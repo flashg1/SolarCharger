@@ -1,0 +1,74 @@
+{
+    "title": "SolarCharger",
+    "config": {
+        "error": {
+            "select_net_power": "Select net power sensor",
+            "select_charger_voltage": "Select charger effective voltage"
+        },
+        "step": {
+            "user": {
+                "title": "Net power",
+                "description": "Net power configuration",
+                "data": {
+                    "net_power": "Net Power (W) (negative for exported power and positive for imported power)",
+                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current",
+                    "charger_device": "Charger device",
+                    "charger_voltage": "Charger effective voltage (V)"
+                }
+            },
+            "charger": {
+                "title": "Charger",
+                "description": "Charger configuration",
+                "data": {
+                    "voltage": "Voltage (V)"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "SolarCharger Options",
+                "description": "Adjust the behavior of the SolarCharger.",
+                "data": {
+                    "sunrise_elevation_start_trigger_": "Sunrise elevation start trigger (degrees)",
+                    "sunset_elevation_end_trigger_": "Sunset elevation end trigger (degrees)",
+                    "set_daily_charge_limit": "Set daily charge limit",
+                    "adjust_charge_limit_based_on_weather": "Adjust charge limit based on weather forecast"
+                }
+            }
+        },
+        "error": {
+            "invalid_charge_limit": "Charge limit must be between 50 and 100%",
+            "invalid_number_format": "Numbers must not contain alphanumeric characters"
+        },
+        "abort": {
+            "already_configured": "This device or service is already configured."
+        }
+    },
+    "entity": {
+        "sensor": {
+            "run_state": {
+                "name": "Run state",
+                "state": {
+                    "stopped": "Stopped",
+                    "charging": "Charging",
+                    "error": "Error"
+                }
+            },
+            "last_check": {
+                "name": "Last check"
+            }
+        },
+        "button": {
+            "start_charge": {
+                "name": "Start charger WL"
+            }
+        },
+        "switch": {
+            "charge": {
+                "name": "Charge"
+            }
+        }
+    }
+}

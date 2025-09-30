@@ -1,0 +1,1 @@
+"""Solar Charger exceptions module."""

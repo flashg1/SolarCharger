@@ -1,0 +1,18 @@
+{
+  "domain": "solarcharger",
+  "name": "SolarCharger",
+  "after_dependencies": [
+    "sensor",
+    "button"
+  ],
+  "codeowners": [
+    "@flashg1"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/flashg1/solarcharger",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/flashg1/solarcharger/issues",
+  "requirements": [],
+  "version": "0.1"
+}
