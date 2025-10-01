@@ -1,4 +1,4 @@
-# Solar Charger
+# Solar Charger - Work in progress
 Home Assistant Solar Charger using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
 
 ###############################################################################
