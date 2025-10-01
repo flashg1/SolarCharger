@@ -4,6 +4,7 @@ from homeassistant import config_entries, core
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import slugify
 
 from .config_subentry_flow import SUBENTRY_TYPE_CHARGER
 from .const import BUTTON, DOMAIN, ENTITY_KEY_CHARGE_BUTTON, ICON_START
@@ -48,8 +49,11 @@ class SolarChargerButtonEntity(SolarChargerEntity, ButtonEntity):
 
         super().__init__(subentry)
         self._coordinator = coordinator
-        id_name = self._entity_key.replace("_", "").lower()
-        self._attr_unique_id = f"{subentry.subentry_id}.{BUTTON}.{id_name}"
+        # id_name = self._entity_key.replace("_", "").lower()
+        id_name = slugify(f"{self._entity_key}")
+        self._attr_unique_id = (
+            f"{subentry.subentry_id}.{subentry.unique_id}.{BUTTON}.{id_name}"
+        )
         self.set_entity_id(BUTTON, self._entity_key)
 
 

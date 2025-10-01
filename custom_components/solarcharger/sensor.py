@@ -4,6 +4,7 @@ from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.util import slugify
 
 from .config_subentry_flow import SUBENTRY_TYPE_CHARGER
 from .const import (
@@ -60,8 +61,11 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
         """Initialize the sensor."""
 
         super().__init__(subentry)
-        id_name = self._entity_key.replace("_", "").lower()
-        self._attr_unique_id = f"{subentry.subentry_id}.{SENSOR}.{id_name}"
+        # id_name = self._entity_key.replace("_", "").lower()
+        id_name = slugify(f"{self._entity_key}")
+        self._attr_unique_id = (
+            f"{subentry.subentry_id}.{subentry.unique_id}.{SENSOR}.{id_name}"
+        )
         self.set_entity_id(SENSOR, self._entity_key)
 
     def set_state(self, new_status):

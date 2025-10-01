@@ -7,7 +7,7 @@ sudo chown -R vscode:vscode /workspaces
 cd "$(dirname "$0")/.."
 
 python3 -m pip install --requirement requirements_dev.txt
-python3 -m pip install --requirement requirements_sim.txt
+#python3 -m pip install --requirement requirements_sim.txt
 
 sudo apt-get update
 # For Python 3.11
