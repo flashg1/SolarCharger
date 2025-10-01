@@ -88,11 +88,6 @@ class SolarChargerSensorRunState(SolarChargerSensorEntity):
         """Initialise sensor."""
         super().__init__(subentry)
 
-    # def set_run_state(self, new_status):
-    #     """Set new status."""
-    #     self._attr_native_value = new_status
-    #     self.update_ha_state()
-
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -106,8 +101,3 @@ class SolarChargerSensorLastCheck(SolarChargerSensorEntity):
     def __init__(self, subentry) -> None:
         """Initialise sensor."""
         super().__init__(subentry)
-
-    # def set_last_check(self, new_status):
-    #     """Set new status."""
-    #     self._attr_native_value = new_status
-    #     self.update_ha_state()

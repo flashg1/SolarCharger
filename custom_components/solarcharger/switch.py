@@ -107,7 +107,6 @@ class SolarChargerSwitchCharge(SolarChargerSwitchEntity):
     """Representation of a SolarCharger start switch."""
 
     _entity_key = ENTITY_KEY_CHARGE_SWITCH
-    # _attr_icon = "mdi:power"
 
     def __init__(
         self,

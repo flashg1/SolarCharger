@@ -40,6 +40,7 @@ from .const import (
     DOMAIN,
     ENTITY_KEY_CHARGE_SWITCH,
     ENTITY_KEY_LAST_CHECK_SENSOR,
+    ENTITY_KEY_RUN_STATE_SENSOR,
     EVENT_ACTION_NEW_CHARGER_LIMITS,
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
@@ -209,11 +210,11 @@ class SolarChargerCoordinator:
         # self._async_update_switches()
 
         # Run the actual charger update
-        # for control in self.charge_controls.values():
-        #     if control.sensors:
-        #         control.sensors[ENTITY_KEY_LAST_CHECK_SENSOR].set_state(
-        #             datetime.now().astimezone()
-        #         )
+        for control in self.charge_controls.values():
+            if control.sensors:
+                control.sensors[ENTITY_KEY_LAST_CHECK_SENSOR].set_state(
+                    datetime.now().astimezone()
+                )
 
         # if control.controller:
         #     control.sensor_last_check_timestamp = datetime.now().astimezone()
@@ -340,7 +341,7 @@ class SolarChargerCoordinator:
                     )
                     return
 
-            def start_charge_completion_callback(task: Task) -> None:
+            def _callback_on_charge_end(task: Task) -> None:
                 """Turn off switch on task exit."""
                 if task.cancelled():
                     _LOGGER.warning("Task %s was cancelled", task.get_name())
@@ -354,9 +355,17 @@ class SolarChargerCoordinator:
                     control.switch_charge = False
                     control.switches[ENTITY_KEY_CHARGE_SWITCH].turn_off()
                     control.switches[ENTITY_KEY_CHARGE_SWITCH].update_ha_state()
+                if control.sensors:
+                    control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
+                        COORDINATOR_STATE_STOPPED
+                    )
 
+            if control.sensors:
+                control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
+                    COORDINATOR_STATE_CHARGING
+                )
             control.charge_task = control.controller.start_charge()
-            control.charge_task.add_done_callback(start_charge_completion_callback)
+            control.charge_task.add_done_callback(_callback_on_charge_end)
 
     # ----------------------------------------------------------------------------
     async def async_stop_charger(self, control: ChargeControl) -> None:
