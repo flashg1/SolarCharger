@@ -451,7 +451,7 @@ class SolarChargerCoordinator:
         entity_id = self.config_entry.options.get(key, None)
         if entity_id is None:
             # Try to get default value.
-            val = of.DEFAULT_VALUES.get(key)
+            val = of.OPTION_DEFAULT_VALUES.get(key)
             if val is None:
                 _LOGGER.debug("No default value for %s", key)
                 return None

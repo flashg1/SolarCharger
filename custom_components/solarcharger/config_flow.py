@@ -47,33 +47,33 @@ CONF_CHARGER_DEVICE = "charger_device"
 CONF_DEVICE_ORIGIN = "device_origin"
 CONF_DEVICE_NAME_DEFAULT = "device_name_default"
 
-_charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_OCPP),
-]
-
 STEP_SOURCE_POWER_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NET_POWER, default=None): EntitySelector(
             EntitySelectorConfig(
                 multiple=False,
-                domain="sensor",
+                domain=["sensor"],
                 device_class=[SensorDeviceClass.POWER],
             )
         ),
     }
 )
 
-STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_CHARGER_DEVICE): DeviceSelector(
-            DeviceSelectorConfig(
-                multiple=False,
-                filter=_charger_integration_filter_list,
-            )
-        ),
-    }
-)
+# _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
+#     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
+#     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_OCPP),
+# ]
+
+# STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
+#     {
+#         vol.Required(CONF_CHARGER_DEVICE): DeviceSelector(
+#             DeviceSelectorConfig(
+#                 multiple=False,
+#                 filter=_charger_integration_filter_list,
+#             )
+#         ),
+#     }
+# )
 
 
 # ----------------------------------------------------------------------------
@@ -168,6 +168,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     self._get_reconfigure_entry(), data_updates=user_input
                 )
 
+        # Get entity name
         net_power: str = self._get_reconfigure_entry().data[CONF_NET_POWER]
 
         net_power_schema = vol.Schema(

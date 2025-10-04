@@ -144,6 +144,8 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 )
 
                 # Check if subentry with this unique_id already exists
+                # if device_name_id in config_entry.subentries:
+                #     return self.async_abort(reason="already_configured")
                 for existing_subentry in config_entry.subentries.values():
                     if existing_subentry.unique_id == device_name_id:
                         return self.async_abort(reason="already_configured")
