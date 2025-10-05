@@ -144,6 +144,8 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 )
 
                 # Check if subentry with this unique_id already exists
+                # subentries is a dictionary accessed via subentry.subentry_id
+                # Below will not work because key is subentry.subentry_id not subentry.unique_id
                 # if device_name_id in config_entry.subentries:
                 #     return self.async_abort(reason="already_configured")
                 for existing_subentry in config_entry.subentries.values():

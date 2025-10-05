@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
+from sqlalchemy import all_
 import voluptuous as vol
 
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.config_entries import ConfigEntry, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlowResult,
+    ConfigSubentry,
+    OptionsFlow,
+)
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
     EntitySelector,
@@ -16,9 +23,10 @@ from homeassistant.helpers.selector import (
     TextSelector,
     selector,
 )
+from homeassistant.util import slugify
 
 from . import config_subentry_flow as csef
-from .config_subentry_flow import SUBENTRY_DEVICE_DOMAIN
+from .config_subentry_flow import SUBENTRY_DEVICE_DOMAIN, SUBENTRY_DEVICE_NAME
 from .const import CHARGER_DOMAIN_OCPP, CHARGER_DOMAIN_TESLA_CUSTOM
 from .exceptions.validation_exception import ValidationExceptionError
 
@@ -27,6 +35,7 @@ if TYPE_CHECKING:
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+_LOGGER = logging.getLogger(__name__)
 OPTION_NET_POWER = "net_power"
 
 
@@ -104,7 +113,7 @@ OPTION_DEFAULT_VALUES: dict[str, Any] = {
 DEVICE_MARKER = "<DeviceName>"
 
 TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
-    OPTION_CHARGER_DEVICE_NAME: "",
+    OPTION_CHARGER_DEVICE_NAME: DEVICE_MARKER,
     OPTION_CHARGER_PLUGGED_IN_SENSOR: f"binary_sensor.{DEVICE_MARKER}charger",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: "['on']",
     OPTION_CHARGER_CONNECT_STATE_LIST: "['on']",
@@ -154,9 +163,9 @@ async def validate_init_input(
 
 
 # ----------------------------------------------------------------------------
-def get_config_item_name(prefix, config_item) -> str:
+def get_config_item_name(device_name, config_item) -> str:
     """Get unique config parameter name."""
-    return f"{prefix}-{config_item}"
+    return f"{device_name}-{config_item}"
 
 
 # ----------------------------------------------------------------------------
@@ -192,30 +201,43 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             if defaults:
                 default_val = defaults.get(config_item)
                 if default_val:
-                    default_val = default_val.replace(DEVICE_MARKER, f"{substr}_")
+                    if default_val == DEVICE_MARKER:
+                        default_val = substr
+                    else:
+                        default_val = default_val.replace(DEVICE_MARKER, f"{substr}_")
 
         return default_val
 
     # ----------------------------------------------------------------------------
-    def _get_default_value(self, device: str, config_item: str) -> Any | None:
+    def _get_default_value(
+        self, subentry: ConfigSubentry, config_item: str
+    ) -> Any | None:
         """Get default value for config item."""
-        options = self.config_entry.options
-        subentry = self.config_entry.subentries[device]
 
         default_val = OPTION_DEFAULT_VALUES.get(config_item)
         if not default_val:
-            device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
-            if device_domain:
-                device_name = options.get(
-                    OPTION_CHARGER_DEVICE_NAME,
-                    CHARGE_API_ENTITIES.get(OPTION_CHARGER_DEVICE_NAME),
-                )
+            if subentry:
+                device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+                device_name_default = subentry.data.get(SUBENTRY_DEVICE_NAME)
+                device_name_default = slugify(device_name_default)
 
-                default_val = self._get_default_entity(
-                    CHARGE_API_ENTITIES.get(device_domain),
-                    config_item,
-                    device_name,
-                )
+                if device_domain:
+                    api_entities = CHARGE_API_ENTITIES.get(device_domain)
+
+                    if api_entities:
+                        options = self.config_entry.options
+                        device_name = options.get(
+                            get_config_item_name(
+                                subentry.unique_id, OPTION_CHARGER_DEVICE_NAME
+                            ),
+                            device_name_default,
+                        )
+
+                        default_val = self._get_default_entity(
+                            api_entities,
+                            config_item,
+                            device_name,
+                        )
 
             # match device_domain:
             #     case const.CHARGER_DOMAIN_TESLA_CUSTOM:
@@ -242,48 +264,65 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         return default_val
 
     # ----------------------------------------------------------------------------
-    def _required(self, device: str, config_item: str) -> vol.Required:
+    def _required(self, subentry: ConfigSubentry, config_item: str) -> vol.Required:
         options = self.config_entry.options
 
-        unique_config_item = get_config_item_name(device, config_item)
-        default_val = self._get_default_value(device, config_item)
-
-        return vol.Required(
-            unique_config_item, default=options.get(unique_config_item, default_val)
+        unique_config_item = get_config_item_name(subentry.unique_id, config_item)
+        default_val = self._get_default_value(subentry, config_item)
+        default_final = options.get(unique_config_item, default_val)
+        _LOGGER.debug(
+            "Required option=%s, default=%s, final=%s",
+            unique_config_item,
+            default_val,
+            default_final,
         )
+
+        return vol.Required(unique_config_item, default=default_final)
 
     # ----------------------------------------------------------------------------
-    def _optional(self, device: str, config_item: str) -> vol.Optional:
+    def _optional(self, subentry: ConfigSubentry, config_item: str) -> vol.Optional:
         options = self.config_entry.options
 
-        unique_config_item = get_config_item_name(device, config_item)
-        default_val = self._get_default_value(device, config_item)
-
-        return vol.Optional(
-            unique_config_item, default=options.get(unique_config_item, default_val)
+        unique_config_item = get_config_item_name(subentry.unique_id, config_item)
+        default_val = self._get_default_value(subentry, config_item)
+        default_final = options.get(unique_config_item, default_val)
+        _LOGGER.debug(
+            "Optional option=%s, default=%s, final=%s",
+            unique_config_item,
+            default_val,
+            default_final,
         )
+
+        return vol.Optional(unique_config_item, default=default_final)
 
     # ----------------------------------------------------------------------------
     # See https://developers.home-assistant.io/docs/data_entry_flow_index
     def _all_charger_options_schema(self) -> vol.Schema:
-        all_schema = {}
+        all_schema = None
 
         for subentry in self.config_entry.subentries.values():
             if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
                 if subentry.unique_id:
-                    general_schema = self._charger_general_options_schema(
-                        subentry.unique_id
+                    _LOGGER.debug(
+                        "Set up subentry options: unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
+                        subentry.unique_id,
+                        subentry.subentry_id,
+                        subentry.subentry_type,
+                        subentry.title,
                     )
-                    entities_schema = self._charger_control_entities_schema(
-                        subentry.unique_id
-                    )
+
+                    general_schema = self._charger_general_options_schema(subentry)
+                    entities_schema = self._charger_control_entities_schema(subentry)
                     combine_schema = {**general_schema, **entities_schema}
                     charger_schema = {
                         vol.Required(subentry.unique_id): section(
                             vol.Schema(combine_schema), {"collapsed": True}
                         ),
                     }
-                    all_schema = {**all_schema, **charger_schema}
+                    if all_schema:
+                        all_schema = {**all_schema, **charger_schema}
+                    else:
+                        all_schema = charger_schema
 
         # charger_schema[vol.Required("Settings")] = selector(
         #     {
@@ -296,38 +335,42 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         return vol.Schema(all_schema)
 
     # ----------------------------------------------------------------------------
-    def _charger_general_options_schema(self, device: str) -> dict[Any, Any]:
+    def _charger_general_options_schema(
+        self, subentry: ConfigSubentry
+    ) -> dict[Any, Any]:
         """Charger general options."""
 
         return {
-            self._required(device, OPTION_CHARGER_EFFECTIVE_VOLTAGE): EntitySelector(
+            self._required(subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["sensor", "input_number"],
                 )
             ),
-            self._required(device, OPTION_CHARGER_MAX_CURRENT): NumberSelector(
+            self._required(subentry, OPTION_CHARGER_MAX_CURRENT): NumberSelector(
                 {"min": 1, "max": 100, "mode": "box", "unit_of_measurement": "A"}
             ),
-            self._optional(device, OPTION_CHARGER_MAX_SPEED): EntitySelector(
+            self._optional(subentry, OPTION_CHARGER_MAX_SPEED): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["input_number", "number", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_MIN_CURRENT): EntitySelector(
+            self._optional(subentry, OPTION_CHARGER_MIN_CURRENT): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["input_number", "number", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_MIN_WORKABLE_CURRENT): NumberSelector(
+            self._optional(
+                subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT
+            ): NumberSelector(
                 {"min": 0, "max": 100, "mode": "box", "unit_of_measurement": "A"}
             ),
             self._optional(
-                device, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT
+                subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT
             ): NumberSelector({"min": 1, "max": 100, "mode": "box"}),
-            self._optional(device, OPTION_WAIT_NET_POWER_UPDATE): NumberSelector(
+            self._optional(subentry, OPTION_WAIT_NET_POWER_UPDATE): NumberSelector(
                 {
                     "min": 1,
                     "max": 600,
@@ -335,7 +378,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     "unit_of_measurement": "second",
                 }
             ),
-            self._optional(device, OPTION_WAIT_CHARGER_UPDATE): NumberSelector(
+            self._optional(subentry, OPTION_WAIT_CHARGER_UPDATE): NumberSelector(
                 {
                     "min": 1,
                     "max": 600,
@@ -344,7 +387,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 }
             ),
             self._optional(
-                device, OPTION_SUNRISE_ELEVATION_START_TRIGGER
+                subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER
             ): NumberSelector(
                 {
                     "min": -90,
@@ -353,7 +396,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     "unit_of_measurement": "degree",
                 }
             ),
-            self._optional(device, OPTION_SUNSET_ELEVATION_END_TRIGGER): NumberSelector(
+            self._optional(
+                subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER
+            ): NumberSelector(
                 {
                     "min": -90,
                     "max": +90,
@@ -364,84 +409,92 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         }
 
     # ----------------------------------------------------------------------------
-    def _charger_control_entities_schema(self, device: str) -> dict[Any, Any]:
+    def _charger_control_entities_schema(
+        self, subentry: ConfigSubentry
+    ) -> dict[Any, Any]:
         """Charger control entities."""
 
         return {
-            self._optional(device, OPTION_CHARGER_DEVICE_NAME): TextSelector(),
-            self._optional(device, OPTION_CHARGER_PLUGGED_IN_SENSOR): EntitySelector(
+            self._optional(subentry, OPTION_CHARGER_DEVICE_NAME): TextSelector(),
+            self._optional(subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["binary_sensor", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_CONNECT_TRIGGER_LIST): EntitySelector(
+            self._optional(
+                subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST
+            ): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["binary_sensor", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_CONNECT_STATE_LIST): EntitySelector(
+            self._optional(subentry, OPTION_CHARGER_CONNECT_STATE_LIST): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["binary_sensor", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_ON_OFF_SWITCH): EntitySelector(
+            self._optional(subentry, OPTION_CHARGER_ON_OFF_SWITCH): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["switch"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_CHARGING_SENSOR): EntitySelector(
+            self._optional(subentry, OPTION_CHARGER_CHARGING_SENSOR): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["binary_sensor", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_CHARGING_STATE_LIST): EntitySelector(
+            self._optional(
+                subentry, OPTION_CHARGER_CHARGING_STATE_LIST
+            ): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["binary_sensor", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGER_CHARGING_AMPS): EntitySelector(
+            self._optional(subentry, OPTION_CHARGER_CHARGING_AMPS): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["number", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGEE_SOC_SENSOR): EntitySelector(
+            self._optional(subentry, OPTION_CHARGEE_SOC_SENSOR): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGEE_CHARGE_LIMIT): EntitySelector(
+            self._optional(subentry, OPTION_CHARGEE_CHARGE_LIMIT): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["number", "input_number"],
                 )
             ),
-            self._optional(device, OPTION_CHARGEE_LOCATION_SENSOR): EntitySelector(
+            self._optional(subentry, OPTION_CHARGEE_LOCATION_SENSOR): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["device_tracker", "binary_sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGEE_LOCATION_STATE_LIST): EntitySelector(
+            self._optional(
+                subentry, OPTION_CHARGEE_LOCATION_STATE_LIST
+            ): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["binary_sensor", "sensor"],
                 )
             ),
-            self._optional(device, OPTION_CHARGEE_WAKE_UP_BUTTON): EntitySelector(
+            self._optional(subentry, OPTION_CHARGEE_WAKE_UP_BUTTON): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["button"],
                 )
             ),
-            self._optional(device, OPTION_CHARGEE_UPDATE_HA_BUTTON): EntitySelector(
+            self._optional(subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON): EntitySelector(
                 EntitySelectorConfig(
                     multiple=False,
                     domain=["button"],

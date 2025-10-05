@@ -83,8 +83,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
             _LOGGER.info(
-                "Setting up entry with charger '%s'",
+                "Set up subentry charge control: class=%s, unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
                 charger.__class__.__name__,
+                subentry.unique_id,
+                subentry.subentry_id,
+                subentry.subentry_type,
+                subentry.title,
             )
 
     await coordinator.async_setup()
