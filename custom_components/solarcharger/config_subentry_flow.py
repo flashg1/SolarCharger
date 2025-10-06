@@ -40,6 +40,7 @@ from .exceptions.validation_exception import ValidationExceptionError
 _LOGGER = logging.getLogger(__name__)
 
 SUBENTRY_TYPE_CHARGER = "charger"
+
 SUBENTRY_CHARGER_DEVICE = "charger_device"
 SUBENTRY_DEVICE_DOMAIN = "device_domain"
 SUBENTRY_DEVICE_NAME = "device_name"
@@ -150,7 +151,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 #     return self.async_abort(reason="already_configured")
                 for existing_subentry in config_entry.subentries.values():
                     if existing_subentry.unique_id == device_name_id:
-                        return self.async_abort(reason="already_configured")
+                        return self.async_abort(reason="device_already_added")
 
                 # Create subentry
                 if (
@@ -187,7 +188,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
 
                 # Must return with SubentryFlowResult as stipulated in the return type
                 return self.async_abort(
-                    reason="subentry_created",
+                    reason="device_subentry_created",
                     description_placeholders={
                         "subentry": device_name_id,
                         "subentry_count": f"{len(config_entry.subentries)}",

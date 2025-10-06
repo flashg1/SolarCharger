@@ -8,12 +8,15 @@
         "step": {
             "user": {
                 "title": "Net power",
-                "description": "Net power configuration",
+                "description": "Net Power in Watts is negative for exported power and positive for imported power.",
                 "data": {
-                    "net_power": "Net Power (W) (negative for exported power and positive for imported power)",
+                    "net_power": "Net Power (W)",
                     "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current",
                     "charger_device": "Charger device",
                     "charger_voltage": "Charger effective voltage (V)"
+                },
+                "data_description": {
+                    "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption."
                 }
             },
             "charger": {
@@ -23,33 +26,36 @@
                     "voltage": "Voltage (V)"
                 }
             }
+        },
+        "abort": {
+            "reconfigure_successful": "Re-configuration was successful"
         }
     },
     "config_subentries": {
         "charger": {
-            "abort": {
-                "reconfigure_successful": "Re-configuration was successful",
-                "subentry_created": "Added charger device"
+            "initiate_flow": {
+                "user": "Add charger device",
+                "reconfigure": "Reconfigure charger device"
             },
-            "entry_type": "Charger device",
             "error": {
                 "unknown_error": "Unknown error"
             },
-            "initiate_flow": {
-                "reconfigure": "Reconfigure charger device",
-                "user": "Add charger device"
-            },
             "step": {
-                "update": {
+                "user": {
+                    "title": "Add charger device",
+                    "description": "Select charger device to add.",
                     "data": {
-                        "component": "Charger device"
+                        "charger_device": "Charger device"
                     },
                     "data_description": {
-                        "component": "Select charger device to update options"
-                    },
-                    "description": "Select charger device to update options",
-                    "title": "Update charger device options"
+                        "charger_device": "Select charger device integration or custom integration to specify your own charger control entities."
+                    }
                 }
+            },
+            "entry_type": "Charger device",
+            "abort": {
+                "device_already_added": "Error: Device already added",
+                "device_subentry_created": "Added charger device"
             }
         }
     },
@@ -57,7 +63,7 @@
         "step": {
             "init": {
                 "title": "SolarCharger Options",
-                "description": "Adjust the behavior of the SolarCharger.",
+                "description": "Adjust charger behaviour.",
                 "data": {
                     "sunrise_elevation_start_trigger_": "Sunrise elevation start trigger (degrees)",
                     "sunset_elevation_end_trigger_": "Sunset elevation end trigger (degrees)",
@@ -71,8 +77,7 @@
             "invalid_number_format": "Numbers must not contain alphanumeric characters"
         },
         "abort": {
-            "empty_charger_device_list": "Empty charger device list. Use + sign to add charger device.",
-            "already_configured": "This device or service is already configured."
+            "empty_charger_device_list": "Empty charger device list. Use + sign to add charger device."
         }
     },
     "entity": {
