@@ -25,6 +25,34 @@
             }
         }
     },
+    "config_subentries": {
+        "charger": {
+            "abort": {
+                "reconfigure_successful": "Re-configuration was successful",
+                "subentry_created": "Added charger device"
+            },
+            "entry_type": "Charger device",
+            "error": {
+                "unknown_error": "Unknown error"
+            },
+            "initiate_flow": {
+                "reconfigure": "Reconfigure charger device",
+                "user": "Add charger device"
+            },
+            "step": {
+                "update": {
+                    "data": {
+                        "component": "Charger device"
+                    },
+                    "data_description": {
+                        "component": "Select charger device to update options"
+                    },
+                    "description": "Select charger device to update options",
+                    "title": "Update charger device options"
+                }
+            }
+        }
+    },
     "options": {
         "step": {
             "init": {
@@ -43,6 +71,7 @@
             "invalid_number_format": "Numbers must not contain alphanumeric characters"
         },
         "abort": {
+            "empty_charger_device_list": "Empty charger device list. Use + sign to add charger device.",
             "already_configured": "This device or service is already configured."
         }
     },
