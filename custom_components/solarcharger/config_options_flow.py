@@ -17,10 +17,20 @@ from homeassistant.config_entries import (
 )
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
     NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+    TemplateSelector,
+    TemplateSelectorConfig,
     TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
     selector,
 )
 from homeassistant.util import slugify
@@ -36,8 +46,91 @@ if TYPE_CHECKING:
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
-OPTION_NET_POWER = "net_power"
 
+
+#####################################
+# Common selectors
+#####################################
+BOOLEAN_SELECTOR = BooleanSelector()
+TEMPLATE_SELECTOR = TemplateSelector(TemplateSelectorConfig())
+TEMPLATE_SELECTOR_READ_ONLY = TemplateSelector(TemplateSelectorConfig(read_only=True))
+TEXT_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT))
+TEXT_SELECTOR_READ_ONLY = TextSelector(
+    TextSelectorConfig(type=TextSelectorType.TEXT, read_only=True)
+)
+OPTIONS_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=[],
+        custom_value=True,
+        multiple=True,
+    )
+)
+PASSWORD_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
+URL_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.URL))
+
+TARGET_TEMPERATURE_FEATURE_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=["single", "high_low", "none"],
+        mode=SelectSelectorMode.DROPDOWN,
+        translation_key="target_temperature_feature",
+    )
+)
+
+NUMBER_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["number", "input_number", "sensor"],
+    )
+)
+SENSOR_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["sensor", "binary_sensor"],
+    )
+)
+SWITCH_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["switch"],
+    )
+)
+BUTTON_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["button"],
+    )
+)
+LOCATION_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["device_tracker", "binary_sensor"],
+    )
+)
+
+
+ELECTRIC_CURRENT_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        mode=NumberSelectorMode.BOX, min=0, max=100, unit_of_measurement="A"
+    )
+)
+WAIT_TIME_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        mode=NumberSelectorMode.BOX, min=1, max=600, unit_of_measurement="sec"
+    )
+)
+SUN_ELEVATION_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        mode=NumberSelectorMode.BOX, min=-90, max=+90, unit_of_measurement="degree"
+    )
+)
+ALLOCATION_WEIGHT_SELECTOR = NumberSelector(
+    NumberSelectorConfig(mode=NumberSelectorMode.BOX, min=1, max=100)
+)
+
+#####################################
+# Power import/export sensor
+#####################################
+OPTION_NET_POWER = "net_power"
 
 #####################################
 # Charger general configs
@@ -297,7 +390,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
     # ----------------------------------------------------------------------------
     # See https://developers.home-assistant.io/docs/data_entry_flow_index
-    def _all_charger_options_schema(self) -> vol.Schema:
+    def _all_charger_options_schema(self, errors) -> vol.Schema:
         all_schema = None
 
         for subentry in self.config_entry.subentries.values():
@@ -341,71 +434,30 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         """Charger general options."""
 
         return {
-            self._required(subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["sensor", "input_number"],
-                )
-            ),
-            self._required(subentry, OPTION_CHARGER_MAX_CURRENT): NumberSelector(
-                {"min": 1, "max": 100, "mode": "box", "unit_of_measurement": "A"}
-            ),
-            self._optional(subentry, OPTION_CHARGER_MAX_SPEED): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["input_number", "number", "sensor"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGER_MIN_CURRENT): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["input_number", "number", "sensor"],
-                )
-            ),
+            self._required(
+                subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE
+            ): NUMBER_ENTITY_SELECTOR,
+            self._required(
+                subentry, OPTION_CHARGER_MAX_CURRENT
+            ): ELECTRIC_CURRENT_SELECTOR,
+            self._optional(subentry, OPTION_CHARGER_MAX_SPEED): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGER_MIN_CURRENT
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT
-            ): NumberSelector(
-                {"min": 0, "max": 100, "mode": "box", "unit_of_measurement": "A"}
-            ),
+            ): ELECTRIC_CURRENT_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT
-            ): NumberSelector({"min": 1, "max": 100, "mode": "box"}),
-            self._optional(subentry, OPTION_WAIT_NET_POWER_UPDATE): NumberSelector(
-                {
-                    "min": 1,
-                    "max": 600,
-                    "mode": "box",
-                    "unit_of_measurement": "second",
-                }
-            ),
-            self._optional(subentry, OPTION_WAIT_CHARGER_UPDATE): NumberSelector(
-                {
-                    "min": 1,
-                    "max": 600,
-                    "mode": "box",
-                    "unit_of_measurement": "second",
-                }
-            ),
+            ): ALLOCATION_WEIGHT_SELECTOR,
+            self._optional(subentry, OPTION_WAIT_NET_POWER_UPDATE): WAIT_TIME_SELECTOR,
+            self._optional(subentry, OPTION_WAIT_CHARGER_UPDATE): WAIT_TIME_SELECTOR,
             self._optional(
                 subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER
-            ): NumberSelector(
-                {
-                    "min": -90,
-                    "max": +90,
-                    "mode": "box",
-                    "unit_of_measurement": "degree",
-                }
-            ),
+            ): SUN_ELEVATION_SELECTOR,
             self._optional(
                 subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER
-            ): NumberSelector(
-                {
-                    "min": -90,
-                    "max": +90,
-                    "mode": "box",
-                    "unit_of_measurement": "degree",
-                }
-            ),
+            ): SUN_ELEVATION_SELECTOR,
         }
 
     # ----------------------------------------------------------------------------
@@ -415,91 +467,44 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         """Charger control entities."""
 
         return {
-            self._optional(subentry, OPTION_CHARGER_DEVICE_NAME): TextSelector(),
-            self._optional(subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["binary_sensor", "sensor"],
-                )
-            ),
+            self._optional(subentry, OPTION_CHARGER_DEVICE_NAME): TEXT_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR
+            ): SENSOR_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST
-            ): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["binary_sensor", "sensor"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGER_CONNECT_STATE_LIST): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["binary_sensor", "sensor"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGER_ON_OFF_SWITCH): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["switch"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGER_CHARGING_SENSOR): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["binary_sensor", "sensor"],
-                )
-            ),
+            ): SENSOR_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGER_CONNECT_STATE_LIST
+            ): SENSOR_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGER_ON_OFF_SWITCH
+            ): SWITCH_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGER_CHARGING_SENSOR
+            ): SENSOR_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_STATE_LIST
-            ): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["binary_sensor", "sensor"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGER_CHARGING_AMPS): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["number", "sensor"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGEE_SOC_SENSOR): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["sensor"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGEE_CHARGE_LIMIT): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["number", "input_number"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGEE_LOCATION_SENSOR): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["device_tracker", "binary_sensor"],
-                )
-            ),
+            ): SENSOR_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGER_CHARGING_AMPS
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(subentry, OPTION_CHARGEE_SOC_SENSOR): SENSOR_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGEE_CHARGE_LIMIT
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGEE_LOCATION_SENSOR
+            ): LOCATION_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_STATE_LIST
-            ): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["binary_sensor", "sensor"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGEE_WAKE_UP_BUTTON): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["button"],
-                )
-            ),
-            self._optional(subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON): EntitySelector(
-                EntitySelectorConfig(
-                    multiple=False,
-                    domain=["button"],
-                )
-            ),
+            ): SENSOR_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGEE_WAKE_UP_BUTTON
+            ): BUTTON_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON
+            ): BUTTON_ENTITY_SELECTOR,
         }
 
     # ----------------------------------------------------------------------------
@@ -650,8 +655,14 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             if not errors and input_data is not None:
                 return self.async_create_entry(title="", data=input_data)
 
+        if not self.config_entry.subentries:
+            errors["empty_charger_device_list"] = "Use + sign to add charger devices."
+            return self.async_abort(
+                reason="empty_charger_device_list",
+            )
+
         return self.async_show_form(
             step_id="init",
-            data_schema=self._all_charger_options_schema(),
+            data_schema=self._all_charger_options_schema(errors),
             errors=errors,
         )
