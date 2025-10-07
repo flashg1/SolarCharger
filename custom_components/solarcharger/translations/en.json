@@ -62,11 +62,18 @@
     "options": {
         "step": {
             "init": {
-                "title": "SolarCharger Options",
+                "title": "SolarCharger options",
+                "description": "Select charger to modify charger behaviour.",
+                "data": {
+                    "select_charger": "Select charger"
+                }
+            },
+            "config_device": {
+                "title": "Charger options",
                 "description": "Adjust charger behaviour.",
                 "data": {
-                    "sunrise_elevation_start_trigger_": "Sunrise elevation start trigger (degrees)",
-                    "sunset_elevation_end_trigger_": "Sunset elevation end trigger (degrees)",
+                    "sunrise_elevation_start_trigger": "Sunrise elevation start trigger (degrees)",
+                    "sunset_elevation_end_trigger": "Sunset elevation end trigger (degrees)",
                     "set_daily_charge_limit": "Set daily charge limit",
                     "adjust_charge_limit_based_on_weather": "Adjust charge limit based on weather forecast"
                 }
@@ -77,7 +84,7 @@
             "invalid_number_format": "Numbers must not contain alphanumeric characters"
         },
         "abort": {
-            "empty_charger_device_list": "Empty charger device list. Use + sign to add charger device."
+            "empty_charger_device_list": "Error: Empty charger device list. Add charger device before setting options for device."
         }
     },
     "entity": {

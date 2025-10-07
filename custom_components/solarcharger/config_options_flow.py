@@ -132,6 +132,9 @@ ALLOCATION_WEIGHT_SELECTOR = NumberSelector(
 #####################################
 OPTION_NET_POWER = "net_power"
 
+OPTION_SELECT_CHARGER = "select_charger"
+OPTION_LAST_CHARGER_ID = "last_charger_id"
+
 #####################################
 # Charger general configs
 #####################################
@@ -258,7 +261,8 @@ async def validate_init_input(
 # ----------------------------------------------------------------------------
 def get_config_item_name(device_name, config_item) -> str:
     """Get unique config parameter name."""
-    return f"{device_name}-{config_item}"
+    # return f"{device_name}-{config_item}"
+    return config_item
 
 
 # ----------------------------------------------------------------------------
@@ -279,6 +283,19 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     def get_option_value(config_entry: ConfigEntry, key: str) -> Any:
         """Get the value of an option from the config entry."""
         return config_entry.options.get(key, OPTION_DEFAULT_VALUES.get(key))
+
+    # ----------------------------------------------------------------------------
+    def _get_device_id(self, device_name: str) -> str | None:
+        subentry_id: str | None = None
+
+        if self.config_entry.subentries:
+            for subentry in self.config_entry.subentries.values():
+                if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
+                    if subentry.unique_id == device_name:
+                        subentry_id = subentry.subentry_id
+                        break
+
+        return subentry_id
 
     # ----------------------------------------------------------------------------
     def _get_default_entity(
@@ -389,45 +406,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         return vol.Optional(unique_config_item, default=default_final)
 
     # ----------------------------------------------------------------------------
-    # See https://developers.home-assistant.io/docs/data_entry_flow_index
-    def _all_charger_options_schema(self, errors) -> vol.Schema:
-        all_schema = None
-
-        for subentry in self.config_entry.subentries.values():
-            if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
-                if subentry.unique_id:
-                    _LOGGER.debug(
-                        "Set up subentry options: unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
-                        subentry.unique_id,
-                        subentry.subentry_id,
-                        subentry.subentry_type,
-                        subentry.title,
-                    )
-
-                    general_schema = self._charger_general_options_schema(subentry)
-                    entities_schema = self._charger_control_entities_schema(subentry)
-                    combine_schema = {**general_schema, **entities_schema}
-                    charger_schema = {
-                        vol.Required(subentry.unique_id): section(
-                            vol.Schema(combine_schema), {"collapsed": True}
-                        ),
-                    }
-                    if all_schema:
-                        all_schema = {**all_schema, **charger_schema}
-                    else:
-                        all_schema = charger_schema
-
-        # charger_schema[vol.Required("Settings")] = selector(
-        #     {
-        #         "select": {
-        #             "options": [],
-        #         }
-        #     }
-        # )
-
-        return vol.Schema(all_schema)
-
-    # ----------------------------------------------------------------------------
     def _charger_general_options_schema(
         self, subentry: ConfigSubentry
     ) -> dict[Any, Any]:
@@ -507,7 +485,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): BUTTON_ENTITY_SELECTOR,
         }
 
-    # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
     def _options_schema(self) -> vol.Schema:
         """Define the schema for the options flow."""
@@ -636,24 +613,113 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         )
 
     # ----------------------------------------------------------------------------
+    def _all_charger_options_schema(self, errors) -> vol.Schema:
+        all_schema = None
+
+        for subentry in self.config_entry.subentries.values():
+            if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
+                if subentry.unique_id:
+                    _LOGGER.debug(
+                        "Set up subentry options: unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
+                        subentry.unique_id,
+                        subentry.subentry_id,
+                        subentry.subentry_type,
+                        subentry.title,
+                    )
+
+                    general_schema = self._charger_general_options_schema(subentry)
+                    entities_schema = self._charger_control_entities_schema(subentry)
+                    combine_schema = {**general_schema, **entities_schema}
+                    charger_schema = {
+                        vol.Required(subentry.unique_id): section(
+                            vol.Schema(combine_schema), {"collapsed": True}
+                        ),
+                    }
+                    if all_schema:
+                        all_schema = {**all_schema, **charger_schema}
+                    else:
+                        all_schema = charger_schema
+
+        return vol.Schema(all_schema)
+
+    # ----------------------------------------------------------------------------
+    async def async_step_config_device(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Select charger device to configure."""
+        errors = {}
+        options_config: dict[str, Any] = dict(self.config_entry.options)
+        bad_input: bool = False
+        input_data = None
+        combine_schema = {}
+
+        if user_input is not None:
+            if subentry_id := user_input.get(OPTION_LAST_CHARGER_ID):
+                user_input.pop(OPTION_LAST_CHARGER_ID)
+
+                # validate input
+                try:
+                    input_data = await validate_init_input(self.hass, user_input)
+                except ValidationExceptionError as ex:
+                    errors[ex.base] = ex.key
+                except ValueError:
+                    errors["base"] = "invalid_number_format"
+
+                # Add input_data to options
+                # if not user_input["will_enable"]:
+                #     options_config[CONF_WILL_MESSAGE] = {}
+
+                if not bad_input and not errors and input_data is not None:
+                    device_name = user_input.pop(OPTION_SELECT_CHARGER)
+                    # TODO: Store config in subentries or options data structure.
+                    # return self.async_create_entry(title="Update options data", data=input_data)
+                    return self.async_create_entry(
+                        title="Update options data", data=options_config
+                    )
+            else:
+                device_name = user_input[OPTION_SELECT_CHARGER]
+                subentry_id = self._get_device_id(device_name)
+                if subentry_id:
+                    subentry = self.config_entry.subentries.get(subentry_id)
+                    if not subentry:
+                        errors["subentry_not_found"] = (
+                            f"Subentry not found for {device_name}"
+                        )
+                        return self.async_abort(
+                            reason="subentry_not_found",
+                        )
+                    user_input[OPTION_LAST_CHARGER_ID] = subentry_id
+
+                    general_schema = self._charger_general_options_schema(subentry)
+                    entities_schema = self._charger_control_entities_schema(subentry)
+                    combine_schema = {**general_schema, **entities_schema}
+                    # charger_schema = {
+                    #     vol.Required(subentry.unique_id): section(
+                    #         vol.Schema(combine_schema), {"collapsed": False}
+                    #     ),
+                    # }
+
+        return self.async_show_form(
+            step_id="config_device",
+            data_schema=vol.Schema(combine_schema),
+            errors=errors,
+            last_step=True,
+        )
+
+    # ----------------------------------------------------------------------------
+    # See https://developers.home-assistant.io/docs/data_entry_flow_index
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the initial step."""
-        errors: dict[str, str] = {}
-        input_data: dict[str, Any] | None = None
+        """Select charger device to configure."""
+        errors = {}
+        options_config: dict[str, Any] = dict(self.config_entry.options)
+        bad_input: bool = False
 
         if user_input is not None:
-            try:
-                input_data = await validate_init_input(self.hass, user_input)
-
-            except ValidationExceptionError as ex:
-                errors[ex.base] = ex.key
-            except ValueError:
-                errors["base"] = "invalid_number_format"
-
-            if not errors and input_data is not None:
-                return self.async_create_entry(title="", data=input_data)
+            config_result = await self.async_step_config_device(user_input)
+            # Manually save dictionary result for subentry in self.config_entry.options[subentry_id]
+            return config_result
 
         if not self.config_entry.subentries:
             errors["empty_charger_device_list"] = "Use + sign to add charger devices."
@@ -661,8 +727,56 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 reason="empty_charger_device_list",
             )
 
+        device_list = []
+        for subentry in self.config_entry.subentries.values():
+            if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
+                if subentry.unique_id:
+                    device_list.append(subentry.unique_id)
+
+        fields = {}
+        fields[vol.Required(OPTION_SELECT_CHARGER)] = SelectSelector(
+            SelectSelectorConfig(
+                options=device_list,
+                custom_value=True,
+                multiple=False,
+            )
+        )
+
         return self.async_show_form(
             step_id="init",
-            data_schema=self._all_charger_options_schema(errors),
+            data_schema=vol.Schema(fields),
             errors=errors,
+            last_step=False,
         )
+
+    # ----------------------------------------------------------------------------
+    # async def async_step_init(
+    #     self, user_input: dict[str, Any] | None = None
+    # ) -> ConfigFlowResult:
+    #     """Handle the initial step."""
+    #     errors: dict[str, str] = {}
+    #     input_data: dict[str, Any] | None = None
+
+    #     if user_input is not None:
+    #         try:
+    #             input_data = await validate_init_input(self.hass, user_input)
+
+    #         except ValidationExceptionError as ex:
+    #             errors[ex.base] = ex.key
+    #         except ValueError:
+    #             errors["base"] = "invalid_number_format"
+
+    #         if not errors and input_data is not None:
+    #             return self.async_create_entry(title="", data=input_data)
+
+    #     if not self.config_entry.subentries:
+    #         errors["empty_charger_device_list"] = "Use + sign to add charger devices."
+    #         return self.async_abort(
+    #             reason="empty_charger_device_list",
+    #         )
+
+    #     return self.async_show_form(
+    #         step_id="init",
+    #         data_schema=self._all_charger_options_schema(errors),
+    #         errors=errors,
+    #     )
