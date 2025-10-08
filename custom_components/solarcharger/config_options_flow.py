@@ -136,6 +136,12 @@ OPTION_SELECT_CHARGER = "select_charger"
 OPTION_LAST_CHARGER_ID = "last_charger_id"
 
 #####################################
+# Option admin
+#####################################
+OPTION_ID = "option_id"
+OPTION_NAME = "option_name"
+
+#####################################
 # Charger general configs
 #####################################
 OPTION_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"
@@ -324,7 +330,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     ) -> Any | None:
         """Get default value for config item."""
 
+        # Get parameter default value
         default_val = OPTION_DEFAULT_VALUES.get(config_item)
+
+        # Get entity name
         if not default_val:
             if subentry:
                 device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
@@ -335,19 +344,19 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     api_entities = CHARGE_API_ENTITIES.get(device_domain)
 
                     if api_entities:
-                        options = self.config_entry.options
-                        device_name = options.get(
-                            get_config_item_name(
-                                subentry.unique_id, OPTION_CHARGER_DEVICE_NAME
-                            ),
-                            device_name_default,
+                        device_options = self.config_entry.options.get(
+                            subentry.subentry_id
                         )
-
-                        default_val = self._get_default_entity(
-                            api_entities,
-                            config_item,
-                            device_name,
-                        )
+                        if device_options:
+                            # Get device name for substitution
+                            device_name = device_options.get(
+                                OPTION_CHARGER_DEVICE_NAME, device_name_default
+                            )
+                            default_val = self._get_default_entity(
+                                api_entities,
+                                config_item,
+                                device_name,
+                            )
 
             # match device_domain:
             #     case const.CHARGER_DOMAIN_TESLA_CUSTOM:
@@ -374,12 +383,20 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         return default_val
 
     # ----------------------------------------------------------------------------
-    def _required(self, subentry: ConfigSubentry, config_item: str) -> vol.Required:
+    def _get_option_parameters(
+        self, subentry: ConfigSubentry, config_item: str
+    ) -> tuple[str, Any]:
         options = self.config_entry.options
 
         unique_config_item = get_config_item_name(subentry.unique_id, config_item)
         default_val = self._get_default_value(subentry, config_item)
-        default_final = options.get(unique_config_item, default_val)
+
+        device_options = options.get(subentry.subentry_id)
+        if device_options:
+            default_final = device_options.get(unique_config_item, default_val)
+        else:
+            default_final = default_val
+
         _LOGGER.debug(
             "Required option=%s, default=%s, final=%s",
             unique_config_item,
@@ -387,22 +404,20 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             default_final,
         )
 
+        return unique_config_item, default_final
+
+    # ----------------------------------------------------------------------------
+    def _required(self, subentry: ConfigSubentry, config_item: str) -> vol.Required:
+        unique_config_item, default_final = self._get_option_parameters(
+            subentry, config_item
+        )
         return vol.Required(unique_config_item, default=default_final)
 
     # ----------------------------------------------------------------------------
     def _optional(self, subentry: ConfigSubentry, config_item: str) -> vol.Optional:
-        options = self.config_entry.options
-
-        unique_config_item = get_config_item_name(subentry.unique_id, config_item)
-        default_val = self._get_default_value(subentry, config_item)
-        default_final = options.get(unique_config_item, default_val)
-        _LOGGER.debug(
-            "Optional option=%s, default=%s, final=%s",
-            unique_config_item,
-            default_val,
-            default_final,
+        unique_config_item, default_final = self._get_option_parameters(
+            subentry, config_item
         )
-
         return vol.Optional(unique_config_item, default=default_final)
 
     # ----------------------------------------------------------------------------
@@ -649,14 +664,15 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         """Select charger device to configure."""
         errors = {}
         options_config: dict[str, Any] = dict(self.config_entry.options)
-        bad_input: bool = False
         input_data = None
         combine_schema = {}
 
-        if user_input is not None:
-            if subentry_id := user_input.get(OPTION_LAST_CHARGER_ID):
-                user_input.pop(OPTION_LAST_CHARGER_ID)
+        device_name = self._device_to_update
+        subentry_id = self._get_device_id(device_name)
 
+        # Process options
+        if user_input is not None:
+            if subentry_id:
                 # validate input
                 try:
                     input_data = await validate_init_input(self.hass, user_input)
@@ -665,39 +681,35 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 except ValueError:
                     errors["base"] = "invalid_number_format"
 
-                # Add input_data to options
-                # if not user_input["will_enable"]:
-                #     options_config[CONF_WILL_MESSAGE] = {}
+                if not errors and input_data is not None:
+                    device_options = options_config.get(subentry_id)
+                    if not device_options:
+                        device_options = {}
+                        device_options[OPTION_ID] = subentry_id
+                        device_options[OPTION_NAME] = device_name
+                        options_config[subentry_id] = device_options
 
-                if not bad_input and not errors and input_data is not None:
-                    device_name = user_input.pop(OPTION_SELECT_CHARGER)
-                    # TODO: Store config in subentries or options data structure.
-                    # return self.async_create_entry(title="Update options data", data=input_data)
-                    return self.async_create_entry(
-                        title="Update options data", data=options_config
-                    )
-            else:
-                device_name = user_input[OPTION_SELECT_CHARGER]
-                subentry_id = self._get_device_id(device_name)
-                if subentry_id:
-                    subentry = self.config_entry.subentries.get(subentry_id)
-                    if not subentry:
-                        errors["subentry_not_found"] = (
-                            f"Subentry not found for {device_name}"
-                        )
-                        return self.async_abort(
-                            reason="subentry_not_found",
-                        )
-                    user_input[OPTION_LAST_CHARGER_ID] = subentry_id
+                    device_options.update(input_data)
 
-                    general_schema = self._charger_general_options_schema(subentry)
-                    entities_schema = self._charger_control_entities_schema(subentry)
-                    combine_schema = {**general_schema, **entities_schema}
-                    # charger_schema = {
-                    #     vol.Required(subentry.unique_id): section(
-                    #         vol.Schema(combine_schema), {"collapsed": False}
-                    #     ),
-                    # }
+                    return self.async_create_entry(data=options_config)
+
+        # Prompt user for options
+        if subentry_id:
+            subentry = self.config_entry.subentries.get(subentry_id)
+            if not subentry:
+                errors["subentry_not_found"] = f"Subentry not found for {device_name}"
+                return self.async_abort(
+                    reason="subentry_not_found",
+                )
+
+            general_schema = self._charger_general_options_schema(subentry)
+            entities_schema = self._charger_control_entities_schema(subentry)
+            combine_schema = {**general_schema, **entities_schema}
+            # charger_schema = {
+            #     vol.Required(subentry.unique_id): section(
+            #         vol.Schema(combine_schema), {"collapsed": False}
+            #     ),
+            # }
 
         return self.async_show_form(
             step_id="config_device",
@@ -713,13 +725,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     ) -> ConfigFlowResult:
         """Select charger device to configure."""
         errors = {}
-        options_config: dict[str, Any] = dict(self.config_entry.options)
-        bad_input: bool = False
 
         if user_input is not None:
-            config_result = await self.async_step_config_device(user_input)
-            # Manually save dictionary result for subentry in self.config_entry.options[subentry_id]
-            return config_result
+            self._device_to_update = user_input[OPTION_SELECT_CHARGER]
+            return await self.async_step_config_device(None)
 
         if not self.config_entry.subentries:
             errors["empty_charger_device_list"] = "Use + sign to add charger devices."
