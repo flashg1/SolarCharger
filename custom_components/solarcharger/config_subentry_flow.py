@@ -96,6 +96,12 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
 
     # cf_data: dict | None = None
 
+    # ----------------------------------------------------------------------------
+    # def _set_global_defaults(self, data: dict[str, dict[str, Any]]) -> None:
+    #     """Set global data for the config flow."""
+    #     self.cf_data = data or {}
+
+    # ----------------------------------------------------------------------------
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:

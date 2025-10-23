@@ -149,6 +149,11 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 data=user_input,
             )
 
+        config_entries: list[ConfigEntry] = self._async_current_entries()
+        if config_entries:
+            if len(config_entries) >= 1:
+                return self.async_abort(reason="single_instance_allowed")
+
         return self.async_show_form(
             step_id="user", data_schema=STEP_SOURCE_POWER_SCHEMA, errors=errors
         )
