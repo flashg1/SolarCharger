@@ -85,7 +85,7 @@
             "invalid_number_format": "Numbers must not contain alphanumeric characters"
         },
         "abort": {
-            "empty_charger_device_list": "Error: Empty charger device list. Add charger device before setting options for device."
+            "empty_charger_device_list": "No charger device to configure. Add charger device before setting options for device."
         }
     },
     "entity": {
