@@ -99,11 +99,12 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
-        """Prompt user to select charger integration."""
+        """Entry point for subentry config. Prompts for charger selection."""
         errors: dict[str, str] = {}
         input_data: dict[str, Any] | None = None
 
         config_entry = self._get_entry()
+        # config_entry.solarcharger_data = {}
         if user_input is not None:
             try:
                 input_data = validate_charger_selection(self.hass, user_input)

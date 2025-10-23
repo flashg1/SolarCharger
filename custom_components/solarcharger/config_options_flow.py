@@ -723,7 +723,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Select charger device to configure."""
+        """Entry point for options config. Select charger device to configure."""
         errors = {}
 
         if user_input is not None:

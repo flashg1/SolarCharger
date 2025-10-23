@@ -135,7 +135,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle initial config step."""
+        """Entry point for initial config."""
         errors: dict[str, str] = {}
         if user_input is not None:
             self.validate_power_input(user_input, errors)
