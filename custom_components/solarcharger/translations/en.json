@@ -28,7 +28,8 @@
             }
         },
         "abort": {
-            "reconfigure_successful": "Re-configuration was successful"
+            "reconfigure_successful": "Re-configuration was successful",
+            "single_instance_allowed": "Only a single instance of SolarCharger is allowed"
         }
     },
     "config_subentries": {
