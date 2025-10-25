@@ -258,6 +258,17 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+GLOBAL_DEFAULTS_ID: str = uuid4().hex
+GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
+    title="Global defaults",
+    unique_id="global_defaults",
+    subentry_id=GLOBAL_DEFAULTS_ID,
+    subentry_type="global_defaults",
+    data={},
+)
+
+
+# ----------------------------------------------------------------------------
 async def validate_init_input(
     _hass: HomeAssistant,
     data: dict[str, Any],
@@ -278,8 +289,6 @@ async def validate_init_input(
 class ConfigOptionsFlowHandler(OptionsFlow):
     """Handle an options flow for solarcharger."""
 
-    global_defaults_id: str = uuid4().hex
-
     def __init__(self, config_entry: ConfigEntry | None = None) -> None:
         """Initialize options flow.
 
@@ -299,7 +308,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         subentry_id: str | None = None
 
         if device_name == OPTION_GLOBAL_DEFAULTS:
-            return self.global_defaults_id
+            return GLOBAL_DEFAULTS_ID
 
         if self.config_entry.subentries:
             for subentry in self.config_entry.subentries.values():
@@ -342,7 +351,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
         # Get entity name
         if not default_val:
-            if subentry:
+            if subentry and subentry.unique_id:
                 device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
                 device_name_default = subentry.data.get(SUBENTRY_DEVICE_NAME)
                 device_name_default = slugify(device_name_default)
@@ -351,18 +360,24 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     api_entities = CHARGE_API_ENTITIES.get(device_domain)
 
                     if api_entities:
-                        device_options = self.config_entry.options.get(
-                            subentry.subentry_id
+                        saved_options = self.config_entry.options.get(
+                            subentry.unique_id
                         )
-                        if device_options:
+                        if saved_options:
                             # Get device name for substitution
-                            device_name = device_options.get(
+                            device_name = saved_options.get(
                                 OPTION_CHARGER_DEVICE_NAME, device_name_default
                             )
                             default_val = self._get_default_entity(
                                 api_entities,
                                 config_item,
                                 device_name,
+                            )
+                        else:
+                            default_val = self._get_default_entity(
+                                api_entities,
+                                config_item,
+                                device_name_default,
                             )
 
             # match device_domain:
@@ -391,21 +406,21 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
     # ----------------------------------------------------------------------------
     def _get_option_parameters(
-        self, subentry: ConfigSubentry, config_item: str, get_default: bool
+        self, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> Any:
         """Get saved option value if exist, else get from default if allowed."""
         default_final = None
         default_val = self._get_default_value(subentry, config_item)
 
-        options = self.config_entry.options
-        device_options = options.get(subentry.subentry_id)
-        if device_options:
-            if get_default:
-                default_final = device_options.get(config_item, default_val)
-            else:
-                default_final = device_options.get(config_item)
-        elif get_default:
-            default_final = default_val
+        if subentry.unique_id:
+            saved_options = self.config_entry.options.get(subentry.unique_id)
+            if saved_options:
+                if use_default:
+                    default_final = saved_options.get(config_item, default_val)
+                else:
+                    default_final = saved_options.get(config_item)
+            elif use_default:
+                default_final = default_val
 
         _LOGGER.debug(
             "Required option=%s, default=%s, final=%s",
@@ -418,16 +433,16 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
     # ----------------------------------------------------------------------------
     def _prompt(
-        self, cls, subentry: ConfigSubentry, config_item: str, get_default: bool = False
+        self, cls, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> vol.Required | vol.Optional:
-        default_final = self._get_option_parameters(subentry, config_item, get_default)
+        default_final = self._get_option_parameters(subentry, config_item, use_default)
         return cls(config_item, default=default_final)
 
     # ----------------------------------------------------------------------------
     def _required(
-        self, subentry: ConfigSubentry, config_item: str, get_default: bool = False
+        self, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> vol.Required:
-        default_final = self._get_option_parameters(subentry, config_item, get_default)
+        default_final = self._get_option_parameters(subentry, config_item, use_default)
         if default_final is not None:
             return vol.Required(config_item, default=default_final)
 
@@ -435,98 +450,98 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
     # ----------------------------------------------------------------------------
     def _optional(
-        self, subentry: ConfigSubentry, config_item: str, get_default: bool = False
+        self, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> vol.Optional:
-        default_final = self._get_option_parameters(subentry, config_item, get_default)
+        default_final = self._get_option_parameters(subentry, config_item, use_default)
         return vol.Optional(config_item, default=default_final)
 
     # ----------------------------------------------------------------------------
     def _charger_general_options_schema(
-        self, subentry: ConfigSubentry, get_default: bool
+        self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:
         """Charger general options."""
 
         return {
             self._required(
-                subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE, get_default
+                subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._required(
-                subentry, OPTION_CHARGER_MAX_CURRENT, get_default
+                subentry, OPTION_CHARGER_MAX_CURRENT, use_default
             ): ELECTRIC_CURRENT_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_MAX_SPEED, get_default
+                subentry, OPTION_CHARGER_MAX_SPEED, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_MIN_CURRENT, get_default
+                subentry, OPTION_CHARGER_MIN_CURRENT, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT, get_default
+                subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT, use_default
             ): ELECTRIC_CURRENT_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, get_default
+                subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
             ): ALLOCATION_WEIGHT_SELECTOR,
             self._optional(
-                subentry, OPTION_WAIT_NET_POWER_UPDATE, get_default
+                subentry, OPTION_WAIT_NET_POWER_UPDATE, use_default
             ): WAIT_TIME_SELECTOR,
             self._optional(
-                subentry, OPTION_WAIT_CHARGER_UPDATE, get_default
+                subentry, OPTION_WAIT_CHARGER_UPDATE, use_default
             ): WAIT_TIME_SELECTOR,
             self._optional(
-                subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, get_default
+                subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
             ): SUN_ELEVATION_SELECTOR,
             self._optional(
-                subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, get_default
+                subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
             ): SUN_ELEVATION_SELECTOR,
         }
 
     # ----------------------------------------------------------------------------
     def _charger_control_entities_schema(
-        self, subentry: ConfigSubentry, get_default: bool
+        self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:
         """Charger control entities."""
 
         return {
             self._optional(
-                subentry, OPTION_CHARGER_DEVICE_NAME, get_default
+                subentry, OPTION_CHARGER_DEVICE_NAME, use_default
             ): TEXT_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR, get_default
+                subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR, use_default
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST, get_default
+                subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST, use_default
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_CONNECT_STATE_LIST, get_default
+                subentry, OPTION_CHARGER_CONNECT_STATE_LIST, use_default
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_ON_OFF_SWITCH, get_default
+                subentry, OPTION_CHARGER_ON_OFF_SWITCH, use_default
             ): SWITCH_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_CHARGING_SENSOR, get_default
+                subentry, OPTION_CHARGER_CHARGING_SENSOR, use_default
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_CHARGING_STATE_LIST, get_default
+                subentry, OPTION_CHARGER_CHARGING_STATE_LIST, use_default
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGER_CHARGING_AMPS, get_default
+                subentry, OPTION_CHARGER_CHARGING_AMPS, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGEE_SOC_SENSOR, get_default
+                subentry, OPTION_CHARGEE_SOC_SENSOR, use_default
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGEE_CHARGE_LIMIT, get_default
+                subentry, OPTION_CHARGEE_CHARGE_LIMIT, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGEE_LOCATION_SENSOR, get_default
+                subentry, OPTION_CHARGEE_LOCATION_SENSOR, use_default
             ): LOCATION_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGEE_LOCATION_STATE_LIST, get_default
+                subentry, OPTION_CHARGEE_LOCATION_STATE_LIST, use_default
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGEE_WAKE_UP_BUTTON, get_default
+                subentry, OPTION_CHARGEE_WAKE_UP_BUTTON, use_default
             ): BUTTON_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON, get_default
+                subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON, use_default
             ): BUTTON_ENTITY_SELECTOR,
         }
 
@@ -541,11 +556,12 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         combine_schema = {}
 
         config_name = self._config_name
+        unique_id = self._config_name
         subentry_id = self._get_device_id(config_name)
 
         # Process options
         if user_input is not None:
-            if subentry_id:
+            if unique_id:
                 # validate input
                 try:
                     input_data = await validate_init_input(self.hass, user_input)
@@ -555,12 +571,12 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     errors["base"] = "invalid_number_format"
 
                 if not errors and input_data is not None:
-                    device_options = options_config.get(subentry_id)
+                    device_options = options_config.get(unique_id)
                     if not device_options:
                         device_options = {}
-                        device_options[OPTION_ID] = subentry_id
+                        device_options[OPTION_ID] = unique_id
                         device_options[OPTION_NAME] = config_name
-                        options_config[subentry_id] = device_options
+                        options_config[unique_id] = device_options
 
                     device_options.update(input_data)
 
@@ -569,14 +585,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         # Prompt user for options
         if config_name == OPTION_GLOBAL_DEFAULTS:
             general_schema = self._charger_general_options_schema(
-                ConfigSubentry(
-                    title="Global defaults",
-                    unique_id="global_defaults",
-                    subentry_id=self.global_defaults_id,
-                    subentry_type="global_defaults",
-                    data={},
-                ),
-                get_default=True,
+                GLOBAL_DEFAULTS_SUBENTRY, use_default=True
             )
             combine_schema = {**general_schema}
         elif subentry_id:
@@ -588,10 +597,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 )
 
             general_schema = self._charger_general_options_schema(
-                subentry, get_default=False
+                subentry, use_default=False
             )
             entities_schema = self._charger_control_entities_schema(
-                subentry, get_default=False
+                subentry, use_default=True
             )
             combine_schema = {**general_schema, **entities_schema}
             # charger_schema = {
