@@ -6,8 +6,13 @@ from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import slugify
 
-from .config_subentry_flow import SUBENTRY_TYPE_CHARGER
-from .const import BUTTON, DOMAIN, ENTITY_KEY_CHARGE_BUTTON, ICON_START
+from .const import (
+    BUTTON,
+    DOMAIN,
+    ENTITY_KEY_CHARGE_BUTTON,
+    ICON_START,
+    SUBENTRY_TYPE_CHARGER,
+)
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity
 

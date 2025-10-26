@@ -32,14 +32,21 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.util import slugify
 
-from .const import CHARGER_DOMAIN_OCPP, CHARGER_DOMAIN_TESLA_CUSTOM
+from .const import (
+    CHARGER_DOMAIN_OCPP,
+    CHARGER_DOMAIN_TESLA_CUSTOM,
+    OPTION_CHARGER_DEVICE_NAME,
+    SUBENTRY_TYPE_CHARGER,
+)
 from .exceptions.validation_exception import ValidationExceptionError
+
+# from .config_options_flow import reset_api_entities
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
-SUBENTRY_TYPE_CHARGER = "charger"
+# SUBENTRY_TYPE_CHARGER = "charger"
 
 SUBENTRY_CHARGER_DEVICE = "charger_device"
 SUBENTRY_DEVICE_DOMAIN = "device_domain"
@@ -106,24 +113,11 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         self, entry: ConfigEntry, subentry_unique_id: str, device_name: str
     ) -> None:
         """Set up default options for the new subentry."""
-        # Here you can set up default options for the subentry if needed.
-        # For example, you might want to initialize some options in entry.options
-        # related to the new subentry.
+
         _LOGGER.debug(
             "Setting up default options for subentry with unique_id: %s",
             subentry_unique_id,
         )
-        # Example: You could add default options like this (modify as needed):
-        # entry.options = {
-        #     **entry.options,
-        #     subentry_unique_id: {
-        #         "some_option": "default_value",
-        #     },
-        # }
-
-        # entry.options[subentry_unique_id] = {
-        #     OPTION_CHARGER_DEVICE_NAME: device_name,
-        # }
 
         # entry.options = {
         #     **entry.options,
@@ -131,6 +125,22 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         #         OPTION_CHARGER_DEVICE_NAME: device_name,
         #     },
         # }
+
+        # await self.reset_api_entities(
+        #     config_name,
+        #     device_name,
+        #     data,
+        # )
+
+        self.hass.config_entries.async_update_entry(
+            entry,
+            options=entry.options
+            | {
+                subentry_unique_id: {
+                    OPTION_CHARGER_DEVICE_NAME: device_name,
+                },
+            },
+        )
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------

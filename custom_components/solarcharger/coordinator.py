@@ -32,7 +32,6 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 
-from . import config_options_flow as of
 from .config_flow import CONF_NET_POWER, CONF_NET_POWER_DEFAULT
 from .const import (
     COORDINATOR_STATE_CHARGING,
@@ -44,6 +43,9 @@ from .const import (
     EVENT_ACTION_NEW_CHARGER_LIMITS,
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
+    OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+    OPTION_DEFAULT_VALUES,
+    OPTION_NET_POWER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 from .helpers.general import get_parameter
@@ -440,18 +442,18 @@ class SolarChargerCoordinator:
     # ----------------------------------------------------------------------------
     def get_net_power(self) -> float | None:
         """Get household net power."""
-        return self._get_entity_number_value(of.OPTION_NET_POWER)
+        return self._get_entity_number_value(OPTION_NET_POWER)
 
     def get_effective_voltage(self) -> float | None:
         """Get charger effective voltage."""
-        return self._get_entity_number_value(of.OPTION_CHARGER_EFFECTIVE_VOLTAGE)
+        return self._get_entity_number_value(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
 
     def _get_entity_number_value(self, key: str) -> float | None:
         """Get the value of an option from the config entry."""
         entity_id = self.config_entry.options.get(key, None)
         if entity_id is None:
             # Try to get default value.
-            val = of.OPTION_DEFAULT_VALUES.get(key)
+            val = OPTION_DEFAULT_VALUES.get(key)
             if val is None:
                 _LOGGER.debug("No default value for %s", key)
                 return None

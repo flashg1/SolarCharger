@@ -11,8 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import slugify
 
-from .config_subentry_flow import SUBENTRY_TYPE_CHARGER
-from .const import DOMAIN, ENTITY_KEY_CHARGE_SWITCH, SWITCH
+from .const import DOMAIN, ENTITY_KEY_CHARGE_SWITCH, SUBENTRY_TYPE_CHARGER, SWITCH
 from .entity import SolarChargerEntity
 
 if TYPE_CHECKING:

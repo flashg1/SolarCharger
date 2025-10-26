@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import logging
+from token import OP
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -17,6 +19,7 @@ from homeassistant.config_entries import (
     OptionsFlow,
 )
 from homeassistant.data_entry_flow import section
+from homeassistant.helpers import entity
 from homeassistant.helpers.selector import (
     BooleanSelector,
     EntitySelector,
@@ -34,11 +37,47 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
     selector,
 )
+
+# from homeassistant.helpers.typing import UNDEFINED, UndefinedType
+# from homeassistant.helpers.template import device_name
 from homeassistant.util import slugify
 
-from . import config_subentry_flow as csef
 from .config_subentry_flow import SUBENTRY_DEVICE_DOMAIN, SUBENTRY_DEVICE_NAME
-from .const import CHARGER_DOMAIN_OCPP, CHARGER_DOMAIN_TESLA_CUSTOM
+from .const import (
+    CHARGE_API_ENTITIES,
+    DEVICE_MARKER,
+    OPTION_CHARGEE_CHARGE_LIMIT,
+    OPTION_CHARGEE_LOCATION_SENSOR,
+    OPTION_CHARGEE_LOCATION_STATE_LIST,
+    OPTION_CHARGEE_SOC_SENSOR,
+    OPTION_CHARGEE_UPDATE_HA_BUTTON,
+    OPTION_CHARGEE_WAKE_UP_BUTTON,
+    OPTION_CHARGER_CHARGING_AMPS,
+    OPTION_CHARGER_CHARGING_SENSOR,
+    OPTION_CHARGER_CHARGING_STATE_LIST,
+    OPTION_CHARGER_CONNECT_STATE_LIST,
+    OPTION_CHARGER_CONNECT_TRIGGER_LIST,
+    OPTION_CHARGER_DEVICE_NAME,
+    OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+    OPTION_CHARGER_MAX_CURRENT,
+    OPTION_CHARGER_MAX_SPEED,
+    OPTION_CHARGER_MIN_CURRENT,
+    OPTION_CHARGER_MIN_WORKABLE_CURRENT,
+    OPTION_CHARGER_ON_OFF_SWITCH,
+    OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+    OPTION_DEFAULT_VALUES,
+    OPTION_DEVICE_ENTITY_LIST,
+    OPTION_GLOBAL_DEFAULTS,
+    OPTION_ID,
+    OPTION_NAME,
+    OPTION_SELECT_CHARGER,
+    OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+    OPTION_SUNSET_ELEVATION_END_TRIGGER,
+    OPTION_WAIT_CHARGER_UPDATE,
+    OPTION_WAIT_NET_POWER_UPDATE,
+    SUBENTRY_TYPE_CHARGER,
+)
 from .exceptions.validation_exception import ValidationExceptionError
 
 if TYPE_CHECKING:
@@ -128,134 +167,6 @@ ALLOCATION_WEIGHT_SELECTOR = NumberSelector(
     NumberSelectorConfig(mode=NumberSelectorMode.BOX, min=1, max=100)
 )
 
-#####################################
-# Power import/export sensor
-#####################################
-OPTION_NET_POWER = "net_power"
-
-OPTION_SELECT_CHARGER = "select_charger"
-OPTION_LAST_CHARGER_ID = "last_charger_id"
-
-#####################################
-# Option admin
-#####################################
-OPTION_GLOBAL_DEFAULTS = "Global defaults"
-OPTION_ID = "option_id"
-OPTION_NAME = "option_name"
-
-#####################################
-# Charger general configs
-#####################################
-OPTION_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"
-OPTION_CHARGER_MAX_CURRENT = "charger_max_current"
-OPTION_CHARGER_MAX_SPEED = "charger_max_speed"
-OPTION_CHARGER_MIN_CURRENT = "charger_min_current"
-OPTION_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"
-OPTION_CHARGER_POWER_ALLOCATION_WEIGHT = "charger_power_allocation_weight"
-
-OPTION_WAIT_NET_POWER_UPDATE = "wait_net_power_update"
-OPTION_WAIT_CHARGER_UPDATE = "wait_charger_update"
-
-OPTION_SUNRISE_ELEVATION_START_TRIGGER = "sunrise_elevation_start_trigger"
-OPTION_SUNSET_ELEVATION_END_TRIGGER = "sunset_elevation_end_trigger"
-
-#####################################
-# Charger control entities
-#####################################
-OPTION_CHARGER_DEVICE_NAME = "charger_device_name"
-OPTION_CHARGER_PLUGGED_IN_SENSOR = "charger_plugged_in_sensor"
-OPTION_CHARGER_CONNECT_TRIGGER_LIST = "charger_connect_trigger_list"
-OPTION_CHARGER_CONNECT_STATE_LIST = "charger_connect_state_list"
-OPTION_CHARGER_ON_OFF_SWITCH = "charger_on_off_switch"
-OPTION_CHARGER_CHARGING_SENSOR = "charger_charging_sensor"
-OPTION_CHARGER_CHARGING_STATE_LIST = "charger_charging_state_list"
-OPTION_CHARGER_CHARGING_AMPS = "charger_charging_amps"
-
-#####################################
-# Chargee control entities
-#####################################
-OPTION_CHARGEE_SOC_SENSOR = "chargee_soc_sensor"
-OPTION_CHARGEE_CHARGE_LIMIT = "chargee_charge_limit"
-OPTION_CHARGEE_LOCATION_SENSOR = "chargee_location_sensor"
-OPTION_CHARGEE_LOCATION_STATE_LIST = "chargee_location_state_list"
-OPTION_CHARGEE_WAKE_UP_BUTTON = "chargee_wake_up_button"
-OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
-
-#####################################
-# Charger specific configs
-#####################################
-# OPTION_TESLACUSTOM_NAME = "tesla_custom_name"
-# DEFAULT_TESLACUSTOM_NAME = ""
-
-# OPTION_OCPPCHARGER_NAME = "ocpp_custom_name"
-# DEFAULT_OCPPCHARGER_NAME = "charger"
-
-#####################################
-# Default values
-#####################################
-OPTION_DEFAULT_VALUES: dict[str, Any] = {
-    OPTION_CHARGER_EFFECTIVE_VOLTAGE: None,
-    OPTION_CHARGER_MAX_CURRENT: 15,
-    OPTION_CHARGER_MAX_SPEED: 6.1448,
-    OPTION_CHARGER_MIN_CURRENT: 1,
-    OPTION_CHARGER_MIN_WORKABLE_CURRENT: 0,
-    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: 1,
-    OPTION_WAIT_NET_POWER_UPDATE: 60,
-    OPTION_WAIT_CHARGER_UPDATE: 5,
-    OPTION_SUNRISE_ELEVATION_START_TRIGGER: 3,
-    OPTION_SUNSET_ELEVATION_END_TRIGGER: 6,
-    # OPTION_TESLACUSTOM_NAME: DEFAULT_TESLACUSTOM_NAME,
-    # OPTION_OCPPCHARGER_NAME: DEFAULT_OCPPCHARGER_NAME,
-}
-
-# STEP_TESLACUSTOM_SCHEMA = vol.Schema(
-#     {
-#         vol.Required(OPTION_TESLACUSTOM_NAME, default=DEFAULT_TESLACUSTOM_NAME): str,
-#     }
-# )
-
-DEVICE_MARKER = "<DeviceName>"
-
-TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
-    OPTION_CHARGER_DEVICE_NAME: DEVICE_MARKER,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR: f"binary_sensor.{DEVICE_MARKER}charger",
-    OPTION_CHARGER_CONNECT_TRIGGER_LIST: "['on']",
-    OPTION_CHARGER_CONNECT_STATE_LIST: "['on']",
-    OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_MARKER}charger",
-    OPTION_CHARGER_CHARGING_SENSOR: f"binary_sensor.{DEVICE_MARKER}charging",
-    OPTION_CHARGER_CHARGING_STATE_LIST: "['on']",
-    OPTION_CHARGER_CHARGING_AMPS: f"number.{DEVICE_MARKER}charging_amps",
-    OPTION_CHARGEE_SOC_SENSOR: f"sensor.{DEVICE_MARKER}battery",
-    OPTION_CHARGEE_CHARGE_LIMIT: f"number.{DEVICE_MARKER}charge_limit",
-    OPTION_CHARGEE_LOCATION_SENSOR: f"device_tracker.{DEVICE_MARKER}location_tracker",
-    OPTION_CHARGEE_LOCATION_STATE_LIST: "['home']",
-    OPTION_CHARGEE_WAKE_UP_BUTTON: f"button.{DEVICE_MARKER}wake_up",
-    OPTION_CHARGEE_UPDATE_HA_BUTTON: f"button.{DEVICE_MARKER}force_data_update",
-}
-
-OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
-    OPTION_CHARGER_DEVICE_NAME: "charger",
-    OPTION_CHARGER_PLUGGED_IN_SENSOR: f"sensor.{DEVICE_MARKER}status_connector",
-    OPTION_CHARGER_CONNECT_TRIGGER_LIST: "['Preparing']",
-    OPTION_CHARGER_CONNECT_STATE_LIST: "['Preparing', 'Charging', 'SuspendedEV', 'SuspendedEVSE', 'Finishing']",
-    OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_MARKER}charge_control",
-    OPTION_CHARGER_CHARGING_SENSOR: f"sensor.{DEVICE_MARKER}status_connector",
-    OPTION_CHARGER_CHARGING_STATE_LIST: "['Charging', 'SuspendedEV', 'SuspendedEVSE']",
-    OPTION_CHARGER_CHARGING_AMPS: f"sensor.{DEVICE_MARKER}current_import",
-    OPTION_CHARGEE_SOC_SENSOR: None,
-    OPTION_CHARGEE_CHARGE_LIMIT: None,
-    OPTION_CHARGEE_LOCATION_SENSOR: None,
-    OPTION_CHARGEE_LOCATION_STATE_LIST: None,
-    OPTION_CHARGEE_WAKE_UP_BUTTON: None,
-    OPTION_CHARGEE_UPDATE_HA_BUTTON: None,
-}
-
-CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
-    CHARGER_DOMAIN_TESLA_CUSTOM: TESLA_CUSTOM_ENTITIES,
-    CHARGER_DOMAIN_OCPP: OCPP_CHARGER_ENTITIES,
-}
-
-
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 GLOBAL_DEFAULTS_ID: str = uuid4().hex
@@ -269,12 +180,12 @@ GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
 
 
 # ----------------------------------------------------------------------------
-async def validate_init_input(
-    _hass: HomeAssistant,
-    data: dict[str, Any],
-) -> dict[str, Any]:
-    """Validate the input data for the options flow."""
-    return data
+# async def validate_init_input(
+#     _hass: HomeAssistant,
+#     data: dict[str, Any],
+# ) -> dict[str, Any]:
+#     """Validate the input data for the options flow."""
+#     return data
 
 
 # ----------------------------------------------------------------------------
@@ -312,7 +223,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
         if self.config_entry.subentries:
             for subentry in self.config_entry.subentries.values():
-                if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
+                if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
                     if subentry.unique_id == device_name:
                         subentry_id = subentry.subentry_id
                         break
@@ -341,6 +252,69 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         return default_val
 
     # ----------------------------------------------------------------------------
+    def _get_entity_name(
+        self,
+        subentry: ConfigSubentry,
+        config_item: str,
+        device_name: str,
+    ) -> str | None:
+        """Get entity name for config item."""
+        device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+
+        if device_domain:
+            api_entities = CHARGE_API_ENTITIES.get(device_domain)
+
+            if api_entities:
+                return self._get_default_entity(
+                    api_entities,
+                    config_item,
+                    device_name,
+                )
+
+        return None
+
+    # ----------------------------------------------------------------------------
+    # def _get_default_value(
+    #     self, subentry: ConfigSubentry, config_item: str
+    # ) -> Any | None:
+    #     """Get default value for config item which can be value or entity id."""
+
+    #     # Get parameter default value
+    #     default_val = OPTION_DEFAULT_VALUES.get(config_item)
+
+    #     # Get entity name
+    #     if not default_val:
+    #         if subentry and subentry.unique_id:
+    #             device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+    #             device_name_default = slugify(subentry.data.get(SUBENTRY_DEVICE_NAME))
+
+    #             if device_domain:
+    #                 api_entities = CHARGE_API_ENTITIES.get(device_domain)
+
+    #                 if api_entities:
+    #                     device_options = self.config_entry.options.get(
+    #                         subentry.unique_id
+    #                     )
+    #                     if device_options:
+    #                         # Get device name for substitution
+    #                         device_name = device_options.get(
+    #                             OPTION_CHARGER_DEVICE_NAME, device_name_default
+    #                         )
+    #                         default_val = self._get_default_entity(
+    #                             api_entities,
+    #                             config_item,
+    #                             device_name,
+    #                         )
+    #                     # else:
+    #                     #     default_val = self._get_default_entity(
+    #                     #         api_entities,
+    #                     #         config_item,
+    #                     #         device_name_default,
+    #                     #     )
+
+    #     return default_val
+
+    # ----------------------------------------------------------------------------
     def _get_default_value(
         self, subentry: ConfigSubentry, config_item: str
     ) -> Any | None:
@@ -352,55 +326,16 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         # Get entity name
         if not default_val:
             if subentry and subentry.unique_id:
-                device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
-                device_name_default = subentry.data.get(SUBENTRY_DEVICE_NAME)
-                device_name_default = slugify(device_name_default)
-
-                if device_domain:
-                    api_entities = CHARGE_API_ENTITIES.get(device_domain)
-
-                    if api_entities:
-                        saved_options = self.config_entry.options.get(
-                            subentry.unique_id
-                        )
-                        if saved_options:
-                            # Get device name for substitution
-                            device_name = saved_options.get(
-                                OPTION_CHARGER_DEVICE_NAME, device_name_default
-                            )
-                            default_val = self._get_default_entity(
-                                api_entities,
-                                config_item,
-                                device_name,
-                            )
-                        else:
-                            default_val = self._get_default_entity(
-                                api_entities,
-                                config_item,
-                                device_name_default,
-                            )
-
-            # match device_domain:
-            #     case const.CHARGER_DOMAIN_TESLA_CUSTOM:
-            #         device_name = options.get(
-            #             OPTION_CHARGER_DEVICE_NAME, DEFAULT_TESLACUSTOM_NAME
-            #         )
-            #         default = self._get_default_entity(
-            #             CHARGE_API_ENTITIES.get(device_domain),
-            #             config_item,
-            #             device_name,
-            #         )
-            #     case const.CHARGER_DOMAIN_OCPP:
-            #         device_name = options.get(
-            #             OPTION_OCPPCHARGER_NAME, DEFAULT_OCPPCHARGER_NAME
-            #         )
-            #         default = self._get_default_entity(
-            #             CHARGE_API_ENTITIES.get(device_domain),
-            #             config_item,
-            #             device_name,
-            #         )
-            #     case _:
-            #         default = None
+                device_name_default = slugify(subentry.data.get(SUBENTRY_DEVICE_NAME))
+                device_options = self.config_entry.options.get(subentry.unique_id)
+                if device_options:
+                    # Get device name for substitution
+                    device_name = device_options.get(
+                        OPTION_CHARGER_DEVICE_NAME, device_name_default
+                    )
+                    default_val = self._get_entity_name(
+                        subentry, config_item, device_name
+                    )
 
         return default_val
 
@@ -413,12 +348,12 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         default_val = self._get_default_value(subentry, config_item)
 
         if subentry.unique_id:
-            saved_options = self.config_entry.options.get(subentry.unique_id)
-            if saved_options:
+            device_options = self.config_entry.options.get(subentry.unique_id)
+            if device_options:
                 if use_default:
-                    default_final = saved_options.get(config_item, default_val)
+                    default_final = device_options.get(config_item, default_val)
                 else:
-                    default_final = saved_options.get(config_item)
+                    default_final = device_options.get(config_item)
             elif use_default:
                 default_final = default_val
 
@@ -453,7 +388,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         self, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> vol.Optional:
         default_final = self._get_option_parameters(subentry, config_item, use_default)
-        return vol.Optional(config_item, default=default_final)
+        if use_default and default_final is not None:
+            return vol.Optional(config_item, default=default_final)
+
+        return vol.Optional(config_item)
 
     # ----------------------------------------------------------------------------
     def _charger_general_options_schema(
@@ -509,10 +447,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST, use_default
-            ): SENSOR_ENTITY_SELECTOR,
+            ): TEXT_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_STATE_LIST, use_default
-            ): SENSOR_ENTITY_SELECTOR,
+            ): TEXT_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_ON_OFF_SWITCH, use_default
             ): SWITCH_ENTITY_SELECTOR,
@@ -521,7 +459,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): SENSOR_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_STATE_LIST, use_default
-            ): SENSOR_ENTITY_SELECTOR,
+            ): TEXT_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_AMPS, use_default
             ): NUMBER_ENTITY_SELECTOR,
@@ -536,7 +474,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): LOCATION_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_STATE_LIST, use_default
-            ): SENSOR_ENTITY_SELECTOR,
+            ): TEXT_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGEE_WAKE_UP_BUTTON, use_default
             ): BUTTON_ENTITY_SELECTOR,
@@ -546,12 +484,67 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         }
 
     # ----------------------------------------------------------------------------
+    async def reset_api_entities(
+        self,
+        config_name: str,
+        device_name: str,
+        data: dict[str, Any],
+        reset_all_entities: bool = False,
+    ) -> dict[str, Any]:
+        """Reset entity names using new device mname."""
+
+        if config_name != OPTION_GLOBAL_DEFAULTS:
+            subentry_id = self._get_device_id(config_name)
+            if subentry_id:
+                subentry = self.config_entry.subentries.get(subentry_id)
+                if subentry:
+                    if OPTION_CHARGER_DEVICE_NAME in data:
+                        device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+                        if device_domain:
+                            api_entities = CHARGE_API_ENTITIES.get(device_domain)
+                            if api_entities:
+                                if reset_all_entities:
+                                    # Only reset all entities during subentry initial setup
+                                    key_list = list(api_entities.keys())
+                                else:
+                                    # This will only reset dependent entities when device name is changed
+                                    key_list = OPTION_DEVICE_ENTITY_LIST
+
+                                for config_item in key_list:
+                                    entity_name = self._get_default_entity(
+                                        api_entities,
+                                        config_item,
+                                        device_name,
+                                    )
+                                    if entity_name:
+                                        data[config_item] = entity_name
+        return data
+
+    # ----------------------------------------------------------------------------
+    async def validate_init_input(
+        self,
+        config_name: str,
+        data: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Validate the input data for the options flow."""
+
+        device_name = data[OPTION_CHARGER_DEVICE_NAME].strip()
+        return await self.reset_api_entities(
+            config_name,
+            device_name,
+            data,
+        )
+
+    # ----------------------------------------------------------------------------
     async def async_step_config_device(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Select charger device to configure."""
+
+        # Must deepcopy to avoid modifying original options, otherwise changes are not saved.
+        options_config: dict[str, Any] = deepcopy(dict(self.config_entry.options))
+
         errors = {}
-        options_config: dict[str, Any] = dict(self.config_entry.options)
         input_data = None
         combine_schema = {}
 
@@ -564,7 +557,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             if unique_id:
                 # validate input
                 try:
-                    input_data = await validate_init_input(self.hass, user_input)
+                    # input_data = await validate_init_input(
+                    #     self.hass, config_name, user_input
+                    # )
+                    input_data = await self.validate_init_input(config_name, user_input)
                 except ValidationExceptionError as ex:
                     errors[ex.base] = ex.key
                 except ValueError:
@@ -636,7 +632,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
         device_list = [OPTION_GLOBAL_DEFAULTS]
         for subentry in self.config_entry.subentries.values():
-            if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
+            if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
                 if subentry.unique_id:
                     device_list.append(subentry.unique_id)
 
@@ -661,7 +657,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     #     all_schema = None
 
     #     for subentry in self.config_entry.subentries.values():
-    #         if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
+    #         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
     #             if subentry.unique_id:
     #                 _LOGGER.debug(
     #                     "Set up subentry options: unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",

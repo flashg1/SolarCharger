@@ -6,13 +6,13 @@ from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import slugify
 
-from .config_subentry_flow import SUBENTRY_TYPE_CHARGER
 from .const import (
     COORDINATOR_STATES,
     DOMAIN,
     ENTITY_KEY_LAST_CHECK_SENSOR,
     ENTITY_KEY_RUN_STATE_SENSOR,
     SENSOR,
+    SUBENTRY_TYPE_CHARGER,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity
