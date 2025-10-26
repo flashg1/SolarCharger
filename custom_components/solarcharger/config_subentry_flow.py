@@ -36,6 +36,7 @@ from .const import (
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
     OPTION_CHARGER_DEVICE_NAME,
+    SUBENTRY_CHARGER_DEVICE,
     SUBENTRY_TYPE_CHARGER,
 )
 from .exceptions.validation_exception import ValidationExceptionError
@@ -47,8 +48,7 @@ from .exceptions.validation_exception import ValidationExceptionError
 _LOGGER = logging.getLogger(__name__)
 
 # SUBENTRY_TYPE_CHARGER = "charger"
-
-SUBENTRY_CHARGER_DEVICE = "charger_device"
+# SUBENTRY_CHARGER_DEVICE = "charger_device"
 SUBENTRY_DEVICE_DOMAIN = "device_domain"
 SUBENTRY_DEVICE_NAME = "device_name"
 SUBENTRY_DEVICE_ORIGIN = "device_origin"
@@ -221,9 +221,9 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                         unique_id=device_name_id,
                         data=MappingProxyType(  # make data immutable
                             {
-                                SUBENTRY_DEVICE_DOMAIN: charger_config_entry.domain,
-                                SUBENTRY_DEVICE_NAME: charger.name,
-                                SUBENTRY_CHARGER_DEVICE: charger_id,
+                                SUBENTRY_DEVICE_DOMAIN: charger_config_entry.domain,  # Integration domain
+                                SUBENTRY_DEVICE_NAME: charger.name,  # Integration-specific device name
+                                SUBENTRY_CHARGER_DEVICE: charger_id,  # Integration-specific device ID
                             }
                         ),
                     ),

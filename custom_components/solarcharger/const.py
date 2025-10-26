@@ -221,10 +221,12 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
     CHARGER_DOMAIN_OCPP: OCPP_CHARGER_ENTITIES,
 }
 
+
 #######################################################
 # Subentry constants
 #######################################################
 SUBENTRY_TYPE_CHARGER = "charger"
+SUBENTRY_CHARGER_DEVICE = "charger_device"
 
 
 #######################################################

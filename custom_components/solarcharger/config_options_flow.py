@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 import logging
-from token import OP
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from sqlalchemy import all_
 import voluptuous as vol
 
 from homeassistant.components.sensor import SensorDeviceClass
@@ -77,6 +76,7 @@ from .const import (
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGER_UPDATE,
     OPTION_WAIT_NET_POWER_UPDATE,
+    SUBENTRY_CHARGER_DEVICE,
     SUBENTRY_TYPE_CHARGER,
 )
 from .exceptions.validation_exception import ValidationExceptionError
@@ -176,7 +176,13 @@ GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
     unique_id="global_defaults",
     subentry_id=GLOBAL_DEFAULTS_ID,
     subentry_type="global_defaults",
-    data={},
+    data=MappingProxyType(  # make data immutable
+        {
+            SUBENTRY_DEVICE_DOMAIN: "N/A",  # Integration domain
+            SUBENTRY_DEVICE_NAME: "N/A",  # Integration-specific device name
+            SUBENTRY_CHARGER_DEVICE: "N/A",  # Integration-specific device ID
+        }
+    ),
 )
 
 
