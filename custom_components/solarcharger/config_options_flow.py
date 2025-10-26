@@ -41,7 +41,6 @@ from homeassistant.helpers.selector import (
 # from homeassistant.helpers.template import device_name
 from homeassistant.util import slugify
 
-from .config_subentry_flow import SUBENTRY_DEVICE_DOMAIN, SUBENTRY_DEVICE_NAME
 from .const import (
     CHARGE_API_ENTITIES,
     DEVICE_MARKER,
@@ -77,6 +76,8 @@ from .const import (
     OPTION_WAIT_CHARGER_UPDATE,
     OPTION_WAIT_NET_POWER_UPDATE,
     SUBENTRY_CHARGER_DEVICE,
+    SUBENTRY_DEVICE_DOMAIN,
+    SUBENTRY_DEVICE_NAME,
     SUBENTRY_TYPE_CHARGER,
 )
 from .exceptions.validation_exception import ValidationExceptionError
@@ -168,12 +169,13 @@ ALLOCATION_WEIGHT_SELECTOR = NumberSelector(
     NumberSelectorConfig(mode=NumberSelectorMode.BOX, min=1, max=100)
 )
 
+
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 GLOBAL_DEFAULTS_ID: str = uuid4().hex
 GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
     title="Global defaults",
-    unique_id="global_defaults",
+    unique_id=OPTION_GLOBAL_DEFAULTS,
     subentry_id=GLOBAL_DEFAULTS_ID,
     subentry_type="global_defaults",
     data=MappingProxyType(  # make data immutable
@@ -184,6 +186,50 @@ GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
         }
     ),
 )
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+def get_default_entity(
+    api_entities: dict[str, str | None] | None,
+    config_item: str,
+    substr: str | None,
+) -> str | None:
+    """Get default value from dictionary with substition."""
+    entity_str: Any | None = None
+
+    if substr:
+        if api_entities:
+            entity_str = api_entities.get(config_item)
+            if entity_str:
+                if entity_str == DEVICE_MARKER:
+                    entity_str = substr
+                else:
+                    entity_str = entity_str.replace(DEVICE_MARKER, f"{substr}_")
+
+    return entity_str
+
+
+# ----------------------------------------------------------------------------
+def get_entity_name(
+    subentry: ConfigSubentry,
+    config_item: str,
+    device_name: str,
+) -> str | None:
+    """Get entity name for config item."""
+    device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+
+    if device_domain:
+        api_entities = CHARGE_API_ENTITIES.get(device_domain)
+
+        if api_entities:
+            return get_default_entity(
+                api_entities,
+                config_item,
+                device_name,
+            )
+
+    return None
 
 
 # ----------------------------------------------------------------------------
@@ -202,6 +248,142 @@ def get_subentry_id(config_entry: ConfigEntry, config_name: str) -> str | None:
                     break
 
     return subentry_id
+
+
+# ----------------------------------------------------------------------------
+def get_saved_local_option_value(
+    config_entry: ConfigEntry, subentry: ConfigSubentry, config_item: str
+) -> Any | None:
+    """Get saved option value if exist."""
+    saved_val = None
+
+    if subentry.unique_id:
+        device_options = config_entry.options.get(subentry.unique_id)
+        if device_options:
+            saved_val = device_options.get(config_item)
+
+    return saved_val
+
+
+# ----------------------------------------------------------------------------
+def get_saved_global_option_value(
+    config_entry: ConfigEntry, config_item: str
+) -> Any | None:
+    """Get saved option value if exist."""
+
+    return get_saved_local_option_value(
+        config_entry, GLOBAL_DEFAULTS_SUBENTRY, config_item
+    )
+
+
+# ----------------------------------------------------------------------------
+def get_saved_option_value(
+    config_entry: ConfigEntry,
+    subentry: ConfigSubentry,
+    config_item: str,
+    use_default: bool,
+) -> Any:
+    """Get saved option value if exist, else get from default if allowed."""
+    saved_local_val = None
+    saved_global_val = None
+    default_constant_val = None
+
+    # Get saved local value
+    saved_local_val = get_saved_local_option_value(config_entry, subentry, config_item)
+    final_val = saved_local_val
+    if not saved_local_val and use_default:
+        # Get saved global value if already global
+        if subentry.unique_id != OPTION_GLOBAL_DEFAULTS:
+            saved_global_val = get_saved_global_option_value(config_entry, config_item)
+            final_val = saved_global_val
+
+        # Get default constant value
+        if not saved_global_val:
+            default_constant_val = OPTION_DEFAULT_VALUES.get(config_item)
+            final_val = default_constant_val
+
+    _LOGGER.debug(
+        "Required option=%s, default=%s, local=%s, global=%s, constant=%s",
+        config_item,
+        final_val,
+        saved_local_val,
+        saved_global_val,
+        default_constant_val,
+    )
+
+    return final_val
+
+
+# ----------------------------------------------------------------------------
+def delete_marked_entities(
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    """Set entity names using new device name."""
+
+    # Iterate over items to avoid extracting values via indexing and to make intent clear.
+    for config_item, value in list(data.items()):
+        # Leave existing value unless it is marked for deletion.
+        # eg. sensor.deleteme, button.deleteme, etc.
+        # No other way to detect that user wants to delete the entity.
+        # User setting to None by deleting entity in user interface did not help
+        # because vol.Optional() has been set to restore from saved options.
+        if value and isinstance(value, str) and OPTION_DELETE_ENTITY in value:
+            data[config_item] = None
+
+    return data
+
+
+# ----------------------------------------------------------------------------
+def reset_api_entities(
+    config_entry: ConfigEntry,
+    config_name: str,  # Same as subentry unique_id
+    device_name: str,
+    data: dict[str, Any],
+    reset_all_entities: bool = False,
+) -> dict[str, Any]:
+    """Reset entity names using new device mname."""
+
+    if config_name != OPTION_GLOBAL_DEFAULTS:
+        data = delete_marked_entities(data)
+        subentry_id = get_subentry_id(config_entry, config_name)
+        if subentry_id:
+            subentry = config_entry.subentries.get(subentry_id)
+            if subentry:
+                #####################################################################
+                # OPTION_CHARGER_DEVICE_NAME and others are always present if restore from saved options is enabled
+                #####################################################################
+                if OPTION_CHARGER_DEVICE_NAME in data:
+                    device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+                    if device_domain:
+                        api_entities = CHARGE_API_ENTITIES.get(device_domain)
+                        if api_entities:
+                            if reset_all_entities:
+                                # Only reset all entities during subentry initial setup
+                                key_list = list(api_entities.keys())
+                            else:
+                                # This will only reset dependent entities when device name is changed
+                                key_list = OPTION_DEVICE_ENTITY_LIST
+
+                            for config_item in key_list:
+                                entity_name = get_default_entity(
+                                    api_entities,
+                                    config_item,
+                                    device_name,
+                                )
+                                if entity_name:
+                                    data[config_item] = entity_name
+
+                                # if entity_name is None and config_item in data:
+                                #     # No default entity found, so leave existing value unless it is marked for deletion.
+                                #     # eg. sensor.deleteme, button.deleteme, etc.
+                                #     # No other way to detect that user wants to delete the entity.
+                                #     # User setting to None by deleting entity in user interface did not help
+                                #     # because vol.Optional() has been set to restore from saved options.
+                                #     if OPTION_DELETE_ENTITY in data[config_item]:
+                                #         data[config_item] = None
+                                # else:
+                                #     data[config_item] = entity_name
+    return data
 
 
 # ----------------------------------------------------------------------------
@@ -225,7 +407,7 @@ def get_subentry_id(config_entry: ConfigEntry, config_name: str) -> str | None:
 class ConfigOptionsFlowHandler(OptionsFlow):
     """Handle an options flow for solarcharger."""
 
-    def __init__(self, config_entry: ConfigEntry | None = None) -> None:
+    def __init__(self, config_entry: ConfigEntry | None = None):
         """Initialize options flow.
 
         @see https://developers.home-assistant.io/blog/2024/11/12/options-flow/
@@ -256,49 +438,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     #     return subentry_id
 
     # ----------------------------------------------------------------------------
-    def _get_default_entity(
-        self,
-        defaults: dict[str, str | None] | None,
-        config_item: str,
-        substr: str | None,
-    ) -> str | None:
-        """Get default value from dictionary with substition."""
-        default_val: Any | None = None
-
-        if substr:
-            if defaults:
-                default_val = defaults.get(config_item)
-                if default_val:
-                    if default_val == DEVICE_MARKER:
-                        default_val = substr
-                    else:
-                        default_val = default_val.replace(DEVICE_MARKER, f"{substr}_")
-
-        return default_val
-
-    # ----------------------------------------------------------------------------
-    def _get_entity_name(
-        self,
-        subentry: ConfigSubentry,
-        config_item: str,
-        device_name: str,
-    ) -> str | None:
-        """Get entity name for config item."""
-        device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
-
-        if device_domain:
-            api_entities = CHARGE_API_ENTITIES.get(device_domain)
-
-            if api_entities:
-                return self._get_default_entity(
-                    api_entities,
-                    config_item,
-                    device_name,
-                )
-
-        return None
-
-    # ----------------------------------------------------------------------------
     # def _get_default_value(
     #     self, subentry: ConfigSubentry, config_item: str
     # ) -> Any | None:
@@ -325,13 +464,13 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     #                         device_name = device_options.get(
     #                             OPTION_CHARGER_DEVICE_NAME, device_name_default
     #                         )
-    #                         default_val = self._get_default_entity(
+    #                         default_val = get_default_entity(
     #                             api_entities,
     #                             config_item,
     #                             device_name,
     #                         )
     #                     # else:
-    #                     #     default_val = self._get_default_entity(
+    #                     #     default_val = get_default_entity(
     #                     #         api_entities,
     #                     #         config_item,
     #                     #         device_name_default,
@@ -340,71 +479,100 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     #     return default_val
 
     # ----------------------------------------------------------------------------
-    def _get_default_value(
-        self, subentry: ConfigSubentry, config_item: str
-    ) -> Any | None:
-        """Get default value for config item which can be value or entity id."""
+    # def _get_saved_local_option_value(
+    #     self, subentry: ConfigSubentry, config_item: str
+    # ) -> Any | None:
+    #     """Get saved option value if exist."""
+    #     saved_val = None
 
-        # Get parameter default value
-        default_val = OPTION_DEFAULT_VALUES.get(config_item)
+    #     if subentry.unique_id:
+    #         device_options = self.config_entry.options.get(subentry.unique_id)
+    #         if device_options:
+    #             saved_val = device_options.get(config_item)
 
-        # Get entity name
-        if not default_val:
-            if subentry and subentry.unique_id:
-                device_name_default = slugify(subentry.data.get(SUBENTRY_DEVICE_NAME))
-                device_options = self.config_entry.options.get(subentry.unique_id)
-                if device_options:
-                    # Get device name for substitution
-                    device_name = device_options.get(
-                        OPTION_CHARGER_DEVICE_NAME, device_name_default
-                    )
-                    default_val = self._get_entity_name(
-                        subentry, config_item, device_name
-                    )
-
-        return default_val
+    #     return saved_val
 
     # ----------------------------------------------------------------------------
-    def _get_option_parameters(
-        self, subentry: ConfigSubentry, config_item: str, use_default: bool
-    ) -> Any:
-        """Get saved option value if exist, else get from default if allowed."""
-        default_final = None
-        default_val = self._get_default_value(subentry, config_item)
+    # def _get_saved_global_option_value(self, config_item: str) -> Any | None:
+    #     """Get saved option value if exist."""
 
-        if subentry.unique_id:
-            device_options = self.config_entry.options.get(subentry.unique_id)
-            if device_options:
-                if use_default:
-                    default_final = device_options.get(config_item, default_val)
-                else:
-                    default_final = device_options.get(config_item)
-            elif use_default:
-                default_final = default_val
+    #     return self._get_saved_local_option_value(GLOBAL_DEFAULTS_SUBENTRY, config_item)
 
-        _LOGGER.debug(
-            "Required option=%s, default=%s, final=%s",
-            config_item,
-            default_val,
-            default_final,
-        )
+    # ----------------------------------------------------------------------------
+    # def _get_default_value(
+    #     self, subentry: ConfigSubentry, config_item: str
+    # ) -> Any | None:
+    #     """Get default value for config item which can be value or entity id."""
 
-        return default_final
+    #     # Get parameter default value
+    #     default_val = OPTION_DEFAULT_VALUES.get(config_item)
+
+    #     # Get entity name
+    #     if not default_val:
+    #         if subentry and subentry.unique_id:
+    #             device_name_default = slugify(subentry.data.get(SUBENTRY_DEVICE_NAME))
+    #             device_options = self.config_entry.options.get(subentry.unique_id)
+    #             if device_options:
+    #                 # Get device name for substitution
+    #                 device_name = device_options.get(
+    #                     OPTION_CHARGER_DEVICE_NAME, device_name_default
+    #                 )
+    #                 default_val = get_entity_name(
+    #                     subentry, config_item, device_name
+    #                 )
+
+    #     return default_val
+
+    # ----------------------------------------------------------------------------
+    # def get_saved_option_value(
+    #     self, subentry: ConfigSubentry, config_item: str, use_default: bool
+    # ) -> Any:
+    #     """Get saved option value if exist, else get from default if allowed."""
+    #     default_final = None
+    #     default_val = self._get_default_value(subentry, config_item)
+
+    #     if subentry.unique_id:
+    #         device_options = self.config_entry.options.get(subentry.unique_id)
+    #         if device_options:
+    #             if use_default:
+    #                 default_final = device_options.get(config_item, default_val)
+    #             else:
+    #                 default_final = device_options.get(config_item)
+    #         elif use_default:
+    #             default_final = default_val
+
+    #     _LOGGER.debug(
+    #         "Required option=%s, default=%s, final=%s",
+    #         config_item,
+    #         default_val,
+    #         default_final,
+    #     )
+
+    #     return default_final
 
     # ----------------------------------------------------------------------------
     def _prompt(
         self, cls, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> vol.Required | vol.Optional:
-        default_final = self._get_option_parameters(subentry, config_item, use_default)
-        return cls(config_item, default=default_final)
+        saved_val = get_saved_option_value(
+            self.config_entry, subentry, config_item, use_default
+        )
+
+        if saved_val:
+            return cls(config_item, default=saved_val)
+
+        return cls(config_item)
 
     # ----------------------------------------------------------------------------
     def _required(
         self, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> vol.Required:
-        default_final = self._get_option_parameters(subentry, config_item, use_default)
-        if default_final is not None:
-            return vol.Required(config_item, default=default_final)
+        saved_val = get_saved_option_value(
+            self.config_entry, subentry, config_item, use_default
+        )
+
+        if saved_val:
+            return vol.Required(config_item, default=saved_val)
 
         return vol.Required(config_item)
 
@@ -412,9 +580,12 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     def _optional(
         self, subentry: ConfigSubentry, config_item: str, use_default: bool
     ) -> vol.Optional:
-        default_final = self._get_option_parameters(subentry, config_item, use_default)
-        if use_default and default_final is not None:
-            return vol.Optional(config_item, default=default_final)
+        saved_val = get_saved_option_value(
+            self.config_entry, subentry, config_item, use_default
+        )
+
+        if saved_val:
+            return vol.Optional(config_item, default=saved_val)
 
         return vol.Optional(config_item)
 
@@ -509,54 +680,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         }
 
     # ----------------------------------------------------------------------------
-    async def reset_api_entities(
-        self,
-        config_name: str,
-        device_name: str,
-        data: dict[str, Any],
-        reset_all_entities: bool = False,
-    ) -> dict[str, Any]:
-        """Reset entity names using new device mname."""
-
-        if config_name != OPTION_GLOBAL_DEFAULTS:
-            subentry_id = get_subentry_id(self.config_entry, config_name)
-            if subentry_id:
-                subentry = self.config_entry.subentries.get(subentry_id)
-                if subentry:
-                    #####################################################################
-                    # OPTION_CHARGER_DEVICE_NAME and others are always present if restore from saved options is enabled
-                    #####################################################################
-                    if OPTION_CHARGER_DEVICE_NAME in data:
-                        device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
-                        if device_domain:
-                            api_entities = CHARGE_API_ENTITIES.get(device_domain)
-                            if api_entities:
-                                if reset_all_entities:
-                                    # Only reset all entities during subentry initial setup
-                                    key_list = list(api_entities.keys())
-                                else:
-                                    # This will only reset dependent entities when device name is changed
-                                    key_list = OPTION_DEVICE_ENTITY_LIST
-
-                                for config_item in key_list:
-                                    entity_name = self._get_default_entity(
-                                        api_entities,
-                                        config_item,
-                                        device_name,
-                                    )
-                                    if entity_name is None and config_item in data:
-                                        # No default entity found, so leave existing value unless it is marked for deletion.
-                                        # eg. sensor.deleteme, button.deleteme, etc.
-                                        # No other way to detect that user wants to delete the entity.
-                                        # User setting to None by deleting entity in user interface did not help
-                                        # because vol.Optional() has been set to restore from saved options.
-                                        if OPTION_DELETE_ENTITY in data[config_item]:
-                                            data[config_item] = None
-                                    else:
-                                        data[config_item] = entity_name
-        return data
-
-    # ----------------------------------------------------------------------------
     async def validate_init_input(
         self,
         config_name: str,
@@ -566,7 +689,8 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
         device_name = data[OPTION_CHARGER_DEVICE_NAME].strip()
         data[OPTION_CHARGER_DEVICE_NAME] = device_name
-        return await self.reset_api_entities(
+        return reset_api_entities(
+            self.config_entry,
             config_name,
             device_name,
             data,

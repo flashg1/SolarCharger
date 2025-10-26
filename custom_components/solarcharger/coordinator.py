@@ -78,7 +78,7 @@ class SolarChargerCoordinator:
         hass: HomeAssistant,
         config_entry: ConfigEntry,
         # charger: Charger,
-    ) -> None:
+    ):
         """Initialize the coordinator."""
         self.hass: HomeAssistant = hass
         self.config_entry: ConfigEntry = config_entry

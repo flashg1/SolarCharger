@@ -75,6 +75,14 @@ WAIT_CHARGEE_WAKEUP = 40  # seconds
 WAIT_CHARGEE_UPDATE_HA = 60  # seconds
 
 #######################################################
+# Subentry constants
+#######################################################
+SUBENTRY_TYPE_CHARGER = "charger"
+SUBENTRY_CHARGER_DEVICE = "charger_device"
+SUBENTRY_DEVICE_DOMAIN = "device_domain"
+SUBENTRY_DEVICE_NAME = "device_name"
+
+#######################################################
 # Option constants
 #######################################################
 OPTION_CHARGER_DEVICE_NAME = "charger_device_name"
@@ -220,13 +228,6 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
     CHARGER_DOMAIN_TESLA_CUSTOM: TESLA_CUSTOM_ENTITIES,
     CHARGER_DOMAIN_OCPP: OCPP_CHARGER_ENTITIES,
 }
-
-
-#######################################################
-# Subentry constants
-#######################################################
-SUBENTRY_TYPE_CHARGER = "charger"
-SUBENTRY_CHARGER_DEVICE = "charger_device"
 
 
 #######################################################
