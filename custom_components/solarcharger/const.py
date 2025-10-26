@@ -178,6 +178,8 @@ OPTION_DEVICE_ENTITY_LIST = {
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
 }
 
+# Use this to delete an entity from saved options, eg. sensor.deleteme, button.deleteme
+OPTION_DELETE_ENTITY = ".deleteme"
 DEVICE_MARKER = "<DeviceName>"
 
 TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {

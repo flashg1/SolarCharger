@@ -67,6 +67,7 @@ from .const import (
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_DEFAULT_VALUES,
+    OPTION_DELETE_ENTITY,
     OPTION_DEVICE_ENTITY_LIST,
     OPTION_GLOBAL_DEFAULTS,
     OPTION_ID,
@@ -180,6 +181,24 @@ GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
 
 
 # ----------------------------------------------------------------------------
+def get_subentry_id(config_entry: ConfigEntry, config_name: str) -> str | None:
+    """Get subentry ID for device name."""
+    subentry_id: str | None = None
+
+    if config_name == OPTION_GLOBAL_DEFAULTS:
+        return GLOBAL_DEFAULTS_ID
+
+    if config_entry.subentries:
+        for subentry in config_entry.subentries.values():
+            if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+                if subentry.unique_id == config_name:
+                    subentry_id = subentry.subentry_id
+                    break
+
+    return subentry_id
+
+
+# ----------------------------------------------------------------------------
 # async def validate_init_input(
 #     _hass: HomeAssistant,
 #     data: dict[str, Any],
@@ -215,20 +234,20 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         return config_entry.options.get(key, OPTION_DEFAULT_VALUES.get(key))
 
     # ----------------------------------------------------------------------------
-    def _get_device_id(self, device_name: str) -> str | None:
-        subentry_id: str | None = None
+    # def _get_subentry_id(self, config_name: str) -> str | None:
+    #     subentry_id: str | None = None
 
-        if device_name == OPTION_GLOBAL_DEFAULTS:
-            return GLOBAL_DEFAULTS_ID
+    #     if config_name == OPTION_GLOBAL_DEFAULTS:
+    #         return GLOBAL_DEFAULTS_ID
 
-        if self.config_entry.subentries:
-            for subentry in self.config_entry.subentries.values():
-                if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-                    if subentry.unique_id == device_name:
-                        subentry_id = subentry.subentry_id
-                        break
+    #     if self.config_entry.subentries:
+    #         for subentry in self.config_entry.subentries.values():
+    #             if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+    #                 if subentry.unique_id == config_name:
+    #                     subentry_id = subentry.subentry_id
+    #                     break
 
-        return subentry_id
+    #     return subentry_id
 
     # ----------------------------------------------------------------------------
     def _get_default_entity(
@@ -494,10 +513,13 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         """Reset entity names using new device mname."""
 
         if config_name != OPTION_GLOBAL_DEFAULTS:
-            subentry_id = self._get_device_id(config_name)
+            subentry_id = get_subentry_id(self.config_entry, config_name)
             if subentry_id:
                 subentry = self.config_entry.subentries.get(subentry_id)
                 if subentry:
+                    #####################################################################
+                    # OPTION_CHARGER_DEVICE_NAME and others are always present if restore from saved options is enabled
+                    #####################################################################
                     if OPTION_CHARGER_DEVICE_NAME in data:
                         device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
                         if device_domain:
@@ -516,7 +538,15 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                                         config_item,
                                         device_name,
                                     )
-                                    if entity_name:
+                                    if entity_name is None and config_item in data:
+                                        # No default entity found, so leave existing value unless it is marked for deletion.
+                                        # eg. sensor.deleteme, button.deleteme, etc.
+                                        # No other way to detect that user wants to delete the entity.
+                                        # User setting to None by deleting entity in user interface did not help
+                                        # because vol.Optional() has been set to restore from saved options.
+                                        if OPTION_DELETE_ENTITY in data[config_item]:
+                                            data[config_item] = None
+                                    else:
                                         data[config_item] = entity_name
         return data
 
@@ -529,6 +559,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         """Validate the input data for the options flow."""
 
         device_name = data[OPTION_CHARGER_DEVICE_NAME].strip()
+        data[OPTION_CHARGER_DEVICE_NAME] = device_name
         return await self.reset_api_entities(
             config_name,
             device_name,
@@ -550,7 +581,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
         config_name = self._config_name
         unique_id = self._config_name
-        subentry_id = self._get_device_id(config_name)
+        subentry_id = get_subentry_id(self.config_entry, config_name)
 
         # Process options
         if user_input is not None:
