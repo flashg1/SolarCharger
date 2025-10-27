@@ -249,12 +249,15 @@ def get_default_entity(
     """Get default value from dictionary with substition."""
     entity_str: Any | None = None
 
-    if substr:
+    # The test "if substr:" cannot distinguish between substr='' and substr=None.  Must explicitly test for None!
+    if substr is not None:
         if api_entities:
             entity_str = api_entities.get(config_item)
             if entity_str:
                 if entity_str == DEVICE_MARKER:
                     entity_str = substr
+                elif substr == "":
+                    entity_str = entity_str.replace(DEVICE_MARKER, "")
                 else:
                     entity_str = entity_str.replace(DEVICE_MARKER, f"{substr}_")
 

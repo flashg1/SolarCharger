@@ -111,6 +111,14 @@
             "charge": {
                 "name": "Charge"
             }
+        },
+        "number": {
+            "charger_effective_voltage": {
+                "name": "Charger effective voltage"
+            },
+            "charger_min_current": {
+                "name": "Charger minimum current"
+            }
         }
     }
 }

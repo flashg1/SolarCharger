@@ -1,13 +1,22 @@
 """SolarCharger number platform."""
 
+import logging
+
 from homeassistant import config_entries, core
-from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
+from homeassistant.components.number import (
+    NumberDeviceClass,
+    NumberEntity,
+    NumberExtraStoredData,
+    NumberMode,
+    RestoreNumber,
+)
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
 )
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import slugify
 
@@ -21,6 +30,10 @@ from .const import (
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+_LOGGER = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------------
@@ -56,7 +69,8 @@ async def async_setup_entry(
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerNumberEntity(SolarChargerEntity, NumberEntity):
+# class SolarChargerNumberEntity(SolarChargerEntity, NumberEntity):
+class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
     """SolarCharger number entity."""
 
     def __init__(
@@ -72,10 +86,30 @@ class SolarChargerNumberEntity(SolarChargerEntity, NumberEntity):
         )
         self.set_entity_id(NUMBER, self._entity_key)
 
-    def set_state(self, new_status):
-        """Set new status."""
-        self._attr_native_value = new_status
-        self.update_ha_state()
+    # def set_state(self, new_status):
+    #     """Set new status."""
+    #     self._attr_native_value = new_status
+    #     self.update_ha_state()
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        self._attr_native_value = value
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity about to be added to hass."""
+
+        restore_num: (
+            NumberExtraStoredData | None
+        ) = await self.async_get_last_number_data()
+        if restore_num is not None and restore_num.native_value is not None:
+            await self.async_set_native_value(restore_num.native_value)
+            _LOGGER.debug(
+                "Restored %s: %s",
+                self.entity_id,
+                self._attr_native_value,
+            )
+        else:
+            _LOGGER.debug("No restored data for %s", self.entity_id)
 
 
 # ----------------------------------------------------------------------------
@@ -84,40 +118,25 @@ class SolarChargerNumberChargerEffectiveVoltage(SolarChargerNumberEntity):
     """Representation of charger effective voltage number."""
 
     _entity_key = ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE
-    _attr_device_class = NumberDeviceClass.VOLTAGE
-    _attr_entity_registry_enabled_default = True
-    _attr_icon = "mdi:ev-station"
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_min_value = 100.0
+    _attr_native_max_value = 700.0
+    _attr_native_step = 1.0
+    _attr_native_unit_of_measurement = "V"
     _attr_mode = NumberMode.BOX
-    _attr_native_step = 1
 
     def __init__(self, subentry) -> None:
         """Initialise number."""
         super().__init__(subentry)
+        if self.value is None:
+            self._attr_native_value = 230.0
+            self.update_ha_state()
 
-    # async def async_set_native_value(self, value: int) -> None:
-    #     """Update charging amps."""
-    #     await self._car.set_charging_amps(value)
-    #     self.async_write_ha_state()
-
-    # @property
-    # def native_value(self) -> int:
-    #     """Return charging amps."""
-    #     return self._car.charge_current_request
-
-    # @property
-    # def native_min_value(self) -> int:
-    #     """Return min charging ampst."""
-    #     return CHARGE_CURRENT_MIN
-
-    # @property
-    # def native_max_value(self) -> int:
-    #     """Return max charging amps."""
-    #     return self._car.charge_current_request_max
-
-    # @property
-    # def native_unit_of_measurement(self) -> str:
-    #     """Return percentage."""
-    #     return UnitOfElectricPotential.VOLT
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        await super().async_set_native_value(value)
+        # self.coordinator.max_charging_current = value
+        # await self.coordinator.update_configuration()
 
 
 # ----------------------------------------------------------------------------
@@ -126,40 +145,26 @@ class SolarChargerNumberChargerMinCurrent(SolarChargerNumberEntity):
     """Representation of charger min current number."""
 
     _entity_key = ENTITY_KEY_CHARGER_MIN_CURRENT
-    _attr_device_class = NumberDeviceClass.CURRENT
-    _attr_entity_registry_enabled_default = True
-    _attr_icon = "mdi:ev-station"
-    _attr_mode = NumberMode.AUTO
-    _attr_native_step = 1
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 100.0
+    _attr_native_step = 1.0
+    _attr_native_unit_of_measurement = "A"
+    _attr_mode = NumberMode.BOX
+    # _attr_mode = NumberMode.AUTO
 
     def __init__(self, subentry) -> None:
         """Initialise number."""
         super().__init__(subentry)
+        if self.value is None:
+            self._attr_native_value = 1.0
+            self.update_ha_state()
 
-    # async def async_set_native_value(self, value: int) -> None:
-    #     """Update charging amps."""
-    #     await self._car.set_charging_amps(value)
-    #     self.async_write_ha_state()
-
-    # @property
-    # def native_value(self) -> int:
-    #     """Return charging amps."""
-    #     return self._car.charge_current_request
-
-    # @property
-    # def native_min_value(self) -> int:
-    #     """Return min charging ampst."""
-    #     return CHARGE_CURRENT_MIN
-
-    # @property
-    # def native_max_value(self) -> int:
-    #     """Return max charging amps."""
-    #     return self._car.charge_current_request_max
-
-    # @property
-    # def native_unit_of_measurement(self) -> str:
-    #     """Return percentage."""
-    #     return UnitOfElectricCurrent.AMPERE
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        await super().async_set_native_value(value)
+        # self.coordinator.max_charging_current = value
+        # await self.coordinator.update_configuration()
 
 
 # ----------------------------------------------------------------------------
@@ -168,45 +173,23 @@ class SolarChargerNumberChargeeChargeLimit(SolarChargerNumberEntity):
     """Representation of a Tesla car charge limit number."""
 
     _entity_key = ENTITY_KEY_CHARGEE_CHARGE_LIMIT
-    _attr_device_class = NumberDeviceClass.BATTERY
-    _attr_entity_registry_enabled_default = True
-    _attr_icon = "mdi:ev-station"
-    _attr_mode = NumberMode.AUTO
-    _attr_native_step = 1
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_native_min_value = 0.0
+    _attr_native_max_value = 100.0
+    _attr_native_step = 1.0
+    _attr_native_unit_of_measurement = "%"
+    _attr_mode = NumberMode.BOX
+    # _attr_mode = NumberMode.AUTO
 
     def __init__(self, subentry) -> None:
         """Initialise number."""
         super().__init__(subentry)
+        if self.value is None:
+            self._attr_native_value = 60.0
+            self.update_ha_state()
 
-    # async def async_set_native_value(self, value: int) -> None:
-    #     """Update charge limit."""
-    #     await self._car.change_charge_limit(value)
-    #     self.async_write_ha_state()
-
-    # @property
-    # def native_value(self) -> int:
-    #     """Return charge limit."""
-    #     return self._car.charge_limit_soc
-
-    # @property
-    # def native_min_value(self) -> int:
-    #     """Return min charge limit."""
-    #     return (
-    #         self._car.charge_limit_soc_min
-    #         if self._car.charge_limit_soc_min is not None
-    #         else 0
-    #     )
-
-    # @property
-    # def native_max_value(self) -> int:
-    #     """Return max charge limit."""
-    #     return (
-    #         self._car.charge_limit_soc_max
-    #         if self._car.charge_limit_soc_max is not None
-    #         else 100
-    #     )
-
-    # @property
-    # def native_unit_of_measurement(self) -> str:
-    #     """Return percentage."""
-    #     return PERCENTAGE
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        await super().async_set_native_value(value)
+        # self.coordinator.max_charging_current = value
+        # await self.coordinator.update_configuration()
