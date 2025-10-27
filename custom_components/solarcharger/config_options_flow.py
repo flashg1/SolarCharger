@@ -124,10 +124,24 @@ NUMBER_ENTITY_SELECTOR = EntitySelector(
         domain=["number", "input_number", "sensor"],
     )
 )
+NUMBER_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["number", "input_number", "sensor"],
+        read_only=True,
+    )
+)
 SENSOR_ENTITY_SELECTOR = EntitySelector(
     EntitySelectorConfig(
         multiple=False,
         domain=["sensor", "binary_sensor"],
+    )
+)
+SENSOR_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["sensor", "binary_sensor"],
+        read_only=True,
     )
 )
 SWITCH_ENTITY_SELECTOR = EntitySelector(
@@ -136,16 +150,37 @@ SWITCH_ENTITY_SELECTOR = EntitySelector(
         domain=["switch"],
     )
 )
+SWITCH_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["switch"],
+        read_only=True,
+    )
+)
 BUTTON_ENTITY_SELECTOR = EntitySelector(
     EntitySelectorConfig(
         multiple=False,
         domain=["button"],
     )
 )
+BUTTON_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["button"],
+        read_only=True,
+    )
+)
 LOCATION_ENTITY_SELECTOR = EntitySelector(
     EntitySelectorConfig(
         multiple=False,
         domain=["device_tracker", "binary_sensor"],
+    )
+)
+LOCATION_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["device_tracker", "binary_sensor"],
+        read_only=True,
     )
 )
 
@@ -189,6 +224,22 @@ GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
 
 
 # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+def entity_selector(
+    api_entities: dict[str, str | None] | None,
+    config_item: str,
+    read_only_selector: EntitySelector,
+    default_selector: EntitySelector,
+) -> EntitySelector:
+    """Entity selector is readonly if API entity is set, ie. user cannot change it."""
+
+    if api_entities:
+        if api_entities.get(config_item):
+            return read_only_selector
+
+    return default_selector
+
+
 # ----------------------------------------------------------------------------
 def get_default_entity(
     api_entities: dict[str, str | None] | None,
@@ -629,54 +680,150 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         }
 
     # ----------------------------------------------------------------------------
+    # def _get_optional_entity_selector(
+    #     self,
+    #     subentry: ConfigSubentry,
+    #     api_entities: dict[str, str | None] | None,
+    #     config_item: str,
+    #     read_only_selector: EntitySelector,
+    #     default_selector: EntitySelector,
+    #     use_default: bool,
+    # ) -> dict[Any, Any]:
+    #     """Charger optional control entities."""
+
+    #     return {
+    #         self._optional(subentry, config_item, use_default): entity_selector(
+    #             api_entities,
+    #             config_item,
+    #             read_only_selector,
+    #             default_selector,
+    #         ),
+    #     }
+
+    # ----------------------------------------------------------------------------
     def _charger_control_entities_schema(
         self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:
         """Charger control entities."""
+        api_entities: dict[str, str | None] | None = None
+
+        device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+        if device_domain:
+            api_entities = CHARGE_API_ENTITIES.get(device_domain)
 
         return {
             self._optional(
                 subentry, OPTION_CHARGER_DEVICE_NAME, use_default
-            ): TEXT_SELECTOR,
+            ): entity_selector(
+                None,
+                OPTION_CHARGER_DEVICE_NAME,
+                TEXT_SELECTOR_READ_ONLY,
+                TEXT_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR, use_default
-            ): SENSOR_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_PLUGGED_IN_SENSOR,
+                SENSOR_ENTITY_SELECTOR_READ_ONLY,
+                SENSOR_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST, use_default
-            ): TEXT_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_CONNECT_TRIGGER_LIST,
+                TEXT_SELECTOR_READ_ONLY,
+                TEXT_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_STATE_LIST, use_default
-            ): TEXT_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_CONNECT_STATE_LIST,
+                TEXT_SELECTOR_READ_ONLY,
+                TEXT_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGER_ON_OFF_SWITCH, use_default
-            ): SWITCH_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_ON_OFF_SWITCH,
+                SWITCH_ENTITY_SELECTOR_READ_ONLY,
+                SWITCH_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_SENSOR, use_default
-            ): SENSOR_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_CHARGING_SENSOR,
+                SENSOR_ENTITY_SELECTOR_READ_ONLY,
+                SENSOR_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_STATE_LIST, use_default
-            ): TEXT_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_CHARGING_STATE_LIST,
+                TEXT_SELECTOR_READ_ONLY,
+                TEXT_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_AMPS, use_default
-            ): NUMBER_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_CHARGING_AMPS,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGEE_SOC_SENSOR, use_default
-            ): SENSOR_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGEE_SOC_SENSOR,
+                SENSOR_ENTITY_SELECTOR_READ_ONLY,
+                SENSOR_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGEE_CHARGE_LIMIT, use_default
-            ): NUMBER_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGEE_CHARGE_LIMIT,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_SENSOR, use_default
-            ): LOCATION_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGEE_LOCATION_SENSOR,
+                LOCATION_ENTITY_SELECTOR_READ_ONLY,
+                LOCATION_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_STATE_LIST, use_default
-            ): TEXT_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGEE_LOCATION_STATE_LIST,
+                TEXT_SELECTOR_READ_ONLY,
+                TEXT_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGEE_WAKE_UP_BUTTON, use_default
-            ): BUTTON_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGEE_WAKE_UP_BUTTON,
+                BUTTON_ENTITY_SELECTOR_READ_ONLY,
+                BUTTON_ENTITY_SELECTOR,
+            ),
             self._optional(
                 subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON, use_default
-            ): BUTTON_ENTITY_SELECTOR,
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGEE_UPDATE_HA_BUTTON,
+                BUTTON_ENTITY_SELECTOR_READ_ONLY,
+                BUTTON_ENTITY_SELECTOR,
+            ),
         }
 
     # ----------------------------------------------------------------------------
