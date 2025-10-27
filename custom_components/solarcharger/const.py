@@ -85,7 +85,6 @@ SUBENTRY_DEVICE_NAME = "device_name"
 #######################################################
 # Option constants
 #######################################################
-OPTION_CHARGER_DEVICE_NAME = "charger_device_name"
 
 #####################################
 # Power import/export sensor
@@ -121,7 +120,7 @@ OPTION_SUNSET_ELEVATION_END_TRIGGER = "sunset_elevation_end_trigger"
 #####################################
 # Charger control entities
 #####################################
-# OPTION_CHARGER_DEVICE_NAME = "charger_device_name"
+OPTION_CHARGER_DEVICE_NAME = "charger_device_name"
 OPTION_CHARGER_PLUGGED_IN_SENSOR = "charger_plugged_in_sensor"
 OPTION_CHARGER_CONNECT_TRIGGER_LIST = "charger_connect_trigger_list"
 OPTION_CHARGER_CONNECT_STATE_LIST = "charger_connect_state_list"
@@ -140,18 +139,10 @@ OPTION_CHARGEE_LOCATION_STATE_LIST = "chargee_location_state_list"
 OPTION_CHARGEE_WAKE_UP_BUTTON = "chargee_wake_up_button"
 OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 
-#####################################
-# Charger specific configs
-#####################################
-# OPTION_TESLACUSTOM_NAME = "tesla_custom_name"
-# DEFAULT_TESLACUSTOM_NAME = ""
-
-# OPTION_OCPPCHARGER_NAME = "ocpp_custom_name"
-# DEFAULT_OCPPCHARGER_NAME = "charger"
-
-#####################################
+#######################################################
+# Lists
+#######################################################
 # Default values
-#####################################
 OPTION_DEFAULT_VALUES: dict[str, Any] = {
     OPTION_CHARGER_EFFECTIVE_VOLTAGE: None,
     OPTION_CHARGER_MAX_CURRENT: 15,
@@ -163,16 +154,9 @@ OPTION_DEFAULT_VALUES: dict[str, Any] = {
     OPTION_WAIT_CHARGER_UPDATE: 5,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER: 3,
     OPTION_SUNSET_ELEVATION_END_TRIGGER: 6,
-    # OPTION_TESLACUSTOM_NAME: DEFAULT_TESLACUSTOM_NAME,
-    # OPTION_OCPPCHARGER_NAME: DEFAULT_OCPPCHARGER_NAME,
 }
 
-# STEP_TESLACUSTOM_SCHEMA = vol.Schema(
-#     {
-#         vol.Required(OPTION_TESLACUSTOM_NAME, default=DEFAULT_TESLACUSTOM_NAME): str,
-#     }
-# )
-
+# API entities
 OPTION_DEVICE_ENTITY_LIST = {
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,

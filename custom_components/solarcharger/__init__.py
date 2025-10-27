@@ -7,11 +7,9 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
-# from . import config_flow as cf
-from . import config_subentry_flow as csef
 from .chargers import Charger, charger_factory
 from .chargers.controller import ChargeController
-from .const import DOMAIN
+from .const import DOMAIN, SUBENTRY_CHARGER_DEVICE, SUBENTRY_TYPE_CHARGER
 from .coordinator import SolarChargerCoordinator
 from .models import ChargeControl
 
@@ -53,11 +51,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator.charge_controls = charge_controls
 
     for subentry in entry.subentries.values():
-        if subentry.subentry_type == csef.SUBENTRY_TYPE_CHARGER:
+        if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
             # Initialize charger
-            charger_device_id: str | None = subentry.data.get(
-                csef.SUBENTRY_CHARGER_DEVICE
-            )
+            charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE)
             if not charger_device_id or not subentry.unique_id:
                 _LOGGER.error(
                     "No charger device ID found in subentry data: %s: %s",

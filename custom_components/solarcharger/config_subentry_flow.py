@@ -136,7 +136,6 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         reset_api_entities(
             config_entry,
             subentry_unique_id,
-            device_name,
             data,
             reset_all_entities=True,
         )

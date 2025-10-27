@@ -369,12 +369,11 @@ def get_saved_option_value(
 def delete_marked_entities(
     data: dict[str, Any],
 ) -> dict[str, Any]:
-    """Set entity names using new device name."""
+    """Delete entity strings marked for deletion."""
 
-    # Iterate over items to avoid extracting values via indexing and to make intent clear.
     for config_item, value in list(data.items()):
-        # Leave existing value unless it is marked for deletion.
-        # eg. sensor.deleteme, button.deleteme, etc.
+        # Leave existing value unless it is marked for deletion, eg.
+        # sensor.deleteme, button.deleteme, etc.
         # No other way to detect that user wants to delete the entity.
         # User setting to None by deleting entity in user interface did not help
         # because vol.Optional() has been set to restore from saved options.
@@ -388,14 +387,16 @@ def delete_marked_entities(
 def reset_api_entities(
     config_entry: ConfigEntry,
     config_name: str,  # Same as subentry unique_id
-    device_name: str,
     data: dict[str, Any],
     reset_all_entities: bool = False,
 ) -> dict[str, Any]:
     """Reset entity names using new device mname."""
 
     if config_name != OPTION_GLOBAL_DEFAULTS:
+        # Delete marked entities
         data = delete_marked_entities(data)
+
+        # Reset API entity names due to device name change
         subentry_id = get_subentry_id(config_entry, config_name)
         if subentry_id:
             subentry = config_entry.subentries.get(subentry_id)
@@ -404,6 +405,10 @@ def reset_api_entities(
                 # OPTION_CHARGER_DEVICE_NAME and others are always present if restore from saved options is enabled
                 #####################################################################
                 if OPTION_CHARGER_DEVICE_NAME in data:
+                    device_name = data.get(OPTION_CHARGER_DEVICE_NAME, "")
+                    device_name = slugify(device_name.strip())
+                    data[OPTION_CHARGER_DEVICE_NAME] = device_name
+
                     device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
                     if device_domain:
                         api_entities = CHARGE_API_ENTITIES.get(device_domain)
@@ -423,17 +428,6 @@ def reset_api_entities(
                                 )
                                 if entity_name:
                                     data[config_item] = entity_name
-
-                                # if entity_name is None and config_item in data:
-                                #     # No default entity found, so leave existing value unless it is marked for deletion.
-                                #     # eg. sensor.deleteme, button.deleteme, etc.
-                                #     # No other way to detect that user wants to delete the entity.
-                                #     # User setting to None by deleting entity in user interface did not help
-                                #     # because vol.Optional() has been set to restore from saved options.
-                                #     if OPTION_DELETE_ENTITY in data[config_item]:
-                                #         data[config_item] = None
-                                # else:
-                                #     data[config_item] = entity_name
     return data
 
 
@@ -834,12 +828,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     ) -> dict[str, Any]:
         """Validate the input data for the options flow."""
 
-        device_name = data[OPTION_CHARGER_DEVICE_NAME].strip()
-        data[OPTION_CHARGER_DEVICE_NAME] = device_name
         return reset_api_entities(
             self.config_entry,
             config_name,
-            device_name,
             data,
         )
 
