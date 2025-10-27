@@ -67,6 +67,10 @@ MIN_CHARGER_UPDATE_DELAY: int = 30
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+# TODO: Think about running multiple coordinators if multiple chargers are defined.
+# See Tesla Custom integration for reference.
+
+
 class SolarChargerCoordinator:
     """Coordinator for the Solar Charger."""
 

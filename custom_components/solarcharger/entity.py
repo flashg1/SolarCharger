@@ -13,6 +13,13 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+def compose_entity_id(platform_str: str, subentry_unique_id: str | None, key: str):
+    """Compose the entity id."""
+    return f"{platform_str}.{DOMAIN}_{subentry_unique_id}_{key}"
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class SolarChargerEntity(Entity):
     """SolarCharger base entity class."""
 
@@ -45,7 +52,7 @@ class SolarChargerEntity(Entity):
 
     def set_entity_id(self, platform_str, key):
         """Set the entity id."""
-        entity_id = f"{platform_str}.{DOMAIN}_{self._subentry.unique_id}_{key}"
+        entity_id = compose_entity_id(platform_str, self._subentry.unique_id, key)
         _LOGGER.debug("entity_id = %s", entity_id)
         self.entity_id = entity_id
 

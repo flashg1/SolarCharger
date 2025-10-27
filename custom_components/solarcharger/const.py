@@ -46,6 +46,20 @@ CHARGER_DOMAIN_TESLA_CUSTOM = "tesla_custom"
 ENTITY_KEY_LAST_CHECK_SENSOR = "last_check"
 ENTITY_KEY_RUN_STATE_SENSOR = "run_state"
 
+# Numbers
+ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"
+# ENTITY_KEY_CHARGER_MAX_CURRENT = "charger_max_current"
+ENTITY_KEY_CHARGER_MAX_SPEED = "charger_max_speed"
+ENTITY_KEY_CHARGER_MIN_CURRENT = "charger_min_current"
+# ENTITY_KEY_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"
+ENTITY_KEY_CHARGER_POWER_ALLOCATION_WEIGHT = "charger_power_allocation_weight"
+# ENTITY_KEY_WAIT_NET_POWER_UPDATE = "wait_net_power_update"
+# ENTITY_KEY_WAIT_CHARGER_UPDATE = "wait_charger_update"
+# ENTITY_KEY_SUNRISE_ELEVATION_START_TRIGGER = "sunrise_elevation_start_trigger"
+# ENTITY_KEY_SUNSET_ELEVATION_END_TRIGGER = "sunset_elevation_end_trigger"
+
+ENTITY_KEY_CHARGEE_CHARGE_LIMIT = "chargee_charge_limit"
+
 # Switches
 ENTITY_KEY_CHARGE_SWITCH = "charge"
 

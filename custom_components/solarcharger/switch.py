@@ -47,7 +47,7 @@ async def async_setup_entry(
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 # class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
-class SolarChargerSwitchEntity(SwitchEntity, RestoreEntity, SolarChargerEntity):
+class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
     """SolarCharger switch base entity."""
 
     def __init__(
