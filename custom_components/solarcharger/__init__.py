@@ -41,7 +41,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 # ----------------------------------------------------------------------------
-async def async_init_charger(
+async def async_init_charger_subentry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     subentry: ConfigSubentry,
@@ -58,7 +58,6 @@ async def async_init_charger(
             subentry.subentry_id,
         )
         return
-
     charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
 
     # Initialize ChargeController
@@ -68,7 +67,6 @@ async def async_init_charger(
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
         device_name=subentry.unique_id,
-        charger=charger,
         controller=controller,
     )
 
@@ -83,7 +81,7 @@ async def async_init_charger(
 
 
 # ----------------------------------------------------------------------------
-async def async_init_global_defaults(
+async def async_init_global_defaults_subsentry(
     entry: ConfigEntry,
     subentry: ConfigSubentry,
     charge_controls: dict[str, ChargeControl],
@@ -104,7 +102,6 @@ async def async_init_global_defaults(
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
         device_name=subentry.unique_id,
-        charger=None,
         controller=None,
     )
 
@@ -135,7 +132,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for subentry in entry.subentries.values():
         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
             # Initialize charger
-            await async_init_charger(
+            await async_init_charger_subentry(
                 hass,
                 entry,
                 subentry,
@@ -143,7 +140,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         elif subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
             # Initialize global defaults
-            await async_init_global_defaults(
+            await async_init_global_defaults_subsentry(
                 entry,
                 subentry,
                 charge_controls,

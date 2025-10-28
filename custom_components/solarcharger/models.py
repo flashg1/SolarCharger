@@ -42,7 +42,7 @@ class ChargeControl:
 
     subentry_id: str
     device_name: str
-    charger: Charger | None = None
+    # charger: Charger | None = None
     controller: ChargeController | None = None
 
     charge_task: Task | None = None

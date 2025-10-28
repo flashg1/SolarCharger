@@ -53,6 +53,16 @@ class ChargeController:
         return None
 
     # ----------------------------------------------------------------------------
+    async def async_setup(self) -> None:
+        """Async setup of the ChargeController."""
+        await self.charger.async_setup()
+
+    # ----------------------------------------------------------------------------
+    async def async_unload(self) -> None:
+        """Async unload of the ChargeController."""
+        await self.charger.async_unload()
+
+    # ----------------------------------------------------------------------------
     def start_charge(self) -> Task:
         """Start charge."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())

@@ -91,10 +91,10 @@ class SolarChargerCoordinator:
         self.charge_controls: dict[str, ChargeControl] = {}
 
         self._unsub: list[CALLBACK_TYPE] = []
-        self._sensors: list[SensorEntity] = []
-        self._buttons: list[ButtonEntity] = []
-        self._switches: list[SwitchEntity] = []
-        self._numbers: list[NumberEntity] = []
+        # self._sensors: list[SensorEntity] = []
+        # self._buttons: list[ButtonEntity] = []
+        # self._switches: list[SwitchEntity] = []
+        # self._numbers: list[NumberEntity] = []
 
         self.entity_id_net_power: str | None = get_parameter(
             self.config_entry, CONF_NET_POWER
@@ -152,8 +152,8 @@ class SolarChargerCoordinator:
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
         for control in self.charge_controls.values():
-            if control.charger is not None:
-                await control.charger.async_setup()
+            if control.controller is not None:
+                await control.controller.async_setup()
 
         self._unsub.append(
             async_track_time_interval(
@@ -181,8 +181,8 @@ class SolarChargerCoordinator:
     async def async_unload(self) -> None:
         """Unload the coordinator and its managed components."""
         for control in self.charge_controls.values():
-            if control.charger is not None:
-                await control.charger.async_unload()
+            if control.controller is not None:
+                await control.controller.async_unload()
 
         for unsub_method in self._unsub:
             unsub_method()
@@ -395,56 +395,56 @@ class SolarChargerCoordinator:
                     control.end_charge_task = control.controller.stop_charge()
 
     # ----------------------------------------------------------------------------
-    def _update_charger_if_needed(
-        self, control: ChargeControl, net_current: float
-    ) -> None:
-        """Update the charger if needed based on net current."""
+    # def _update_charger_if_needed(
+    #     self, control: ChargeControl, net_current: float
+    # ) -> None:
+    #     """Update the charger if needed based on net current."""
 
-        if not control.switch_charge:
-            _LOGGER.debug("Charger %s is not running", control.device_name)
-            return
+    #     if not control.switch_charge:
+    #         _LOGGER.debug("Charger %s is not running", control.device_name)
+    #         return
 
-        now = int(time())
-        if (
-            control.last_charger_target_update is None
-            or (now - control.last_charger_target_update[1]) >= MIN_CHARGER_UPDATE_DELAY
-        ):
-            self._update_charger_current(control, net_current)
-        else:
-            _LOGGER.debug(
-                "Skipping %s charger update because last update was %s seconds ago",
-                control.device_name,
-                now - control.last_charger_target_update[1],
-            )
+    #     now = int(time())
+    #     if (
+    #         control.last_charger_target_update is None
+    #         or (now - control.last_charger_target_update[1]) >= MIN_CHARGER_UPDATE_DELAY
+    #     ):
+    #         self._update_charger_current(control, net_current)
+    #     else:
+    #         _LOGGER.debug(
+    #             "Skipping %s charger update because last update was %s seconds ago",
+    #             control.device_name,
+    #             now - control.last_charger_target_update[1],
+    #         )
 
     # ----------------------------------------------------------------------------
-    def _update_charger_current(
-        self, control: ChargeControl, net_current: float
-    ) -> None:
-        """Update the charger current based on net current."""
-        now_current = control.charger.get_charge_current()
-        max_current = control.charger.get_max_charge_current()
-        new_current = 0.0
-        if now_current is None or max_current is None:
-            _LOGGER.warning(
-                "Invalid current: now_current=%d, max current=%d",
-                now_current,
-                max_current,
-            )
-            return
+    # def _update_charger_current(
+    #     self, control: ChargeControl, net_current: float
+    # ) -> None:
+    #     """Update the charger current based on net current."""
+    #     now_current = control.charger.get_charge_current()
+    #     max_current = control.charger.get_max_charge_current()
+    #     new_current = 0.0
+    #     if now_current is None or max_current is None:
+    #         _LOGGER.warning(
+    #             "Invalid current: now_current=%d, max current=%d",
+    #             now_current,
+    #             max_current,
+    #         )
+    #         return
 
-        new_current = now_current - net_current
-        if new_current >= max_current:
-            new_current = max_current
-        elif new_current < 0:
-            new_current = 0.0
-        _LOGGER.debug("New charger settings: %s", new_current)
-        control.last_charger_target_update = (
-            new_current,
-            int(time()),
-        )
-        self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)
-        self.hass.async_create_task(control.charger.set_charge_current(new_current))
+    #     new_current = now_current - net_current
+    #     if new_current >= max_current:
+    #         new_current = max_current
+    #     elif new_current < 0:
+    #         new_current = 0.0
+    #     _LOGGER.debug("New charger settings: %s", new_current)
+    #     control.last_charger_target_update = (
+    #         new_current,
+    #         int(time()),
+    #     )
+    #     self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)
+    #     self.hass.async_create_task(control.charger.set_charge_current(new_current))
 
     # ----------------------------------------------------------------------------
     def get_net_power(self) -> float | None:
@@ -503,6 +503,8 @@ class SolarChargerCoordinator:
             return None
 
     # ----------------------------------------------------------------------------
+    # eg. self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)
+
     def _emit_charger_event(self, action: str, new_limits: float) -> None:
         """Emit an event to Home Assistant's device event log."""
         self.hass.bus.async_fire(
