@@ -44,8 +44,8 @@ from .const import (
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-    OPTION_DEFAULT_VALUES,
-    OPTION_GLOBAL_DEFAULTS,
+    OPTION_GLOBAL_DEFAULTS_ID,
+    OPTION_GLOBAL_DEFAULTS_LIST,
     OPTION_NET_POWER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
@@ -455,7 +455,7 @@ class SolarChargerCoordinator:
         """Get charger effective voltage."""
         val: float | None = None
 
-        global_defaults = self.config_entry.options.get(OPTION_GLOBAL_DEFAULTS)
+        global_defaults = self.config_entry.options.get(OPTION_GLOBAL_DEFAULTS_ID)
         if global_defaults is not None:
             entity_id = global_defaults.get(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
             if entity_id is not None:
@@ -468,7 +468,7 @@ class SolarChargerCoordinator:
         entity_id = self.config_entry.options.get(key, None)
         if entity_id is None:
             # Try to get default value.
-            val = OPTION_DEFAULT_VALUES.get(key)
+            val = OPTION_GLOBAL_DEFAULTS_LIST.get(key)
             if val is None:
                 _LOGGER.debug("No default value for %s", key)
                 return None

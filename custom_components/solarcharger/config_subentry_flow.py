@@ -37,8 +37,8 @@ from .const import (
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
     OPTION_CHARGER_DEVICE_NAME,
-    OPTION_DEFAULT_VALUES,
-    OPTION_GLOBAL_DEFAULTS,
+    OPTION_GLOBAL_DEFAULTS_ID,
+    OPTION_GLOBAL_DEFAULTS_LIST,
     SUBENTRY_CHARGER_DEVICE,
     SUBENTRY_DEVICE_DOMAIN,
     SUBENTRY_DEVICE_NAME,
@@ -161,7 +161,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 ConfigSubentry(
                     subentry_type=SUBENTRY_TYPE_DEFAULTS,
                     title="Global defaults",
-                    unique_id=OPTION_GLOBAL_DEFAULTS,
+                    unique_id=OPTION_GLOBAL_DEFAULTS_ID,
                     data=MappingProxyType(  # make data immutable
                         {
                             SUBENTRY_DEVICE_DOMAIN: "N/A",  # Integration domain
@@ -176,7 +176,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 config_entry,
                 options=config_entry.options
                 | {
-                    OPTION_GLOBAL_DEFAULTS: OPTION_DEFAULT_VALUES,
+                    OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULTS_LIST,
                 },
             )
 

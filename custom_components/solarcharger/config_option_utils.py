@@ -30,7 +30,7 @@ from .const import (
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_DELETE_ENTITY,
     OPTION_DEVICE_ENTITY_LIST,
-    OPTION_GLOBAL_DEFAULTS,
+    OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_DEVICE_DOMAIN,
 )
 
@@ -285,7 +285,7 @@ def get_saved_global_option_value(
 ) -> Any | None:
     """Get saved option value if exist."""
 
-    global_defaults_subentry = get_subentry(config_entry, OPTION_GLOBAL_DEFAULTS)
+    global_defaults_subentry = get_subentry(config_entry, OPTION_GLOBAL_DEFAULTS_ID)
     return get_saved_local_option_value(
         config_entry, global_defaults_subentry, config_item
     )
@@ -308,7 +308,7 @@ def get_saved_option_value(
     final_val = saved_local_val
     if not saved_local_val and use_default:
         # Get saved global value if already global
-        if subentry.unique_id != OPTION_GLOBAL_DEFAULTS:
+        if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
             saved_global_val = get_saved_global_option_value(config_entry, config_item)
             final_val = saved_global_val
 
@@ -356,7 +356,7 @@ def reset_api_entities(
 ) -> dict[str, Any]:
     """Reset entity names using new device mname."""
 
-    if config_name != OPTION_GLOBAL_DEFAULTS:
+    if config_name != OPTION_GLOBAL_DEFAULTS_ID:
         # Delete marked entities
         data = delete_marked_entities(data)
 

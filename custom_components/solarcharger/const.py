@@ -1,6 +1,7 @@
 """Constants for the Solar Charger integration."""
 
 from enum import Enum
+from token import OP
 from typing import Any
 
 from homeassistant.const import Platform, __version__ as HA_VERSION
@@ -84,10 +85,6 @@ EVENT_ACTION_NEW_CHARGER_LIMITS = "new_charger_limits"
 EVENT_ATTR_ACTION = "action"
 EVENT_ATTR_NEW_LIMITS = "new_limits"
 
-# Wait times
-WAIT_CHARGEE_WAKEUP = 40  # seconds
-WAIT_CHARGEE_UPDATE_HA = 60  # seconds
-
 #######################################################
 # Subentry constants
 #######################################################
@@ -113,25 +110,33 @@ OPTION_LAST_CHARGER_ID = "last_charger_id"
 #####################################
 # Option admin
 #####################################
-OPTION_GLOBAL_DEFAULTS = "Global defaults"
+OPTION_GLOBAL_DEFAULTS_ID = "Global defaults"
 OPTION_ID = "option_id"
 OPTION_NAME = "option_name"
 
 #####################################
 # Charger general configs
 #####################################
-OPTION_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"
-OPTION_CHARGER_MAX_CURRENT = "charger_max_current"
-OPTION_CHARGER_MAX_SPEED = "charger_max_speed"
-OPTION_CHARGER_MIN_CURRENT = "charger_min_current"
-OPTION_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"
-OPTION_CHARGER_POWER_ALLOCATION_WEIGHT = "charger_power_allocation_weight"
+OPTION_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # 230 Volts
+OPTION_CHARGER_MAX_CURRENT = "charger_max_current"  # 15 Amps
+OPTION_CHARGER_MAX_SPEED = "charger_max_speed"  # 6.1448 %/hr
+OPTION_CHARGER_MIN_CURRENT = "charger_min_current"  # 1 Amps
+OPTION_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"  # 0 Amps
+OPTION_CHARGER_POWER_ALLOCATION_WEIGHT = "charger_power_allocation_weight"  # 1
 
-OPTION_WAIT_NET_POWER_UPDATE = "wait_net_power_update"
-OPTION_WAIT_CHARGER_UPDATE = "wait_charger_update"
+OPTION_SUNRISE_ELEVATION_START_TRIGGER = "sunrise_elevation_start_trigger"  # 3
+OPTION_SUNSET_ELEVATION_END_TRIGGER = "sunset_elevation_end_trigger"  # 6
 
-OPTION_SUNRISE_ELEVATION_START_TRIGGER = "sunrise_elevation_start_trigger"
-OPTION_SUNSET_ELEVATION_END_TRIGGER = "sunset_elevation_end_trigger"
+# Wait times
+WAIT_CHARGEE_WAKEUP = 40  # seconds
+WAIT_CHARGEE_UPDATE_HA = 5  # seconds
+OPTION_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 60 seconds
+OPTION_WAIT_CHARGEE_WAKEUP = "wait_chargee_wakeup"  # 40 seconds
+OPTION_WAIT_CHARGEE_UPDATE_HA = "wait_chargee_update_ha"  # 5 seconds
+OPTION_WAIT_CHARGEE_LIMIT_CHANGE = "wait_chargee_limit_change"  # 5 seconds
+OPTION_WAIT_CHARGER_ON = "wait_charger_on"  # 11 seconds
+OPTION_WAIT_CHARGER_OFF = "wait_charger_off"  # 5 seconds
+OPTION_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 second
 
 #####################################
 # Charger control entities
@@ -158,18 +163,23 @@ OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 #######################################################
 # Lists
 #######################################################
-# Default values
-OPTION_DEFAULT_VALUES: dict[str, Any] = {
+# Global default entities
+OPTION_GLOBAL_DEFAULTS_LIST: dict[str, str] = {
     OPTION_CHARGER_EFFECTIVE_VOLTAGE: "number.solarcharger_global_defaults_charger_effective_voltage",
-    OPTION_CHARGER_MAX_CURRENT: 15,
+    OPTION_CHARGER_MAX_CURRENT: "number.solarcharger_global_defaults_charger_max_current",
     OPTION_CHARGER_MAX_SPEED: "number.solarcharger_global_defaults_charger_max_speed",
     OPTION_CHARGER_MIN_CURRENT: "number.solarcharger_global_defaults_charger_min_current",
-    OPTION_CHARGER_MIN_WORKABLE_CURRENT: 0,
-    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: 1,
-    OPTION_WAIT_NET_POWER_UPDATE: 60,
-    OPTION_WAIT_CHARGER_UPDATE: 5,
-    OPTION_SUNRISE_ELEVATION_START_TRIGGER: 3,
-    OPTION_SUNSET_ELEVATION_END_TRIGGER: 6,
+    OPTION_CHARGER_MIN_WORKABLE_CURRENT: "number.solarcharger_global_defaults_charger_min_workable_current",
+    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: "number.solarcharger_global_defaults_charger_power_allocation_weight",
+    OPTION_SUNRISE_ELEVATION_START_TRIGGER: "number.solarcharger_global_defaults_sunrise_elevation_start_trigger",
+    OPTION_SUNSET_ELEVATION_END_TRIGGER: "number.solarcharger_global_defaults_sunset_elevation_end_trigger",
+    OPTION_WAIT_NET_POWER_UPDATE: "number.solarcharger_global_defaults_wait_net_power_update",
+    OPTION_WAIT_CHARGEE_WAKEUP: "number.solarcharger_global_defaults_wait_chargee_wakeup",
+    OPTION_WAIT_CHARGEE_UPDATE_HA: "number.solarcharger_global_defaults_wait_chargee_update_ha",
+    OPTION_WAIT_CHARGEE_LIMIT_CHANGE: "number.solarcharger_global_defaults_wait_chargee_limit_change",
+    OPTION_WAIT_CHARGER_ON: "number.solarcharger_global_defaults_wait_charger_on",
+    OPTION_WAIT_CHARGER_OFF: "number.solarcharger_global_defaults_wait_charger_off",
+    OPTION_WAIT_CHARGER_AMP_CHANGE: "number.solarcharger_global_defaults_wait_charger_amp_change",
 }
 
 # API entities

@@ -67,14 +67,14 @@ from .const import (
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_DEFAULT_VALUES,
-    OPTION_GLOBAL_DEFAULTS,
+    OPTION_GLOBAL_DEFAULTS_ID,
+    OPTION_GLOBAL_DEFAULTS_LIST,
     OPTION_ID,
     OPTION_NAME,
     OPTION_SELECT_CHARGER,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
-    OPTION_WAIT_CHARGER_UPDATE,
+    OPTION_WAIT_CHARGEE_UPDATE_HA,
     OPTION_WAIT_NET_POWER_UPDATE,
     SUBENTRY_DEVICE_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
@@ -138,7 +138,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     @staticmethod
     def get_option_value(config_entry: ConfigEntry, key: str) -> Any:
         """Get the value of an option from the config entry."""
-        return config_entry.options.get(key, OPTION_DEFAULT_VALUES.get(key))
+        return config_entry.options.get(key, OPTION_GLOBAL_DEFAULTS_LIST.get(key))
 
     # ----------------------------------------------------------------------------
     # def _get_subentry_id(self, config_name: str) -> str | None:
@@ -320,7 +320,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_MAX_CURRENT, use_default
-            ): ELECTRIC_CURRENT_SELECTOR,
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_MAX_SPEED, use_default
             ): NUMBER_ENTITY_SELECTOR,
@@ -329,23 +329,62 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT, use_default
-            ): ELECTRIC_CURRENT_SELECTOR,
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
-            ): ALLOCATION_WEIGHT_SELECTOR,
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_WAIT_NET_POWER_UPDATE, use_default
-            ): WAIT_TIME_SELECTOR,
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_WAIT_CHARGER_UPDATE, use_default
-            ): WAIT_TIME_SELECTOR,
+                subentry, OPTION_WAIT_CHARGEE_UPDATE_HA, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
-            ): SUN_ELEVATION_SELECTOR,
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
-            ): SUN_ELEVATION_SELECTOR,
+            ): NUMBER_ENTITY_SELECTOR,
         }
+
+    # ----------------------------------------------------------------------------
+    # def _charger_general_options_schema(
+    #     self, subentry: ConfigSubentry, use_default: bool
+    # ) -> dict[Any, Any]:
+    #     """Charger general options."""
+
+    #     return {
+    #         self._optional(
+    #             subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE, use_default
+    #         ): NUMBER_ENTITY_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_CHARGER_MAX_CURRENT, use_default
+    #         ): ELECTRIC_CURRENT_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_CHARGER_MAX_SPEED, use_default
+    #         ): NUMBER_ENTITY_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_CHARGER_MIN_CURRENT, use_default
+    #         ): NUMBER_ENTITY_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT, use_default
+    #         ): ELECTRIC_CURRENT_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
+    #         ): ALLOCATION_WEIGHT_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_WAIT_NET_POWER_UPDATE, use_default
+    #         ): WAIT_TIME_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_WAIT_CHARGEE_UPDATE_HA, use_default
+    #         ): WAIT_TIME_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
+    #         ): SUN_ELEVATION_SELECTOR,
+    #         self._optional(
+    #             subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
+    #         ): SUN_ELEVATION_SELECTOR,
+    #     }
 
     # ----------------------------------------------------------------------------
     # def _get_optional_entity_selector(
@@ -563,7 +602,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 reason="subentry_not_found",
             )
 
-        if subentry.unique_id == OPTION_GLOBAL_DEFAULTS:
+        if subentry.unique_id == OPTION_GLOBAL_DEFAULTS_ID:
             general_schema = self._charger_general_options_schema(
                 subentry, use_default=True
             )
@@ -607,7 +646,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 reason="empty_charger_device_list",
             )
 
-        device_list = [OPTION_GLOBAL_DEFAULTS]
+        device_list = [OPTION_GLOBAL_DEFAULTS_ID]
         for subentry in self.config_entry.subentries.values():
             if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
                 if subentry.unique_id:

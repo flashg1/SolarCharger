@@ -118,6 +118,12 @@
             },
             "charger_min_current": {
                 "name": "Charger minimum current"
+            },
+            "charger_min_workable_current": {
+                "name": "Charger minimum workable current"
+            },
+            "charger_power_allocation_weight": {
+                "name": "Charger power allocation weight"
             }
         }
     }

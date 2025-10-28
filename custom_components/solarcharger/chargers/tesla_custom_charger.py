@@ -247,8 +247,8 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
 
         if state is None:
             _LOGGER.warning(
-                "State of charge not available for Tesla Custom charger %s. "
-                "Make sure the required entity (%s) is enabled and available",
+                "Cannot get number for for Tesla Custom charger %s. "
+                "Please check entity '%s'.",
                 self.device_entry.id,
                 entity,
             )
@@ -268,38 +268,39 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
             return None
 
     # ----------------------------------------------------------------------------
-    # def _get_state(self, entity: str) -> Any | None:
-    #     """Get connect state of Tesla Custom charger."""
-    #     status: Any | None = None
+    def _get_state(self, entity: str) -> Any | None:
+        """Get connect state of Tesla Custom charger."""
+        status: Any | None = None
 
-    #     try:
-    #         status = self._get_entity_state_by_unique_id(entity)
-    #     except ValueError as e:
-    #         _LOGGER.debug(
-    #             "Failed to get state for Tesla Custom charger entity '%s': '%s'",
-    #             entity,
-    #             e,
-    #         )
+        try:
+            # status = self._get_entity_state_by_unique_id(entity)
+            status = self._get_entity_state(entity)
+        except ValueError as e:
+            _LOGGER.debug(
+                "Failed to get state for Tesla Custom charger entity '%s': '%s'",
+                entity,
+                e,
+            )
 
-    #     return status
+        return status
 
     # ----------------------------------------------------------------------------
-    def _get_state(self, entity_id: str) -> float | None:
-        entity = self.hass.states.get(entity_id)
-        if entity is None:
-            _LOGGER.debug("State not found for entity %s", entity_id)
-            return None
-        state_value = entity.state
-        try:
-            return float(state_value)
-        except ValueError as ex:
-            _LOGGER.exception(
-                "Failed to parse state %s for entity %s: %s",
-                state_value,
-                entity_id,
-                ex,  # noqa: TRY401
-            )
-            return None
+    # def _get_state(self, entity_id: str) -> float | None:
+    #     entity = self.hass.states.get(entity_id)
+    #     if entity is None:
+    #         _LOGGER.debug("State not found for entity %s", entity_id)
+    #         return None
+    #     state_value = entity.state
+    #     try:
+    #         return float(state_value)
+    #     except ValueError as ex:
+    #         _LOGGER.exception(
+    #             "Failed to parse state %s for entity %s: %s",
+    #             state_value,
+    #             entity_id,
+    #             ex,  # noqa: TRY401
+    #         )
+    #         return None
 
     # ----------------------------------------------------------------------------
     async def async_set_integer(self, entity: str, num: int) -> None:
