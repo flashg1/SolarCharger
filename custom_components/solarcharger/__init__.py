@@ -2,14 +2,19 @@
 
 import logging
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .chargers import Charger, charger_factory
 from .chargers.controller import ChargeController
-from .const import DOMAIN, SUBENTRY_CHARGER_DEVICE, SUBENTRY_TYPE_CHARGER
+from .const import (
+    DOMAIN,
+    SUBENTRY_CHARGER_DEVICE,
+    SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_TYPE_DEFAULTS,
+)
 from .coordinator import SolarChargerCoordinator
 from .models import ChargeControl
 
@@ -36,6 +41,83 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 # ----------------------------------------------------------------------------
+async def async_init_charger(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    subentry: ConfigSubentry,
+    charge_controls: dict[str, ChargeControl],
+):
+    """Initialize a charger for a given subentry."""
+
+    # Initialize charger
+    charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE)
+    if not charger_device_id or not subentry.unique_id:
+        _LOGGER.error(
+            "No charger device ID found in subentry data: %s: %s",
+            subentry.unique_id,
+            subentry.subentry_id,
+        )
+        return
+
+    charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
+
+    # Initialize ChargeController
+    controller: ChargeController = ChargeController(hass, entry, subentry, charger)
+
+    # Store in charge_controls dictionary
+    charge_controls[subentry.subentry_id] = ChargeControl(
+        subentry_id=subentry.subentry_id,
+        device_name=subentry.unique_id,
+        charger=charger,
+        controller=controller,
+    )
+
+    _LOGGER.info(
+        "Set up subentry charge control: class=%s, unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
+        charger.__class__.__name__,
+        subentry.unique_id,
+        subentry.subentry_id,
+        subentry.subentry_type,
+        subentry.title,
+    )
+
+
+# ----------------------------------------------------------------------------
+async def async_init_global_defaults(
+    entry: ConfigEntry,
+    subentry: ConfigSubentry,
+    charge_controls: dict[str, ChargeControl],
+):
+    """Initialize global defaults subentry."""
+
+    # Initialize charger
+    charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE)
+    if not charger_device_id or not subentry.unique_id:
+        _LOGGER.error(
+            "No global defaults ID found in subentry data: %s: %s",
+            subentry.unique_id,
+            subentry.subentry_id,
+        )
+        return
+
+    # Store in charge_controls dictionary
+    charge_controls[subentry.subentry_id] = ChargeControl(
+        subentry_id=subentry.subentry_id,
+        device_name=subentry.unique_id,
+        charger=None,
+        controller=None,
+    )
+
+    _LOGGER.info(
+        "Set up subentry global defaults: unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
+        subentry.unique_id,
+        subentry.subentry_id,
+        subentry.subentry_type,
+        subentry.title,
+    )
+
+
+# ----------------------------------------------------------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Solar Charger from a config entry."""
 
@@ -53,38 +135,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for subentry in entry.subentries.values():
         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
             # Initialize charger
-            charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE)
-            if not charger_device_id or not subentry.unique_id:
-                _LOGGER.error(
-                    "No charger device ID found in subentry data: %s: %s",
-                    subentry.unique_id,
-                    subentry.subentry_id,
-                )
-                continue
-            charger: Charger = await charger_factory(
-                hass, entry, subentry, charger_device_id
+            await async_init_charger(
+                hass,
+                entry,
+                subentry,
+                charge_controls,
             )
-
-            # Initialize ChargeController
-            controller: ChargeController = ChargeController(
-                hass, entry, subentry, charger
-            )
-
-            # Store in charge_controls dictionary
-            charge_controls[subentry.subentry_id] = ChargeControl(
-                subentry_id=subentry.subentry_id,
-                device_name=subentry.unique_id,
-                charger=charger,
-                controller=controller,
-            )
-
-            _LOGGER.info(
-                "Set up subentry charge control: class=%s, unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
-                charger.__class__.__name__,
-                subentry.unique_id,
-                subentry.subentry_id,
-                subentry.subentry_type,
-                subentry.title,
+        elif subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
+            # Initialize global defaults
+            await async_init_global_defaults(
+                entry,
+                subentry,
+                charge_controls,
             )
 
     await coordinator.async_setup()

@@ -96,6 +96,8 @@ SUBENTRY_CHARGER_DEVICE = "charger_device"
 SUBENTRY_DEVICE_DOMAIN = "device_domain"
 SUBENTRY_DEVICE_NAME = "device_name"
 
+SUBENTRY_TYPE_DEFAULTS = "defaults"
+
 #######################################################
 # Option constants
 #######################################################
@@ -158,10 +160,10 @@ OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 #######################################################
 # Default values
 OPTION_DEFAULT_VALUES: dict[str, Any] = {
-    OPTION_CHARGER_EFFECTIVE_VOLTAGE: None,
+    OPTION_CHARGER_EFFECTIVE_VOLTAGE: "number.solarcharger_global_defaults_charger_effective_voltage",
     OPTION_CHARGER_MAX_CURRENT: 15,
-    OPTION_CHARGER_MAX_SPEED: 6.1448,
-    OPTION_CHARGER_MIN_CURRENT: 1,
+    OPTION_CHARGER_MAX_SPEED: "number.solarcharger_global_defaults_charger_max_speed",
+    OPTION_CHARGER_MIN_CURRENT: "number.solarcharger_global_defaults_charger_min_current",
     OPTION_CHARGER_MIN_WORKABLE_CURRENT: 0,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: 1,
     OPTION_WAIT_NET_POWER_UPDATE: 60,

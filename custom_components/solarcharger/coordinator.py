@@ -45,6 +45,7 @@ from .const import (
     EVENT_ATTR_NEW_LIMITS,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_DEFAULT_VALUES,
+    OPTION_GLOBAL_DEFAULTS,
     OPTION_NET_POWER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
@@ -151,7 +152,8 @@ class SolarChargerCoordinator:
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
         for control in self.charge_controls.values():
-            await control.charger.async_setup()
+            if control.charger is not None:
+                await control.charger.async_setup()
 
         self._unsub.append(
             async_track_time_interval(
@@ -179,7 +181,8 @@ class SolarChargerCoordinator:
     async def async_unload(self) -> None:
         """Unload the coordinator and its managed components."""
         for control in self.charge_controls.values():
-            await control.charger.async_unload()
+            if control.charger is not None:
+                await control.charger.async_unload()
 
         for unsub_method in self._unsub:
             unsub_method()
@@ -450,10 +453,18 @@ class SolarChargerCoordinator:
 
     def get_effective_voltage(self) -> float | None:
         """Get charger effective voltage."""
-        return self._get_entity_number_value(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
+        val: float | None = None
+
+        global_defaults = self.config_entry.options.get(OPTION_GLOBAL_DEFAULTS)
+        if global_defaults is not None:
+            entity_id = global_defaults.get(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
+            if entity_id is not None:
+                val = self._get_state(entity_id)
+        return val
 
     def _get_entity_number_value(self, key: str) -> float | None:
         """Get the value of an option from the config entry."""
+
         entity_id = self.config_entry.options.get(key, None)
         if entity_id is None:
             # Try to get default value.

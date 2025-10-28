@@ -32,12 +32,7 @@ from homeassistant.helpers.selector import (
 
 from .config_options_flow import ConfigOptionsFlowHandler
 from .config_subentry_flow import AddChargerSubEntryFlowHandler
-from .const import (
-    CHARGER_DOMAIN_OCPP,
-    CHARGER_DOMAIN_TESLA_CUSTOM,
-    DOMAIN,
-    SUBENTRY_TYPE_CHARGER,
-)
+from .const import DOMAIN, SUBENTRY_TYPE_CHARGER, SUBENTRY_TYPE_DEFAULTS
 from .exceptions.validation_exception import ValidationExceptionError
 
 # ----------------------------------------------------------------------------
@@ -134,7 +129,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         cls, config_entry: ConfigEntry
     ) -> dict[str, type[ConfigSubentryFlow]]:
         """Return subentries supported by this integration."""
-        return {SUBENTRY_TYPE_CHARGER: AddChargerSubEntryFlowHandler}
+        return {
+            SUBENTRY_TYPE_CHARGER: AddChargerSubEntryFlowHandler,
+        }
 
     # ----------------------------------------------------------------------------
     async def async_step_user(

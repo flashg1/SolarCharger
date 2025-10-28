@@ -207,20 +207,20 @@ ALLOCATION_WEIGHT_SELECTOR = NumberSelector(
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-GLOBAL_DEFAULTS_ID: str = uuid4().hex
-GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
-    title="Global defaults",
-    unique_id=OPTION_GLOBAL_DEFAULTS,
-    subentry_id=GLOBAL_DEFAULTS_ID,
-    subentry_type="global_defaults",
-    data=MappingProxyType(  # make data immutable
-        {
-            SUBENTRY_DEVICE_DOMAIN: "N/A",  # Integration domain
-            SUBENTRY_DEVICE_NAME: "N/A",  # Integration-specific device name
-            SUBENTRY_CHARGER_DEVICE: "N/A",  # Integration-specific device ID
-        }
-    ),
-)
+# GLOBAL_DEFAULTS_ID: str = uuid4().hex
+# GLOBAL_DEFAULTS_SUBENTRY: ConfigSubentry = ConfigSubentry(
+#     title="Global defaults",
+#     unique_id=OPTION_GLOBAL_DEFAULTS,
+#     subentry_id=GLOBAL_DEFAULTS_ID,
+#     subentry_type="global_defaults",
+#     data=MappingProxyType(  # make data immutable
+#         {
+#             SUBENTRY_DEVICE_DOMAIN: "N/A",  # Integration domain
+#             SUBENTRY_DEVICE_NAME: "N/A",  # Integration-specific device name
+#             SUBENTRY_CHARGER_DEVICE: "N/A",  # Integration-specific device ID
+#         }
+#     ),
+# )
 
 
 # ----------------------------------------------------------------------------
@@ -287,31 +287,59 @@ def get_entity_name(
 
 
 # ----------------------------------------------------------------------------
+# def get_subentry_id(config_entry: ConfigEntry, config_name: str) -> str | None:
+#     """Get subentry ID for device name."""
+#     subentry_id: str | None = None
+
+#     if config_name == OPTION_GLOBAL_DEFAULTS:
+#         return GLOBAL_DEFAULTS_ID
+
+#     if config_entry.subentries:
+#         for subentry in config_entry.subentries.values():
+#             if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+#                 if subentry.unique_id == config_name:
+#                     subentry_id = subentry.subentry_id
+#                     break
+
+#     return subentry_id
+
+
+# ----------------------------------------------------------------------------
 def get_subentry_id(config_entry: ConfigEntry, config_name: str) -> str | None:
     """Get subentry ID for device name."""
     subentry_id: str | None = None
 
-    if config_name == OPTION_GLOBAL_DEFAULTS:
-        return GLOBAL_DEFAULTS_ID
-
     if config_entry.subentries:
         for subentry in config_entry.subentries.values():
-            if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-                if subentry.unique_id == config_name:
-                    subentry_id = subentry.subentry_id
-                    break
+            if subentry.unique_id == config_name:
+                subentry_id = subentry.subentry_id
+                break
 
     return subentry_id
 
 
 # ----------------------------------------------------------------------------
+def get_subentry(config_entry: ConfigEntry, config_name: str) -> ConfigSubentry | None:
+    """Get subentry ID for device name."""
+    found_subentry: ConfigSubentry | None = None
+
+    if config_entry.subentries:
+        for subentry in config_entry.subentries.values():
+            if subentry.unique_id == config_name:
+                found_subentry = subentry
+                break
+
+    return found_subentry
+
+
+# ----------------------------------------------------------------------------
 def get_saved_local_option_value(
-    config_entry: ConfigEntry, subentry: ConfigSubentry, config_item: str
+    config_entry: ConfigEntry, subentry: ConfigSubentry | None, config_item: str
 ) -> Any | None:
     """Get saved option value if exist."""
     saved_val = None
 
-    if subentry.unique_id:
+    if subentry and subentry.unique_id:
         device_options = config_entry.options.get(subentry.unique_id)
         if device_options:
             saved_val = device_options.get(config_item)
@@ -325,8 +353,9 @@ def get_saved_global_option_value(
 ) -> Any | None:
     """Get saved option value if exist."""
 
+    global_defaults_subentry = get_subentry(config_entry, OPTION_GLOBAL_DEFAULTS)
     return get_saved_local_option_value(
-        config_entry, GLOBAL_DEFAULTS_SUBENTRY, config_item
+        config_entry, global_defaults_subentry, config_item
     )
 
 
@@ -352,9 +381,9 @@ def get_saved_option_value(
             final_val = saved_global_val
 
         # Get default constant value
-        if not saved_global_val:
-            default_constant_val = OPTION_DEFAULT_VALUES.get(config_item)
-            final_val = default_constant_val
+        # if not saved_global_val:
+        #     default_constant_val = OPTION_DEFAULT_VALUES.get(config_item)
+        #     final_val = default_constant_val
 
     _LOGGER.debug(
         "Required option=%s, default=%s, local=%s, global=%s, constant=%s",
@@ -644,10 +673,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         """Charger general options."""
 
         return {
-            self._required(
+            self._optional(
                 subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            self._required(
+            self._optional(
                 subentry, OPTION_CHARGER_MAX_CURRENT, use_default
             ): ELECTRIC_CURRENT_SELECTOR,
             self._optional(
@@ -851,12 +880,16 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         combine_schema = {}
 
         config_name = self._config_name
-        unique_id = self._config_name
         subentry_id = get_subentry_id(self.config_entry, config_name)
+        if not subentry_id:
+            errors["subentry_id_not_found"] = f"Subentry ID not found for {config_name}"
+            return self.async_abort(
+                reason="subentry_id_not_found",
+            )
 
         # Process options
         if user_input is not None:
-            if unique_id:
+            if config_name:
                 # validate input
                 try:
                     # input_data = await validate_init_input(
@@ -869,31 +902,31 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     errors["base"] = "invalid_number_format"
 
                 if not errors and input_data is not None:
-                    device_options = options_config.get(unique_id)
+                    device_options = options_config.get(config_name)
                     if not device_options:
                         device_options = {}
-                        device_options[OPTION_ID] = unique_id
                         device_options[OPTION_NAME] = config_name
-                        options_config[unique_id] = device_options
+                        device_options[OPTION_ID] = subentry_id
+                        options_config[config_name] = device_options
 
                     device_options.update(input_data)
 
                     return self.async_create_entry(data=options_config)
 
         # Prompt user for options
-        if config_name == OPTION_GLOBAL_DEFAULTS:
+        subentry = self.config_entry.subentries.get(subentry_id)
+        if not subentry:
+            errors["subentry_not_found"] = f"Subentry not found for {config_name}"
+            return self.async_abort(
+                reason="subentry_not_found",
+            )
+
+        if subentry.unique_id == OPTION_GLOBAL_DEFAULTS:
             general_schema = self._charger_general_options_schema(
-                GLOBAL_DEFAULTS_SUBENTRY, use_default=True
+                subentry, use_default=True
             )
             combine_schema = {**general_schema}
-        elif subentry_id:
-            subentry = self.config_entry.subentries.get(subentry_id)
-            if not subentry:
-                errors["subentry_not_found"] = f"Subentry not found for {config_name}"
-                return self.async_abort(
-                    reason="subentry_not_found",
-                )
-
+        else:
             general_schema = self._charger_general_options_schema(
                 subentry, use_default=False
             )

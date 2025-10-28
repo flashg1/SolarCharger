@@ -37,10 +37,13 @@ from .const import (
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
     OPTION_CHARGER_DEVICE_NAME,
+    OPTION_DEFAULT_VALUES,
+    OPTION_GLOBAL_DEFAULTS,
     SUBENTRY_CHARGER_DEVICE,
     SUBENTRY_DEVICE_DOMAIN,
     SUBENTRY_DEVICE_NAME,
     SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_TYPE_DEFAULTS,
 )
 from .exceptions.validation_exception import ValidationExceptionError
 
@@ -149,6 +152,34 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         )
 
     # ----------------------------------------------------------------------------
+    async def async_init_global_defaults(self, config_entry: ConfigEntry) -> None:
+        """Initialize global defaults subentry if none exist."""
+
+        if config_entry.subentries.__len__() == 0:
+            self.hass.config_entries.async_add_subentry(
+                config_entry,
+                ConfigSubentry(
+                    subentry_type=SUBENTRY_TYPE_DEFAULTS,
+                    title="Global defaults",
+                    unique_id=OPTION_GLOBAL_DEFAULTS,
+                    data=MappingProxyType(  # make data immutable
+                        {
+                            SUBENTRY_DEVICE_DOMAIN: "N/A",  # Integration domain
+                            SUBENTRY_DEVICE_NAME: "N/A",  # Integration-specific device name
+                            SUBENTRY_CHARGER_DEVICE: "N/A",  # Integration-specific device ID
+                        }
+                    ),
+                ),
+            )
+
+            self.hass.config_entries.async_update_entry(
+                config_entry,
+                options=config_entry.options
+                | {
+                    OPTION_GLOBAL_DEFAULTS: OPTION_DEFAULT_VALUES,
+                },
+            )
+
     # ----------------------------------------------------------------------------
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -218,6 +249,8 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                         f"Charger config entry domain, name, or ID is missing: "
                         f"{charger_config_entry.domain=}, {charger.name=}, {charger_id=}"
                     )
+
+                await self.async_init_global_defaults(config_entry)
 
                 self.hass.config_entries.async_add_subentry(
                     config_entry,
