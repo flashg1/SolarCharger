@@ -24,22 +24,18 @@ from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 from homeassistant.util import slugify
 
 from .config_option_utils import (
-    ALLOCATION_WEIGHT_SELECTOR,
     BUTTON_ENTITY_SELECTOR,
     BUTTON_ENTITY_SELECTOR_READ_ONLY,
-    ELECTRIC_CURRENT_SELECTOR,
     LOCATION_ENTITY_SELECTOR,
     LOCATION_ENTITY_SELECTOR_READ_ONLY,
     NUMBER_ENTITY_SELECTOR,
     NUMBER_ENTITY_SELECTOR_READ_ONLY,
     SENSOR_ENTITY_SELECTOR,
     SENSOR_ENTITY_SELECTOR_READ_ONLY,
-    SUN_ELEVATION_SELECTOR,
     SWITCH_ENTITY_SELECTOR,
     SWITCH_ENTITY_SELECTOR_READ_ONLY,
     TEXT_SELECTOR,
     TEXT_SELECTOR_READ_ONLY,
-    WAIT_TIME_SELECTOR,
     entity_selector,
     get_saved_option_value,
     get_subentry_id,
@@ -74,7 +70,12 @@ from .const import (
     OPTION_SELECT_SETTINGS,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
+    OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
     OPTION_WAIT_CHARGEE_UPDATE_HA,
+    OPTION_WAIT_CHARGEE_WAKEUP,
+    OPTION_WAIT_CHARGER_AMP_CHANGE,
+    OPTION_WAIT_CHARGER_OFF,
+    OPTION_WAIT_CHARGER_ON,
     OPTION_WAIT_NET_POWER_UPDATE,
     SUBENTRY_DEVICE_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
@@ -205,16 +206,31 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
+                subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
                 subentry, OPTION_WAIT_NET_POWER_UPDATE, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_WAIT_CHARGEE_WAKEUP, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_WAIT_CHARGEE_UPDATE_HA, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
+                subentry, OPTION_WAIT_CHARGEE_LIMIT_CHANGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
+                subentry, OPTION_WAIT_CHARGER_ON, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_WAIT_CHARGER_OFF, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_WAIT_CHARGER_AMP_CHANGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
         }
 
@@ -425,12 +441,15 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             entities_schema = self._charger_control_entities_schema(
                 subentry, use_default=True
             )
-            combine_schema = {**general_schema, **entities_schema}
-            # charger_schema = {
-            #     vol.Required(subentry.unique_id): section(
-            #         vol.Schema(combine_schema), {"collapsed": False}
+            # combine_schema = {
+            #     vol.Required("General config"): section(
+            #         vol.Schema(general_schema), {"collapsed": True}
+            #     ),
+            #     vol.Required("Device entities"): section(
+            #         vol.Schema(entities_schema), {"collapsed": True}
             #     ),
             # }
+            combine_schema = {**general_schema, **entities_schema}
 
         return self.async_show_form(
             step_id="config_device",
