@@ -1,6 +1,7 @@
 """Base Charger Class."""
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
@@ -45,6 +46,10 @@ class Charger(ABC):
     @abstractmethod
     async def set_charge_current(self, charge_current: float) -> None:
         """Set the charger limit in amps."""
+
+    @abstractmethod
+    def get_val(self, key: str) -> float | None:
+        """Get value for entity key."""
 
     @abstractmethod
     def get_charge_current(self) -> float | None:

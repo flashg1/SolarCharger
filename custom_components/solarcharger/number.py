@@ -1,12 +1,10 @@
 """SolarCharger number platform."""
 
 import logging
-from typing import Any
 
 from homeassistant import config_entries, core
 from homeassistant.components.number import (
     NumberDeviceClass,
-    NumberEntity,
     NumberEntityDescription,
     NumberExtraStoredData,
     NumberMode,
@@ -14,23 +12,19 @@ from homeassistant.components.number import (
 )
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.const import (
+    DEGREE,
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfTime,
 )
-from homeassistant.helpers import entity
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import slugify
 
 from .const import (
     DOMAIN,
-    ENTITY_KEY_CHARGEE_CHARGE_LIMIT,
-    ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE,
-    ENTITY_KEY_CHARGER_MAX_SPEED,
-    ENTITY_KEY_CHARGER_MIN_CURRENT,
     NUMBER,
-    OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_MAX_SPEED,
@@ -56,10 +50,178 @@ from .entity import SolarChargerEntity
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
+# ----------------------------------------------------------------------------
+CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
+    (
+        OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+        230,
+        NumberEntityDescription(
+            key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+            # translation_key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+            # entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.VOLTAGE,
+            native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+            native_min_value=100.0,
+            native_max_value=700.0,
+            # native_step=1.0,
+            # mode=NumberMode.BOX,
+            # entity_registry_enabled_default=True,
+        ),
+    ),
+    (
+        OPTION_CHARGER_MAX_CURRENT,
+        15,
+        NumberEntityDescription(
+            key=OPTION_CHARGER_MAX_CURRENT,
+            device_class=NumberDeviceClass.CURRENT,
+            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGER_MAX_SPEED,
+        6.1448,
+        NumberEntityDescription(
+            key=OPTION_CHARGER_MAX_SPEED,
+            native_unit_of_measurement="%/hr",
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGER_MIN_CURRENT,
+        1,
+        NumberEntityDescription(
+            key=OPTION_CHARGER_MIN_CURRENT,
+            device_class=NumberDeviceClass.CURRENT,
+            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGER_MIN_WORKABLE_CURRENT,
+        0,
+        NumberEntityDescription(
+            key=OPTION_CHARGER_MIN_WORKABLE_CURRENT,
+            device_class=NumberDeviceClass.CURRENT,
+            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+        1,
+        NumberEntityDescription(
+            key=OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+        3,
+        NumberEntityDescription(
+            key=OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+            native_unit_of_measurement=DEGREE,
+            native_min_value=-90.0,
+            native_max_value=+90.0,
+        ),
+    ),
+    (
+        OPTION_SUNSET_ELEVATION_END_TRIGGER,
+        6,
+        NumberEntityDescription(
+            key=OPTION_SUNSET_ELEVATION_END_TRIGGER,
+            native_unit_of_measurement=DEGREE,
+            native_min_value=-90.0,
+            native_max_value=+90.0,
+        ),
+    ),
+    (
+        OPTION_WAIT_NET_POWER_UPDATE,
+        60,
+        NumberEntityDescription(
+            key=OPTION_WAIT_NET_POWER_UPDATE,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
+    (
+        OPTION_WAIT_CHARGEE_WAKEUP,
+        40,
+        NumberEntityDescription(
+            key=OPTION_WAIT_CHARGEE_WAKEUP,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
+    (
+        OPTION_WAIT_CHARGEE_UPDATE_HA,
+        5,
+        NumberEntityDescription(
+            key=OPTION_WAIT_CHARGEE_UPDATE_HA,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
+    (
+        OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
+        5,
+        NumberEntityDescription(
+            key=OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
+    (
+        OPTION_WAIT_CHARGER_ON,
+        11,
+        NumberEntityDescription(
+            key=OPTION_WAIT_CHARGER_ON,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
+    (
+        OPTION_WAIT_CHARGER_OFF,
+        5,
+        NumberEntityDescription(
+            key=OPTION_WAIT_CHARGER_OFF,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
+    (
+        OPTION_WAIT_CHARGER_AMP_CHANGE,
+        1,
+        NumberEntityDescription(
+            key=OPTION_WAIT_CHARGER_AMP_CHANGE,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
+)
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-# class SolarChargerNumberEntity(SolarChargerEntity, NumberEntity):
 class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
     """SolarCharger number entity."""
 
@@ -147,148 +309,6 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-# class SolarChargerNumberChargerEffectiveVoltage(SolarChargerNumberEntity):
-#     """Representation of charger effective voltage number."""
-
-#     _entity_key = ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE
-#     _attr_entity_category = EntityCategory.CONFIG
-#     _attr_native_min_value = 100.0
-#     _attr_native_max_value = 700.0
-#     _attr_native_step = 1.0
-#     _attr_native_unit_of_measurement = "V"
-#     _attr_mode = NumberMode.BOX
-#     # _attr_mode = NumberMode.AUTO
-
-#     def __init__(self, subentry) -> None:
-#         """Initialise number."""
-#         super().__init__(subentry)
-#         if self.value is None:
-#             self._attr_native_value = 230.0
-#             self.update_ha_state()
-
-#     async def async_set_native_value(self, value: float) -> None:
-#         """Set new value."""
-#         await super().async_set_native_value(value)
-#         # self.coordinator.max_charging_current = value
-#         # await self.coordinator.update_configuration()
-
-
-# # ----------------------------------------------------------------------------
-# # ----------------------------------------------------------------------------
-# class SolarChargerNumberChargerMinCurrent(SolarChargerNumberEntity):
-#     """Representation of charger min current number."""
-
-#     _entity_key = ENTITY_KEY_CHARGER_MIN_CURRENT
-#     _attr_entity_category = EntityCategory.CONFIG
-#     _attr_native_min_value = 0.0
-#     _attr_native_max_value = 100.0
-#     _attr_native_step = 1.0
-#     _attr_native_unit_of_measurement = "A"
-#     _attr_mode = NumberMode.BOX
-
-#     def __init__(self, subentry) -> None:
-#         """Initialise number."""
-#         super().__init__(subentry)
-#         if self.value is None:
-#             self._attr_native_value = 1.0
-#             self.update_ha_state()
-
-#     async def async_set_native_value(self, value: float) -> None:
-#         """Set new value."""
-#         await super().async_set_native_value(value)
-
-
-# # ----------------------------------------------------------------------------
-# # ----------------------------------------------------------------------------
-# class SolarChargerNumberChargerMaxSpeed(SolarChargerNumberEntity):
-#     """Representation of charger max speed."""
-
-#     _entity_key = ENTITY_KEY_CHARGER_MAX_SPEED
-#     _attr_entity_category = EntityCategory.CONFIG
-#     _attr_native_min_value = 0.0
-#     _attr_native_max_value = 100.0
-#     _attr_native_step = 1.0
-#     _attr_native_unit_of_measurement = "%/hr"
-#     _attr_mode = NumberMode.BOX
-
-#     def __init__(self, subentry) -> None:
-#         """Initialise number."""
-#         super().__init__(subentry)
-#         if self.value is None:
-#             self._attr_native_value = 6.1448
-#             self.update_ha_state()
-
-#     async def async_set_native_value(self, value: float) -> None:
-#         """Set new value."""
-#         await super().async_set_native_value(value)
-
-
-# # ----------------------------------------------------------------------------
-# # ----------------------------------------------------------------------------
-# class SolarChargerNumberChargeeChargeLimit(SolarChargerNumberEntity):
-#     """Representation of a Tesla car charge limit number."""
-
-#     _entity_key = ENTITY_KEY_CHARGEE_CHARGE_LIMIT
-#     _attr_entity_category = EntityCategory.CONFIG
-#     _attr_native_min_value = 0.0
-#     _attr_native_max_value = 100.0
-#     _attr_native_step = 1.0
-#     _attr_native_unit_of_measurement = "%"
-#     _attr_mode = NumberMode.BOX
-
-#     def __init__(self, subentry) -> None:
-#         """Initialise number."""
-#         super().__init__(subentry)
-#         if self.value is None:
-#             self._attr_native_value = 60.0
-#             self.update_ha_state()
-
-#     async def async_set_native_value(self, value: float) -> None:
-#         """Set new value."""
-#         await super().async_set_native_value(value)
-
-
-# # ----------------------------------------------------------------------------
-# # ----------------------------------------------------------------------------
-# def async_init_charger_numbers(
-#     coordinator: SolarChargerCoordinator, subentry: ConfigSubentry
-# ) -> dict[str, SolarChargerNumberEntity]:
-#     """Initialize charger numbers."""
-
-#     numbers: dict[str, SolarChargerNumberEntity] = {
-#         ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE: SolarChargerNumberChargerEffectiveVoltage(
-#             subentry
-#         ),
-#         ENTITY_KEY_CHARGER_MIN_CURRENT: SolarChargerNumberChargerMinCurrent(subentry),
-#         ENTITY_KEY_CHARGER_MAX_SPEED: SolarChargerNumberChargerMaxSpeed(subentry),
-#         ENTITY_KEY_CHARGEE_CHARGE_LIMIT: SolarChargerNumberChargeeChargeLimit(subentry),
-#     }
-
-#     coordinator.charge_controls[subentry.subentry_id].numbers = numbers
-
-#     return numbers
-
-
-# # ----------------------------------------------------------------------------
-# def async_init_global_default_numbers(
-#     coordinator: SolarChargerCoordinator, subentry: ConfigSubentry
-# ) -> dict[str, SolarChargerNumberEntity]:
-#     """Initialize charger numbers."""
-
-#     numbers: dict[str, SolarChargerNumberEntity] = {
-#         ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE: SolarChargerNumberChargerEffectiveVoltage(
-#             subentry
-#         ),
-#         ENTITY_KEY_CHARGER_MIN_CURRENT: SolarChargerNumberChargerMinCurrent(subentry),
-#         ENTITY_KEY_CHARGER_MAX_SPEED: SolarChargerNumberChargerMaxSpeed(subentry),
-#     }
-
-#     coordinator.charge_controls[subentry.subentry_id].numbers = numbers
-
-#     return numbers
-
-
-# ----------------------------------------------------------------------------
 async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
@@ -317,121 +337,3 @@ async def async_setup_entry(
             update_before_add=False,
             config_subentry_id=subentry.subentry_id,
         )
-
-    # sensors = [
-    #     SensorCls(coordinator, entity_description)
-    #     for SensorCls, entity_description in SENSORS
-    # ]
-    # async_add_entities(sensors, update_before_add=False)
-
-
-# XX: dict[str, str] = {
-#     OPTION_CHARGER_EFFECTIVE_VOLTAGE: "number.solarcharger_global_defaults_charger_effective_voltage",
-#     OPTION_CHARGER_MAX_CURRENT: "number.solarcharger_global_defaults_charger_max_current",
-#     OPTION_CHARGER_MAX_SPEED: "number.solarcharger_global_defaults_charger_max_speed",
-#     OPTION_CHARGER_MIN_CURRENT: "number.solarcharger_global_defaults_charger_min_current",
-#     OPTION_CHARGER_MIN_WORKABLE_CURRENT: "number.solarcharger_global_defaults_charger_min_workable_current",
-#     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: "number.solarcharger_global_defaults_charger_power_allocation_weight",
-#     OPTION_SUNRISE_ELEVATION_START_TRIGGER: "number.solarcharger_global_defaults_sunrise_elevation_start_trigger",
-#     OPTION_SUNSET_ELEVATION_END_TRIGGER: "number.solarcharger_global_defaults_sunset_elevation_end_trigger",
-#     OPTION_WAIT_NET_POWER_UPDATE: "number.solarcharger_global_defaults_wait_net_power_update",
-#     OPTION_WAIT_CHARGEE_WAKEUP: "number.solarcharger_global_defaults_wait_chargee_wakeup",
-#     OPTION_WAIT_CHARGEE_UPDATE_HA: "number.solarcharger_global_defaults_wait_chargee_update_ha",
-#     OPTION_WAIT_CHARGEE_LIMIT_CHANGE: "number.solarcharger_global_defaults_wait_chargee_limit_change",
-#     OPTION_WAIT_CHARGER_ON: "number.solarcharger_global_defaults_wait_charger_on",
-#     OPTION_WAIT_CHARGER_OFF: "number.solarcharger_global_defaults_wait_charger_off",
-#     OPTION_WAIT_CHARGER_AMP_CHANGE: "number.solarcharger_global_defaults_wait_charger_amp_change",
-# }
-
-# _entity_key = ENTITY_KEY_CHARGEE_CHARGE_LIMIT
-# _attr_entity_category = EntityCategory.CONFIG
-# _attr_native_min_value = 0.0
-# _attr_native_max_value = 100.0
-# _attr_native_step = 1.0
-# _attr_native_unit_of_measurement = "%"
-# _attr_mode = NumberMode.BOX
-
-
-CONFIG_NUMBER_LIST: tuple[
-    # tuple[str, SolarChargerNumberConfigEntity, NumberEntityDescription], ...
-    tuple[str, float, NumberEntityDescription], ...
-] = (
-    (
-        OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-        230,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-            # translation_key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-            # entity_category=EntityCategory.CONFIG,
-            device_class=NumberDeviceClass.VOLTAGE,
-            native_unit_of_measurement=UnitOfElectricPotential.VOLT,
-            native_min_value=100.0,
-            native_max_value=700.0,
-            # native_step=1.0,
-            # mode=NumberMode.BOX,
-            # entity_registry_enabled_default=True,
-        ),
-    ),
-    (
-        OPTION_CHARGER_MAX_CURRENT,
-        15,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_MAX_CURRENT,
-            device_class=NumberDeviceClass.CURRENT,
-            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGER_MAX_SPEED,
-        6.1448,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_MAX_SPEED,
-            native_unit_of_measurement="%/hr",
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGER_MIN_CURRENT,
-        1,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_MIN_CURRENT,
-            device_class=NumberDeviceClass.CURRENT,
-            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-        0,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-            device_class=NumberDeviceClass.CURRENT,
-            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-        1,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGEE_CHARGE_LIMIT,
-        60,
-        NumberEntityDescription(
-            key=OPTION_CHARGEE_CHARGE_LIMIT,
-            native_unit_of_measurement=PERCENTAGE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-)

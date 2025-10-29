@@ -8,7 +8,10 @@ import logging
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 
-from ..const import WAIT_CHARGEE_UPDATE_HA, WAIT_CHARGEE_WAKEUP  # noqa: TID252
+from ..const import (  # noqa: TID252
+    OPTION_WAIT_CHARGEE_UPDATE_HA,
+    OPTION_WAIT_CHARGEE_WAKEUP,
+)
 from ..utils import log_is_event_loop  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
@@ -89,6 +92,14 @@ class ChargeController:
         await self._async_start_charge_task(charger)
 
     # ----------------------------------------------------------------------------
+    async def _async_sleep(self, key: str) -> None:
+        """Wait sleep time."""
+
+        sleep_sec = self.charger.get_val(key)
+        if sleep_sec is not None:
+            await asyncio.sleep(sleep_sec)
+
+    # ----------------------------------------------------------------------------
     async def _async_start_charge_task(self, charger: Charger) -> None:
         """Async task to start the charging process."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
@@ -97,9 +108,9 @@ class ChargeController:
 
         if chargee:
             await chargee.async_wake_up_chargee()
-            await asyncio.sleep(WAIT_CHARGEE_WAKEUP)
+            await self._async_sleep(OPTION_WAIT_CHARGEE_WAKEUP)
             await chargee.async_get_chargee_update()
-            await asyncio.sleep(WAIT_CHARGEE_UPDATE_HA)
+            await self._async_sleep(OPTION_WAIT_CHARGEE_UPDATE_HA)
 
         while True:
             try:

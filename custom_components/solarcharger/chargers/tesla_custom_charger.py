@@ -190,6 +190,11 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
         )
 
     # ----------------------------------------------------------------------------
+    def get_val(self, key: str) -> float | None:
+        """Get value for entity key."""
+        return self.get_number(self.get_config(key))
+
+    # ----------------------------------------------------------------------------
     def get_charge_current(self) -> float | None:
         """Get the current limit of the charger in amps."""
         return self.get_number(self.get_config(OPTION_CHARGER_CHARGING_AMPS))

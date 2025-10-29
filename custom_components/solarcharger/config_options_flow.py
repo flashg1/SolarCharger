@@ -71,7 +71,7 @@ from .const import (
     OPTION_GLOBAL_DEFAULTS_LIST,
     OPTION_ID,
     OPTION_NAME,
-    OPTION_SELECT_CHARGER,
+    OPTION_SELECT_SETTINGS,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGEE_UPDATE_HA,
@@ -139,135 +139,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     def get_option_value(config_entry: ConfigEntry, key: str) -> Any:
         """Get the value of an option from the config entry."""
         return config_entry.options.get(key, OPTION_GLOBAL_DEFAULTS_LIST.get(key))
-
-    # ----------------------------------------------------------------------------
-    # def _get_subentry_id(self, config_name: str) -> str | None:
-    #     subentry_id: str | None = None
-
-    #     if config_name == OPTION_GLOBAL_DEFAULTS:
-    #         return GLOBAL_DEFAULTS_ID
-
-    #     if self.config_entry.subentries:
-    #         for subentry in self.config_entry.subentries.values():
-    #             if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-    #                 if subentry.unique_id == config_name:
-    #                     subentry_id = subentry.subentry_id
-    #                     break
-
-    #     return subentry_id
-
-    # ----------------------------------------------------------------------------
-    # def _get_default_value(
-    #     self, subentry: ConfigSubentry, config_item: str
-    # ) -> Any | None:
-    #     """Get default value for config item which can be value or entity id."""
-
-    #     # Get parameter default value
-    #     default_val = OPTION_DEFAULT_VALUES.get(config_item)
-
-    #     # Get entity name
-    #     if not default_val:
-    #         if subentry and subentry.unique_id:
-    #             device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
-    #             device_name_default = slugify(subentry.data.get(SUBENTRY_DEVICE_NAME))
-
-    #             if device_domain:
-    #                 api_entities = CHARGE_API_ENTITIES.get(device_domain)
-
-    #                 if api_entities:
-    #                     device_options = self.config_entry.options.get(
-    #                         subentry.unique_id
-    #                     )
-    #                     if device_options:
-    #                         # Get device name for substitution
-    #                         device_name = device_options.get(
-    #                             OPTION_CHARGER_DEVICE_NAME, device_name_default
-    #                         )
-    #                         default_val = get_default_entity(
-    #                             api_entities,
-    #                             config_item,
-    #                             device_name,
-    #                         )
-    #                     # else:
-    #                     #     default_val = get_default_entity(
-    #                     #         api_entities,
-    #                     #         config_item,
-    #                     #         device_name_default,
-    #                     #     )
-
-    #     return default_val
-
-    # ----------------------------------------------------------------------------
-    # def _get_saved_local_option_value(
-    #     self, subentry: ConfigSubentry, config_item: str
-    # ) -> Any | None:
-    #     """Get saved option value if exist."""
-    #     saved_val = None
-
-    #     if subentry.unique_id:
-    #         device_options = self.config_entry.options.get(subentry.unique_id)
-    #         if device_options:
-    #             saved_val = device_options.get(config_item)
-
-    #     return saved_val
-
-    # ----------------------------------------------------------------------------
-    # def _get_saved_global_option_value(self, config_item: str) -> Any | None:
-    #     """Get saved option value if exist."""
-
-    #     return self._get_saved_local_option_value(GLOBAL_DEFAULTS_SUBENTRY, config_item)
-
-    # ----------------------------------------------------------------------------
-    # def _get_default_value(
-    #     self, subentry: ConfigSubentry, config_item: str
-    # ) -> Any | None:
-    #     """Get default value for config item which can be value or entity id."""
-
-    #     # Get parameter default value
-    #     default_val = OPTION_DEFAULT_VALUES.get(config_item)
-
-    #     # Get entity name
-    #     if not default_val:
-    #         if subentry and subentry.unique_id:
-    #             device_name_default = slugify(subentry.data.get(SUBENTRY_DEVICE_NAME))
-    #             device_options = self.config_entry.options.get(subentry.unique_id)
-    #             if device_options:
-    #                 # Get device name for substitution
-    #                 device_name = device_options.get(
-    #                     OPTION_CHARGER_DEVICE_NAME, device_name_default
-    #                 )
-    #                 default_val = get_entity_name(
-    #                     subentry, config_item, device_name
-    #                 )
-
-    #     return default_val
-
-    # ----------------------------------------------------------------------------
-    # def get_saved_option_value(
-    #     self, subentry: ConfigSubentry, config_item: str, use_default: bool
-    # ) -> Any:
-    #     """Get saved option value if exist, else get from default if allowed."""
-    #     default_final = None
-    #     default_val = self._get_default_value(subentry, config_item)
-
-    #     if subentry.unique_id:
-    #         device_options = self.config_entry.options.get(subentry.unique_id)
-    #         if device_options:
-    #             if use_default:
-    #                 default_final = device_options.get(config_item, default_val)
-    #             else:
-    #                 default_final = device_options.get(config_item)
-    #         elif use_default:
-    #             default_final = default_val
-
-    #     _LOGGER.debug(
-    #         "Required option=%s, default=%s, final=%s",
-    #         config_item,
-    #         default_val,
-    #         default_final,
-    #     )
-
-    #     return default_final
 
     # ----------------------------------------------------------------------------
     def _prompt(
@@ -346,66 +217,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
             ): NUMBER_ENTITY_SELECTOR,
         }
-
-    # ----------------------------------------------------------------------------
-    # def _charger_general_options_schema(
-    #     self, subentry: ConfigSubentry, use_default: bool
-    # ) -> dict[Any, Any]:
-    #     """Charger general options."""
-
-    #     return {
-    #         self._optional(
-    #             subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE, use_default
-    #         ): NUMBER_ENTITY_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_CHARGER_MAX_CURRENT, use_default
-    #         ): ELECTRIC_CURRENT_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_CHARGER_MAX_SPEED, use_default
-    #         ): NUMBER_ENTITY_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_CHARGER_MIN_CURRENT, use_default
-    #         ): NUMBER_ENTITY_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT, use_default
-    #         ): ELECTRIC_CURRENT_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
-    #         ): ALLOCATION_WEIGHT_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_WAIT_NET_POWER_UPDATE, use_default
-    #         ): WAIT_TIME_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_WAIT_CHARGEE_UPDATE_HA, use_default
-    #         ): WAIT_TIME_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
-    #         ): SUN_ELEVATION_SELECTOR,
-    #         self._optional(
-    #             subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
-    #         ): SUN_ELEVATION_SELECTOR,
-    #     }
-
-    # ----------------------------------------------------------------------------
-    # def _get_optional_entity_selector(
-    #     self,
-    #     subentry: ConfigSubentry,
-    #     api_entities: dict[str, str | None] | None,
-    #     config_item: str,
-    #     read_only_selector: EntitySelector,
-    #     default_selector: EntitySelector,
-    #     use_default: bool,
-    # ) -> dict[Any, Any]:
-    #     """Charger optional control entities."""
-
-    #     return {
-    #         self._optional(subentry, config_item, use_default): entity_selector(
-    #             api_entities,
-    #             config_item,
-    #             read_only_selector,
-    #             default_selector,
-    #         ),
-    #     }
 
     # ----------------------------------------------------------------------------
     def _charger_control_entities_schema(
@@ -637,7 +448,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         errors = {}
 
         if user_input is not None:
-            self._config_name = user_input[OPTION_SELECT_CHARGER]
+            self._config_name = user_input[OPTION_SELECT_SETTINGS]
             return await self.async_step_config_device(None)
 
         if not self.config_entry.subentries:
@@ -653,7 +464,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     device_list.append(subentry.unique_id)
 
         fields = {}
-        fields[vol.Required(OPTION_SELECT_CHARGER)] = SelectSelector(
+        fields[vol.Required(OPTION_SELECT_SETTINGS)] = SelectSelector(
             SelectSelectorConfig(
                 options=device_list,
                 custom_value=True,
@@ -667,65 +478,3 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             errors=errors,
             last_step=False,
         )
-
-    # ----------------------------------------------------------------------------
-    # def _all_charger_options_schema(self, errors) -> vol.Schema:
-    #     all_schema = None
-
-    #     for subentry in self.config_entry.subentries.values():
-    #         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-    #             if subentry.unique_id:
-    #                 _LOGGER.debug(
-    #                     "Set up subentry options: unique_id=%s, subentry_id=%s, subentry_type=%s, title=%s",
-    #                     subentry.unique_id,
-    #                     subentry.subentry_id,
-    #                     subentry.subentry_type,
-    #                     subentry.title,
-    #                 )
-
-    #                 general_schema = self._charger_general_options_schema(subentry)
-    #                 entities_schema = self._charger_control_entities_schema(subentry)
-    #                 combine_schema = {**general_schema, **entities_schema}
-    #                 charger_schema = {
-    #                     vol.Required(subentry.unique_id): section(
-    #                         vol.Schema(combine_schema), {"collapsed": True}
-    #                     ),
-    #                 }
-    #                 if all_schema:
-    #                     all_schema = {**all_schema, **charger_schema}
-    #                 else:
-    #                     all_schema = charger_schema
-
-    #     return vol.Schema(all_schema)
-
-    # ----------------------------------------------------------------------------
-    # async def async_step_init(
-    #     self, user_input: dict[str, Any] | None = None
-    # ) -> ConfigFlowResult:
-    #     """Handle the initial step."""
-    #     errors: dict[str, str] = {}
-    #     input_data: dict[str, Any] | None = None
-
-    #     if user_input is not None:
-    #         try:
-    #             input_data = await validate_init_input(self.hass, user_input)
-
-    #         except ValidationExceptionError as ex:
-    #             errors[ex.base] = ex.key
-    #         except ValueError:
-    #             errors["base"] = "invalid_number_format"
-
-    #         if not errors and input_data is not None:
-    #             return self.async_create_entry(title="", data=input_data)
-
-    #     if not self.config_entry.subentries:
-    #         errors["empty_charger_device_list"] = "Use + sign to add charger devices."
-    #         return self.async_abort(
-    #             reason="empty_charger_device_list",
-    #         )
-
-    #     return self.async_show_form(
-    #         step_id="init",
-    #         data_schema=self._all_charger_options_schema(errors),
-    #         errors=errors,
-    #     )

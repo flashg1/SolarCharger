@@ -63,15 +63,15 @@
     "options": {
         "step": {
             "init": {
-                "title": "SolarCharger options",
-                "description": "Select charger to modify charger behaviour.",
+                "title": "SolarCharger settings",
+                "description": "Device local settings, if defined, will always take precedence over global defaults.",
                 "data": {
-                    "select_charger": "Select charger"
+                    "select_global_or_local_settings": "Select global defaults or local device settings"
                 }
             },
             "config_device": {
                 "title": "Charger options",
-                "description": "Adjust charger behaviour.",
+                "description": "Select the SolarCharger entity and adjust the value in the device \"Configuration\" section if required, or replace with your own entity.",
                 "data": {
                     "sunrise_elevation_start_trigger": "Sunrise elevation start trigger (degrees)",
                     "sunset_elevation_end_trigger": "Sunset elevation end trigger (degrees)",
@@ -114,16 +114,49 @@
         },
         "number": {
             "charger_effective_voltage": {
-                "name": "Charger effective voltage"
+                "name": "Effective voltage"
+            },
+            "charger_max_current": {
+                "name": "Max current"
+            },
+            "charger_max_speed": {
+                "name": "Max charge speed"
             },
             "charger_min_current": {
-                "name": "Charger minimum current"
+                "name": "Min current"
             },
             "charger_min_workable_current": {
-                "name": "Charger minimum workable current"
+                "name": "Min workable current"
             },
             "charger_power_allocation_weight": {
-                "name": "Charger power allocation weight"
+                "name": "Power allocation weight"
+            },
+            "sunrise_elevation_start_trigger": {
+                "name": "Sunrise elevation start trigger"
+            },
+            "sunset_elevation_end_trigger": {
+                "name": "Sunset elevation end trigger"
+            },
+            "wait_net_power_update": {
+                "name": "Wait net power update"
+            },
+            "wait_chargee_wakeup": {
+                "name": "Wait wakeup"
+            },
+            "wait_chargee_update_ha": {
+                "name": "Wait update HA"
+            },
+            "wait_chargee_limit_change": {
+                "name": "Wait limit change"
+            },
+            "wait_charger_on": {
+                "name": "Wait charger on"
+            },
+            "wait_charger_off": {
+                "name": "Wait charger off"
+            },
+            "wait_charger_amp_change": {
+                "name": "Wait current change"
             }
         }
     }
