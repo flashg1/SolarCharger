@@ -12,6 +12,7 @@ from ..const import (  # noqa: TID252
     OPTION_WAIT_CHARGEE_UPDATE_HA,
     OPTION_WAIT_CHARGEE_WAKEUP,
 )
+from ..ha_state import HaState  # noqa: TID252
 from ..utils import log_is_event_loop  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
@@ -41,6 +42,8 @@ class ChargeController:
         self.charger = charger
         self.charge_task: Task | None = None
         self.end_charge_task: Task | None = None
+
+        self._ha_state = HaState(hass, config_entry, config_subentry, __name__)
 
     # ----------------------------------------------------------------------------
     @property
@@ -92,12 +95,12 @@ class ChargeController:
         await self._async_start_charge_task(charger)
 
     # ----------------------------------------------------------------------------
-    async def _async_sleep(self, key: str) -> None:
+    async def _async_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
-        sleep_sec = self.charger.get_val(key)
-        if sleep_sec is not None:
-            await asyncio.sleep(sleep_sec)
+        duration = self._ha_state.get_entity_number(config_item)
+        if duration is not None:
+            await asyncio.sleep(duration)
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge_task(self, charger: Charger) -> None:

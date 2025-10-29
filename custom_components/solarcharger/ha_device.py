@@ -1,4 +1,4 @@
-"""HA Device."""
+"""HA Device.  Combined with code from dirkgroenen/hass-evse-load-balancer for reference."""
 
 from collections.abc import Callable
 import logging
@@ -12,33 +12,44 @@ from homeassistant.helpers.entity_registry import RegistryEntry
 if TYPE_CHECKING:
     pass
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class HaDevice:
     """Base class for HA devices."""
 
     def __init__(self, hass: HomeAssistant, device_entry: DeviceEntry) -> None:
         """Initialize the HaDevice instance."""
+
         self.hass = hass
         self.device_entry = device_entry
         self.entity_registry = er.async_get(self.hass)
         self._entities: list[RegistryEntry] = []
         self.refresh_entities()
 
+    # ----------------------------------------------------------------------------
     def refresh_entities(self) -> None:
         """Refresh local list of entity maps for the meter."""
+
         self._entities = self._get_entities_for_device()
 
+    # ----------------------------------------------------------------------------
     def _get_entities_for_device(self) -> list[RegistryEntry]:
         """Get all available entities for the linked HA device."""
+
         return self.entity_registry.entities.get_entries_for_device_id(
             self.device_entry.id,
             include_disabled_entities=True,
         )
 
+    # ----------------------------------------------------------------------------
     def _get_entity_id_by_translation_key(self, entity_translation_key: str) -> str:
         """Get the entity ID for a given translation key."""
+
         entity: RegistryEntry | None = next(
             (e for e in self._entities if e.translation_key == entity_translation_key),
             None,
@@ -50,10 +61,13 @@ class HaDevice:
             _LOGGER.error(
                 "Required entity %s is disabled. Please enable it!", entity.entity_id
             )
+
         return entity.entity_id
 
+    # ----------------------------------------------------------------------------
     def _get_entity_id_by_unique_id(self, entity_unique_id: str) -> str | None:
         """Get the entity ID for a given unique ID."""
+
         entity: RegistryEntry | None = next(
             (e for e in self._entities if e.unique_id == entity_unique_id),
             None,
@@ -65,15 +79,17 @@ class HaDevice:
             _LOGGER.error(
                 "Required entity %s is disabled. Please enable it!", entity.entity_id
             )
+
         return entity.entity_id
 
+    # ----------------------------------------------------------------------------
     def _get_entity_id_by_key(self, entity_key: str) -> str | None:
-        """
-        Get the entity ID for a given key.
+        """Get the entity ID for a given key.
 
         Looks up the entity by checking all entities associated with the device
         whose unique_id end with the provided key.
         """
+
         entity: RegistryEntry | None = next(
             (e for e in self._entities if e.unique_id.endswith(f"_{entity_key}")),
             None,
@@ -85,12 +101,15 @@ class HaDevice:
             _LOGGER.error(
                 "Required entity %s is disabled. Please enable it!", entity.entity_id
             )
+
         return entity.entity_id
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state(
         self, entity_id: str | None, parser_fn: Callable | None = None
     ) -> Any | None:
         """Get the state of the entity for a given entity. Can be parsed."""
+
         if entity_id is None:
             raise ValueError("Cannot get entity state because entity ID is None")
         state = self.hass.states.get(entity_id)
@@ -106,8 +125,10 @@ class HaDevice:
             )
             return None
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state_attrs(self, entity_id: str | None) -> dict | None:
         """Get the state attributes for a given entity."""
+
         if entity_id is None:
             raise ValueError(
                 "Cannot get entity state attributes because entity ID is None"
@@ -116,44 +137,63 @@ class HaDevice:
         if state is None:
             _LOGGER.debug("State not found for entity %s", entity_id)
             return None
+
         return state.attributes
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state_by_translation_key(
         self, entity_translation_key: str, parser_fn: Callable | None = None
     ) -> Any | None:
         """Get the state of the entity for a given translation key."""
+
         entity_id = self._get_entity_id_by_translation_key(entity_translation_key)
+
         return self._get_entity_state(entity_id, parser_fn)
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state_attrs_by_translation_key(
         self, entity_translation_key: str
     ) -> dict | None:
         """Get the state attributes for the entity for a given translation key."""
+
         entity_id = self._get_entity_id_by_translation_key(entity_translation_key)
+
         return self._get_entity_state_attrs(entity_id)
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state_by_unique_id(
         self, entity_unique_id: str, parser_fn: Callable | None = None
     ) -> Any | None:
         """Get the state of the entity for a given unique ID."""
+
         entity_id = self._get_entity_id_by_unique_id(entity_unique_id)
+
         return self._get_entity_state(entity_id, parser_fn)
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state_attrs_by_unique_id(
         self, entity_unique_id: str
     ) -> dict | None:
         """Get the state attributes for the entity for a given unique ID."""
+
         entity_id = self._get_entity_id_by_unique_id(entity_unique_id)
+
         return self._get_entity_state_attrs(entity_id)
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state_by_key(
         self, entity_key: str, parser_fn: Callable | None = None
     ) -> Any | None:
         """Get the state of the entity for a given entity key."""
+
         entity_id = self._get_entity_id_by_key(entity_key)
+
         return self._get_entity_state(entity_id, parser_fn)
 
+    # ----------------------------------------------------------------------------
     def _get_entity_state_attrs_by_key(self, entity_key: str) -> dict | None:
         """Get the state attributes for the entity for a given entity key."""
+
         entity_id = self._get_entity_id_by_key(entity_key)
+
         return self._get_entity_state_attrs(entity_id)

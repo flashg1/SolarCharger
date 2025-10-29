@@ -48,10 +48,6 @@ class Charger(ABC):
         """Set the charger limit in amps."""
 
     @abstractmethod
-    def get_val(self, key: str) -> float | None:
-        """Get value for entity key."""
-
-    @abstractmethod
     def get_charge_current(self) -> float | None:
         """Get charge current in AMPS."""
 

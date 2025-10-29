@@ -293,8 +293,9 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
 
         super().__init__(subentry)
         self.entity_description = desc
-        self._attr_should_poll = False
         self._attr_has_entity_name = True
+        # Must set _attr_should_poll=True (default) for HA to register value changes
+        # self._attr_should_poll = False
 
         if self.value is None:
             self._attr_native_value = default_val

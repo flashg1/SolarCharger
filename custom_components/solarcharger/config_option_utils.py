@@ -202,9 +202,9 @@ def get_entity_name(
     config_item: str,
     device_name: str,
 ) -> str | None:
-    """Get entity name for config item."""
-    device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+    """Get entity name for config item with string substitution for device name."""
 
+    device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
     if device_domain:
         api_entities = CHARGE_API_ENTITIES.get(device_domain)
 
@@ -297,11 +297,10 @@ def get_saved_option_value(
     subentry: ConfigSubentry,
     config_item: str,
     use_default: bool,
-) -> Any:
+) -> Any | None:
     """Get saved option value if exist, else get from default if allowed."""
     saved_local_val = None
     saved_global_val = None
-    default_constant_val = None
 
     # Get saved local value
     saved_local_val = get_saved_local_option_value(config_entry, subentry, config_item)
@@ -312,18 +311,12 @@ def get_saved_option_value(
             saved_global_val = get_saved_global_option_value(config_entry, config_item)
             final_val = saved_global_val
 
-        # Get default constant value
-        # if not saved_global_val:
-        #     default_constant_val = OPTION_DEFAULT_VALUES.get(config_item)
-        #     final_val = default_constant_val
-
     _LOGGER.debug(
-        "Required option=%s, default=%s, local=%s, global=%s, constant=%s",
+        "Required option=%s, final=%s, local=%s, global=%s",
         config_item,
         final_val,
         saved_local_val,
         saved_global_val,
-        default_constant_val,
     )
 
     return final_val
