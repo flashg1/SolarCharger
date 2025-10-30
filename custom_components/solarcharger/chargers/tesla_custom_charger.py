@@ -1,7 +1,6 @@
 """Tesla Custom Charger implementation."""
 
 import logging
-from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
@@ -11,6 +10,7 @@ from ..const import (  # noqa: TID252
     CHARGER_DOMAIN_TESLA_CUSTOM,
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
+    OPTION_CHARGEE_LOCATION_STATE_LIST,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
@@ -27,59 +27,6 @@ from .chargeable import Chargeable
 from .charger import Charger
 
 _LOGGER = logging.getLogger(__name__)
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-# class TeslaCustomEntityMap:
-#     """Map Tesla Custom entities to their respective attributes."""
-
-#     _car_name = ""
-#     # Status entities from HAChargerStatuses
-#     ChargerConnectState = f"binary_sensor.{_car_name}charger"
-#     ChargerSwitch = f"switch.{_car_name}charger"
-#     ChargerChargingState = f"binary_sensor.{_car_name}charging"
-#     ChargerCurrent = f"number.{_car_name}charging_amps"
-
-#     ChargeeWakeUp = f"button.{_car_name}wake_up"
-#     ChargeeUpdate = f"button.{_car_name}force_data_update"
-#     ChargeeStateOfCharge = f"sensor.{_car_name}battery"
-#     ChargeeChargeLimit = f"number.{_car_name}charge_limit"
-#     ChargeeLocation = f"device_tracker.{_car_name}location_tracker"
-
-#     def __init__(
-#         self,
-#         config_entry: ConfigEntry,
-#         config_subentry: ConfigSubentry,
-#     ) -> None:
-#         """Initialize the TeslaCustomEntityMap."""
-#         self.config_entry = config_entry
-#         self.config_subentry = config_subentry
-
-#         if not self.config_subentry.unique_id:
-#             raise ValueError("Config subentry unique_id is required")
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-# class TeslaCustomChargerConnectStateMap:
-#     """Map Tesla Custom charger connected states."""
-
-#     On = "on"
-
-#     # Consider the chargee is connected if the charger is in any of these states.
-#     ConnectedStateList = [On]
-
-
-# # ----------------------------------------------------------------------------
-# # ----------------------------------------------------------------------------
-# class TeslaCustomChargerChargingStateMap:
-#     """Map Tesla Custom charger charging states."""
-
-#     On = "on"
-
-#     # Consider the chargee is charging or ready to charge if the charger is in any of these states.
-#     ChargingStateList = [On]
 
 
 # ----------------------------------------------------------------------------
@@ -131,24 +78,37 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         # await asyncio.sleep(WAIT_CHARGEE_UPDATE_HA)
 
     # ----------------------------------------------------------------------------
-    async def async_wake_up_chargee(self) -> None:
+    async def async_wake_up(self) -> None:
         """Wake up chargeable device."""
-        await self.async_press_option_button(OPTION_CHARGEE_WAKE_UP_BUTTON)
+        await self.async_option_button_press(OPTION_CHARGEE_WAKE_UP_BUTTON)
 
     # ----------------------------------------------------------------------------
-    async def async_get_chargee_update(self) -> None:
+    async def async_update_ha(self) -> None:
         """Force chargeable device to update data in HA."""
-        await self.async_press_option_button(OPTION_CHARGEE_UPDATE_HA_BUTTON)
+        await self.async_option_button_press(OPTION_CHARGEE_UPDATE_HA_BUTTON)
+
+    # ----------------------------------------------------------------------------
+    def is_at_location(self) -> bool:
+        """Is chargeable device at charger location?"""
+        is_at_location = False
+
+        # 'device_tracker.tesla23m3_location_tracker' = 'not_home' or 'home'
+        state = self.option_get_string(OPTION_CHARGEE_LOCATION_SENSOR)
+        state_list = self.option_get_data_list(OPTION_CHARGEE_LOCATION_STATE_LIST)
+        if state is not None and state_list is not None:
+            is_at_location = state in state_list
+
+        return is_at_location
 
     # ----------------------------------------------------------------------------
     def get_state_of_charge(self) -> int | None:
-        """Get the current state of charge (SoC) of the chargeable device."""
-        return self.get_option_integer(OPTION_CHARGEE_SOC_SENSOR)
+        """Get state of charge (SoC) of chargeable device."""
+        return self.option_get_integer(OPTION_CHARGEE_SOC_SENSOR)
 
     # ----------------------------------------------------------------------------
     def get_charge_limit(self) -> int | None:
         """Get chargeable device charge limit."""
-        return self.get_option_integer(OPTION_CHARGEE_CHARGE_LIMIT)
+        return self.option_get_integer(OPTION_CHARGEE_CHARGE_LIMIT)
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_limit(self, charge_limit: int) -> None:
@@ -156,14 +116,14 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         if not 50 <= charge_limit <= 100:
             msg = "Invalid charge limit. Must be between 50 and 100."
             raise ValueError(msg)
-        await self.async_set_option_integer(OPTION_CHARGEE_CHARGE_LIMIT, charge_limit)
+        await self.async_option_set_integer(OPTION_CHARGEE_CHARGE_LIMIT, charge_limit)
 
     # ----------------------------------------------------------------------------
     # Charger interface implementation
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_charger_device(device: DeviceEntry) -> bool:
-        """Check if the given device is an Tesla Custom charger."""
+        """Check if device is a Tesla Custom charger."""
         return any(
             id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
             for id_domain, _ in device.identifiers
@@ -175,20 +135,8 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         await self.async_setup_chargeable()
 
     # ----------------------------------------------------------------------------
-    async def set_charge_current(self, charge_current: float) -> None:
-        """Set charger charge current."""
-        await self.async_set_option_integer(
-            OPTION_CHARGER_GET_CHARGE_CURRENT, int(charge_current)
-        )
-
-    # ----------------------------------------------------------------------------
-    def get_charge_current(self) -> float | None:
-        """Get the current limit of the charger in amps."""
-        return self.get_option_number(OPTION_CHARGER_GET_CHARGE_CURRENT)
-
-    # ----------------------------------------------------------------------------
     def get_max_charge_current(self) -> float | None:
-        """Get the configured maximum current limit of the charger in amps."""
+        """Get charger max allowable current in amps."""
         _LOGGER.info(
             "No maximum current limit information available for Tesla Custom charger %s, "
             "using default 15A",
@@ -198,37 +146,59 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
 
     # ----------------------------------------------------------------------------
     def get_connect_state(self) -> str | None:
-        """Get connect state of Tesla Custom charger."""
-        return self.get_option_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
+        """Get charger connect state."""
+        return self.option_get_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
 
     # ----------------------------------------------------------------------------
-    def car_connected(self) -> bool:
-        """Car is connected to the charger and ready to receive charge."""
+    def is_connected(self) -> bool:
+        """Is charger connected to chargeable device?"""
         is_connected = False
 
         state = self.get_connect_state()
-        state_list = self.get_option_data_list(OPTION_CHARGER_CONNECT_STATE_LIST)
+        state_list = self.option_get_data_list(OPTION_CHARGER_CONNECT_STATE_LIST)
         if state is not None and state_list is not None:
             is_connected = state in state_list
 
         return is_connected
 
     # ----------------------------------------------------------------------------
-    def get_charging_state(self) -> str | None:
-        """Get charging state of Tesla Custom charger."""
-        return self.get_option_string(OPTION_CHARGER_CHARGING_SENSOR)
+    async def async_charger_switch_on(self) -> None:
+        """Switch on charger."""
+        await self.async_option_switch_on(OPTION_CHARGER_ON_OFF_SWITCH)
 
     # ----------------------------------------------------------------------------
-    def can_charge(self) -> bool:
-        """Return whether the car is connected and charging or accepting charge."""
+    async def async_charger_switch_off(self) -> None:
+        """Switch off charger."""
+        await self.async_option_switch_off(OPTION_CHARGER_ON_OFF_SWITCH)
+
+    # ----------------------------------------------------------------------------
+    def get_charging_state(self) -> str | None:
+        """Get charging state."""
+        return self.option_get_string(OPTION_CHARGER_CHARGING_SENSOR)
+
+    # ----------------------------------------------------------------------------
+    def is_charging(self) -> bool:
+        """Is device charging?"""
         is_charging = False
 
         state = self.get_charging_state()
-        state_list = self.get_option_data_list(OPTION_CHARGER_CHARGING_STATE_LIST)
+        state_list = self.option_get_data_list(OPTION_CHARGER_CHARGING_STATE_LIST)
         if state is not None and state_list is not None:
             is_charging = state in state_list
 
         return is_charging
+
+    # ----------------------------------------------------------------------------
+    def get_charge_current(self) -> float | None:
+        """Get charger charge current in AMPS."""
+        return self.option_get_number(OPTION_CHARGER_GET_CHARGE_CURRENT)
+
+    # ----------------------------------------------------------------------------
+    async def async_set_charge_current(self, charge_current: float) -> None:
+        """Set charger charge current in AMPS."""
+        await self.async_option_set_integer(
+            OPTION_CHARGER_GET_CHARGE_CURRENT, int(charge_current)
+        )
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:

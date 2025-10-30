@@ -74,7 +74,7 @@ class OcppCharger(HaDevice, Charger):
         """Set up the charger."""
 
     # ----------------------------------------------------------------------------
-    async def set_charge_current(self, charge_current: float) -> None:
+    async def async_set_charge_current(self, charge_current: float) -> None:
         """Set charger charge current."""
         min_current = charge_current
 
@@ -157,7 +157,7 @@ class OcppCharger(HaDevice, Charger):
         return status
 
     # ----------------------------------------------------------------------------
-    def car_connected(self) -> bool:
+    def is_connected(self) -> bool:
         """Car is connected to the charger and ready to receive charge."""
         status = self._get_status()
 
@@ -173,7 +173,7 @@ class OcppCharger(HaDevice, Charger):
         return status in connected_statuses
 
     # ----------------------------------------------------------------------------
-    def can_charge(self) -> bool:
+    def is_charging(self) -> bool:
         """Return whether the car is connected and charging or accepting charge."""
         status = self._get_status()
 

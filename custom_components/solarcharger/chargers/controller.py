@@ -11,6 +11,9 @@ from homeassistant.core import HomeAssistant
 from ..const import (  # noqa: TID252
     OPTION_WAIT_CHARGEE_UPDATE_HA,
     OPTION_WAIT_CHARGEE_WAKEUP,
+    OPTION_WAIT_CHARGER_AMP_CHANGE,
+    OPTION_WAIT_CHARGER_OFF,
+    OPTION_WAIT_CHARGER_ON,
 )
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import log_is_event_loop  # noqa: TID252
@@ -98,7 +101,7 @@ class ChargeController(ScOptionState):
     async def _async_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
-        duration = self.get_option_number(config_item)
+        duration = self.option_get_number(config_item)
         if duration is not None:
             await asyncio.sleep(duration)
 
@@ -110,10 +113,25 @@ class ChargeController(ScOptionState):
         chargee: Chargeable | None = self.get_chargee
 
         if chargee:
-            await chargee.async_wake_up_chargee()
+            await chargee.async_wake_up()
             await self._async_sleep(OPTION_WAIT_CHARGEE_WAKEUP)
-            await chargee.async_get_chargee_update()
+            await chargee.async_update_ha()
             await self._async_sleep(OPTION_WAIT_CHARGEE_UPDATE_HA)
+            is_at_location = chargee.is_at_location()
+
+        is_connected = charger.is_connected()
+        await charger.async_charger_switch_on()
+        await self._async_sleep(OPTION_WAIT_CHARGER_ON)
+
+        now_current = charger.get_charge_current()
+        await charger.async_set_charge_current(5)
+        await self._async_sleep(OPTION_WAIT_CHARGER_AMP_CHANGE)
+
+        is_charging = charger.is_charging()
+        if chargee:
+            await chargee.async_update_ha()
+            await self._async_sleep(OPTION_WAIT_CHARGEE_UPDATE_HA)
+        is_charging = charger.is_charging()
 
         while True:
             try:
@@ -126,6 +144,9 @@ class ChargeController(ScOptionState):
 
             await asyncio.sleep(20)  # Wait before checking again
             break
+
+        await charger.async_charger_switch_off()
+        await self._async_sleep(OPTION_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
     def charge_devce(

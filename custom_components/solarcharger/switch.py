@@ -130,6 +130,7 @@ class SolarChargerSwitchCharge(SolarChargerSwitchEntity):
             self._coordinator.charge_controls[self._subentry.subentry_id], True
         )
 
+    # ----------------------------------------------------------------------------
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         await super().async_turn_off(**kwargs)

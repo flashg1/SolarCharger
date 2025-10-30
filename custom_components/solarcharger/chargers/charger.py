@@ -37,27 +37,19 @@ class Charger(ABC):
     @staticmethod
     @abstractmethod
     def is_charger_device(device: DeviceEntry) -> bool:
-        """Check if given device is of class' type charger."""
+        """Check if device is of class type charger."""
 
     @abstractmethod
     async def async_setup(self) -> None:
         """Set up charger."""
 
     @abstractmethod
-    async def set_charge_current(self, charge_current: float) -> None:
-        """Set the charger limit in amps."""
-
-    @abstractmethod
-    def get_charge_current(self) -> float | None:
-        """Get charge current in AMPS."""
-
-    @abstractmethod
     def get_max_charge_current(self) -> float | None:
-        """Get the configured maximum current limit of the charger in amps."""
+        """Get charger max allowable current in amps."""
 
     @abstractmethod
-    def car_connected(self) -> bool:
-        """Return whether the car is connected to the charger and ready to receive charge.
+    def is_connected(self) -> bool:
+        """Is charger connected to chargeable device?
 
         This does not mean that the car is actually able to charge, for which
         you can use can_charge().
@@ -67,14 +59,24 @@ class Charger(ABC):
         """
 
     @abstractmethod
-    def can_charge(self) -> bool:
-        """Return whether the car is connected and charging or accepting charge."""
+    async def async_charger_switch_on(self) -> None:
+        """Switch on charger."""
 
-    async def async_start_charger(self) -> None:
-        """Start charger."""
+    @abstractmethod
+    async def async_charger_switch_off(self) -> None:
+        """Switch off charger."""
 
-    async def async_stop_charger(self) -> None:
-        """Stop charger."""
+    @abstractmethod
+    def is_charging(self) -> bool:
+        """Is device charging?"""
+
+    @abstractmethod
+    def get_charge_current(self) -> float | None:
+        """Get charger charge current in AMPS."""
+
+    @abstractmethod
+    async def async_set_charge_current(self, charge_current: float) -> None:
+        """Set charger charge current in AMPS."""
 
     @abstractmethod
     async def async_unload(self) -> None:

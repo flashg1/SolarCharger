@@ -101,7 +101,7 @@ class SolarChargerCoordinator(ScConfigState):
         #     self.config_entry, CONF_NET_POWER
         # )
 
-        self.entity_id_net_power: str | None = self.get_config_data(CONF_NET_POWER)
+        self.entity_id_net_power: str | None = self.config_get_data(CONF_NET_POWER)
 
     # ----------------------------------------------------------------------------
     @cached_property

@@ -29,23 +29,27 @@ class Chargeable(ABC):
     @staticmethod
     @abstractmethod
     def is_chargeable_device(device: DeviceEntry) -> bool:
-        """Check if given device is of class' type chargeable."""
+        """Check if given device is of class type chargeable."""
 
     @abstractmethod
     async def async_setup_chargeable(self) -> None:
         """Set up chargeable device."""
 
     @abstractmethod
-    async def async_wake_up_chargee(self) -> None:
+    async def async_wake_up(self) -> None:
         """Wake up chargeable device."""
 
     @abstractmethod
-    async def async_get_chargee_update(self) -> None:
+    async def async_update_ha(self) -> None:
         """Force chargeable device to update data in HA."""
 
     @abstractmethod
+    def is_at_location(self) -> bool:
+        """Is chargeable device at charger location?"""
+
+    @abstractmethod
     def get_state_of_charge(self) -> int | None:
-        """Get the state of charge of the chargeable device."""
+        """Get state of charge (SoC) of chargeable device."""
 
     @abstractmethod
     def get_charge_limit(self) -> int | None:

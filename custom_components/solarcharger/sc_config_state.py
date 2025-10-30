@@ -35,7 +35,7 @@ class ScConfigState(ScState):
     # Get entity ID from config data, then get entity value.
     # Requires config_entry.data.
     # ----------------------------------------------------------------------------
-    def get_config_data(
+    def config_get_data(
         self,
         config_item: str,
     ) -> str | None:
@@ -48,7 +48,7 @@ class ScConfigState(ScState):
         return config_str
 
     # ----------------------------------------------------------------------------
-    def get_config_entity_id(
+    def config_get_entity_id(
         self,
         config_item: str,
     ) -> str | None:
@@ -61,14 +61,14 @@ class ScConfigState(ScState):
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def get_config_number(
+    def config_get_number(
         self,
         config_item: str,
     ) -> float | None:
         """Get entity name from saved options, then get value for entity."""
         entity_val = None
 
-        entity_id = self.get_config_entity_id(config_item)
+        entity_id = self.config_get_entity_id(config_item)
         if entity_id:
             entity_val = self.get_number(entity_id)
 

@@ -155,14 +155,16 @@ class ScState:
         await self.async_set_number(entity_id, float(num))
 
     # ----------------------------------------------------------------------------
-    async def async_press_button(self, entity_id: str) -> None:
-        """Press a button entity."""
+    async def async_ha_call(
+        self, domain_name: str, service_name: str, entity_id: str
+    ) -> None:
+        """HA service call for entity."""
 
         try:
-            # Call the Home Assistant button.press service
+            # Call the Home Assistant service
             await self.hass.services.async_call(
-                domain="button",
-                service="press",
+                domain=domain_name,
+                service=service_name,
                 service_data={
                     "entity_id": entity_id,
                 },
@@ -170,8 +172,28 @@ class ScState:
             )
         except (ValueError, RuntimeError, TimeoutError) as e:
             _LOGGER.warning(
-                "%s: Failed button press for entity '%s': %s",
+                "%s: Failed %s %s for entity '%s': %s",
                 self._caller,
+                domain_name,
+                service_name,
                 entity_id,
                 e,
             )
+
+    # ----------------------------------------------------------------------------
+    async def async_button_press(self, entity_id: str) -> None:
+        """Press button entity."""
+
+        await self.async_ha_call("button", "press", entity_id)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_on(self, entity_id: str) -> None:
+        """Turn on switch entity."""
+
+        await self.async_ha_call("switch", "turn_on", entity_id)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_off(self, entity_id: str) -> None:
+        """Turn off switch entity."""
+
+        await self.async_ha_call("switch", "turn_off", entity_id)
