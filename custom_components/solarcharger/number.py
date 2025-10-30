@@ -16,6 +16,7 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfPower,
     UnitOfTime,
 )
 from homeassistant.helpers.entity import EntityCategory
@@ -23,6 +24,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import slugify
 
 from .const import (
+    CONTROL_CHARGER_AVAILABLE_POWER,
     DOMAIN,
     NUMBER,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
@@ -31,6 +33,7 @@ from .const import (
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+    OPTION_GLOBAL_DEFAULT_VALUE_LIST,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
@@ -51,10 +54,9 @@ from .entity import SolarChargerEntity
 _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
-CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
+CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     (
         OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-        230,
         NumberEntityDescription(
             key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
             # translation_key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
@@ -70,7 +72,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MAX_CURRENT,
-        15,
         NumberEntityDescription(
             key=OPTION_CHARGER_MAX_CURRENT,
             device_class=NumberDeviceClass.CURRENT,
@@ -81,7 +82,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MAX_SPEED,
-        6.1448,
         NumberEntityDescription(
             key=OPTION_CHARGER_MAX_SPEED,
             native_unit_of_measurement="%/hr",
@@ -91,7 +91,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MIN_CURRENT,
-        1,
         NumberEntityDescription(
             key=OPTION_CHARGER_MIN_CURRENT,
             device_class=NumberDeviceClass.CURRENT,
@@ -102,7 +101,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-        0,
         NumberEntityDescription(
             key=OPTION_CHARGER_MIN_WORKABLE_CURRENT,
             device_class=NumberDeviceClass.CURRENT,
@@ -113,7 +111,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-        1,
         NumberEntityDescription(
             key=OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
             native_min_value=0.0,
@@ -122,7 +119,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_SUNRISE_ELEVATION_START_TRIGGER,
-        3,
         NumberEntityDescription(
             key=OPTION_SUNRISE_ELEVATION_START_TRIGGER,
             native_unit_of_measurement=DEGREE,
@@ -132,7 +128,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_SUNSET_ELEVATION_END_TRIGGER,
-        6,
         NumberEntityDescription(
             key=OPTION_SUNSET_ELEVATION_END_TRIGGER,
             native_unit_of_measurement=DEGREE,
@@ -142,7 +137,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_NET_POWER_UPDATE,
-        60,
         NumberEntityDescription(
             key=OPTION_WAIT_NET_POWER_UPDATE,
             device_class=NumberDeviceClass.DURATION,
@@ -153,7 +147,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGEE_WAKEUP,
-        40,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_WAKEUP,
             device_class=NumberDeviceClass.DURATION,
@@ -164,7 +157,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGEE_UPDATE_HA,
-        5,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_UPDATE_HA,
             device_class=NumberDeviceClass.DURATION,
@@ -175,7 +167,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
-        5,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
             device_class=NumberDeviceClass.DURATION,
@@ -186,7 +177,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGER_ON,
-        11,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_ON,
             device_class=NumberDeviceClass.DURATION,
@@ -197,7 +187,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGER_OFF,
-        5,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_OFF,
             device_class=NumberDeviceClass.DURATION,
@@ -208,13 +197,26 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, float, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGER_AMP_CHANGE,
-        1,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_AMP_CHANGE,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+        ),
+    ),
+    #####################################
+    # Internal entities
+    #####################################
+    (
+        CONTROL_CHARGER_AVAILABLE_POWER,
+        NumberEntityDescription(
+            key=CONTROL_CHARGER_AVAILABLE_POWER,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            device_class=NumberDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            native_min_value=-23000.0,
+            native_max_value=+23000.0,
         ),
     ),
 )
@@ -283,11 +285,12 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         name: str,
         subentry: ConfigSubentry,
         desc: NumberEntityDescription,
-        default_val,
+        default_val: float,
     ) -> None:
         """Initialise number."""
         self._entity_key = name
-        self._attr_entity_category = EntityCategory.CONFIG
+        if desc.entity_category is None:
+            self._attr_entity_category = EntityCategory.CONFIG
         self._attr_native_step = 1.0
         self._attr_mode = NumberMode.BOX
 
@@ -327,9 +330,12 @@ async def async_setup_entry(
         #     continue
 
         numbers = {}
-        for config_item, default_val, entity_description in CONFIG_NUMBER_LIST:
+        for config_item, entity_description in CONFIG_NUMBER_LIST:
             numbers[config_item] = SolarChargerNumberConfigEntity(
-                config_item, subentry, entity_description, default_val
+                config_item,
+                subentry,
+                entity_description,
+                OPTION_GLOBAL_DEFAULT_VALUE_LIST[config_item],
             )
         coordinator.charge_controls[subentry.subentry_id].numbers = numbers
 

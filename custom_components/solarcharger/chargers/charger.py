@@ -57,8 +57,7 @@ class Charger(ABC):
 
     @abstractmethod
     def car_connected(self) -> bool:
-        """
-        Return whether the car is connected to the charger and ready to receive charge.
+        """Return whether the car is connected to the charger and ready to receive charge.
 
         This does not mean that the car is actually able to charge, for which
         you can use can_charge().

@@ -104,7 +104,7 @@
         },
         "button": {
             "start_charge": {
-                "name": "Start charger WL"
+                "name": "Start charge"
             }
         },
         "switch": {

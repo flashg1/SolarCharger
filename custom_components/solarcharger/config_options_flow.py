@@ -49,13 +49,13 @@ from .const import (
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
-    OPTION_CHARGER_CHARGING_AMPS,
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+    OPTION_CHARGER_GET_CHARGE_CURRENT,
     OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_MAX_SPEED,
     OPTION_CHARGER_MIN_CURRENT,
@@ -63,8 +63,9 @@ from .const import (
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+    OPTION_CHARGER_SET_CHARGE_CURRENT,
+    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
-    OPTION_GLOBAL_DEFAULTS_LIST,
     OPTION_ID,
     OPTION_NAME,
     OPTION_SELECT_SETTINGS,
@@ -139,7 +140,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     @staticmethod
     def get_option_value(config_entry: ConfigEntry, key: str) -> Any:
         """Get the value of an option from the config entry."""
-        return config_entry.options.get(key, OPTION_GLOBAL_DEFAULTS_LIST.get(key))
+        return config_entry.options.get(key, OPTION_GLOBAL_DEFAULT_ENTITY_LIST.get(key))
 
     # ----------------------------------------------------------------------------
     def _prompt(
@@ -303,10 +304,18 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 TEXT_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_CHARGING_AMPS, use_default
+                subentry, OPTION_CHARGER_GET_CHARGE_CURRENT, use_default
             ): entity_selector(
                 api_entities,
-                OPTION_CHARGER_CHARGING_AMPS,
+                OPTION_CHARGER_GET_CHARGE_CURRENT,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+            ),
+            self._optional(
+                subentry, OPTION_CHARGER_SET_CHARGE_CURRENT, use_default
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_SET_CHARGE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
             ),

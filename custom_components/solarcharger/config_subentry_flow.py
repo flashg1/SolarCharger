@@ -38,7 +38,7 @@ from .const import (
     CHARGER_DOMAIN_TESLA_CUSTOM,
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_GLOBAL_DEFAULTS_ID,
-    OPTION_GLOBAL_DEFAULTS_LIST,
+    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
     SUBENTRY_CHARGER_DEVICE,
     SUBENTRY_DEVICE_DOMAIN,
     SUBENTRY_DEVICE_NAME,
@@ -176,7 +176,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 config_entry,
                 options=config_entry.options
                 | {
-                    OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULTS_LIST,
+                    OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
                 },
             )
 

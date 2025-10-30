@@ -12,7 +12,7 @@ from ..const import (  # noqa: TID252
     OPTION_WAIT_CHARGEE_UPDATE_HA,
     OPTION_WAIT_CHARGEE_WAKEUP,
 )
-from ..ha_state import HaState  # noqa: TID252
+from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import log_is_event_loop  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class ChargeController:
+class ChargeController(ScOptionState):
     """Class to manage the charging process."""
 
     def __init__(
@@ -43,7 +43,7 @@ class ChargeController:
         self.charge_task: Task | None = None
         self.end_charge_task: Task | None = None
 
-        self._ha_state = HaState(hass, config_entry, config_subentry, __name__)
+        ScOptionState.__init__(self, hass, config_entry, config_subentry, __name__)
 
     # ----------------------------------------------------------------------------
     @property
@@ -98,7 +98,7 @@ class ChargeController:
     async def _async_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
-        duration = self._ha_state.get_entity_number(config_item)
+        duration = self.get_option_number(config_item)
         if duration is not None:
             await asyncio.sleep(duration)
 

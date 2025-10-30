@@ -32,7 +32,7 @@ from homeassistant.helpers.selector import (
 
 from .config_options_flow import ConfigOptionsFlowHandler
 from .config_subentry_flow import AddChargerSubEntryFlowHandler
-from .const import DOMAIN, SUBENTRY_TYPE_CHARGER, SUBENTRY_TYPE_DEFAULTS
+from .const import CONF_NET_POWER, DOMAIN, SUBENTRY_TYPE_CHARGER, SUBENTRY_TYPE_DEFAULTS
 from .exceptions.validation_exception import ValidationExceptionError
 
 # ----------------------------------------------------------------------------
@@ -40,7 +40,6 @@ from .exceptions.validation_exception import ValidationExceptionError
 _LOGGER = logging.getLogger(__name__)
 
 
-CONF_NET_POWER = "net_power"
 CONF_NET_POWER_DEFAULT = "sensor.net_power"
 
 CONF_CHARGER_DEVICE = "charger_device"

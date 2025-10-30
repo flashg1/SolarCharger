@@ -32,8 +32,8 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 
-from .config_flow import CONF_NET_POWER, CONF_NET_POWER_DEFAULT
 from .const import (
+    CONF_NET_POWER,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     DOMAIN,
@@ -44,13 +44,13 @@ from .const import (
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
-    OPTION_GLOBAL_DEFAULTS_LIST,
-    OPTION_NET_POWER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 from .helpers.general import get_parameter
 from .models import ChargeControl
+from .sc_config_state import ScConfigState
 from .utils import log_is_event_loop
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ MIN_CHARGER_UPDATE_DELAY: int = 30
 # See Tesla Custom integration for reference.
 
 
-class SolarChargerCoordinator:
+class SolarChargerCoordinator(ScConfigState):
     """Coordinator for the Solar Charger."""
 
     # MODIFIED: Store as datetime object or None
@@ -82,7 +82,6 @@ class SolarChargerCoordinator:
         self,
         hass: HomeAssistant,
         config_entry: ConfigEntry,
-        # charger: Charger,
     ):
         """Initialize the coordinator."""
         self.hass: HomeAssistant = hass
@@ -96,11 +95,13 @@ class SolarChargerCoordinator:
         # self._switches: list[SwitchEntity] = []
         # self._numbers: list[NumberEntity] = []
 
-        self.entity_id_net_power: str | None = get_parameter(
-            self.config_entry, CONF_NET_POWER
-        )
+        ScConfigState.__init__(self, hass, config_entry, __name__)
 
-        # self._charger: Charger = charger
+        # self.entity_id_net_power: str | None = get_parameter(
+        #     self.config_entry, CONF_NET_POWER
+        # )
+
+        self.entity_id_net_power: str | None = self.get_config_data(CONF_NET_POWER)
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -449,7 +450,7 @@ class SolarChargerCoordinator:
     # ----------------------------------------------------------------------------
     def get_net_power(self) -> float | None:
         """Get household net power."""
-        return self._get_entity_number_value(OPTION_NET_POWER)
+        return self._get_entity_number_value(CONF_NET_POWER)
 
     def get_effective_voltage(self) -> float | None:
         """Get charger effective voltage."""
@@ -459,7 +460,7 @@ class SolarChargerCoordinator:
         if global_defaults is not None:
             entity_id = global_defaults.get(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
             if entity_id is not None:
-                val = self._get_state(entity_id)
+                val = self.get_value(entity_id)
         return val
 
     def _get_entity_number_value(self, key: str) -> float | None:
@@ -468,7 +469,7 @@ class SolarChargerCoordinator:
         entity_id = self.config_entry.options.get(key, None)
         if entity_id is None:
             # Try to get default value.
-            val = OPTION_GLOBAL_DEFAULTS_LIST.get(key)
+            val = OPTION_GLOBAL_DEFAULT_ENTITY_LIST.get(key)
             if val is None:
                 _LOGGER.debug("No default value for %s", key)
                 return None
@@ -482,25 +483,25 @@ class SolarChargerCoordinator:
                     ex,  # noqa: TRY401
                 )
                 return None
-        return self._get_state(entity_id)
+        return self.get_number(entity_id)
 
     # ----------------------------------------------------------------------------
-    def _get_state(self, entity_id: str) -> float | None:
-        entity = self.hass.states.get(entity_id)
-        if entity is None:
-            _LOGGER.debug("State not found for entity %s", entity_id)
-            return None
-        state_value = entity.state
-        try:
-            return float(state_value)
-        except ValueError as ex:
-            _LOGGER.exception(
-                "Failed to parse state %s for entity %s: %s",
-                state_value,
-                entity_id,
-                ex,  # noqa: TRY401
-            )
-            return None
+    # def _get_state(self, entity_id: str) -> float | None:
+    #     entity = self.hass.states.get(entity_id)
+    #     if entity is None:
+    #         _LOGGER.debug("State not found for entity %s", entity_id)
+    #         return None
+    #     state_value = entity.state
+    #     try:
+    #         return float(state_value)
+    #     except ValueError as ex:
+    #         _LOGGER.exception(
+    #             "Failed to parse state %s for entity %s: %s",
+    #             state_value,
+    #             entity_id,
+    #             ex,  # noqa: TRY401
+    #         )
+    #         return None
 
     # ----------------------------------------------------------------------------
     # eg. self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)

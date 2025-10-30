@@ -14,15 +14,15 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
-    OPTION_CHARGER_CHARGING_AMPS,
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
+    OPTION_CHARGER_GET_CHARGE_CURRENT,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
 )
 from ..ha_device import HaDevice  # noqa: TID252
-from ..ha_state import HaState  # noqa: TID252
+from ..sc_option_state import ScOptionState  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
 
@@ -84,7 +84,7 @@ class TeslaCustomChargerChargingStateMap:
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class TeslaCustomCharger(HaDevice, Charger, Chargeable):
+class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
     """Implementation of the Charger class for Tesla Custom chargers."""
 
     # Also need to implement following,
@@ -102,12 +102,13 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
         self.hass = hass
         self.config_entry = config_entry
         self.config_subentry = config_subentry
-        self._ha_state = HaState(hass, config_entry, config_subentry, __name__)
 
         # TeslaCustomEntityMap.__init__(self, config_entry, config_subentry)
         HaDevice.__init__(self, hass, device_entry)
+        ScOptionState.__init__(self, hass, config_entry, config_subentry, __name__)
         Charger.__init__(self, hass, config_entry, config_subentry, device_entry)
         Chargeable.__init__(self, hass, config_entry, config_subentry, device_entry)
+
         self.refresh_entities()
 
     # ----------------------------------------------------------------------------
@@ -132,22 +133,22 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     async def async_wake_up_chargee(self) -> None:
         """Wake up chargeable device."""
-        await self._ha_state.async_press_entity_button(OPTION_CHARGEE_WAKE_UP_BUTTON)
+        await self.async_press_option_button(OPTION_CHARGEE_WAKE_UP_BUTTON)
 
     # ----------------------------------------------------------------------------
     async def async_get_chargee_update(self) -> None:
         """Force chargeable device to update data in HA."""
-        await self._ha_state.async_press_entity_button(OPTION_CHARGEE_UPDATE_HA_BUTTON)
+        await self.async_press_option_button(OPTION_CHARGEE_UPDATE_HA_BUTTON)
 
     # ----------------------------------------------------------------------------
     def get_state_of_charge(self) -> int | None:
         """Get the current state of charge (SoC) of the chargeable device."""
-        return self._ha_state.get_entity_integer(OPTION_CHARGEE_SOC_SENSOR)
+        return self.get_option_integer(OPTION_CHARGEE_SOC_SENSOR)
 
     # ----------------------------------------------------------------------------
     def get_charge_limit(self) -> int | None:
         """Get chargeable device charge limit."""
-        return self._ha_state.get_entity_integer(OPTION_CHARGEE_CHARGE_LIMIT)
+        return self.get_option_integer(OPTION_CHARGEE_CHARGE_LIMIT)
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_limit(self, charge_limit: int) -> None:
@@ -155,9 +156,7 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
         if not 50 <= charge_limit <= 100:
             msg = "Invalid charge limit. Must be between 50 and 100."
             raise ValueError(msg)
-        await self._ha_state.async_set_entity_integer(
-            OPTION_CHARGEE_CHARGE_LIMIT, charge_limit
-        )
+        await self.async_set_option_integer(OPTION_CHARGEE_CHARGE_LIMIT, charge_limit)
 
     # ----------------------------------------------------------------------------
     # Charger interface implementation
@@ -178,14 +177,14 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     async def set_charge_current(self, charge_current: float) -> None:
         """Set charger charge current."""
-        await self._ha_state.async_set_entity_integer(
-            OPTION_CHARGER_CHARGING_AMPS, int(charge_current)
+        await self.async_set_option_integer(
+            OPTION_CHARGER_GET_CHARGE_CURRENT, int(charge_current)
         )
 
     # ----------------------------------------------------------------------------
     def get_charge_current(self) -> float | None:
         """Get the current limit of the charger in amps."""
-        return self._ha_state.get_entity_number(OPTION_CHARGER_CHARGING_AMPS)
+        return self.get_option_number(OPTION_CHARGER_GET_CHARGE_CURRENT)
 
     # ----------------------------------------------------------------------------
     def get_max_charge_current(self) -> float | None:
@@ -200,7 +199,7 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     def _get_connect_state(self) -> str | None:
         """Get connect state of Tesla Custom charger."""
-        return self._ha_state.get_entity_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
+        return self.get_option_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
 
     # ----------------------------------------------------------------------------
     def car_connected(self) -> bool:
@@ -208,7 +207,7 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
         is_connected = False
 
         state = self._get_connect_state()
-        state_list = self._ha_state.get_config(OPTION_CHARGER_CONNECT_STATE_LIST)
+        state_list = self.get_option_config(OPTION_CHARGER_CONNECT_STATE_LIST)
         if state is not None and state_list is not None:
             is_connected = state in state_list
 
@@ -217,7 +216,7 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     def _get_charging_state(self) -> str | None:
         """Get charging state of Tesla Custom charger."""
-        return self._ha_state.get_entity_string(OPTION_CHARGER_CHARGING_SENSOR)
+        return self.get_option_string(OPTION_CHARGER_CHARGING_SENSOR)
 
     # ----------------------------------------------------------------------------
     def can_charge(self) -> bool:
@@ -225,7 +224,7 @@ class TeslaCustomCharger(HaDevice, Charger, Chargeable):
         is_charging = False
 
         state = self._get_charging_state()
-        state_list = self._ha_state.get_config(OPTION_CHARGER_CHARGING_STATE_LIST)
+        state_list = self.get_option_config(OPTION_CHARGER_CHARGING_STATE_LIST)
         if state is not None and state_list is not None:
             is_charging = state in state_list
 

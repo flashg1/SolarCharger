@@ -91,10 +91,15 @@ SUBENTRY_TYPE_DEFAULTS = "defaults"
 #####################################
 # Power import/export sensor
 #####################################
-OPTION_NET_POWER = "net_power"
+CONF_NET_POWER = "net_power"
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 OPTION_LAST_CHARGER_ID = "last_charger_id"
+
+#####################################
+# Internal entities
+#####################################
+CONTROL_CHARGER_AVAILABLE_POWER = "available_power"
 
 #####################################
 # Option admin
@@ -135,7 +140,8 @@ OPTION_CHARGER_CONNECT_STATE_LIST = "charger_connect_state_list"
 OPTION_CHARGER_ON_OFF_SWITCH = "charger_on_off_switch"
 OPTION_CHARGER_CHARGING_SENSOR = "charger_charging_sensor"
 OPTION_CHARGER_CHARGING_STATE_LIST = "charger_charging_state_list"
-OPTION_CHARGER_CHARGING_AMPS = "charger_charging_amps"
+OPTION_CHARGER_GET_CHARGE_CURRENT = "charger_get_charge_current"
+OPTION_CHARGER_SET_CHARGE_CURRENT = "charger_set_charge_current"
 
 #####################################
 # Chargee control entities
@@ -151,7 +157,7 @@ OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 # Lists
 #######################################################
 # Global default entities
-OPTION_GLOBAL_DEFAULTS_LIST: dict[str, str] = {
+OPTION_GLOBAL_DEFAULT_ENTITY_LIST: dict[str, str] = {
     OPTION_CHARGER_EFFECTIVE_VOLTAGE: "number.solarcharger_global_defaults_charger_effective_voltage",
     OPTION_CHARGER_MAX_CURRENT: "number.solarcharger_global_defaults_charger_max_current",
     OPTION_CHARGER_MAX_SPEED: "number.solarcharger_global_defaults_charger_max_speed",
@@ -169,13 +175,36 @@ OPTION_GLOBAL_DEFAULTS_LIST: dict[str, str] = {
     OPTION_WAIT_CHARGER_AMP_CHANGE: "number.solarcharger_global_defaults_wait_charger_amp_change",
 }
 
+OPTION_GLOBAL_DEFAULT_VALUE_LIST: dict[str, Any] = {
+    OPTION_CHARGER_EFFECTIVE_VOLTAGE: 230,
+    OPTION_CHARGER_MAX_CURRENT: 15,
+    OPTION_CHARGER_MAX_SPEED: 6.1448,
+    OPTION_CHARGER_MIN_CURRENT: 1,
+    OPTION_CHARGER_MIN_WORKABLE_CURRENT: 0,
+    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: 1,
+    OPTION_SUNRISE_ELEVATION_START_TRIGGER: 3,
+    OPTION_SUNSET_ELEVATION_END_TRIGGER: 6,
+    OPTION_WAIT_NET_POWER_UPDATE: 60,
+    OPTION_WAIT_CHARGEE_WAKEUP: 40,
+    OPTION_WAIT_CHARGEE_UPDATE_HA: 5,
+    OPTION_WAIT_CHARGEE_LIMIT_CHANGE: 5,
+    OPTION_WAIT_CHARGER_ON: 11,
+    OPTION_WAIT_CHARGER_OFF: 5,
+    OPTION_WAIT_CHARGER_AMP_CHANGE: 1,
+    #####################################
+    # Internal entities
+    #####################################
+    CONTROL_CHARGER_AVAILABLE_POWER: 0,
+}
+
 # API entities
 OPTION_DEVICE_ENTITY_LIST = {
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_CHARGING_SENSOR,
-    OPTION_CHARGER_CHARGING_AMPS,
+    OPTION_CHARGER_GET_CHARGE_CURRENT,
+    OPTION_CHARGER_SET_CHARGE_CURRENT,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
@@ -195,13 +224,15 @@ TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_MARKER}charger",
     OPTION_CHARGER_CHARGING_SENSOR: f"binary_sensor.{DEVICE_MARKER}charging",
     OPTION_CHARGER_CHARGING_STATE_LIST: "['on']",
-    OPTION_CHARGER_CHARGING_AMPS: f"number.{DEVICE_MARKER}charging_amps",
+    OPTION_CHARGER_GET_CHARGE_CURRENT: f"number.{DEVICE_MARKER}charging_amps",
+    OPTION_CHARGER_SET_CHARGE_CURRENT: f"number.{DEVICE_MARKER}charging_amps",
     OPTION_CHARGEE_SOC_SENSOR: f"sensor.{DEVICE_MARKER}battery",
     OPTION_CHARGEE_CHARGE_LIMIT: f"number.{DEVICE_MARKER}charge_limit",
     OPTION_CHARGEE_LOCATION_SENSOR: f"device_tracker.{DEVICE_MARKER}location_tracker",
     OPTION_CHARGEE_LOCATION_STATE_LIST: "['home']",
     OPTION_CHARGEE_WAKE_UP_BUTTON: f"button.{DEVICE_MARKER}wake_up",
     OPTION_CHARGEE_UPDATE_HA_BUTTON: f"button.{DEVICE_MARKER}force_data_update",
+    CONTROL_CHARGER_AVAILABLE_POWER: f"number.{DEVICE_MARKER}charger_available_power",
 }
 
 OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
@@ -212,13 +243,15 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_MARKER}charge_control",
     OPTION_CHARGER_CHARGING_SENSOR: f"sensor.{DEVICE_MARKER}status_connector",
     OPTION_CHARGER_CHARGING_STATE_LIST: "['Charging', 'SuspendedEV', 'SuspendedEVSE']",
-    OPTION_CHARGER_CHARGING_AMPS: f"sensor.{DEVICE_MARKER}current_import",
+    OPTION_CHARGER_GET_CHARGE_CURRENT: f"sensor.{DEVICE_MARKER}current_import",
+    OPTION_CHARGER_SET_CHARGE_CURRENT: f"number.{DEVICE_MARKER}charge_current",
     OPTION_CHARGEE_SOC_SENSOR: None,
     OPTION_CHARGEE_CHARGE_LIMIT: None,
     OPTION_CHARGEE_LOCATION_SENSOR: None,
     OPTION_CHARGEE_LOCATION_STATE_LIST: None,
     OPTION_CHARGEE_WAKE_UP_BUTTON: None,
     OPTION_CHARGEE_UPDATE_HA_BUTTON: None,
+    CONTROL_CHARGER_AVAILABLE_POWER: f"number.{DEVICE_MARKER}available_power",
 }
 
 CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
