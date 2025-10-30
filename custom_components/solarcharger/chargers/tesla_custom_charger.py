@@ -62,24 +62,24 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class TeslaCustomChargerConnectStateMap:
-    """Map Tesla Custom charger connected states."""
+# class TeslaCustomChargerConnectStateMap:
+#     """Map Tesla Custom charger connected states."""
 
-    On = "on"
+#     On = "on"
 
-    # Consider the chargee is connected if the charger is in any of these states.
-    ConnectedStateList = [On]
+#     # Consider the chargee is connected if the charger is in any of these states.
+#     ConnectedStateList = [On]
 
 
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-class TeslaCustomChargerChargingStateMap:
-    """Map Tesla Custom charger charging states."""
+# # ----------------------------------------------------------------------------
+# # ----------------------------------------------------------------------------
+# class TeslaCustomChargerChargingStateMap:
+#     """Map Tesla Custom charger charging states."""
 
-    On = "on"
+#     On = "on"
 
-    # Consider the chargee is charging or ready to charge if the charger is in any of these states.
-    ChargingStateList = [On]
+#     # Consider the chargee is charging or ready to charge if the charger is in any of these states.
+#     ChargingStateList = [On]
 
 
 # ----------------------------------------------------------------------------
@@ -197,7 +197,7 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         return 15.0  # Assume a default max current limit of 15A
 
     # ----------------------------------------------------------------------------
-    def _get_connect_state(self) -> str | None:
+    def get_connect_state(self) -> str | None:
         """Get connect state of Tesla Custom charger."""
         return self.get_option_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
 
@@ -206,15 +206,15 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         """Car is connected to the charger and ready to receive charge."""
         is_connected = False
 
-        state = self._get_connect_state()
-        state_list = self.get_option_config(OPTION_CHARGER_CONNECT_STATE_LIST)
+        state = self.get_connect_state()
+        state_list = self.get_option_data_list(OPTION_CHARGER_CONNECT_STATE_LIST)
         if state is not None and state_list is not None:
             is_connected = state in state_list
 
         return is_connected
 
     # ----------------------------------------------------------------------------
-    def _get_charging_state(self) -> str | None:
+    def get_charging_state(self) -> str | None:
         """Get charging state of Tesla Custom charger."""
         return self.get_option_string(OPTION_CHARGER_CHARGING_SENSOR)
 
@@ -223,8 +223,8 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         """Return whether the car is connected and charging or accepting charge."""
         is_charging = False
 
-        state = self._get_charging_state()
-        state_list = self.get_option_config(OPTION_CHARGER_CHARGING_STATE_LIST)
+        state = self.get_charging_state()
+        state_list = self.get_option_data_list(OPTION_CHARGER_CHARGING_STATE_LIST)
         if state is not None and state_list is not None:
             is_charging = state in state_list
 

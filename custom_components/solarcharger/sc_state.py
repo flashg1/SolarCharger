@@ -64,7 +64,8 @@ class ScState:
             val = self._get_entity_value(entity_id)
         except ValueError as e:
             _LOGGER.debug(
-                "Failed to get value for entity '%s': '%s'",
+                "%s: Failed to get value for entity '%s': '%s'",
+                self._caller,
                 entity_id,
                 e,
             )
@@ -80,7 +81,7 @@ class ScState:
         val = self.get_value(entity_id)
         if val is None:
             _LOGGER.warning(
-                "Cannot get number for device %s. Please check entity '%s'.",
+                "%s: Cannot get number for entity '%s'",
                 self._caller,
                 entity_id,
             )
@@ -90,10 +91,10 @@ class ScState:
             return float(val)
         except (ValueError, TypeError) as e:
             _LOGGER.warning(
-                "Failed to parse state '%s' for '%s' from device %s: %s",
+                "%s: Failed to parse state '%s' for entity '%s': %s",
+                self._caller,
                 val,
                 entity_id,
-                self._caller,
                 e,
             )
             return None
@@ -112,16 +113,16 @@ class ScState:
     def get_string(self, entity_id: str) -> str | None:
         """Get string entity."""
 
-        state = self.get_value(entity_id)
-        if state is None:
+        str_val = self.get_value(entity_id)
+        if str_val is None:
             _LOGGER.warning(
-                "Cannot get string for device %s. Please check entity '%s'.",
+                "%s: Cannot get string for entity '%s'",
                 self._caller,
                 entity_id,
             )
             return None
 
-        return state.state
+        return str_val
 
     # ----------------------------------------------------------------------------
     async def async_set_number(self, entity_id: str, num: float) -> None:
@@ -140,10 +141,10 @@ class ScState:
             )
         except (ValueError, RuntimeError, TimeoutError) as e:
             _LOGGER.warning(
-                "Failed to set %s to %d for device %s: %s",
-                entity_id,
-                num,
+                "%s: Failed to set number %s for entity '%s': %s",
                 self._caller,
+                num,
+                entity_id,
                 e,
             )
 
@@ -169,8 +170,8 @@ class ScState:
             )
         except (ValueError, RuntimeError, TimeoutError) as e:
             _LOGGER.warning(
-                "Button press %s failed for device %s: %s",
-                entity_id,
+                "%s: Failed button press for entity '%s': %s",
                 self._caller,
+                entity_id,
                 e,
             )

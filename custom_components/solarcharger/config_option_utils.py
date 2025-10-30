@@ -305,7 +305,7 @@ def get_saved_option_value(
     # Get saved local value
     saved_local_val = get_saved_local_option_value(config_entry, subentry, config_item)
     final_val = saved_local_val
-    if not saved_local_val and use_default:
+    if saved_local_val is None and use_default:
         # Get saved global value if already global
         if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
             saved_global_val = get_saved_global_option_value(config_entry, config_item)

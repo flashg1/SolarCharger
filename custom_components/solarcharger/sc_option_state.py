@@ -1,6 +1,8 @@
 """SolarCharger entity state using config from config_entry.options and config_subentry."""
 
+import json
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
@@ -38,7 +40,7 @@ class ScOptionState(ScConfigState):
     # Get entity ID from options config, then get entity value.
     # Requires config_subentry and config_entry.options.
     # ----------------------------------------------------------------------------
-    def get_option_config(
+    def get_option_data(
         self,
         config_item: str,
     ) -> str | None:
@@ -53,15 +55,23 @@ class ScOptionState(ScConfigState):
         return config_str
 
     # ----------------------------------------------------------------------------
+    def get_option_data_list(self, config_item: str) -> list[Any] | None:
+        """Get list from option config data."""
+
+        json_str = self.get_option_data(config_item)
+        if json_str is None:
+            return None
+
+        return json.loads(json_str)
+
+    # ----------------------------------------------------------------------------
     def get_option_entity_id(
         self,
         config_item: str,
     ) -> str | None:
-        """Try to get entity name from local device settings first, and if not available then try global defaults."""
+        """Get entity ID from option config data."""
 
-        entity_id = get_saved_option_value(
-            self._config_entry, self._config_subentry, config_item, use_default=True
-        )
+        entity_id = self.get_option_data(config_item)
         if not entity_id:
             _LOGGER.warning(
                 "%s: Entity ID not found for '%s'", self._caller, config_item
@@ -74,7 +84,7 @@ class ScOptionState(ScConfigState):
         self,
         config_item: str,
     ) -> float | None:
-        """Get entity name from saved options, then get value for entity."""
+        """Get entity ID from saved options, then get value for entity."""
         entity_val = None
 
         entity_id = self.get_option_entity_id(config_item)
