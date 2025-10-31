@@ -171,7 +171,7 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         return is_connected
 
     # ----------------------------------------------------------------------------
-    def is_charger_on(self) -> bool:
+    def is_charger_switch_on(self) -> bool:
         """Is charger switched on?"""
         switched_on = False
 

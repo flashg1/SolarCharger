@@ -63,7 +63,7 @@ class Charger(ABC):
         """
 
     @abstractmethod
-    def is_charger_on(self) -> bool:
+    def is_charger_switch_on(self) -> bool:
         """Is charger switched on?"""
 
     @abstractmethod

@@ -172,7 +172,7 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def _async_turn_on_charger(self, charger: Charger) -> None:
-        switched_on = charger.is_charger_on()
+        switched_on = charger.is_charger_switch_on()
         if not switched_on:
             await charger.async_charger_switch_on()
             await self._async_sleep(OPTION_WAIT_CHARGER_ON)
