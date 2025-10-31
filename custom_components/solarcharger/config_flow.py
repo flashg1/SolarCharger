@@ -51,7 +51,7 @@ STEP_SOURCE_POWER_SCHEMA = vol.Schema(
         vol.Required(CONF_NET_POWER, default=None): EntitySelector(
             EntitySelectorConfig(
                 multiple=False,
-                domain=["sensor"],
+                domain=["sensor", "number", "input_number"],
                 device_class=[SensorDeviceClass.POWER],
             )
         ),
