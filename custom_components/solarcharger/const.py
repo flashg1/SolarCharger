@@ -105,6 +105,7 @@ CONTROL_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
 # Option admin
 #####################################
 OPTION_GLOBAL_DEFAULTS_ID = "Global defaults"
+CONFIG_NAME_GLOBAL_DEFAULTS = "global_defaults"
 OPTION_ID = "option_id"
 OPTION_NAME = "option_name"
 
@@ -158,21 +159,21 @@ OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 #######################################################
 # Global default entities
 OPTION_GLOBAL_DEFAULT_ENTITY_LIST: dict[str, str] = {
-    OPTION_CHARGER_EFFECTIVE_VOLTAGE: "number.solarcharger_global_defaults_charger_effective_voltage",
-    OPTION_CHARGER_MAX_CURRENT: "number.solarcharger_global_defaults_charger_max_current",
-    OPTION_CHARGER_MAX_SPEED: "number.solarcharger_global_defaults_charger_max_speed",
-    OPTION_CHARGER_MIN_CURRENT: "number.solarcharger_global_defaults_charger_min_current",
-    OPTION_CHARGER_MIN_WORKABLE_CURRENT: "number.solarcharger_global_defaults_charger_min_workable_current",
-    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: "number.solarcharger_global_defaults_charger_power_allocation_weight",
-    OPTION_SUNRISE_ELEVATION_START_TRIGGER: "number.solarcharger_global_defaults_sunrise_elevation_start_trigger",
-    OPTION_SUNSET_ELEVATION_END_TRIGGER: "number.solarcharger_global_defaults_sunset_elevation_end_trigger",
-    OPTION_WAIT_NET_POWER_UPDATE: "number.solarcharger_global_defaults_wait_net_power_update",
-    OPTION_WAIT_CHARGEE_WAKEUP: "number.solarcharger_global_defaults_wait_chargee_wakeup",
-    OPTION_WAIT_CHARGEE_UPDATE_HA: "number.solarcharger_global_defaults_wait_chargee_update_ha",
-    OPTION_WAIT_CHARGEE_LIMIT_CHANGE: "number.solarcharger_global_defaults_wait_chargee_limit_change",
-    OPTION_WAIT_CHARGER_ON: "number.solarcharger_global_defaults_wait_charger_on",
-    OPTION_WAIT_CHARGER_OFF: "number.solarcharger_global_defaults_wait_charger_off",
-    OPTION_WAIT_CHARGER_AMP_CHANGE: "number.solarcharger_global_defaults_wait_charger_amp_change",
+    OPTION_CHARGER_EFFECTIVE_VOLTAGE: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_CHARGER_EFFECTIVE_VOLTAGE}",
+    OPTION_CHARGER_MAX_CURRENT: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_CHARGER_MAX_CURRENT}",
+    OPTION_CHARGER_MAX_SPEED: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_CHARGER_MAX_SPEED}",
+    OPTION_CHARGER_MIN_CURRENT: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_CHARGER_MIN_CURRENT}",
+    OPTION_CHARGER_MIN_WORKABLE_CURRENT: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_CHARGER_MIN_WORKABLE_CURRENT}",
+    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_CHARGER_POWER_ALLOCATION_WEIGHT}",
+    OPTION_SUNRISE_ELEVATION_START_TRIGGER: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_SUNRISE_ELEVATION_START_TRIGGER}",
+    OPTION_SUNSET_ELEVATION_END_TRIGGER: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_SUNSET_ELEVATION_END_TRIGGER}",
+    OPTION_WAIT_NET_POWER_UPDATE: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_NET_POWER_UPDATE}",
+    OPTION_WAIT_CHARGEE_WAKEUP: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_CHARGEE_WAKEUP}",
+    OPTION_WAIT_CHARGEE_UPDATE_HA: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_CHARGEE_UPDATE_HA}",
+    OPTION_WAIT_CHARGEE_LIMIT_CHANGE: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_CHARGEE_LIMIT_CHANGE}",
+    OPTION_WAIT_CHARGER_ON: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_CHARGER_ON}",
+    OPTION_WAIT_CHARGER_OFF: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_CHARGER_OFF}",
+    OPTION_WAIT_CHARGER_AMP_CHANGE: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_CHARGER_AMP_CHANGE}",
 }
 
 OPTION_GLOBAL_DEFAULT_VALUE_LIST: dict[str, Any] = {
