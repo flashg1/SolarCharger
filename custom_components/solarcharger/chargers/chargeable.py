@@ -31,6 +31,10 @@ class Chargeable(ABC):
     def is_chargeable_device(device: DeviceEntry) -> bool:
         """Check if given device is of class type chargeable."""
 
+    def get_chargeable_name(self) -> str:
+        """Get chargeable name."""
+        return "Chargeable_device"
+
     @abstractmethod
     async def async_setup_chargeable(self) -> None:
         """Set up chargeable device."""
@@ -43,9 +47,9 @@ class Chargeable(ABC):
     async def async_update_ha(self) -> None:
         """Force chargeable device to update data in HA."""
 
-    @abstractmethod
     def is_at_location(self) -> bool:
         """Is chargeable device at charger location?"""
+        return True
 
     @abstractmethod
     def get_state_of_charge(self) -> int | None:

@@ -1,7 +1,9 @@
 """Solar Charger Integration."""
 
 import logging
+from typing import cast
 
+from config.custom_components.solarcharger.chargers.chargeable import Chargeable
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -59,9 +61,12 @@ async def async_init_charger_subentry(
         )
         return
     charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
+    chargeable: Chargeable = cast(Chargeable, charger)
 
     # Initialize ChargeController
-    controller: ChargeController = ChargeController(hass, entry, subentry, charger)
+    controller: ChargeController = ChargeController(
+        hass, entry, subentry, charger, chargeable
+    )
 
     # Store in charge_controls dictionary
     charge_controls[subentry.subentry_id] = ChargeControl(

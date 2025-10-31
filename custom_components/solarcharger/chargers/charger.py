@@ -40,6 +40,10 @@ class Charger(ABC):
         """Check if device is of class type charger."""
 
     @abstractmethod
+    def get_charger_name(self) -> str:
+        """Get charger name."""
+
+    @abstractmethod
     async def async_setup(self) -> None:
         """Set up charger."""
 
@@ -57,6 +61,10 @@ class Charger(ABC):
         When the connected car is not authorised (and therefore the charger is not
         ready) we consider it a "disconnected" state.
         """
+
+    @abstractmethod
+    def is_charger_on(self) -> bool:
+        """Is charger switched on?"""
 
     @abstractmethod
     async def async_charger_switch_on(self) -> None:

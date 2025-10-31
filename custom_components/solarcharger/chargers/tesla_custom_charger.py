@@ -2,6 +2,8 @@
 
 import logging
 
+from sqlalchemy import true
+
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -18,6 +20,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_GET_CHARGE_CURRENT,
+    OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
 )
@@ -49,6 +52,7 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         self.hass = hass
         self.config_entry = config_entry
         self.config_subentry = config_subentry
+        self.device_entry = device_entry
 
         # TeslaCustomEntityMap.__init__(self, config_entry, config_subentry)
         HaDevice.__init__(self, hass, device_entry)
@@ -68,6 +72,11 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
             id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
             for id_domain, _ in device.identifiers
         )
+
+    # ----------------------------------------------------------------------------
+    def get_chargeable_name(self) -> str:
+        """Get chargeable name."""
+        return self.device_entry.id
 
     # ----------------------------------------------------------------------------
     async def async_setup_chargeable(self) -> None:
@@ -130,6 +139,11 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         )
 
     # ----------------------------------------------------------------------------
+    def get_charger_name(self) -> str:
+        """Get charger name."""
+        return self.device_entry.id
+
+    # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the charger."""
         await self.async_setup_chargeable()
@@ -137,12 +151,7 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     def get_max_charge_current(self) -> float | None:
         """Get charger max allowable current in amps."""
-        _LOGGER.info(
-            "No maximum current limit information available for Tesla Custom charger %s, "
-            "using default 15A",
-            self.device_entry.id,
-        )
-        return 15.0  # Assume a default max current limit of 15A
+        return self.option_get_number(OPTION_CHARGER_MAX_CURRENT)
 
     # ----------------------------------------------------------------------------
     def get_connect_state(self) -> str | None:
@@ -160,6 +169,17 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
             is_connected = state in state_list
 
         return is_connected
+
+    # ----------------------------------------------------------------------------
+    def is_charger_on(self) -> bool:
+        """Is charger switched on?"""
+        switched_on = False
+
+        state = self.option_get_string(OPTION_CHARGER_ON_OFF_SWITCH)
+        if state == "on":
+            switched_on = True
+
+        return switched_on
 
     # ----------------------------------------------------------------------------
     async def async_charger_switch_on(self) -> None:
