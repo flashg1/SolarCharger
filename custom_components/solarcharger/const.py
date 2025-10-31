@@ -10,7 +10,7 @@ MANUFACTURER = "FlashG"
 NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.1"
+VERSION = "0.1beta1"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -99,7 +99,7 @@ OPTION_LAST_CHARGER_ID = "last_charger_id"
 #####################################
 # Internal entities
 #####################################
-CONTROL_CHARGER_AVAILABLE_POWER = "available_power"
+CONTROL_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
 
 #####################################
 # Option admin
@@ -194,7 +194,7 @@ OPTION_GLOBAL_DEFAULT_VALUE_LIST: dict[str, Any] = {
     #####################################
     # Internal entities
     #####################################
-    CONTROL_CHARGER_AVAILABLE_POWER: 0,
+    CONTROL_CHARGER_ALLOCATED_POWER: 0,
 }
 
 # API entities
@@ -214,44 +214,45 @@ OPTION_DEVICE_ENTITY_LIST = {
 
 # Use this to delete an entity from saved options, eg. sensor.deleteme, button.deleteme
 OPTION_DELETE_ENTITY = ".deleteme"
-DEVICE_MARKER = "<DeviceName>"
+DEVICE_NAME_MARKER = "<DeviceName>"
+CONFIG_NAME_MARKER = "<ConfigName>"
 
 TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
-    OPTION_CHARGER_DEVICE_NAME: DEVICE_MARKER,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR: f"binary_sensor.{DEVICE_MARKER}charger",
+    OPTION_CHARGER_DEVICE_NAME: DEVICE_NAME_MARKER,
+    OPTION_CHARGER_PLUGGED_IN_SENSOR: f"binary_sensor.{DEVICE_NAME_MARKER}charger",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["on"]',
-    OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_MARKER}charger",
-    OPTION_CHARGER_CHARGING_SENSOR: f"binary_sensor.{DEVICE_MARKER}charging",
+    OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_NAME_MARKER}charger",
+    OPTION_CHARGER_CHARGING_SENSOR: f"binary_sensor.{DEVICE_NAME_MARKER}charging",
     OPTION_CHARGER_CHARGING_STATE_LIST: '["on"]',
-    OPTION_CHARGER_GET_CHARGE_CURRENT: f"number.{DEVICE_MARKER}charging_amps",
-    OPTION_CHARGER_SET_CHARGE_CURRENT: f"number.{DEVICE_MARKER}charging_amps",
-    OPTION_CHARGEE_SOC_SENSOR: f"sensor.{DEVICE_MARKER}battery",
-    OPTION_CHARGEE_CHARGE_LIMIT: f"number.{DEVICE_MARKER}charge_limit",
-    OPTION_CHARGEE_LOCATION_SENSOR: f"device_tracker.{DEVICE_MARKER}location_tracker",
+    OPTION_CHARGER_GET_CHARGE_CURRENT: f"number.{DEVICE_NAME_MARKER}charging_amps",
+    OPTION_CHARGER_SET_CHARGE_CURRENT: f"number.{DEVICE_NAME_MARKER}charging_amps",
+    OPTION_CHARGEE_SOC_SENSOR: f"sensor.{DEVICE_NAME_MARKER}battery",
+    OPTION_CHARGEE_CHARGE_LIMIT: f"number.{DEVICE_NAME_MARKER}charge_limit",
+    OPTION_CHARGEE_LOCATION_SENSOR: f"device_tracker.{DEVICE_NAME_MARKER}location_tracker",
     OPTION_CHARGEE_LOCATION_STATE_LIST: '["home"]',
-    OPTION_CHARGEE_WAKE_UP_BUTTON: f"button.{DEVICE_MARKER}wake_up",
-    OPTION_CHARGEE_UPDATE_HA_BUTTON: f"button.{DEVICE_MARKER}force_data_update",
-    CONTROL_CHARGER_AVAILABLE_POWER: f"number.{DEVICE_MARKER}charger_available_power",
+    OPTION_CHARGEE_WAKE_UP_BUTTON: f"button.{DEVICE_NAME_MARKER}wake_up",
+    OPTION_CHARGEE_UPDATE_HA_BUTTON: f"button.{DEVICE_NAME_MARKER}force_data_update",
+    CONTROL_CHARGER_ALLOCATED_POWER: f"number.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
 }
 
 OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
-    OPTION_CHARGER_DEVICE_NAME: DEVICE_MARKER,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR: f"sensor.{DEVICE_MARKER}status_connector",
+    OPTION_CHARGER_DEVICE_NAME: DEVICE_NAME_MARKER,
+    OPTION_CHARGER_PLUGGED_IN_SENSOR: f"sensor.{DEVICE_NAME_MARKER}status_connector",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing"]',
-    OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_MARKER}charge_control",
-    OPTION_CHARGER_CHARGING_SENSOR: f"sensor.{DEVICE_MARKER}status_connector",
+    OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_NAME_MARKER}charge_control",
+    OPTION_CHARGER_CHARGING_SENSOR: f"sensor.{DEVICE_NAME_MARKER}status_connector",
     OPTION_CHARGER_CHARGING_STATE_LIST: '["Charging", "SuspendedEV", "SuspendedEVSE"]',
-    OPTION_CHARGER_GET_CHARGE_CURRENT: f"sensor.{DEVICE_MARKER}current_import",
-    OPTION_CHARGER_SET_CHARGE_CURRENT: f"number.{DEVICE_MARKER}charge_current",
+    OPTION_CHARGER_GET_CHARGE_CURRENT: f"sensor.{DEVICE_NAME_MARKER}current_import",
+    OPTION_CHARGER_SET_CHARGE_CURRENT: f"number.{DEVICE_NAME_MARKER}charge_current",
     OPTION_CHARGEE_SOC_SENSOR: None,
     OPTION_CHARGEE_CHARGE_LIMIT: None,
     OPTION_CHARGEE_LOCATION_SENSOR: None,
     OPTION_CHARGEE_LOCATION_STATE_LIST: None,
     OPTION_CHARGEE_WAKE_UP_BUTTON: None,
     OPTION_CHARGEE_UPDATE_HA_BUTTON: None,
-    CONTROL_CHARGER_AVAILABLE_POWER: f"number.{DEVICE_MARKER}available_power",
+    CONTROL_CHARGER_ALLOCATED_POWER: f"number.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
 }
 
 CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {

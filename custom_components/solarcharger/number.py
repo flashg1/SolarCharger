@@ -24,7 +24,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import slugify
 
 from .const import (
-    CONTROL_CHARGER_AVAILABLE_POWER,
+    CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
@@ -209,9 +209,9 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     # Internal entities
     #####################################
     (
-        CONTROL_CHARGER_AVAILABLE_POWER,
+        CONTROL_CHARGER_ALLOCATED_POWER,
         NumberEntityDescription(
-            key=CONTROL_CHARGER_AVAILABLE_POWER,
+            key=CONTROL_CHARGER_ALLOCATED_POWER,
             entity_category=EntityCategory.DIAGNOSTIC,
             device_class=NumberDeviceClass.POWER,
             native_unit_of_measurement=UnitOfPower.WATT,

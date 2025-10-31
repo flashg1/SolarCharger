@@ -26,7 +26,8 @@ from homeassistant.util import slugify
 
 from .const import (
     CHARGE_API_ENTITIES,
-    DEVICE_MARKER,
+    CONFIG_NAME_MARKER,
+    DEVICE_NAME_MARKER,
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_DELETE_ENTITY,
     OPTION_DEVICE_ENTITY_LIST,
@@ -176,22 +177,28 @@ def entity_selector(
 def get_default_entity(
     api_entities: dict[str, str | None] | None,
     config_item: str,
-    substr: str | None,
+    device_name: str | None,
+    config_name: str | None,
 ) -> str | None:
     """Get default value from dictionary with substition."""
-    entity_str: Any | None = None
+    entity_str: str | None = None
 
     # The test "if substr:" cannot distinguish between substr='' and substr=None.  Must explicitly test for None!
-    if substr is not None:
-        if api_entities:
-            entity_str = api_entities.get(config_item)
-            if entity_str:
-                if entity_str == DEVICE_MARKER:
-                    entity_str = substr
-                elif substr == "":
-                    entity_str = entity_str.replace(DEVICE_MARKER, "")
+    if api_entities:
+        entity_str = api_entities.get(config_item)
+        if entity_str:
+            if device_name is not None:
+                if entity_str == DEVICE_NAME_MARKER:
+                    entity_str = device_name
+                elif device_name == "":
+                    entity_str = entity_str.replace(DEVICE_NAME_MARKER, "")
                 else:
-                    entity_str = entity_str.replace(DEVICE_MARKER, f"{substr}_")
+                    entity_str = entity_str.replace(
+                        DEVICE_NAME_MARKER, f"{device_name}_"
+                    )
+
+            if config_name is not None:
+                entity_str = entity_str.replace(CONFIG_NAME_MARKER, f"{config_name}")
 
     return entity_str
 
@@ -213,6 +220,7 @@ def get_entity_name(
                 api_entities,
                 config_item,
                 device_name,
+                subentry.unique_id,
             )
 
     return None
@@ -382,6 +390,7 @@ def reset_api_entities(
                                     api_entities,
                                     config_item,
                                     device_name,
+                                    subentry.unique_id,
                                 )
                                 if entity_name:
                                     data[config_item] = entity_name

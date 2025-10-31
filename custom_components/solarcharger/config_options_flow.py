@@ -43,6 +43,7 @@ from .config_option_utils import (
 )
 from .const import (
     CHARGE_API_ENTITIES,
+    CONTROL_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
@@ -364,6 +365,14 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): entity_selector(
                 api_entities,
                 OPTION_CHARGEE_UPDATE_HA_BUTTON,
+                BUTTON_ENTITY_SELECTOR_READ_ONLY,
+                BUTTON_ENTITY_SELECTOR,
+            ),
+            self._optional(
+                subentry, CONTROL_CHARGER_ALLOCATED_POWER, use_default
+            ): entity_selector(
+                api_entities,
+                CONTROL_CHARGER_ALLOCATED_POWER,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
                 BUTTON_ENTITY_SELECTOR,
             ),
