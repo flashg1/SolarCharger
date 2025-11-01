@@ -32,6 +32,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.util import slugify
 
+from .config_option_utils import get_subentry_id
 from .config_options_flow import reset_api_entities
 from .const import (
     CHARGER_DOMAIN_OCPP,
@@ -209,15 +210,11 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 )
 
                 # Check if subentry with this unique_id already exists
-                # subentries is a dictionary accessed via subentry.subentry_id
-                # Below will not work because key is subentry.subentry_id not subentry.unique_id
-                # if device_name_id in config_entry.subentries:
-                #     return self.async_abort(reason="already_configured")
-                for existing_subentry in config_entry.subentries.values():
-                    if existing_subentry.unique_id == thirdparty_config_name:
-                        return self.async_abort(reason="device_already_added")
+                subentry_id = get_subentry_id(config_entry, thirdparty_config_name)
+                if subentry_id is not None:
+                    return self.async_abort(reason="device_already_added")
 
-                # Create subentry
+                # Create new subentry
                 if (
                     not thirdparty_config_entry.domain
                     or not thirdparty_charger.name
@@ -251,7 +248,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 )
 
                 _LOGGER.info(
-                    "Created subentry %d for charger '%s' with device_name_id '%s'",
+                    "Created subentry %d for charger '%s' with config_name '%s'",
                     len(config_entry.subentries),
                     thirdparty_charger.name,
                     thirdparty_config_name,

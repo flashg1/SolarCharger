@@ -34,6 +34,7 @@ from .const import (
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULT_VALUE_LIST,
+    OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
@@ -289,6 +290,10 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         self._entity_key = name
         if desc.entity_category is None:
             self._attr_entity_category = EntityCategory.CONFIG
+            # Disable local device entities. User needs to manually enable if required.
+            if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
+                self._attr_entity_registry_enabled_default = False
+
         self._attr_native_step = 1.0
         self._attr_mode = NumberMode.BOX
 

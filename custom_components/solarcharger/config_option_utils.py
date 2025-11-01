@@ -249,6 +249,7 @@ def get_subentry_id(config_entry: ConfigEntry, config_name: str) -> str | None:
     """Get subentry ID for device name."""
     subentry_id: str | None = None
 
+    # subentries is a dictionary accessed via subentry.subentry_id, not subentry.unique_id.
     if config_entry.subentries:
         for subentry in config_entry.subentries.values():
             if subentry.unique_id == config_name:
