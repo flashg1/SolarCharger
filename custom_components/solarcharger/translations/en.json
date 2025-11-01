@@ -10,10 +10,7 @@
                 "title": "Net power",
                 "description": "Net Power in Watts is negative for exported power and positive for imported power.",
                 "data": {
-                    "net_power": "Net Power (W)",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current",
-                    "charger_device": "Charger device",
-                    "charger_voltage": "Charger effective voltage (V)"
+                    "net_power": "Net Power (W)"
                 },
                 "data_description": {
                     "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption."
@@ -46,10 +43,10 @@
                     "title": "Add charger device",
                     "description": "Select charger device to add.",
                     "data": {
-                        "charger_device": "Charger device"
+                        "thirdparty_device_id": "Charger device"
                     },
                     "data_description": {
-                        "charger_device": "Select charger device integration or custom integration to specify your own charger control entities."
+                        "thirdparty_device_id": "Select charger device integration or custom integration to specify your own charger control entities."
                     }
                 }
             },
@@ -73,10 +70,12 @@
                 "title": "Charger options",
                 "description": "Select the SolarCharger entity and adjust the value in the device \"Configuration\" section if required, or replace with your own entity.",
                 "data": {
+                    "charger_effective_voltage": "Charger effective voltage (V)",
                     "sunrise_elevation_start_trigger": "Sunrise elevation start trigger (degrees)",
                     "sunset_elevation_end_trigger": "Sunset elevation end trigger (degrees)",
                     "set_daily_charge_limit": "Set daily charge limit",
-                    "adjust_charge_limit_based_on_weather": "Adjust charge limit based on weather forecast"
+                    "adjust_charge_limit_based_on_weather": "Adjust charge limit based on weather forecast",
+                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current"
                 }
             }
         },

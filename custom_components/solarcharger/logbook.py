@@ -24,7 +24,7 @@ def async_describe_events(
     _hass: HomeAssistant,
     async_describe_event: Callable[[str, str, Callable[[Event], dict[str, Any]]], None],
 ) -> None:
-    """Describe EVSE events."""
+    """Describe SolarCharger events."""
 
     @callback
     def async_describe_charger_event(event: Event) -> dict[str, Any]:
@@ -34,9 +34,7 @@ def async_describe_events(
 
         if action == EVENT_ACTION_NEW_CHARGER_LIMITS:
             limit = data.get(EVENT_ATTR_NEW_LIMITS, {})
-            message = (
-                f"charger limits set to: {limit}A"
-            )
+            message = f"charger limits set to: {limit}A"
         else:
             msg = f"Unknown action: {action}"
             raise ValueError(msg)

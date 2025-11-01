@@ -13,7 +13,7 @@ from .chargers import Charger, charger_factory
 from .chargers.controller import ChargeController
 from .const import (
     DOMAIN,
-    SUBENTRY_CHARGER_DEVICE,
+    SUBENTRY_THIRDPARTY_DEVICE_ID,
     SUBENTRY_TYPE_CHARGER,
     SUBENTRY_TYPE_DEFAULTS,
 )
@@ -52,7 +52,7 @@ async def async_init_charger_subentry(
     """Initialize a charger for a given subentry."""
 
     # Initialize charger
-    charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE)
+    charger_device_id: str | None = subentry.data.get(SUBENTRY_THIRDPARTY_DEVICE_ID)
     if not charger_device_id or not subentry.unique_id:
         _LOGGER.error(
             "No charger device ID found in subentry data: %s: %s",
@@ -71,7 +71,7 @@ async def async_init_charger_subentry(
     # Store in charge_controls dictionary
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
-        device_name=subentry.unique_id,
+        config_name=subentry.unique_id,
         controller=controller,
     )
 
@@ -94,7 +94,7 @@ async def async_init_global_defaults_subsentry(
     """Initialize global defaults subentry."""
 
     # Initialize charger
-    charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE)
+    charger_device_id: str | None = subentry.data.get(SUBENTRY_THIRDPARTY_DEVICE_ID)
     if not charger_device_id or not subentry.unique_id:
         _LOGGER.error(
             "No global defaults ID found in subentry data: %s: %s",
@@ -106,7 +106,7 @@ async def async_init_global_defaults_subsentry(
     # Store in charge_controls dictionary
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
-        device_name=subentry.unique_id,
+        config_name=subentry.unique_id,
         controller=None,
     )
 

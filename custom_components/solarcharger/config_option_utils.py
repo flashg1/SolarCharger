@@ -32,7 +32,7 @@ from .const import (
     OPTION_DELETE_ENTITY,
     OPTION_DEVICE_ENTITY_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
-    SUBENTRY_DEVICE_DOMAIN,
+    SUBENTRY_THIRDPARTY_DOMAIN,
 )
 
 # ----------------------------------------------------------------------------
@@ -211,7 +211,7 @@ def get_entity_name(
 ) -> str | None:
     """Get entity name for config item with string substitution for device name."""
 
-    device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+    device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
     if device_domain:
         api_entities = CHARGE_API_ENTITIES.get(device_domain)
 
@@ -374,7 +374,7 @@ def reset_api_entities(
                     device_name = slugify(device_name.strip())
                     data[OPTION_CHARGER_DEVICE_NAME] = device_name
 
-                    device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+                    device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
                     if device_domain:
                         api_entities = CHARGE_API_ENTITIES.get(device_domain)
                         if api_entities:

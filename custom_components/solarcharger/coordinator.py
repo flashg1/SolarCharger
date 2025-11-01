@@ -317,11 +317,11 @@ class SolarChargerCoordinator(ScConfigState):
     async def switch_charge_update(self, control: ChargeControl, start_charge: bool):
         """Handle charge switch."""
 
-        _LOGGER.debug("Charger %s start charge: %s", control.device_name, start_charge)
+        _LOGGER.debug("Charger %s start charge: %s", control.config_name, start_charge)
 
         if start_charge:
             if control.switch_charge:
-                _LOGGER.error("Charger %s already running", control.device_name)
+                _LOGGER.error("Charger %s already running", control.config_name)
             else:
                 control.switch_charge = start_charge
                 await self.async_start_charger(control)
@@ -330,7 +330,7 @@ class SolarChargerCoordinator(ScConfigState):
                 control.switch_charge = start_charge
                 await self.async_stop_charger(control)
             else:
-                _LOGGER.error("Charger %s already stopped", control.device_name)
+                _LOGGER.error("Charger %s already stopped", control.config_name)
 
         # control.switch_charge = start_charge
         # if start_charge:

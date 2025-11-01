@@ -41,7 +41,7 @@ class ChargeControl:
     """Data structure for charger data."""
 
     subentry_id: str
-    device_name: str
+    config_name: str
     # charger: Charger | None = None
     controller: ChargeController | None = None
 

@@ -79,7 +79,7 @@ from .const import (
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
     OPTION_WAIT_NET_POWER_UPDATE,
-    SUBENTRY_DEVICE_DOMAIN,
+    SUBENTRY_THIRDPARTY_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
 )
 from .exceptions.validation_exception import ValidationExceptionError
@@ -243,7 +243,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         """Charger control entities."""
         api_entities: dict[str, str | None] | None = None
 
-        device_domain = subentry.data.get(SUBENTRY_DEVICE_DOMAIN)
+        device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
         if device_domain:
             api_entities = CHARGE_API_ENTITIES.get(device_domain)
 

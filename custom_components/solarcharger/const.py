@@ -78,9 +78,9 @@ EVENT_ATTR_NEW_LIMITS = "new_limits"
 # Subentry constants
 #######################################################
 SUBENTRY_TYPE_CHARGER = "charger"
-SUBENTRY_CHARGER_DEVICE = "charger_device"
-SUBENTRY_DEVICE_DOMAIN = "device_domain"
-SUBENTRY_DEVICE_NAME = "device_name"
+SUBENTRY_THIRDPARTY_DOMAIN = "thirdparty_domain"
+SUBENTRY_THIRDPARTY_DEVICE_NAME = "thirdparty_device_name"
+SUBENTRY_THIRDPARTY_DEVICE_ID = "thirdparty_device_id"
 
 SUBENTRY_TYPE_DEFAULTS = "defaults"
 

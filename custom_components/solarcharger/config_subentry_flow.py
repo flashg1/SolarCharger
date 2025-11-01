@@ -39,9 +39,9 @@ from .const import (
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
-    SUBENTRY_CHARGER_DEVICE,
-    SUBENTRY_DEVICE_DOMAIN,
-    SUBENTRY_DEVICE_NAME,
+    SUBENTRY_THIRDPARTY_DEVICE_ID,
+    SUBENTRY_THIRDPARTY_DEVICE_NAME,
+    SUBENTRY_THIRDPARTY_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
     SUBENTRY_TYPE_DEFAULTS,
 )
@@ -62,7 +62,7 @@ _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
 
 STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
     {
-        vol.Required(SUBENTRY_CHARGER_DEVICE): DeviceSelector(
+        vol.Required(SUBENTRY_THIRDPARTY_DEVICE_ID): DeviceSelector(
             DeviceSelectorConfig(
                 multiple=False,
                 filter=_charger_integration_filter_list,
@@ -78,7 +78,7 @@ def validate_charger_selection(
     _hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
     """Validate user input for charger selection step."""
-    if not data.get(SUBENTRY_CHARGER_DEVICE):
+    if not data.get(SUBENTRY_THIRDPARTY_DEVICE_ID):
         raise ValidationExceptionError("base", "select_charger_error")  # noqa: EM101
 
     return data
@@ -164,9 +164,9 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     unique_id=OPTION_GLOBAL_DEFAULTS_ID,
                     data=MappingProxyType(  # make data immutable
                         {
-                            SUBENTRY_DEVICE_DOMAIN: "N/A",  # Integration domain
-                            SUBENTRY_DEVICE_NAME: "N/A",  # Integration-specific device name
-                            SUBENTRY_CHARGER_DEVICE: "N/A",  # Integration-specific device ID
+                            SUBENTRY_THIRDPARTY_DOMAIN: "N/A",  # Integration domain
+                            SUBENTRY_THIRDPARTY_DEVICE_NAME: "N/A",  # Integration-specific device name
+                            SUBENTRY_THIRDPARTY_DEVICE_ID: "N/A",  # Integration-specific device ID
                         }
                     ),
                 ),
@@ -201,33 +201,43 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # await self.async_step_config_charger()
 
                 # Get charger device subentry
-                charger_id: str | None = input_data.get(SUBENTRY_CHARGER_DEVICE)
-                if not charger_id:
-                    raise ValueError(f"Subentry {SUBENTRY_CHARGER_DEVICE} not defined")
-                registry: DeviceRegistry = dr.async_get(self.hass)
-                charger: DeviceEntry | None = registry.async_get(charger_id)
-                if not charger:
+                thirdparty_charger_id: str | None = input_data.get(
+                    SUBENTRY_THIRDPARTY_DEVICE_ID
+                )
+                if not thirdparty_charger_id:
                     raise ValueError(
-                        f"Charger device {charger_id} not found in device registry."
+                        f"Subentry {SUBENTRY_THIRDPARTY_DEVICE_ID} not defined"
+                    )
+                registry: DeviceRegistry = dr.async_get(self.hass)
+                thirdparty_charger: DeviceEntry | None = registry.async_get(
+                    thirdparty_charger_id
+                )
+                if not thirdparty_charger:
+                    raise ValueError(
+                        f"Charger device {thirdparty_charger_id} not found in device registry."
                     )
 
                 # Get charger domain and name to create unique_id
-                charger_config_entry_id: str = next(iter(charger.config_entries))
-                charger_config_entry: ConfigEntry | None = (
-                    self.hass.config_entries.async_get_entry(charger_config_entry_id)
+                thirdparty_config_entry_id: str = next(
+                    iter(thirdparty_charger.config_entries)
                 )
-                if not charger_config_entry:
+                thirdparty_config_entry: ConfigEntry | None = (
+                    self.hass.config_entries.async_get_entry(thirdparty_config_entry_id)
+                )
+                if not thirdparty_config_entry:
                     raise ValueError(
-                        f"Charger config entry {charger_config_entry_id} not found."
+                        f"Charger config entry {thirdparty_config_entry_id} not found."
                     )
-                device_display_name = f"{charger_config_entry.domain} {charger.name}"
-                device_name_id = slugify(f"{device_display_name}")
+                thirdparty_display_name = (
+                    f"{thirdparty_config_entry.domain} {thirdparty_charger.name}"
+                )
+                thirdparty_config_name = slugify(f"{thirdparty_display_name}")
 
                 _LOGGER.info(
-                    "Creating subentry %d for charger '%s' with device_name_id '%s'",
+                    "Creating subentry %d for charger '%s' with unique_id '%s'",
                     len(config_entry.subentries) + 1,
-                    charger.name,
-                    device_name_id,
+                    thirdparty_charger.name,
+                    thirdparty_config_name,
                 )
 
                 # Check if subentry with this unique_id already exists
@@ -236,18 +246,18 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # if device_name_id in config_entry.subentries:
                 #     return self.async_abort(reason="already_configured")
                 for existing_subentry in config_entry.subentries.values():
-                    if existing_subentry.unique_id == device_name_id:
+                    if existing_subentry.unique_id == thirdparty_config_name:
                         return self.async_abort(reason="device_already_added")
 
                 # Create subentry
                 if (
-                    not charger_config_entry.domain
-                    or not charger.name
-                    or not charger_id
+                    not thirdparty_config_entry.domain
+                    or not thirdparty_charger.name
+                    or not thirdparty_charger_id
                 ):
                     raise ValueError(
                         f"Charger config entry domain, name, or ID is missing: "
-                        f"{charger_config_entry.domain=}, {charger.name=}, {charger_id=}"
+                        f"{thirdparty_config_entry.domain=}, {thirdparty_charger.name=}, {thirdparty_charger_id=}"
                     )
 
                 await self.async_init_global_defaults(config_entry)
@@ -256,32 +266,36 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     config_entry,
                     ConfigSubentry(
                         subentry_type=SUBENTRY_TYPE_CHARGER,
-                        title=device_display_name,
-                        unique_id=device_name_id,
+                        title=thirdparty_display_name,
+                        unique_id=thirdparty_config_name,
                         data=MappingProxyType(  # make data immutable
                             {
-                                SUBENTRY_DEVICE_DOMAIN: charger_config_entry.domain,  # Integration domain
-                                SUBENTRY_DEVICE_NAME: charger.name,  # Integration-specific device name
-                                SUBENTRY_CHARGER_DEVICE: charger_id,  # Integration-specific device ID
+                                SUBENTRY_THIRDPARTY_DOMAIN: thirdparty_config_entry.domain,  # Integration domain
+                                SUBENTRY_THIRDPARTY_DEVICE_NAME: thirdparty_charger.name,  # Integration-specific device name
+                                SUBENTRY_THIRDPARTY_DEVICE_ID: thirdparty_charger_id,  # Integration-specific device ID
                             }
                         ),
                     ),
                 )
 
-                self.setup_options(config_entry, device_name_id, slugify(charger.name))
+                self.setup_options(
+                    config_entry,
+                    thirdparty_config_name,
+                    slugify(thirdparty_charger.name),
+                )
 
                 _LOGGER.info(
                     "Created subentry %d for charger '%s' with device_name_id '%s'",
                     len(config_entry.subentries),
-                    charger.name,
-                    device_name_id,
+                    thirdparty_charger.name,
+                    thirdparty_config_name,
                 )
 
                 # Must return with SubentryFlowResult as stipulated in the return type
                 return self.async_abort(
                     reason="device_subentry_created",
                     description_placeholders={
-                        "subentry": device_name_id,
+                        "subentry": thirdparty_config_name,
                         "subentry_count": f"{len(config_entry.subentries)}",
                     },
                 )
