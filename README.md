@@ -1,5 +1,5 @@
 # Solar Charger - Work in progress
-Home Assistant Solar Charger custom integration using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
+Home Assistant solar charger custom integration using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
 
 ###############################################################################
 # Disclaimer:
