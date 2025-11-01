@@ -54,12 +54,28 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
+    #####################################
+    # Control entities
+    #####################################
+    (
+        CONTROL_CHARGER_ALLOCATED_POWER,
+        NumberEntityDescription(
+            key=CONTROL_CHARGER_ALLOCATED_POWER,
+            device_class=NumberDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            native_min_value=-23000.0,
+            native_max_value=+23000.0,
+        ),
+    ),
+    #####################################
+    # Config entities
+    #####################################
     (
         OPTION_CHARGER_EFFECTIVE_VOLTAGE,
         NumberEntityDescription(
             key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
             # translation_key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-            # entity_category=EntityCategory.CONFIG,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.VOLTAGE,
             native_unit_of_measurement=UnitOfElectricPotential.VOLT,
             native_min_value=100.0,
@@ -73,6 +89,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_CHARGER_MAX_CURRENT,
         NumberEntityDescription(
             key=OPTION_CHARGER_MAX_CURRENT,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.CURRENT,
             native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
             native_min_value=0.0,
@@ -83,6 +100,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_CHARGER_MAX_SPEED,
         NumberEntityDescription(
             key=OPTION_CHARGER_MAX_SPEED,
+            entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement="%/hr",
             native_min_value=0.0,
             native_max_value=100.0,
@@ -92,6 +110,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_CHARGER_MIN_CURRENT,
         NumberEntityDescription(
             key=OPTION_CHARGER_MIN_CURRENT,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.CURRENT,
             native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
             native_min_value=0.0,
@@ -102,6 +121,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_CHARGER_MIN_WORKABLE_CURRENT,
         NumberEntityDescription(
             key=OPTION_CHARGER_MIN_WORKABLE_CURRENT,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.CURRENT,
             native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
             native_min_value=0.0,
@@ -112,6 +132,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
         NumberEntityDescription(
             key=OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+            entity_category=EntityCategory.CONFIG,
             native_min_value=0.0,
             native_max_value=100.0,
         ),
@@ -120,6 +141,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_SUNRISE_ELEVATION_START_TRIGGER,
         NumberEntityDescription(
             key=OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+            entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=DEGREE,
             native_min_value=-90.0,
             native_max_value=+90.0,
@@ -129,6 +151,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_SUNSET_ELEVATION_END_TRIGGER,
         NumberEntityDescription(
             key=OPTION_SUNSET_ELEVATION_END_TRIGGER,
+            entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=DEGREE,
             native_min_value=-90.0,
             native_max_value=+90.0,
@@ -138,6 +161,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_WAIT_NET_POWER_UPDATE,
         NumberEntityDescription(
             key=OPTION_WAIT_NET_POWER_UPDATE,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
@@ -148,6 +172,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_WAIT_CHARGEE_WAKEUP,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_WAKEUP,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
@@ -158,6 +183,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_WAIT_CHARGEE_UPDATE_HA,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_UPDATE_HA,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
@@ -168,6 +194,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
@@ -178,6 +205,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_WAIT_CHARGER_ON,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_ON,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
@@ -188,6 +216,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_WAIT_CHARGER_OFF,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_OFF,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
@@ -198,6 +227,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         OPTION_WAIT_CHARGER_AMP_CHANGE,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_AMP_CHANGE,
+            entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
@@ -205,19 +235,9 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         ),
     ),
     #####################################
-    # Internal entities
+    # Diagnostic entities
+    # entity_category=EntityCategory.DIAGNOSTIC,
     #####################################
-    (
-        CONTROL_CHARGER_ALLOCATED_POWER,
-        NumberEntityDescription(
-            key=CONTROL_CHARGER_ALLOCATED_POWER,
-            entity_category=EntityCategory.DIAGNOSTIC,
-            device_class=NumberDeviceClass.POWER,
-            native_unit_of_measurement=UnitOfPower.WATT,
-            native_min_value=-23000.0,
-            native_max_value=+23000.0,
-        ),
-    ),
 )
 
 
@@ -288,8 +308,7 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
     ) -> None:
         """Initialise number."""
         self._entity_key = name
-        if desc.entity_category is None:
-            self._attr_entity_category = EntityCategory.CONFIG
+        if desc.entity_category == EntityCategory.CONFIG:
             # Disable local device entities. User needs to manually enable if required.
             if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
                 self._attr_entity_registry_enabled_default = False
