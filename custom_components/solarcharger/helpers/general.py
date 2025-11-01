@@ -7,6 +7,9 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import State
 
+from ..const import CONTROL_CHARGER_ALLOCATED_POWER  # noqa: TID252
+from ..models import ChargeControl  # noqa: TID252
+
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
@@ -22,6 +25,22 @@ def get_parameter(config_entry: ConfigEntry, parameter: str, default_val: Any = 
         return config_entry.data.get(parameter)
 
     return default_val
+
+
+# ----------------------------------------------------------------------------
+async def async_set_allocated_power(
+    control: ChargeControl, allocated_power: float
+) -> bool:
+    """Set allocated power number entity."""
+    ok: bool = False
+
+    if control.numbers:
+        await control.numbers[CONTROL_CHARGER_ALLOCATED_POWER].async_set_native_value(
+            allocated_power
+        )
+        ok = True
+
+    return ok
 
 
 # ----------------------------------------------------------------------------

@@ -382,6 +382,37 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
+    async def _async_stop_charge_task(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        """Stop charge task."""
+        if self.charge_task:
+            if not self.charge_task.done():
+                self.charge_task.cancel()
+                try:
+                    await self.charge_task
+                except asyncio.CancelledError:
+                    _LOGGER.info(
+                        "Task %s cancelled successfully", self.charge_task.get_name()
+                    )
+                    await self._async_tidy_up_on_exit(charger, chargeable)
+                except Exception as e:
+                    _LOGGER.error(
+                        "Error stopping charge task for charger %s: %s",
+                        self.device_name,
+                        e,
+                    )
+            else:
+                _LOGGER.info("Task %s already completed", self.charge_task.get_name())
+
+    # ----------------------------------------------------------------------------
+    async def _async_stop_charge(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        """Async task to start the charger."""
+        await self._async_stop_charge_task(charger, chargeable)
+
+    # ----------------------------------------------------------------------------
     def stop_charge(self) -> Task | None:
         """Stop charge."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
@@ -408,34 +439,3 @@ class ChargeController(ScOptionState):
                 "No running charge task to stop for charger %s", self.device_name
             )
         return None
-
-    # ----------------------------------------------------------------------------
-    async def _async_stop_charge(
-        self, charger: Charger, chargeable: Chargeable
-    ) -> None:
-        """Async task to start the charger."""
-        await self._async_stop_charge_task(charger, chargeable)
-
-    # ----------------------------------------------------------------------------
-    async def _async_stop_charge_task(
-        self, charger: Charger, chargeable: Chargeable
-    ) -> None:
-        """Stop charge task."""
-        if self.charge_task:
-            if not self.charge_task.done():
-                self.charge_task.cancel()
-                try:
-                    await self.charge_task
-                except asyncio.CancelledError:
-                    _LOGGER.info(
-                        "Task %s cancelled successfully", self.charge_task.get_name()
-                    )
-                    await self._async_tidy_up_on_exit(charger, chargeable)
-                except Exception as e:
-                    _LOGGER.error(
-                        "Error stopping charge task for charger %s: %s",
-                        self.device_name,
-                        e,
-                    )
-            else:
-                _LOGGER.info("Task %s already completed", self.charge_task.get_name())

@@ -31,7 +31,6 @@ from homeassistant.helpers.event import (
 
 from .const import (
     CONF_NET_POWER,
-    CONTROL_CHARGER_ALLOCATED_POWER,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     DOMAIN,
@@ -47,6 +46,7 @@ from .const import (
     OPTION_WAIT_NET_POWER_UPDATE,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
+from .helpers.general import async_set_allocated_power
 from .models import ChargeControl
 from .sc_option_state import ScOptionState
 from .utils import log_is_event_loop
@@ -232,7 +232,7 @@ class SolarChargerCoordinator(ScOptionState):
     async def _async_allocate_net_power(self) -> None:
         net_power = self._get_net_power()
         if net_power is None:
-            _LOGGER.warning("Failed to get net power data. Try again next cycle.")
+            _LOGGER.warning("Failed to get net power update. Try again next cycle.")
             return
 
         pool = self._get_total_allocation_pool()
@@ -243,18 +243,12 @@ class SolarChargerCoordinator(ScOptionState):
         if total_weight > 0:
             for control in self.charge_controls.values():
                 if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
-                    if control.numbers:
-                        await control.numbers[
-                            CONTROL_CHARGER_ALLOCATED_POWER
-                        ].async_set_native_value(net_power)
+                    await async_set_allocated_power(control, net_power)
                     continue
 
                 allocation_weight = pool[control.subentry_id]
                 allocated_power = net_power * allocation_weight / total_weight
-                if control.numbers:
-                    await control.numbers[
-                        CONTROL_CHARGER_ALLOCATED_POWER
-                    ].async_set_native_value(allocated_power)
+                await async_set_allocated_power(control, allocated_power)
 
                 _LOGGER.debug(
                     "%s: total_weight=%s, allocation_weight=%s, allocated_power=%s",
@@ -403,8 +397,16 @@ class SolarChargerCoordinator(ScOptionState):
                     )
                     return
 
+            #####################################
+            # Callback on task end
+            # Cannot be async due to following error.
+            # TypeError: coroutines cannot be used with call_soon()
+            #####################################
             def _callback_on_charge_end(task: Task) -> None:
                 """Turn off switch on task exit."""
+                log_is_event_loop(
+                    _LOGGER, self.__class__.__name__, inspect.currentframe()
+                )
                 if task.cancelled():
                     _LOGGER.warning("Task %s was cancelled", task.get_name())
                 elif task.exception():
@@ -415,6 +417,7 @@ class SolarChargerCoordinator(ScOptionState):
                     _LOGGER.info("Task %s completed", task.get_name())
 
                 control.instance_count = 0
+                # await async_set_allocated_power(control, 0)
 
                 if control.switches:
                     control.switch_charge = False
