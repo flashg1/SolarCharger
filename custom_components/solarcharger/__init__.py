@@ -1,6 +1,7 @@
 """Solar Charger Integration."""
 
 import logging
+from types import MappingProxyType
 from typing import cast
 
 from config.custom_components.solarcharger.chargers.chargeable import Chargeable
@@ -11,9 +12,14 @@ from homeassistant.helpers import config_validation as cv
 
 from .chargers import Charger, charger_factory
 from .chargers.controller import ChargeController
+from .config_option_utils import get_subentry
 from .const import (
     DOMAIN,
+    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
+    OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_THIRDPARTY_DEVICE_ID,
+    SUBENTRY_THIRDPARTY_DEVICE_NAME,
+    SUBENTRY_THIRDPARTY_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
     SUBENTRY_TYPE_DEFAULTS,
 )
@@ -40,6 +46,39 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up Solar Charger integration."""
     hass.data.setdefault(DOMAIN, {})
     return True
+
+
+# ----------------------------------------------------------------------------
+async def async_create_global_defaults_subentry(
+    hass: HomeAssistant, config_entry: ConfigEntry
+) -> None:
+    """Initialize global defaults subentry if none exist."""
+
+    global_defaults_subentry = get_subentry(config_entry, OPTION_GLOBAL_DEFAULTS_ID)
+    if global_defaults_subentry is None:
+        hass.config_entries.async_add_subentry(
+            config_entry,
+            ConfigSubentry(
+                subentry_type=SUBENTRY_TYPE_DEFAULTS,
+                title="Global defaults",
+                unique_id=OPTION_GLOBAL_DEFAULTS_ID,
+                data=MappingProxyType(  # make data immutable
+                    {
+                        SUBENTRY_THIRDPARTY_DOMAIN: "N/A",  # Integration domain
+                        SUBENTRY_THIRDPARTY_DEVICE_NAME: "N/A",  # Integration-specific device name
+                        SUBENTRY_THIRDPARTY_DEVICE_ID: "N/A",  # Integration-specific device ID
+                    }
+                ),
+            ),
+        )
+
+        hass.config_entries.async_update_entry(
+            config_entry,
+            options=config_entry.options
+            | {
+                OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
+            },
+        )
 
 
 # ----------------------------------------------------------------------------
@@ -86,7 +125,7 @@ async def async_init_charger_subentry(
 
 
 # ----------------------------------------------------------------------------
-async def async_init_global_defaults_subsentry(
+async def async_init_global_defaults_subentry(
     entry: ConfigEntry,
     subentry: ConfigSubentry,
     charge_controls: dict[str, ChargeControl],
@@ -123,17 +162,16 @@ async def async_init_global_defaults_subsentry(
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Solar Charger from a config entry."""
 
-    # Initialize coordinator
-    coordinator = SolarChargerCoordinator(
-        hass=hass,
-        config_entry=entry,
-    )
-    hass.data[DOMAIN][entry.entry_id] = coordinator
+    #####################################
+    # Create global defaults subentry
+    #####################################
+    await async_create_global_defaults_subentry(hass, entry)
 
-    # Set up subentries (e.g., chargers)
+    #####################################
+    # Initialise all subentries
+    #####################################
+    global_defaults_subentry = None
     charge_controls: dict[str, ChargeControl] = {}
-    coordinator.charge_controls = charge_controls
-
     for subentry in entry.subentries.values():
         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
             # Initialize charger
@@ -145,11 +183,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
         elif subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
             # Initialize global defaults
-            await async_init_global_defaults_subsentry(
+            global_defaults_subentry = subentry
+            await async_init_global_defaults_subentry(
                 entry,
                 subentry,
                 charge_controls,
             )
+
+    # There are no subentries on first start
+    if global_defaults_subentry is None:
+        raise RuntimeError("Global defaults subentry not found")
+
+    #####################################
+    # Initialize coordinator
+    #####################################
+    coordinator = SolarChargerCoordinator(
+        hass=hass,
+        config_entry=entry,
+        global_defaults_subentry=global_defaults_subentry,
+    )
+    coordinator.charge_controls = charge_controls
+    hass.data[DOMAIN][entry.entry_id] = coordinator
 
     await coordinator.async_setup()
     _LOGGER.warning("SolarChargerCoordinator initialized for %s", entry.entry_id)
@@ -157,7 +211,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Registers update listener to update config entry when options are updated.
     # entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
+    #####################################
     # Create entites for each platform
+    #####################################
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
 
     _LOGGER.debug("SolarCharger initialized for %s", entry.entry_id)

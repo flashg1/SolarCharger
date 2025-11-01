@@ -310,6 +310,9 @@ def get_saved_option_value(
     saved_local_val = None
     saved_global_val = None
 
+    if subentry is None:
+        raise SystemError(f"Cannot get {config_item} because subentry is None")
+
     # Get saved local value
     saved_local_val = get_saved_local_option_value(config_entry, subentry, config_item)
     final_val = saved_local_val

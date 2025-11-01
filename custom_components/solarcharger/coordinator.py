@@ -8,12 +8,13 @@ from time import time
 
 # from functools import cached_property
 from propcache.api import cached_property
+from regex import W
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.components.number import NumberEntity
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import (
     CALLBACK_TYPE,
@@ -34,6 +35,8 @@ from homeassistant.helpers.event import (
 
 from .const import (
     CONF_NET_POWER,
+    CONTROL_CHARGER_ALLOCATED_POWER,
+    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     DOMAIN,
@@ -50,7 +53,7 @@ from .const import (
 )
 from .helpers.general import get_parameter
 from .models import ChargeControl
-from .sc_config_state import ScConfigState
+from .sc_option_state import ScOptionState
 from .utils import log_is_event_loop
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,7 +75,7 @@ MIN_CHARGER_UPDATE_DELAY: int = 30
 # See Tesla Custom integration for reference.
 
 
-class SolarChargerCoordinator(ScConfigState):
+class SolarChargerCoordinator(ScOptionState):
     """Coordinator for the Solar Charger."""
 
     # MODIFIED: Store as datetime object or None
@@ -82,10 +85,12 @@ class SolarChargerCoordinator(ScConfigState):
         self,
         hass: HomeAssistant,
         config_entry: ConfigEntry,
+        global_defaults_subentry: ConfigSubentry,
     ):
         """Initialize the coordinator."""
         self.hass: HomeAssistant = hass
         self.config_entry: ConfigEntry = config_entry
+        # self.global_defaults_subentry: ConfigSubentry = global_defaults_subentry
         self.listeners = []
         self.charge_controls: dict[str, ChargeControl] = {}
 
@@ -95,7 +100,9 @@ class SolarChargerCoordinator(ScConfigState):
         # self._switches: list[SwitchEntity] = []
         # self._numbers: list[NumberEntity] = []
 
-        ScConfigState.__init__(self, hass, config_entry, __name__)
+        ScOptionState.__init__(
+            self, hass, config_entry, global_defaults_subentry, __name__
+        )
 
         # self.entity_id_net_power: str | None = get_parameter(
         #     self.config_entry, CONF_NET_POWER
@@ -190,30 +197,75 @@ class SolarChargerCoordinator(ScConfigState):
         self._unsub.clear()
 
     # ----------------------------------------------------------------------------
+    def _get_net_power(self) -> float | None:
+        """Get household net power."""
+        return self.config_get_number(CONF_NET_POWER)
+
+    # ----------------------------------------------------------------------------
+    def _get_total_allocation_pool(self) -> dict[str, float]:
+        allocation_pool: dict[str, float] = {}
+        pool = 0
+        for control in self.charge_controls.values():
+            pool = pool + control.instance_count
+
+        for control in self.charge_controls.values():
+            subentry = self.config_entry.subentries.get(control.subentry_id)
+            if subentry:
+                allocation_weight = self.option_get_number(
+                    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, subentry
+                )
+                if allocation_weight is None:
+                    raise RuntimeError(
+                        f"Cannot get {OPTION_CHARGER_POWER_ALLOCATION_WEIGHT} for {subentry.unique_id}"
+                    )
+                allocation_pool[control.subentry_id] = (
+                    allocation_weight * control.instance_count
+                )
+            else:
+                # TODO: Need to remove stale control
+                allocation_pool[control.subentry_id] = 0
+
+        return allocation_pool
+
+    # ----------------------------------------------------------------------------
+    def _allocate_net_power(self) -> None:
+        net_power = self._get_net_power()
+        if net_power is None:
+            _LOGGER.warning("Failed to get net power data. Try again next cycle.")
+            return
+
+        pool = self._get_total_allocation_pool()
+        total_weight = 0
+        for weight in pool.values():
+            total_weight = total_weight + weight
+
+        if total_weight > 0:
+            for control in self.charge_controls.values():
+                allocation_weight = pool[control.subentry_id]
+                allocated_power = net_power * allocation_weight / total_weight
+                if control.numbers:
+                    control.numbers[CONTROL_CHARGER_ALLOCATED_POWER].set_value(
+                        allocated_power
+                    )
+                _LOGGER.debug(
+                    "total_weight=%s, allocation_weight=%s, allocated_power=%s",
+                    total_weight,
+                    allocation_weight,
+                    allocated_power,
+                )
+        else:
+            _LOGGER.debug(
+                "No running charger for net power allocation. Try again next cycle."
+            )
+
+    # ----------------------------------------------------------------------------
     @callback
     def _execute_update_cycle(self, now: datetime) -> None:
         """Execute an update cycle."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
         self._last_check_timestamp = datetime.now().astimezone()
-        net_power = self.get_net_power()
-        effective_voltage = self.get_effective_voltage()
-        net_current: float | None = None
-
-        if (
-            net_power is not None
-            and effective_voltage is not None
-            and effective_voltage > 0
-        ):
-            net_current = net_power / effective_voltage
-
-        _LOGGER.debug(
-            "Update cycle at %s: effective_voltage=%s, net_power=%s, net_current=%s",
-            self._last_check_timestamp,
-            effective_voltage,
-            net_power,
-            net_current,
-        )
+        self._allocate_net_power()
 
         # self._async_update_sensors()
         # self._async_update_numbers()
@@ -233,10 +285,6 @@ class SolarChargerCoordinator(ScConfigState):
         #         # self._update_charger_if_needed(control, net_current)
         #     elif not control.is_running:
         #         self.async_stop_charger(control)
-
-        if net_current is None:
-            _LOGGER.debug("Cannot proceed with cycle because net_current is None")
-            return
 
     # ----------------------------------------------------------------------------
     async def update_sensors_new(
@@ -315,7 +363,7 @@ class SolarChargerCoordinator(ScConfigState):
 
     # ----------------------------------------------------------------------------
     async def switch_charge_update(self, control: ChargeControl, start_charge: bool):
-        """Handle charge switch."""
+        """Called by switch entity to start or stop charge."""
 
         _LOGGER.debug("Charger %s start charge: %s", control.config_name, start_charge)
 
@@ -323,20 +371,14 @@ class SolarChargerCoordinator(ScConfigState):
             if control.switch_charge:
                 _LOGGER.error("Charger %s already running", control.config_name)
             else:
-                control.switch_charge = start_charge
+                control.switch_charge = True
                 await self.async_start_charger(control)
         else:
             if control.switch_charge:
-                control.switch_charge = start_charge
+                control.switch_charge = False
                 await self.async_stop_charger(control)
             else:
                 _LOGGER.error("Charger %s already stopped", control.config_name)
-
-        # control.switch_charge = start_charge
-        # if start_charge:
-        #     await self.async_start_charger(control)
-        # else:
-        #     await self.async_stop_charger(control)
 
     # ----------------------------------------------------------------------------
     async def async_start_charger(self, control: ChargeControl) -> None:
@@ -369,12 +411,14 @@ class SolarChargerCoordinator(ScConfigState):
                     control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
                         COORDINATOR_STATE_STOPPED
                     )
+                control.instance_count = 0
 
             if control.sensors:
                 control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
                     COORDINATOR_STATE_CHARGING
                 )
             control.charge_task = control.controller.start_charge()
+            control.instance_count = 1
             control.charge_task.add_done_callback(_callback_on_charge_end)
 
     # ----------------------------------------------------------------------------
@@ -446,62 +490,6 @@ class SolarChargerCoordinator(ScConfigState):
     #     )
     #     self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)
     #     self.hass.async_create_task(control.charger.set_charge_current(new_current))
-
-    # ----------------------------------------------------------------------------
-    def get_net_power(self) -> float | None:
-        """Get household net power."""
-        return self._get_entity_number_value(CONF_NET_POWER)
-
-    def get_effective_voltage(self) -> float | None:
-        """Get charger effective voltage."""
-        val: float | None = None
-
-        global_defaults = self.config_entry.options.get(OPTION_GLOBAL_DEFAULTS_ID)
-        if global_defaults is not None:
-            entity_id = global_defaults.get(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
-            if entity_id is not None:
-                val = self.get_value(entity_id)
-        return val
-
-    def _get_entity_number_value(self, key: str) -> float | None:
-        """Get the value of an option from the config entry."""
-
-        entity_id = self.config_entry.options.get(key, None)
-        if entity_id is None:
-            # Try to get default value.
-            val = OPTION_GLOBAL_DEFAULT_ENTITY_LIST.get(key)
-            if val is None:
-                _LOGGER.debug("No default value for %s", key)
-                return None
-            try:
-                return float(val)
-            except ValueError as ex:
-                _LOGGER.exception(
-                    "Failed to parse default value %s for key %s: %s",
-                    val,
-                    key,
-                    ex,  # noqa: TRY401
-                )
-                return None
-        return self.get_number(entity_id)
-
-    # ----------------------------------------------------------------------------
-    # def _get_state(self, entity_id: str) -> float | None:
-    #     entity = self.hass.states.get(entity_id)
-    #     if entity is None:
-    #         _LOGGER.debug("State not found for entity %s", entity_id)
-    #         return None
-    #     state_value = entity.state
-    #     try:
-    #         return float(state_value)
-    #     except ValueError as ex:
-    #         _LOGGER.exception(
-    #             "Failed to parse state %s for entity %s: %s",
-    #             state_value,
-    #             entity_id,
-    #             ex,  # noqa: TRY401
-    #         )
-    #         return None
 
     # ----------------------------------------------------------------------------
     # eg. self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)

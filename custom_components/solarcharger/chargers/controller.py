@@ -32,6 +32,9 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+# TODO: Need to clean up if removed subentry
+
+
 class ChargeController(ScOptionState):
     """Class to manage the charging process."""
 

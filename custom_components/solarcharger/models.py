@@ -46,6 +46,7 @@ class ChargeControl:
     controller: ChargeController | None = None
 
     charge_task: Task | None = None
+    instance_count: int = 0
     end_charge_task: Task | None = None
     last_charger_target_update: tuple[float, int] | None = (
         None  # (new_current, timestamp)

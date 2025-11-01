@@ -260,7 +260,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                         f"{thirdparty_config_entry.domain=}, {thirdparty_charger.name=}, {thirdparty_charger_id=}"
                     )
 
-                await self.async_init_global_defaults(config_entry)
+                # await self.async_init_global_defaults(config_entry)
 
                 self.hass.config_entries.async_add_subentry(
                     config_entry,

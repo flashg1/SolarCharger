@@ -15,13 +15,6 @@
                 "data_description": {
                     "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption."
                 }
-            },
-            "charger": {
-                "title": "Charger",
-                "description": "Charger configuration",
-                "data": {
-                    "voltage": "Voltage (V)"
-                }
             }
         },
         "abort": {
