@@ -251,8 +251,10 @@ class SolarChargerCoordinator(ScOptionState):
                     await control.numbers[
                         CONTROL_CHARGER_ALLOCATED_POWER
                     ].async_set_native_value(allocated_power)
+
                 _LOGGER.debug(
-                    "total_weight=%s, allocation_weight=%s, allocated_power=%s",
+                    "%s: total_weight=%s, allocation_weight=%s, allocated_power=%s",
+                    control.config_name,
                     total_weight,
                     allocation_weight,
                     allocated_power,

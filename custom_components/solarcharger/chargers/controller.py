@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 
 from ..const import (  # noqa: TID252
-    CONF_NET_POWER,
+    CONTROL_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
@@ -221,9 +221,10 @@ class ChargeController(ScOptionState):
         else:
             charger_min_current = config_min_current
 
-        feedback_loop_power = self.config_get_number(CONF_NET_POWER)
-        if feedback_loop_power is None:
-            raise SystemError(f"{self.device_name}: Failed to get feedback loop power")
+        #####################################
+        # Get allocated power
+        #####################################
+        allocated_power = self._get_config(CONTROL_CHARGER_ALLOCATED_POWER)
 
         charger_effective_voltage = self._get_config(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
         if charger_effective_voltage <= 0:
@@ -231,7 +232,7 @@ class ChargeController(ScOptionState):
 
         one_amp_watt_step = charger_effective_voltage * 1
         power_offset = 0
-        all_power_net = feedback_loop_power + (one_amp_watt_step * 0.3) + power_offset
+        all_power_net = allocated_power + (one_amp_watt_step * 0.3) + power_offset
         all_current_net = all_power_net / charger_effective_voltage
 
         if all_current_net > 0:
@@ -242,8 +243,8 @@ class ChargeController(ScOptionState):
             propose_charge_current = round(
                 min([charger_max_current, old_charge_current - all_current_net])
             )
-
         propose_new_charge_current = max([charger_min_current, propose_charge_current])
+
         charger_min_workable_current = self._get_config(
             OPTION_CHARGER_MIN_WORKABLE_CURRENT
         )
@@ -254,7 +255,7 @@ class ChargeController(ScOptionState):
 
         _LOGGER.debug(
             "%s: "
-            "feedback_loop_power=%s, "
+            "allocated_power=%s, "
             "charger_effective_voltage=%s, "
             "config_min_current=%s, "
             "charger_min_current=%s, "
@@ -267,7 +268,7 @@ class ChargeController(ScOptionState):
             "charger_min_workable_current=%s "
             "new_charge_current=%s ",
             self.device_name,
-            feedback_loop_power,
+            allocated_power,
             charger_effective_voltage,
             config_min_current,
             charger_min_current,
