@@ -43,8 +43,6 @@ from .const import (
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
     OPTION_WAIT_NET_POWER_UPDATE,
-    SUBENTRY_TYPE_CHARGER,
-    SUBENTRY_TYPE_DEFAULTS,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity

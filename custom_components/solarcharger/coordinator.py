@@ -10,10 +10,6 @@ from time import time
 from propcache.api import cached_property
 from regex import W
 
-from homeassistant.components.button import ButtonEntity
-from homeassistant.components.number import NumberEntity
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import (
@@ -36,7 +32,6 @@ from homeassistant.helpers.event import (
 from .const import (
     CONF_NET_POWER,
     CONTROL_CHARGER_ALLOCATED_POWER,
-    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     DOMAIN,
@@ -46,12 +41,9 @@ from .const import (
     EVENT_ACTION_NEW_CHARGER_LIMITS,
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
-    OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
-    OPTION_GLOBAL_DEFAULTS_ID,
+    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
-from .helpers.general import get_parameter
 from .models import ChargeControl
 from .sc_option_state import ScOptionState
 from .utils import log_is_event_loop

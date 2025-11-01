@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from types import MappingProxyType
 from typing import Any
 
 from packaging.version import parse as parse_version
@@ -17,34 +16,15 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    ConfigSubentry,
     ConfigSubentryFlow,
 )
 from homeassistant.const import __version__ as ha_version
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import section
-from homeassistant.helpers.selector import (
-    DeviceFilterSelectorConfig,
-    DeviceSelector,
-    DeviceSelectorConfig,
-    EntitySelector,
-    EntitySelectorConfig,
-    # NumberSelector,
-)
+from homeassistant.helpers.selector import EntitySelector, EntitySelectorConfig
 
 from .config_options_flow import ConfigOptionsFlowHandler
 from .config_subentry_flow import AddChargerSubEntryFlowHandler
-from .const import (
-    CONF_NET_POWER,
-    DOMAIN,
-    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
-    OPTION_GLOBAL_DEFAULTS_ID,
-    SUBENTRY_THIRDPARTY_DEVICE_ID,
-    SUBENTRY_THIRDPARTY_DEVICE_NAME,
-    SUBENTRY_THIRDPARTY_DOMAIN,
-    SUBENTRY_TYPE_CHARGER,
-    SUBENTRY_TYPE_DEFAULTS,
-)
+from .const import CONF_NET_POWER, DOMAIN, SUBENTRY_TYPE_CHARGER
 from .exceptions.validation_exception import ValidationExceptionError
 
 # ----------------------------------------------------------------------------
@@ -145,35 +125,6 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         }
 
     # ----------------------------------------------------------------------------
-    async def async_init_global_defaults(self, config_entry: ConfigEntry) -> None:
-        """Initialize global defaults subentry if none exist."""
-
-        if config_entry.subentries.__len__() == 0:
-            self.hass.config_entries.async_add_subentry(
-                config_entry,
-                ConfigSubentry(
-                    subentry_type=SUBENTRY_TYPE_DEFAULTS,
-                    title="Global defaults",
-                    unique_id=OPTION_GLOBAL_DEFAULTS_ID,
-                    data=MappingProxyType(  # make data immutable
-                        {
-                            SUBENTRY_THIRDPARTY_DOMAIN: "N/A",  # Integration domain
-                            SUBENTRY_THIRDPARTY_DEVICE_NAME: "N/A",  # Integration-specific device name
-                            SUBENTRY_THIRDPARTY_DEVICE_ID: "N/A",  # Integration-specific device ID
-                        }
-                    ),
-                ),
-            )
-
-            self.hass.config_entries.async_update_entry(
-                config_entry,
-                options=config_entry.options
-                | {
-                    OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
-                },
-            )
-
-    # ----------------------------------------------------------------------------
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -186,18 +137,10 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     self._get_reconfigure_entry(), data_updates=user_input
                 )
 
-            result = self.async_create_entry(
+            return self.async_create_entry(
                 title="SolarCharger",
                 data=user_input,
             )
-
-            # config_entries: list[ConfigEntry] = self._async_current_entries()
-            # if config_entries:
-            #     if len(config_entries) != 1:
-            #         raise RuntimeError("No config entry!")
-            #     config_entry = config_entries[0]
-            #     await self.async_init_global_defaults(config_entry)
-            return result
 
         config_entries: list[ConfigEntry] = self._async_current_entries()
         if config_entries:

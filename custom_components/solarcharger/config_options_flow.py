@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 import logging
-from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -18,10 +17,6 @@ from homeassistant.config_entries import (
 )
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
-
-# from homeassistant.helpers.typing import UNDEFINED, UndefinedType
-# from homeassistant.helpers.template import device_name
-from homeassistant.util import slugify
 
 from .config_option_utils import (
     BUTTON_ENTITY_SELECTOR,

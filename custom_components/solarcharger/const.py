@@ -1,7 +1,6 @@
 """Constants for the Solar Charger integration."""
 
 from enum import Enum
-from token import OP
 from typing import Any
 
 from homeassistant.const import Platform, __version__ as HA_VERSION
@@ -59,7 +58,6 @@ ENTITY_KEY_CHARGE_BUTTON = "start_charge"
 #######################################################
 # Make sure the entity key names are unique.
 #######################################################
-
 
 COORDINATOR_STATE_STOPPED = "stopped"
 COORDINATOR_STATE_CHARGING = "charging"
