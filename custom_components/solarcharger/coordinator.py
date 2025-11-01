@@ -42,6 +42,7 @@ from .const import (
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+    OPTION_WAIT_NET_POWER_UPDATE,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 from .models import ChargeControl
@@ -49,11 +50,6 @@ from .sc_option_state import ScOptionState
 from .utils import log_is_event_loop
 
 _LOGGER = logging.getLogger(__name__)
-
-# Number of seconds between each check cycle
-# EXECUTION_CYCLE_DELAY: int = 1
-# EXECUTION_CYCLE_DELAY: int = 3
-EXECUTION_CYCLE_DELAY: int = 60
 
 # Number of seconds between each charger update. This setting
 # makes sure that the charger is not updated too frequently and
@@ -155,11 +151,17 @@ class SolarChargerCoordinator(ScOptionState):
             if control.controller is not None:
                 await control.controller.async_setup()
 
+        wait_net_power_update = self.option_get_number(OPTION_WAIT_NET_POWER_UPDATE)
+        if wait_net_power_update is None:
+            raise SystemError(
+                f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
+            )
+
         self._unsub.append(
             async_track_time_interval(
                 self.hass,
-                self._execute_update_cycle,
-                timedelta(seconds=EXECUTION_CYCLE_DELAY),
+                self._async_execute_update_cycle,
+                timedelta(seconds=wait_net_power_update),
             )
         )
 
@@ -220,7 +222,7 @@ class SolarChargerCoordinator(ScOptionState):
         return allocation_pool
 
     # ----------------------------------------------------------------------------
-    def _allocate_net_power(self) -> None:
+    async def _async_allocate_net_power(self) -> None:
         net_power = self._get_net_power()
         if net_power is None:
             _LOGGER.warning("Failed to get net power data. Try again next cycle.")
@@ -236,9 +238,9 @@ class SolarChargerCoordinator(ScOptionState):
                 allocation_weight = pool[control.subentry_id]
                 allocated_power = net_power * allocation_weight / total_weight
                 if control.numbers:
-                    control.numbers[CONTROL_CHARGER_ALLOCATED_POWER].set_value(
-                        allocated_power
-                    )
+                    await control.numbers[
+                        CONTROL_CHARGER_ALLOCATED_POWER
+                    ].async_set_native_value(allocated_power)
                 _LOGGER.debug(
                     "total_weight=%s, allocation_weight=%s, allocated_power=%s",
                     total_weight,
@@ -251,13 +253,13 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    @callback
-    def _execute_update_cycle(self, now: datetime) -> None:
+    # @callback
+    async def _async_execute_update_cycle(self, now: datetime) -> None:
         """Execute an update cycle."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
         self._last_check_timestamp = datetime.now().astimezone()
-        self._allocate_net_power()
+        await self._async_allocate_net_power()
 
         # self._async_update_sensors()
         # self._async_update_numbers()

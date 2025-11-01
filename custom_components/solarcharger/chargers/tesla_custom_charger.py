@@ -2,8 +2,6 @@
 
 import logging
 
-from sqlalchemy import true
-
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -37,10 +35,6 @@ _LOGGER = logging.getLogger(__name__)
 class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
     """Implementation of the Charger class for Tesla Custom chargers."""
 
-    # Also need to implement following,
-    # OPTION_CHARGER_ON_OFF_SWITCH,
-    # OPTION_CHARGEE_LOCATION_SENSOR,
-
     def __init__(
         self,
         hass: HomeAssistant,
@@ -54,7 +48,6 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         self.config_subentry = config_subentry
         self.device_entry = device_entry
 
-        # TeslaCustomEntityMap.__init__(self, config_entry, config_subentry)
         HaDevice.__init__(self, hass, device_entry)
         ScOptionState.__init__(self, hass, config_entry, config_subentry, __name__)
         Charger.__init__(self, hass, config_entry, config_subentry, device_entry)
@@ -154,16 +147,11 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         return self.option_get_number(OPTION_CHARGER_MAX_CURRENT)
 
     # ----------------------------------------------------------------------------
-    def get_connect_state(self) -> str | None:
-        """Get charger connect state."""
-        return self.option_get_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
-
-    # ----------------------------------------------------------------------------
     def is_connected(self) -> bool:
         """Is charger connected to chargeable device?"""
         is_connected = False
 
-        state = self.get_connect_state()
+        state = self.option_get_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
         state_list = self.option_get_data_list(OPTION_CHARGER_CONNECT_STATE_LIST)
         if state is not None and state_list is not None:
             is_connected = state in state_list
@@ -192,16 +180,11 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         await self.async_option_switch_off(OPTION_CHARGER_ON_OFF_SWITCH)
 
     # ----------------------------------------------------------------------------
-    def get_charging_state(self) -> str | None:
-        """Get charging state."""
-        return self.option_get_string(OPTION_CHARGER_CHARGING_SENSOR)
-
-    # ----------------------------------------------------------------------------
     def is_charging(self) -> bool:
         """Is device charging?"""
         is_charging = False
 
-        state = self.get_charging_state()
+        state = self.option_get_string(OPTION_CHARGER_CHARGING_SENSOR)
         state_list = self.option_get_data_list(OPTION_CHARGER_CHARGING_STATE_LIST)
         if state is not None and state_list is not None:
             is_charging = state in state_list

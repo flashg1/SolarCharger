@@ -7,8 +7,18 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import CHARGER_DOMAIN_OCPP  # noqa: TID252
+from ..const import (  # noqa: TID252
+    CHARGER_DOMAIN_OCPP,
+    OPTION_CHARGER_CHARGING_SENSOR,
+    OPTION_CHARGER_CHARGING_STATE_LIST,
+    OPTION_CHARGER_CONNECT_STATE_LIST,
+    OPTION_CHARGER_MAX_CURRENT,
+    OPTION_CHARGER_ON_OFF_SWITCH,
+    OPTION_CHARGER_PLUGGED_IN_SENSOR,
+)
 from ..ha_device import HaDevice  # noqa: TID252
+from ..sc_option_state import ScOptionState  # noqa: TID252
+from .chargeable import Chargeable
 from .charger import Charger
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,7 +56,7 @@ class OcppStatusMap:
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class OcppCharger(HaDevice, Charger):
+class OcppCharger(HaDevice, ScOptionState, Charger, Chargeable):
     """Implementation of the Charger class for OCPP chargers."""
 
     def __init__(
@@ -58,9 +68,34 @@ class OcppCharger(HaDevice, Charger):
     ) -> None:
         """Initialize the OCPP charger."""
         HaDevice.__init__(self, hass, device_entry)
+        ScOptionState.__init__(self, hass, config_entry, config_subentry, __name__)
         Charger.__init__(self, hass, config_entry, config_subentry, device_entry)
+        Chargeable.__init__(self, hass, config_entry, config_subentry, device_entry)
+
         self.refresh_entities()
 
+    # ----------------------------------------------------------------------------
+    # Chargeable interface implementation
+    # ----------------------------------------------------------------------------
+    @staticmethod
+    def is_chargeable_device(device: DeviceEntry) -> bool:
+        """Check if the given device is an OCPP charger."""
+        return any(
+            id_domain == CHARGER_DOMAIN_OCPP for id_domain, _ in device.identifiers
+        )
+
+    # ----------------------------------------------------------------------------
+    def get_chargeable_name(self) -> str:
+        """Get chargeable name."""
+        return self.device_entry.id
+
+    # ----------------------------------------------------------------------------
+    async def async_setup_chargeable(self) -> None:
+        """Set up the charger."""
+        return
+
+    # ----------------------------------------------------------------------------
+    # Charger interface implementation
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_charger_device(device: DeviceEntry) -> bool:
@@ -70,30 +105,69 @@ class OcppCharger(HaDevice, Charger):
         )
 
     # ----------------------------------------------------------------------------
-    async def async_setup(self) -> None:
-        """Set up the charger."""
+    def get_charger_name(self) -> str:
+        """Get charger name."""
+        return self.device_entry.id
 
     # ----------------------------------------------------------------------------
-    async def async_set_charge_current(self, charge_current: float) -> None:
-        """Set charger charge current."""
-        min_current = charge_current
+    async def async_setup(self) -> None:
+        """Set up the charger."""
+        await self.async_setup_chargeable()
 
-        try:
-            await self.hass.services.async_call(
-                domain=CHARGER_DOMAIN_OCPP,
-                service="set_charge_rate",
-                service_data={
-                    "device_id": self.device_entry.id,
-                    "limit_amps": min_current,
-                },
-                blocking=True,
-            )
-        except (ValueError, RuntimeError, TimeoutError) as e:
-            _LOGGER.warning(
-                "Failed to set current limit for OCPP charger %s: %s",
-                self.device_entry.id,
-                e,
-            )
+    # ----------------------------------------------------------------------------
+    def get_max_charge_current(self) -> float | None:
+        """Get charger max allowable current in amps."""
+        return self.option_get_number(OPTION_CHARGER_MAX_CURRENT)
+
+    # ----------------------------------------------------------------------------
+    def is_connected(self) -> bool:
+        """Is charger connected to chargeable device?"""
+        is_connected = False
+
+        state = self.option_get_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
+        state_list = self.option_get_data_list(OPTION_CHARGER_CONNECT_STATE_LIST)
+        if state is not None and state_list is not None:
+            is_connected = state in state_list
+
+        return is_connected
+
+    # ----------------------------------------------------------------------------
+    def is_charger_switch_on(self) -> bool:
+        """Is charger switched on?"""
+        switched_on = False
+
+        state = self.option_get_string(OPTION_CHARGER_ON_OFF_SWITCH)
+        if state == "on":
+            switched_on = True
+
+        return switched_on
+
+    # ----------------------------------------------------------------------------
+    async def async_charger_switch_on(self) -> None:
+        """Switch on charger."""
+        await self.async_option_switch_on(OPTION_CHARGER_ON_OFF_SWITCH)
+
+    # ----------------------------------------------------------------------------
+    async def async_charger_switch_off(self) -> None:
+        """Switch off charger."""
+        await self.async_option_switch_off(OPTION_CHARGER_ON_OFF_SWITCH)
+
+    # ----------------------------------------------------------------------------
+    def is_charging(self) -> bool:
+        """Is device charging?"""
+        is_charging = False
+
+        state = self.option_get_string(OPTION_CHARGER_CHARGING_SENSOR)
+        state_list = self.option_get_data_list(OPTION_CHARGER_CHARGING_STATE_LIST)
+        if state is not None and state_list is not None:
+            is_charging = state in state_list
+
+        return is_charging
+
+    # ----------------------------------------------------------------------------
+    # def get_charge_current(self) -> float | None:
+    #     """Get charger charge current in AMPS."""
+    #     return self.option_get_number(OPTION_CHARGER_GET_CHARGE_CURRENT)
 
     # ----------------------------------------------------------------------------
     def get_charge_current(self) -> float | None:
@@ -122,15 +196,26 @@ class OcppCharger(HaDevice, Charger):
             return None
 
     # ----------------------------------------------------------------------------
-    def get_max_charge_current(self) -> float | None:
-        """Get the configured maximum current limit of the charger in amps."""
-        # TODO: Get max current from OCPP
-        _LOGGER.info(
-            "No maximum current limit information available for OCPP charger %s, "
-            "using default 15A",
-            self.device_entry.id,
-        )
-        return 15.0
+    async def async_set_charge_current(self, charge_current: float) -> None:
+        """Set charger charge current."""
+        min_current = charge_current
+
+        try:
+            await self.hass.services.async_call(
+                domain=CHARGER_DOMAIN_OCPP,
+                service="set_charge_rate",
+                service_data={
+                    "device_id": self.device_entry.id,
+                    "limit_amps": min_current,
+                },
+                blocking=True,
+            )
+        except (ValueError, RuntimeError, TimeoutError) as e:
+            _LOGGER.warning(
+                "Failed to set current limit for OCPP charger %s: %s",
+                self.device_entry.id,
+                e,
+            )
 
     # ----------------------------------------------------------------------------
     def _get_status(self) -> Any | None:
@@ -155,35 +240,6 @@ class OcppCharger(HaDevice, Charger):
             )
 
         return status
-
-    # ----------------------------------------------------------------------------
-    def is_connected(self) -> bool:
-        """Car is connected to the charger and ready to receive charge."""
-        status = self._get_status()
-
-        # Consider the car connected if the charger is in any of these states
-        connected_statuses = [
-            OcppStatusMap.Preparing,
-            OcppStatusMap.Charging,
-            OcppStatusMap.SuspendedEVSE,
-            OcppStatusMap.SuspendedEV,
-            OcppStatusMap.Finishing,
-        ]
-
-        return status in connected_statuses
-
-    # ----------------------------------------------------------------------------
-    def is_charging(self) -> bool:
-        """Return whether the car is connected and charging or accepting charge."""
-        status = self._get_status()
-
-        charging_statuses = [
-            OcppStatusMap.Preparing,
-            OcppStatusMap.Charging,
-            OcppStatusMap.SuspendedEV,
-        ]
-
-        return status in charging_statuses
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
