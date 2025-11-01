@@ -61,7 +61,7 @@
             },
             "config_device": {
                 "title": "Charger options",
-                "description": "Select the SolarCharger entity and adjust the value in the device \"Configuration\" section if required, or replace with your own entity.",
+                "description": "These are entities controlling charger behaviour with values defined in \"Configuration\" section. Replace with your own entities if required. Greyed-out entries are FYI only.",
                 "data": {
                     "charger_effective_voltage": "Charger effective voltage (V)",
                     "sunrise_elevation_start_trigger": "Sunrise elevation start trigger (degrees)",
