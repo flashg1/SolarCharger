@@ -1,10 +1,10 @@
 # Solar Charger - Work in progress
-Home Assistant Solar Charger using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
+Home Assistant Solar Charger custom integration using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
 
 ###############################################################################
 # Disclaimer:
 #
-# Even though this automation has been created with care, the author cannot be responsible for any damage caused by this automation.  Use at your own risk.
+# Even though this custom integration has been created with care, the author cannot be responsible for any damage caused by this integration.  Use at your own risk.
 #
 ###############################################################################
 
@@ -66,40 +66,17 @@ Device: Envoy [YourEnvoyId]
 
 - If using OCPP charger, configure your charger to point to your HA OCPP central server, eg. ws://homeassistant.local:9000
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fflashg1%2FevSolarCharger%2Fblob%2Fmain%2Fev_solar_charger_automation.yaml)
-
--	Import the Blueprint automatically by clicking above, or manually copy the Blueprint file to following location and reload HA config,
-\\HOMEASSISTANT\config\blueprints\automation\flashg1\ev_solar_charger_automation.yaml
-
--	Create following non-optional helpers, eg.
-Settings > Devices & Services > Helpers > Create Helper >
-1.  Number or template sensor: MyEV charger effective voltage (for single-phase or 3-phase system)
-1.  Date and time: MyEV next charge time trigger
-1.  Number or template sensor: MyEV battery maximum charge speed
-
--	Optionally create following helpers, or create them later for finer control, eg.
-1.  Number or template sensor: MyEV charger minimum current
-1.	Number or template sensor: MyEV power offset
-1.	Toggle: MyEV secondary power source (for night time charging)
-1.	Toggle: MyEV set daily charge limit
-1.	Toggle: MyEV adjust charge limit based on weather
-1.	Number: MyEV charge limit Monday .. Sunday
-1.	Time: MyEV charge completion time Monday .. Sunday
-1.  Number: MyEV publish charge limit (only required if setting charge limit is not supported by car specific API)
-1.	Toggle: MyEV stop charging
-
--	Config the Blueprint automation specifying the power feedback loop sensor, charger effective voltage, maximum current, next charge time trigger, maximum charge speed, charge control API selection and the optional helper entities created above, ie.
-Settings > Automations & Scenes > Blueprints > EV solar charger automation
+-	Config the integration specifying the power feedback loop sensor, charger effective voltage, maximum current, maximum charge speed, ie. SolarCharger > Settings > Global defaults
 
 
 How to use
 ==========
 
 -	Set your car charge limit.
--	Connect charger to car.  Normal charging at constant current should begin immediately if schedule charging is disabled.  After a little while, the script will take over and manage the charging current during daylight hours.  Please see [wiki](https://github.com/flashg1/evSolarCharger/wiki/User-guide#automation-cannot-be-triggered) if automation cannot be triggered.
+-	Connect charger to car.  Normal charging at constant current should begin immediately if schedule charging is disabled.  After a little while, the integration will take over and manage the charging current during daylight hours.  Please see [wiki](https://github.com/flashg1/evSolarCharger/wiki/User-guide#automation-cannot-be-triggered) if automation cannot be triggered.
 -	There are 2 options on how to charge the car (see below).
--	The script will stop if charger is turned off manually or automatically by car when reaching charge limit.
--	To abort charging, turn on "MyEV stop charging".  The script will take about a minute to terminate if using default values.
+-	The integration will stop if charger is turned off manually or automatically by car when reaching charge limit.
+-	To abort charging, toggle off the "Charge" switch.
 
 2 options on how to charge the car:
 
