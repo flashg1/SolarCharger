@@ -42,6 +42,8 @@ from .const import (
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+    OPTION_GLOBAL_DEFAULT_VALUE_LIST,
+    OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_WAIT_NET_POWER_UPDATE,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
@@ -151,11 +153,16 @@ class SolarChargerCoordinator(ScOptionState):
             if control.controller is not None:
                 await control.controller.async_setup()
 
-        wait_net_power_update = self.option_get_number(OPTION_WAIT_NET_POWER_UPDATE)
-        if wait_net_power_update is None:
-            raise SystemError(
-                f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
-            )
+        # TODO: Think about how to fix this.
+        # Global default entities are yet to be created, so cannot get config here.
+        # wait_net_power_update = self.option_get_number(OPTION_WAIT_NET_POWER_UPDATE)
+        # if wait_net_power_update is None:
+        #     raise SystemError(
+        #         f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
+        #     )
+        wait_net_power_update = OPTION_GLOBAL_DEFAULT_VALUE_LIST[
+            OPTION_WAIT_NET_POWER_UPDATE
+        ]
 
         self._unsub.append(
             async_track_time_interval(
@@ -198,11 +205,11 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     def _get_total_allocation_pool(self) -> dict[str, float]:
         allocation_pool: dict[str, float] = {}
-        pool = 0
-        for control in self.charge_controls.values():
-            pool = pool + control.instance_count
 
         for control in self.charge_controls.values():
+            if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
+                continue
+
             subentry = self.config_entry.subentries.get(control.subentry_id)
             if subentry:
                 allocation_weight = self.option_get_number(
@@ -235,6 +242,9 @@ class SolarChargerCoordinator(ScOptionState):
 
         if total_weight > 0:
             for control in self.charge_controls.values():
+                if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
+                    continue
+
                 allocation_weight = pool[control.subentry_id]
                 allocated_power = net_power * allocation_weight / total_weight
                 if control.numbers:
@@ -397,15 +407,18 @@ class SolarChargerCoordinator(ScOptionState):
                     )
                 else:
                     _LOGGER.info("Task %s completed", task.get_name())
+
+                control.instance_count = 0
+
                 if control.switches:
                     control.switch_charge = False
                     control.switches[ENTITY_KEY_CHARGE_SWITCH].turn_off()
                     control.switches[ENTITY_KEY_CHARGE_SWITCH].update_ha_state()
+
                 if control.sensors:
                     control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
                         COORDINATOR_STATE_STOPPED
                     )
-                control.instance_count = 0
 
             if control.sensors:
                 control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
