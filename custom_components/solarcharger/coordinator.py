@@ -243,6 +243,10 @@ class SolarChargerCoordinator(ScOptionState):
         if total_weight > 0:
             for control in self.charge_controls.values():
                 if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
+                    if control.numbers:
+                        await control.numbers[
+                            CONTROL_CHARGER_ALLOCATED_POWER
+                        ].async_set_native_value(net_power)
                     continue
 
                 allocation_weight = pool[control.subentry_id]
