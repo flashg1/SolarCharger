@@ -4,13 +4,13 @@ import logging
 from types import MappingProxyType
 from typing import cast
 
-from config.custom_components.solarcharger.chargers.chargeable import Chargeable
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
 from .chargers import Charger, charger_factory
+from .chargers.chargeable import Chargeable
 from .chargers.controller import ChargeController
 from .config_option_utils import get_subentry
 from .const import (

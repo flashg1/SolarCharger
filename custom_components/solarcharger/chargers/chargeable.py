@@ -1,7 +1,6 @@
 """Base Chargeable Class."""
 
 from abc import ABC, abstractmethod
-from ast import Return
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
