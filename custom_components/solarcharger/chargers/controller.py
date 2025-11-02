@@ -29,6 +29,7 @@ from .charger import Charger
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
+INITIAL_CHARGE_CURRENT = 6
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -200,7 +201,7 @@ class ChargeController(ScOptionState):
         return current
 
     # ----------------------------------------------------------------------------
-    def _calc_current_change(self, charger: Charger, chargeable: Chargeable):
+    def _calc_current_change(self, charger: Charger):
         charger_max_current = charger.get_max_charge_current()
         if charger_max_current is None or charger_max_current <= 0:
             raise SystemError(f"{self.device_name}: Failed to get charger max current")
@@ -285,6 +286,12 @@ class ChargeController(ScOptionState):
         return (new_charge_current, old_charge_current)
 
     # ----------------------------------------------------------------------------
+    async def _async_adjust_charge_current(self, charger: Charger) -> None:
+        new_charge_current, old_charge_current = self._calc_current_change(charger)
+        if new_charge_current != old_charge_current:
+            await self._async_set_charge_current(charger, int(new_charge_current))
+
+    # ----------------------------------------------------------------------------
     async def _async_charge_device(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
@@ -305,17 +312,12 @@ class ChargeController(ScOptionState):
                 # Turn on charger if looping for the first time
                 if loop_count == 0:
                     await self._async_turn_charger_switch_on(charger)
-                    await self._async_set_charge_current(charger, 6)
+                    await self._async_set_charge_current(
+                        charger, INITIAL_CHARGE_CURRENT
+                    )
                     await self._async_update_ha(chargeable)
 
-                new_charge_current, old_charge_current = self._calc_current_change(
-                    charger, chargeable
-                )
-                if new_charge_current != old_charge_current:
-                    await self._async_set_charge_current(
-                        charger, int(new_charge_current)
-                    )
-
+                await self._async_adjust_charge_current(charger)
                 await self._async_update_ha(chargeable)
 
             except TimeoutError:
