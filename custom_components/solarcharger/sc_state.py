@@ -181,19 +181,19 @@ class ScState:
             )
 
     # ----------------------------------------------------------------------------
-    async def async_button_press(self, entity_id: str) -> None:
+    async def async_press_button(self, entity_id: str) -> None:
         """Press button entity."""
 
         await self.async_ha_call("button", "press", entity_id)
 
     # ----------------------------------------------------------------------------
-    async def async_switch_on(self, entity_id: str) -> None:
+    async def async_turn_switch_on(self, entity_id: str) -> None:
         """Turn on switch entity."""
 
         await self.async_ha_call("switch", "turn_on", entity_id)
 
     # ----------------------------------------------------------------------------
-    async def async_switch_off(self, entity_id: str) -> None:
+    async def async_turn_switch_off(self, entity_id: str) -> None:
         """Turn off switch entity."""
 
         await self.async_ha_call("switch", "turn_off", entity_id)

@@ -83,7 +83,7 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _get_config(self, config_item: str) -> float:
-        num = self.option_get_number(config_item)
+        num = self.option_get_entity_number(config_item)
         if num is None:
             raise SystemError(
                 f"{self.device_name}: Failed to get number for {config_item}"

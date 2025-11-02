@@ -98,7 +98,7 @@ class SolarChargerCoordinator(ScOptionState):
         #     self.config_entry, CONF_NET_POWER
         # )
 
-        self.entity_id_net_power: str | None = self.config_get_data(CONF_NET_POWER)
+        self.entity_id_net_power: str | None = self.config_get_id(CONF_NET_POWER)
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -200,7 +200,7 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     def _get_net_power(self) -> float | None:
         """Get household net power."""
-        return self.config_get_number(CONF_NET_POWER)
+        return self.config_get_entity_number(CONF_NET_POWER)
 
     # ----------------------------------------------------------------------------
     def _get_total_allocation_pool(self) -> dict[str, float]:
@@ -212,7 +212,7 @@ class SolarChargerCoordinator(ScOptionState):
 
             subentry = self.config_entry.subentries.get(control.subentry_id)
             if subentry:
-                allocation_weight = self.option_get_number(
+                allocation_weight = self.option_get_entity_number(
                     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, subentry
                 )
                 if allocation_weight is None:

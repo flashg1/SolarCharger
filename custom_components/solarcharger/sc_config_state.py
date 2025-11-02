@@ -35,7 +35,7 @@ class ScConfigState(ScState):
     # Get entity ID from config data, then get entity value.
     # Requires config_entry.data.
     # ----------------------------------------------------------------------------
-    def config_get_data(
+    def config_get_string(
         self,
         config_item: str,
     ) -> str | None:
@@ -43,32 +43,28 @@ class ScConfigState(ScState):
 
         config_str = self._config_entry.data.get(config_item)
         if config_str is None:
-            _LOGGER.warning("%s: Config not found for '%s'", self._caller, config_item)
+            _LOGGER.error("%s: Config not found for '%s'", self._caller, config_item)
 
         return config_str
 
     # ----------------------------------------------------------------------------
-    def config_get_entity_id(
+    def config_get_id(
         self,
         config_item: str,
     ) -> str | None:
-        """Get entity name from config data."""
+        """Get entity ID from config data."""
 
-        entity_id = self._config_entry.data.get(config_item)
-        if not entity_id:
-            _LOGGER.error("%s: Entity ID not found for '%s'", self._caller, config_item)
-
-        return entity_id
+        return self.config_get_string(config_item)
 
     # ----------------------------------------------------------------------------
-    def config_get_number(
+    def config_get_entity_number(
         self,
         config_item: str,
     ) -> float | None:
         """Get entity name from saved options, then get value for entity."""
         entity_val = None
 
-        entity_id = self.config_get_entity_id(config_item)
+        entity_id = self.config_get_id(config_item)
         if entity_id:
             entity_val = self.get_number(entity_id)
 

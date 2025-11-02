@@ -117,15 +117,15 @@ class OcppCharger(HaDevice, ScOptionState, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     def get_max_charge_current(self) -> float | None:
         """Get charger max allowable current in amps."""
-        return self.option_get_number(OPTION_CHARGER_MAX_CURRENT)
+        return self.option_get_entity_number(OPTION_CHARGER_MAX_CURRENT)
 
     # ----------------------------------------------------------------------------
     def is_connected(self) -> bool:
         """Is charger connected to chargeable device?"""
         is_connected = False
 
-        state = self.option_get_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
-        state_list = self.option_get_data_list(OPTION_CHARGER_CONNECT_STATE_LIST)
+        state = self.option_get_entity_string(OPTION_CHARGER_PLUGGED_IN_SENSOR)
+        state_list = self.option_get_list(OPTION_CHARGER_CONNECT_STATE_LIST)
         if state is not None and state_list is not None:
             is_connected = state in state_list
 
@@ -136,7 +136,7 @@ class OcppCharger(HaDevice, ScOptionState, Charger, Chargeable):
         """Is charger switched on?"""
         switched_on = False
 
-        state = self.option_get_string(OPTION_CHARGER_ON_OFF_SWITCH)
+        state = self.option_get_entity_string(OPTION_CHARGER_ON_OFF_SWITCH)
         if state == "on":
             switched_on = True
 
@@ -145,20 +145,20 @@ class OcppCharger(HaDevice, ScOptionState, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     async def async_charger_switch_on(self) -> None:
         """Switch on charger."""
-        await self.async_option_switch_on(OPTION_CHARGER_ON_OFF_SWITCH)
+        await self.async_option_turn_entity_switch_on(OPTION_CHARGER_ON_OFF_SWITCH)
 
     # ----------------------------------------------------------------------------
     async def async_charger_switch_off(self) -> None:
         """Switch off charger."""
-        await self.async_option_switch_off(OPTION_CHARGER_ON_OFF_SWITCH)
+        await self.async_option_turn_entity_switch_off(OPTION_CHARGER_ON_OFF_SWITCH)
 
     # ----------------------------------------------------------------------------
     def is_charging(self) -> bool:
         """Is device charging?"""
         is_charging = False
 
-        state = self.option_get_string(OPTION_CHARGER_CHARGING_SENSOR)
-        state_list = self.option_get_data_list(OPTION_CHARGER_CHARGING_STATE_LIST)
+        state = self.option_get_entity_string(OPTION_CHARGER_CHARGING_SENSOR)
+        state_list = self.option_get_list(OPTION_CHARGER_CHARGING_STATE_LIST)
         if state is not None and state_list is not None:
             is_charging = state in state_list
 
