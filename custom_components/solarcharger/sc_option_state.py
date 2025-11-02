@@ -69,7 +69,7 @@ class ScOptionState(ScConfigState):
         return json.loads(json_str)
 
     # ----------------------------------------------------------------------------
-    def option_get_entity_id(
+    def option_get_id(
         self, config_item: str, subentry: ConfigSubentry | None = None
     ) -> str | None:
         """Get entity ID from option config data."""
@@ -89,7 +89,7 @@ class ScOptionState(ScConfigState):
         """Get entity ID from saved options, then get value for entity."""
         entity_val = None
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             entity_val = self.get_number(entity_id)
 
@@ -102,7 +102,7 @@ class ScOptionState(ScConfigState):
         """Get entity name from saved options, then get value for entity."""
         entity_val = None
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             entity_val = self.get_integer(entity_id)
 
@@ -115,7 +115,7 @@ class ScOptionState(ScConfigState):
         """Get entity name from saved options, then get value for entity."""
         entity_val = None
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             entity_val = self.get_string(entity_id)
 
@@ -127,7 +127,7 @@ class ScOptionState(ScConfigState):
     ) -> None:
         """Set number entity."""
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             await self.async_set_number(entity_id, num)
 
@@ -137,7 +137,7 @@ class ScOptionState(ScConfigState):
     ) -> None:
         """Set integer entity."""
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             await self.async_set_integer(entity_id, num)
 
@@ -147,7 +147,7 @@ class ScOptionState(ScConfigState):
     ) -> None:
         """Press a button entity."""
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             await self.async_press_button(entity_id)
 
@@ -157,7 +157,7 @@ class ScOptionState(ScConfigState):
     ) -> None:
         """Turn on switch entity."""
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             await self.async_turn_switch_on(entity_id)
 
@@ -167,6 +167,6 @@ class ScOptionState(ScConfigState):
     ) -> None:
         """Turn off switch entity."""
 
-        entity_id = self.option_get_entity_id(config_item, subentry)
+        entity_id = self.option_get_id(config_item, subentry)
         if entity_id:
             await self.async_turn_switch_off(entity_id)
