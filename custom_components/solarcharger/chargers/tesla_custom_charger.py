@@ -172,12 +172,12 @@ class TeslaCustomCharger(HaDevice, ScOptionState, Charger, Chargeable):
         return switched_on
 
     # ----------------------------------------------------------------------------
-    async def async_charger_switch_on(self) -> None:
+    async def async_turn_charger_switch_on(self) -> None:
         """Switch on charger."""
         await self.async_option_turn_entity_switch_on(OPTION_CHARGER_ON_OFF_SWITCH)
 
     # ----------------------------------------------------------------------------
-    async def async_charger_switch_off(self) -> None:
+    async def async_turn_charger_switch_off(self) -> None:
         """Switch off charger."""
         await self.async_option_turn_entity_switch_off(OPTION_CHARGER_ON_OFF_SWITCH)
 

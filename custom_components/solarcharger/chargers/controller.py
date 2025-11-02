@@ -82,7 +82,7 @@ class ChargeController(ScOptionState):
         await self.charger.async_unload()
 
     # ----------------------------------------------------------------------------
-    def _get_config(self, config_item: str) -> float:
+    def _get_number(self, config_item: str) -> float:
         num = self.option_get_entity_number(config_item)
         if num is None:
             raise SystemError(
@@ -95,7 +95,7 @@ class ChargeController(ScOptionState):
     async def _async_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
-        duration = self._get_config(config_item)
+        duration = self._get_number(config_item)
         await asyncio.sleep(duration)
 
     # ----------------------------------------------------------------------------
@@ -174,15 +174,15 @@ class ChargeController(ScOptionState):
         return False
 
     # ----------------------------------------------------------------------------
-    async def _async_turn_on_charger(self, charger: Charger) -> None:
+    async def _async_turn_charger_switch_on(self, charger: Charger) -> None:
         switched_on = charger.is_charger_switch_on()
         if not switched_on:
-            await charger.async_charger_switch_on()
+            await charger.async_turn_charger_switch_on()
             await self._async_sleep(OPTION_WAIT_CHARGER_ON)
 
     # ----------------------------------------------------------------------------
-    async def _async_turn_off_charger(self, charger: Charger) -> None:
-        await charger.async_charger_switch_off()
+    async def _async_turn_charger_switch_off(self, charger: Charger) -> None:
+        await charger.async_turn_charger_switch_off()
         await self._async_sleep(OPTION_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
@@ -212,7 +212,7 @@ class ChargeController(ScOptionState):
             charger_max_current, battery_charge_current
         )
 
-        config_min_current = self._get_config(OPTION_CHARGER_MIN_CURRENT)
+        config_min_current = self._get_number(OPTION_CHARGER_MIN_CURRENT)
         config_min_current = self._check_current(
             charger_max_current, config_min_current
         )
@@ -224,9 +224,9 @@ class ChargeController(ScOptionState):
         #####################################
         # Get allocated power
         #####################################
-        allocated_power = self._get_config(CONTROL_CHARGER_ALLOCATED_POWER)
+        allocated_power = self._get_number(CONTROL_CHARGER_ALLOCATED_POWER)
 
-        charger_effective_voltage = self._get_config(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
+        charger_effective_voltage = self._get_number(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
         if charger_effective_voltage <= 0:
             raise SystemError(f"{self.device_name}: Charger effective voltage is 0")
 
@@ -245,7 +245,7 @@ class ChargeController(ScOptionState):
             )
         propose_new_charge_current = max([charger_min_current, propose_charge_current])
 
-        charger_min_workable_current = self._get_config(
+        charger_min_workable_current = self._get_number(
             OPTION_CHARGER_MIN_WORKABLE_CURRENT
         )
         if propose_new_charge_current < charger_min_workable_current:
@@ -304,7 +304,7 @@ class ChargeController(ScOptionState):
             try:
                 # Turn on charger if looping for the first time
                 if loop_count == 0:
-                    await self._async_turn_on_charger(charger)
+                    await self._async_turn_charger_switch_on(charger)
                     await self._async_set_charge_current(charger, 6)
                     await self._async_update_ha(chargeable)
 
@@ -335,7 +335,7 @@ class ChargeController(ScOptionState):
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         await self._async_set_charge_current(charger, 0)
-        await self._async_turn_off_charger(charger)
+        await self._async_turn_charger_switch_off(charger)
         await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 """Base Charger Class."""
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
@@ -67,11 +66,11 @@ class Charger(ABC):
         """Is charger switched on?"""
 
     @abstractmethod
-    async def async_charger_switch_on(self) -> None:
+    async def async_turn_charger_switch_on(self) -> None:
         """Switch on charger."""
 
     @abstractmethod
-    async def async_charger_switch_off(self) -> None:
+    async def async_turn_charger_switch_off(self) -> None:
         """Switch off charger."""
 
     @abstractmethod
