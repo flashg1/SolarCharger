@@ -368,8 +368,8 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): entity_selector(
                 api_entities,
                 CONTROL_CHARGER_ALLOCATED_POWER,
-                BUTTON_ENTITY_SELECTOR_READ_ONLY,
-                BUTTON_ENTITY_SELECTOR,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
             ),
         }
 

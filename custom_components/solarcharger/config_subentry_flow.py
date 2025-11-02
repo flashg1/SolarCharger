@@ -42,6 +42,7 @@ from .const import (
     SUBENTRY_THIRDPARTY_DEVICE_NAME,
     SUBENTRY_THIRDPARTY_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
+    SUPPORTED_CHARGER_DOMAIN_LIST,
 )
 from .exceptions.validation_exception import ValidationExceptionError
 
@@ -187,12 +188,30 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     )
 
                 # Get charger domain and name to create unique_id
-                thirdparty_config_entry_id: str = next(
-                    iter(thirdparty_charger.config_entries)
-                )
-                thirdparty_config_entry: ConfigEntry | None = (
-                    self.hass.config_entries.async_get_entry(thirdparty_config_entry_id)
-                )
+                # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
+                thirdparty_config_entry_id: str | None = None
+                thirdparty_config_entry: ConfigEntry | None = None
+
+                for entry_id in thirdparty_charger.config_entries:
+                    entry: ConfigEntry | None = (
+                        self.hass.config_entries.async_get_entry(entry_id)
+                    )
+                    if entry is not None:
+                        # Best guess to match
+                        if entry.domain in SUPPORTED_CHARGER_DOMAIN_LIST:
+                            thirdparty_config_entry_id = entry_id
+                            thirdparty_config_entry = entry
+                            break
+
+                # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
+                # So following can sometimes can get Template as domain name!
+                # thirdparty_config_entry_id: str = next(
+                #     iter(thirdparty_charger.config_entries)
+                # )
+                # thirdparty_config_entry: ConfigEntry | None = (
+                #     self.hass.config_entries.async_get_entry(thirdparty_config_entry_id)
+                # )
+
                 if not thirdparty_config_entry:
                     raise ValueError(
                         f"Charger config entry {thirdparty_config_entry_id} not found."

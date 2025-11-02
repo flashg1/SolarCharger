@@ -36,8 +36,14 @@ SELECT = Platform.SELECT
 PLATFORMS = [BUTTON, NUMBER, SELECT, SENSOR, SWITCH]
 PLATFORM_OCPP = "ocpp"
 PLATFORM_USER_CUSTOM = "user_custom"
+
 CHARGER_DOMAIN_OCPP = "ocpp"
 CHARGER_DOMAIN_TESLA_CUSTOM = "tesla_custom"
+
+SUPPORTED_CHARGER_DOMAIN_LIST = [
+    CHARGER_DOMAIN_TESLA_CUSTOM,
+    CHARGER_DOMAIN_OCPP,
+]
 
 #######################################################
 # Make sure the entity key names are unique.
