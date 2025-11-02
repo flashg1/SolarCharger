@@ -206,7 +206,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     await coordinator.async_setup()
-    _LOGGER.warning("SolarChargerCoordinator initialized for %s", entry.entry_id)
+    _LOGGER.warning(
+        "SolarChargerCoordinator initialized (config_entry_id=%s)", entry.entry_id
+    )
 
     # Registers update listener to update config entry when options are updated.
     # entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -216,7 +218,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #####################################
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
 
-    _LOGGER.debug("SolarCharger initialized for %s", entry.entry_id)
+    _LOGGER.debug("SolarCharger initialized (config_entry_id=%s)", entry.entry_id)
     return True
 
 
