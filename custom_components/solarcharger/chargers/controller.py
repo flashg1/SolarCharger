@@ -2,34 +2,21 @@
 
 import asyncio
 from asyncio import Task, timeout
-from collections.abc import (
-    Callable,
-    Coroutine,
-    Generator,
-    Hashable,
-    Iterable,
-    Mapping,
-    ValuesView,
-)
+from collections.abc import Callable, Coroutine
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any, Self, TypedDict, cast
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import (
+    CALLBACK_TYPE,
     Event,
     EventStateChangedData,
     HomeAssistant,
     State,
     callback,
 )
-from homeassistant.helpers.event import (
-    async_call_later,
-    async_track_state_change,
-    async_track_state_change_event,
-    async_track_time_change,
-    async_track_time_interval,
-)
+from homeassistant.helpers.event import async_track_state_change_event
 
 from ..const import (  # noqa: TID252
     CONTROL_CHARGER_ALLOCATED_POWER,
@@ -53,6 +40,7 @@ from .charger import Charger
 _LOGGER = logging.getLogger(__name__)
 
 INITIAL_CHARGE_CURRENT = 6
+MIN_TIME_BETWEEN_UPDATE = 10  # 10 seconds
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -65,46 +53,48 @@ class ChargeController(ScOptionState):
     def __init__(
         self,
         hass: HomeAssistant,
-        config_entry: ConfigEntry,
-        config_subentry: ConfigSubentry,
+        entry: ConfigEntry,
+        subentry: ConfigSubentry,
         charger: Charger,
         chargeable: Chargeable,
     ) -> None:
         """Initialize the Charge instance."""
-        self.hass = hass
-        self.config_entry = config_entry
-        self.config_subentry = config_subentry
-        self.device_name = config_subentry.unique_id
-        self.charger = charger
-        self.chargeable = chargeable
-        self.charge_task: Task | None = None
-        self.end_charge_task: Task | None = None
-        self.subscribe_list: list[Callable[[], Coroutine[Any, Any, None] | None]] = []
+        self._hass = hass
+        self._entry = entry
+        self._subentry = subentry
+        self.device_name = subentry.unique_id
+        self._charger = charger
+        self._chargeable = chargeable
+        self._charge_task: Task | None = None
+        self._end_charge_task: Task | None = None
 
-        ScOptionState.__init__(self, hass, config_entry, config_subentry, __name__)
+        # self._unsub_list: list[Callable[[], Coroutine[Any, Any, None] | None]] = []
+        self._unsub_list: list[CALLBACK_TYPE] = []
+
+        ScOptionState.__init__(self, hass, entry, subentry, __name__)
 
     # ----------------------------------------------------------------------------
     @property
     def is_chargeable(self) -> bool:
         """Return True if the charger is chargeable."""
-        return isinstance(self.charger, Chargeable)
+        return isinstance(self._charger, Chargeable)
 
     @property
     def get_chargee(self) -> Chargeable | None:
         """Return the chargeable device if applicable."""
         if self.is_chargeable:
-            return self.charger  # type: ignore[return-value]
+            return self._charger  # type: ignore[return-value]
         return None
 
     # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Async setup of the ChargeController."""
-        await self.charger.async_setup()
+        await self._charger.async_setup()
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Async unload of the ChargeController."""
-        await self.charger.async_unload()
+        await self._charger.async_unload()
 
     # ----------------------------------------------------------------------------
     def _get_entity_id(self, config_item: str) -> str:
@@ -235,7 +225,7 @@ class ChargeController(ScOptionState):
         return current
 
     # ----------------------------------------------------------------------------
-    def _calc_current_change(self, charger: Charger):
+    def _calc_current_change(self, charger: Charger, allocated_power: float):
         charger_max_current = charger.get_max_charge_current()
         if charger_max_current is None or charger_max_current <= 0:
             raise SystemError(f"{self.device_name}: Failed to get charger max current")
@@ -259,7 +249,7 @@ class ChargeController(ScOptionState):
         #####################################
         # Get allocated power
         #####################################
-        allocated_power = self._get_number(CONTROL_CHARGER_ALLOCATED_POWER)
+        # allocated_power = self._get_number(CONTROL_CHARGER_ALLOCATED_POWER)
 
         charger_effective_voltage = self._get_number(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
         if charger_effective_voltage <= 0:
@@ -320,55 +310,93 @@ class ChargeController(ScOptionState):
         return (new_charge_current, old_charge_current)
 
     # ----------------------------------------------------------------------------
-    async def _async_adjust_charge_current(self, charger: Charger) -> None:
-        new_charge_current, old_charge_current = self._calc_current_change(charger)
+    async def _async_adjust_charge_current(
+        self, charger: Charger, chargeable: Chargeable, allocated_power: float
+    ) -> None:
+        new_charge_current, old_charge_current = self._calc_current_change(
+            charger, allocated_power
+        )
         if new_charge_current != old_charge_current:
+            _LOGGER.info(
+                "%s: Update current from %s to %s",
+                self.device_name,
+                old_charge_current,
+                new_charge_current,
+            )
             await self._async_set_charge_current(charger, int(new_charge_current))
+            await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------
-    # def async_track_state_change_event(
-    #     hass: HomeAssistant,
-    #     entity_ids: str | Iterable[str],
-    #     action: Callable[[Event[EventStateChangedData]], Any],
-    #     job_type: HassJobType | None = None,
-    # ) -> CALLBACK_TYPE:
+    # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
+    # entity_id=number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power,
+    #
+    # old_state=<state number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power=-500.0; min=-23000.0, max=23000.0, step=1.0, mode=box,
+    # unit_of_measurement=W, device_class=power, icon=mdi:flash, friendly_name=tesla_custom Tesla23m3 Allocated power @ 2025-11-02T20:00:32.962356+11:00>,
+    #
+    # new_state=<state number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power=-200.0; min=-23000.0, max=23000.0, step=1.0, mode=box,
+    # unit_of_measurement=W, device_class=power, icon=mdi:flash, friendly_name=tesla_custom Tesla23m3 Allocated power @ 2025-11-02T20:01:48.008211+11:00>
 
-    # def async_track_time_interval(
-    #     hass: HomeAssistant,
-    #     action: Callable[[datetime], Coroutine[Any, Any, None] | None],
-    #     interval: timedelta,
-    #     *,
-    #     name: str | None = None,
-    #     cancel_on_shutdown: bool | None = None,
-    # ) -> CALLBACK_TYPE:
-
-    # ----------------------------------------------------------------------------
-    async def _async_handle_power_update(
+    async def _async_handle_allocated_power_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
         """Fetch and process state change event."""
         data = event.data
         entity_id = data["entity_id"]
-        old_state = data["old_state"]
-        new_state = data["new_state"]
+        old_alloc_power = data["old_state"]
+        new_alloc_power = data["new_state"]
 
-        # TODO: Make sure we don't update too often
-        await self._async_adjust_charge_current(self.charger)
+        if new_alloc_power is not None:
+            if old_alloc_power is not None:
+                # Make sure we don't change the charge current too often
+                duration_since_last_change = (
+                    new_alloc_power.last_changed_timestamp
+                    - old_alloc_power.last_changed_timestamp
+                )
+                _LOGGER.info(
+                    "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
+                    self.device_name,
+                    entity_id,
+                    old_alloc_power.state,
+                    new_alloc_power.state,
+                    duration_since_last_change,
+                )
+                if duration_since_last_change >= MIN_TIME_BETWEEN_UPDATE:
+                    await self._async_adjust_charge_current(
+                        self._charger, self._chargeable, float(new_alloc_power.state)
+                    )
+            else:
+                _LOGGER.info(
+                    "%s: entity_id=%s, new_state=%s",
+                    self.device_name,
+                    entity_id,
+                    new_alloc_power.state,
+                )
+                await self._async_adjust_charge_current(
+                    self._charger, self._chargeable, float(new_alloc_power.state)
+                )
 
     # ----------------------------------------------------------------------------
-    def _track_power_update(self) -> None:
+    def _track_allocated_power_update(self) -> None:
         allocated_power_entity_id = self._get_entity_id(CONTROL_CHARGER_ALLOCATED_POWER)
 
-        self.subscribe_list.append(
+        # Need both changed and unchanged events, eg. update1 at time1=-500W, update2 at time2=-500W
+        # Need to handle both updates to make use of the spare power.
+        # async_track_state_report_event - send unchanged events.
+        # async_track_state_change_event - send changed events.
+        # So need both to see all events?
+        self._unsub_list.append(
             async_track_state_change_event(
-                self.hass, allocated_power_entity_id, self._async_handle_power_update
+                self._hass,
+                allocated_power_entity_id,
+                self._async_handle_allocated_power_update,
             )
         )
 
     # ----------------------------------------------------------------------------
-    def _untrack_power_update(self) -> None:
-        for dounsub in self.subscribe_list:
-            dounsub()
+    def _untrack_allocated_power_update(self) -> None:
+        for unsub_func in self._unsub_list:
+            unsub_func()
+        self._unsub_list.clear()
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -395,10 +423,10 @@ class ChargeController(ScOptionState):
                         charger, INITIAL_CHARGE_CURRENT
                     )
                     await self._async_update_ha(chargeable)
-                    self._track_power_update()
+                    self._track_allocated_power_update()
 
                 # await self._async_adjust_charge_current(charger)
-                await self._async_update_ha(chargeable)
+                # await self._async_update_ha(chargeable)
 
             except TimeoutError:
                 _LOGGER.warning(
@@ -411,6 +439,8 @@ class ChargeController(ScOptionState):
 
             loop_count = loop_count + 1
             await self._async_sleep(OPTION_WAIT_NET_POWER_UPDATE)
+
+        self._untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------
     async def _async_tidy_up_on_exit(
@@ -451,16 +481,16 @@ class ChargeController(ScOptionState):
         #     "start_charge"
         # )
 
-        if self.charge_task and not self.charge_task.done():
-            _LOGGER.warning("Task %s already running", self.charge_task.get_name())
-            return self.charge_task
+        if self._charge_task and not self._charge_task.done():
+            _LOGGER.warning("Task %s already running", self._charge_task.get_name())
+            return self._charge_task
 
         _LOGGER.info("Starting charge task for charger %s", self.device_name)
-        self.charge_task = self.hass.async_create_task(
-            self._async_start_charge(self.charger, self.chargeable),
+        self._charge_task = self._hass.async_create_task(
+            self._async_start_charge(self._charger, self._chargeable),
             f"{self.device_name} charge",
         )
-        return self.charge_task
+        return self._charge_task
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
@@ -468,15 +498,15 @@ class ChargeController(ScOptionState):
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Stop charge task."""
-        if self.charge_task:
-            if not self.charge_task.done():
-                self.charge_task.cancel()
+        if self._charge_task:
+            if not self._charge_task.done():
+                self._charge_task.cancel()
 
                 try:
-                    await self.charge_task
+                    await self._charge_task
                 except asyncio.CancelledError:
                     _LOGGER.info(
-                        "Task %s cancelled successfully", self.charge_task.get_name()
+                        "Task %s cancelled successfully", self._charge_task.get_name()
                     )
                     await self._async_tidy_up_on_exit(charger, chargeable)
                 except Exception as e:
@@ -486,10 +516,10 @@ class ChargeController(ScOptionState):
                         e,
                     )
 
-                self._untrack_power_update()
+                self._untrack_allocated_power_update()
 
             else:
-                _LOGGER.info("Task %s already completed", self.charge_task.get_name())
+                _LOGGER.info("Task %s already completed", self._charge_task.get_name())
 
     # ----------------------------------------------------------------------------
     async def _async_stop_charge(
@@ -503,23 +533,23 @@ class ChargeController(ScOptionState):
         """Stop charge."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
-        if self.charge_task:
-            if not self.charge_task.done():
-                if self.end_charge_task:
-                    if not self.end_charge_task.done():
+        if self._charge_task:
+            if not self._charge_task.done():
+                if self._end_charge_task:
+                    if not self._end_charge_task.done():
                         _LOGGER.warning(
-                            "Task %s already running", self.end_charge_task.get_name()
+                            "Task %s already running", self._end_charge_task.get_name()
                         )
-                        return self.end_charge_task
+                        return self._end_charge_task
 
                 _LOGGER.info("Ending charge task for charger %s", self.device_name)
-                self.end_charge_task = self.hass.async_create_task(
-                    self._async_stop_charge(self.charger, self.chargeable),
+                self._end_charge_task = self._hass.async_create_task(
+                    self._async_stop_charge(self._charger, self._chargeable),
                     f"{self.device_name} end charge",
                 )
-                return self.end_charge_task
+                return self._end_charge_task
 
-            _LOGGER.info("Task %s already completed", self.charge_task.get_name())
+            _LOGGER.info("Task %s already completed", self._charge_task.get_name())
         else:
             _LOGGER.info(
                 "No running charge task to stop for charger %s", self.device_name
