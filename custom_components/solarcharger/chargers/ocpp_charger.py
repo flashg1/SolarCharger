@@ -20,6 +20,7 @@ from ..ha_device import HaDevice  # noqa: TID252
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
+from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,21 +57,79 @@ class OcppStatusMap:
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class OcppCharger(HaDevice, ScOptionState, Charger, Chargeable):
+class OcppCharger(ChargerChargeableBase):
     """Implementation of the Charger class for OCPP chargers."""
 
     def __init__(
         self,
         hass: HomeAssistant,
-        config_entry: ConfigEntry,
-        config_subentry: ConfigSubentry,
-        device_entry: DeviceEntry,
+        entry: ConfigEntry,
+        subentry: ConfigSubentry,
+        device: DeviceEntry,
     ) -> None:
         """Initialize the OCPP charger."""
-        HaDevice.__init__(self, hass, device_entry)
-        ScOptionState.__init__(self, hass, config_entry, config_subentry, __name__)
-        Charger.__init__(self, hass, config_entry, config_subentry, device_entry)
-        Chargeable.__init__(self, hass, config_entry, config_subentry, device_entry)
+        ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
+
+    # ----------------------------------------------------------------------------
+    # Chargeable interface implementation
+    # ----------------------------------------------------------------------------
+    @staticmethod
+    def is_chargeable_device(device: DeviceEntry) -> bool:
+        """Check if the given device is an OCPP charger."""
+        return any(
+            id_domain == CHARGER_DOMAIN_OCPP for id_domain, _ in device.identifiers
+        )
+
+    # ----------------------------------------------------------------------------
+    # Charger interface implementation
+    # ----------------------------------------------------------------------------
+    @staticmethod
+    def is_charger_device(device: DeviceEntry) -> bool:
+        """Check if the given device is an OCPP charger."""
+        return any(
+            id_domain == CHARGER_DOMAIN_OCPP for id_domain, _ in device.identifiers
+        )
+
+    # ----------------------------------------------------------------------------
+    async def async_set_charge_current(self, charge_current: float) -> None:
+        """Set charger charge current."""
+        min_current = charge_current
+
+        try:
+            await self.hass.services.async_call(
+                domain=CHARGER_DOMAIN_OCPP,
+                service="set_charge_rate",
+                service_data={
+                    "device_id": self.device_entry.id,
+                    "limit_amps": min_current,
+                },
+                blocking=True,
+            )
+        except (ValueError, RuntimeError, TimeoutError) as e:
+            _LOGGER.warning(
+                "Failed to set current limit for OCPP charger %s: %s",
+                self.device_entry.id,
+                e,
+            )
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class OcppCharger1(HaDevice, ScOptionState, Charger, Chargeable):
+    """Implementation of the Charger class for OCPP chargers."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        subentry: ConfigSubentry,
+        device: DeviceEntry,
+    ) -> None:
+        """Initialize the OCPP charger."""
+        HaDevice.__init__(self, hass, device)
+        ScOptionState.__init__(self, hass, entry, subentry, __name__)
+        Charger.__init__(self, hass, entry, subentry, device)
+        Chargeable.__init__(self, hass, entry, subentry, device)
 
         self.refresh_entities()
 

@@ -44,9 +44,11 @@ from .const import (
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
     OPTION_WAIT_NET_POWER_UPDATE,
+    SUBENTRY_THIRDPARTY_DOMAIN,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity
+from .helpers.general import is_config_entity_used_as_local_device_entity
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -311,7 +313,10 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         if desc.entity_category == EntityCategory.CONFIG:
             # Disable local device entities. User needs to manually enable if required.
             if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
-                self._attr_entity_registry_enabled_default = False
+                if not is_config_entity_used_as_local_device_entity(
+                    subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN), name
+                ):
+                    self._attr_entity_registry_enabled_default = False
 
         self._attr_native_step = 1.0
         self._attr_mode = NumberMode.BOX

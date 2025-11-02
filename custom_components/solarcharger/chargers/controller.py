@@ -5,6 +5,7 @@ from asyncio import Task, timeout
 from collections.abc import Callable, Coroutine
 import inspect
 import logging
+from time import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
@@ -67,6 +68,7 @@ class ChargeController(ScOptionState):
         self._chargeable = chargeable
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
+        self._charge_current_updatetime: int = 0
 
         # self._unsub_list: list[Callable[[], Coroutine[Any, Any, None] | None]] = []
         self._unsub_list: list[CALLBACK_TYPE] = []
@@ -324,6 +326,7 @@ class ChargeController(ScOptionState):
                 new_charge_current,
             )
             await self._async_set_charge_current(charger, int(new_charge_current))
+            self._charge_current_updatetime = int(time())
             await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------
@@ -346,13 +349,12 @@ class ChargeController(ScOptionState):
         new_alloc_power = data["new_state"]
 
         if new_alloc_power is not None:
+            duration_since_last_change = (
+                new_alloc_power.last_changed_timestamp - self._charge_current_updatetime
+            )
+
             if old_alloc_power is not None:
-                # Make sure we don't change the charge current too often
-                duration_since_last_change = (
-                    new_alloc_power.last_changed_timestamp
-                    - old_alloc_power.last_changed_timestamp
-                )
-                _LOGGER.info(
+                _LOGGER.debug(
                     "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
                     self.device_name,
                     entity_id,
@@ -360,17 +362,17 @@ class ChargeController(ScOptionState):
                     new_alloc_power.state,
                     duration_since_last_change,
                 )
-                if duration_since_last_change >= MIN_TIME_BETWEEN_UPDATE:
-                    await self._async_adjust_charge_current(
-                        self._charger, self._chargeable, float(new_alloc_power.state)
-                    )
             else:
-                _LOGGER.info(
-                    "%s: entity_id=%s, new_state=%s",
+                _LOGGER.debug(
+                    "%s: entity_id=%s, new_state=%s, duration_since_last_change=%s",
                     self.device_name,
                     entity_id,
                     new_alloc_power.state,
+                    duration_since_last_change,
                 )
+
+            # Make sure we don't change the charge current too often
+            if duration_since_last_change >= MIN_TIME_BETWEEN_UPDATE:
                 await self._async_adjust_charge_current(
                     self._charger, self._chargeable, float(new_alloc_power.state)
                 )

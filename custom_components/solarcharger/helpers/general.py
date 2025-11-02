@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import State
 
-from ..const import CONTROL_CHARGER_ALLOCATED_POWER  # noqa: TID252
+from ..const import CHARGE_API_ENTITIES, CONTROL_CHARGER_ALLOCATED_POWER  # noqa: TID252
 from ..models import ChargeControl  # noqa: TID252
 
 # ----------------------------------------------------------------------------
@@ -41,6 +41,22 @@ async def async_set_allocated_power(
         ok = True
 
     return ok
+
+
+# ----------------------------------------------------------------------------
+def is_config_entity_used_as_local_device_entity(
+    domain: str | None, config_item: str
+) -> bool:
+    """Check if SolarCharger config entity is used as local device entity."""
+
+    if domain is not None:
+        api_entities = CHARGE_API_ENTITIES.get(domain)
+        if api_entities is not None:
+            entity_id = api_entities.get(config_item)
+            if entity_id is not None:
+                return config_item in entity_id
+
+    return False
 
 
 # ----------------------------------------------------------------------------

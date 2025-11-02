@@ -187,9 +187,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, OPTION_CHARGER_MAX_CURRENT, use_default
-            ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, OPTION_CHARGER_MAX_CURRENT, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_MAX_SPEED, use_default
             ): NUMBER_ENTITY_SELECTOR,
@@ -298,6 +298,14 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGER_CHARGING_STATE_LIST,
                 TEXT_SELECTOR_READ_ONLY,
                 TEXT_SELECTOR,
+            ),
+            self._optional(
+                subentry, OPTION_CHARGER_MAX_CURRENT, use_default
+            ): entity_selector(
+                api_entities,
+                OPTION_CHARGER_MAX_CURRENT,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
             ),
             self._optional(
                 subentry, OPTION_CHARGER_GET_CHARGE_CURRENT, use_default

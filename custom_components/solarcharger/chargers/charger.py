@@ -15,22 +15,22 @@ class Charger(ABC):
     def __init__(
         self,
         hass: HomeAssistant,
-        config_entry: ConfigEntry,
-        config_subentry: ConfigSubentry,
+        entry: ConfigEntry,
+        subentry: ConfigSubentry,
         device: DeviceEntry,
     ) -> None:
         """Initialize the Charger instance."""
-        self.hass = hass
-        self.config_entry = config_entry
-        self.config_subentry = config_subentry
-        self.device = device
+        self._hass = hass
+        self._entry = entry
+        self._subentry = subentry
+        self._device = device
 
     # ----------------------------------------------------------------------------
     @property
     def id(self) -> str:
         """Return the unique ID of the charger."""
         # return self.config_entry.entry_id
-        return self.config_subentry.subentry_id
+        return self._subentry.subentry_id
 
     # ----------------------------------------------------------------------------
     @staticmethod

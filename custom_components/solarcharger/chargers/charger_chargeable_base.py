@@ -1,4 +1,4 @@
-"""Tesla Custom Charger implementation."""
+"""Charger and Chargeable base class implementation."""
 
 import logging
 
@@ -26,13 +26,14 @@ from ..ha_device import HaDevice  # noqa: TID252
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
-from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class TeslaCustomCharger(ChargerChargeableBase):
-    """Implementation of the Charger class for Tesla Custom chargers."""
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
+    """Implementation of the Charger and Chargeable base classes."""
 
     def __init__(
         self,
@@ -41,50 +42,7 @@ class TeslaCustomCharger(ChargerChargeableBase):
         subentry: ConfigSubentry,
         device: DeviceEntry,
     ) -> None:
-        """Initialize the Tesla Custom charger."""
-        self._hass = hass
-        self._entry = entry
-        self._subentry = subentry
-        self._device = device
-
-        ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
-
-    # ----------------------------------------------------------------------------
-    # Chargeable interface implementation
-    # ----------------------------------------------------------------------------
-    @staticmethod
-    def is_chargeable_device(device: DeviceEntry) -> bool:
-        """Check if the given device is an Tesla Custom charger."""
-        return any(
-            id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
-            for id_domain, _ in device.identifiers
-        )
-
-    # ----------------------------------------------------------------------------
-    # Charger interface implementation
-    # ----------------------------------------------------------------------------
-    @staticmethod
-    def is_charger_device(device: DeviceEntry) -> bool:
-        """Check if device is a Tesla Custom charger."""
-        return any(
-            id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
-            for id_domain, _ in device.identifiers
-        )
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-class TeslaCustomCharger1(HaDevice, ScOptionState, Charger, Chargeable):
-    """Implementation of the Charger class for Tesla Custom chargers."""
-
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        entry: ConfigEntry,
-        subentry: ConfigSubentry,
-        device: DeviceEntry,
-    ) -> None:
-        """Initialize the Tesla Custom charger."""
+        """Initialize the charger and chargeable devices."""
         self._hass = hass
         self._entry = entry
         self._subentry = subentry
@@ -100,13 +58,13 @@ class TeslaCustomCharger1(HaDevice, ScOptionState, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     # Chargeable interface implementation
     # ----------------------------------------------------------------------------
-    @staticmethod
-    def is_chargeable_device(device: DeviceEntry) -> bool:
-        """Check if the given device is an Tesla Custom charger."""
-        return any(
-            id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
-            for id_domain, _ in device.identifiers
-        )
+    # @staticmethod
+    # def is_chargeable_device(device: DeviceEntry) -> bool:
+    #     """Check if the given device is an Tesla Custom charger."""
+    #     return any(
+    #         id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
+    #         for id_domain, _ in device.identifiers
+    #     )
 
     # ----------------------------------------------------------------------------
     def get_chargeable_name(self) -> str:
@@ -167,13 +125,13 @@ class TeslaCustomCharger1(HaDevice, ScOptionState, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     # Charger interface implementation
     # ----------------------------------------------------------------------------
-    @staticmethod
-    def is_charger_device(device: DeviceEntry) -> bool:
-        """Check if device is a Tesla Custom charger."""
-        return any(
-            id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
-            for id_domain, _ in device.identifiers
-        )
+    # @staticmethod
+    # def is_charger_device(device: DeviceEntry) -> bool:
+    #     """Check if device is a Tesla Custom charger."""
+    #     return any(
+    #         id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
+    #         for id_domain, _ in device.identifiers
+    #     )
 
     # ----------------------------------------------------------------------------
     def get_charger_name(self) -> str:

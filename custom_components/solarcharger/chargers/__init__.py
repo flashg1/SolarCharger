@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 
 async def charger_factory(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    config_subentry: ConfigSubentry,
+    entry: ConfigEntry,
+    subentry: ConfigSubentry,
     device_entry_id: str,
 ) -> Charger:
     """Create a charger instance based on the device's properties."""
@@ -39,7 +39,7 @@ async def charger_factory(
         TeslaCustomCharger,
     ]:
         if charger_cls.is_charger_device(device):
-            return charger_cls(hass, config_entry, config_subentry, device)
+            return charger_cls(hass, entry, subentry, device)
 
     msg = f"Unsupported device: {device.name} (ID: {device_entry_id}). "
     raise ValueError(msg)
