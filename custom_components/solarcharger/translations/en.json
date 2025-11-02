@@ -151,7 +151,7 @@
                 "name": "Wait current change"
             },
             "charger_allocated_power": {
-                "name": "Charger allocated power"
+                "name": "Allocated power"
             }
         }
     }
