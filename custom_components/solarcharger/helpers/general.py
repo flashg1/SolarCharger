@@ -48,15 +48,16 @@ def is_config_entity_used_as_local_device_entity(
     domain: str | None, config_item: str
 ) -> bool:
     """Check if SolarCharger config entity is used as local device entity."""
+    used_as_local_device_entity = False
 
     if domain is not None:
         api_entities = CHARGE_API_ENTITIES.get(domain)
         if api_entities is not None:
             entity_id = api_entities.get(config_item)
             if entity_id is not None:
-                return config_item in entity_id
+                used_as_local_device_entity = config_item in entity_id
 
-    return False
+    return used_as_local_device_entity
 
 
 # ----------------------------------------------------------------------------

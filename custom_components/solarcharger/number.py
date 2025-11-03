@@ -27,13 +27,14 @@ from .const import (
     CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,
+    OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_MAX_SPEED,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_GLOBAL_DEFAULT_VALUE_LIST,
+    OPTION_DEFAULT_VALUE_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
@@ -58,6 +59,8 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     #####################################
     # Control entities
+    # Must haves, ie. not hidden for all
+    # entity_category=None
     #####################################
     (
         CONTROL_CHARGER_ALLOCATED_POWER,
@@ -70,7 +73,35 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         ),
     ),
     #####################################
+    # Config entities, or device entities
+    # Hidden if not device entities, except for global defaults.
+    # entity_category=EntityCategory.CONFIG
+    #####################################
+    (
+        OPTION_CHARGEE_CHARGE_LIMIT,
+        NumberEntityDescription(
+            key=OPTION_CHARGEE_CHARGE_LIMIT,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGER_MAX_CURRENT,
+        NumberEntityDescription(
+            key=OPTION_CHARGER_MAX_CURRENT,
+            entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.CURRENT,
+            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    #####################################
     # Config entities
+    # Hidden except for global defaults
+    # entity_category=EntityCategory.CONFIG
     #####################################
     (
         OPTION_CHARGER_EFFECTIVE_VOLTAGE,
@@ -85,17 +116,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
             # native_step=1.0,
             # mode=NumberMode.BOX,
             # entity_registry_enabled_default=True,
-        ),
-    ),
-    (
-        OPTION_CHARGER_MAX_CURRENT,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_MAX_CURRENT,
-            entity_category=EntityCategory.CONFIG,
-            device_class=NumberDeviceClass.CURRENT,
-            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-            native_min_value=0.0,
-            native_max_value=100.0,
         ),
     ),
     (
@@ -238,7 +258,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     #####################################
     # Diagnostic entities
-    # entity_category=EntityCategory.DIAGNOSTIC,
+    # entity_category=EntityCategory.DIAGNOSTIC
     #####################################
 )
 
@@ -303,18 +323,18 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
 
     def __init__(
         self,
-        name: str,
+        config_item: str,
         subentry: ConfigSubentry,
         desc: NumberEntityDescription,
         default_val: float,
     ) -> None:
         """Initialise number."""
-        self._entity_key = name
+        self._entity_key = config_item
         if desc.entity_category == EntityCategory.CONFIG:
             # Disable local device entities. User needs to manually enable if required.
             if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
                 if not is_config_entity_used_as_local_device_entity(
-                    subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN), name
+                    subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN), config_item
                 ):
                     self._attr_entity_registry_enabled_default = False
 
@@ -362,7 +382,7 @@ async def async_setup_entry(
                 config_item,
                 subentry,
                 entity_description,
-                OPTION_GLOBAL_DEFAULT_VALUE_LIST[config_item],
+                OPTION_DEFAULT_VALUE_LIST[config_item],
             )
         coordinator.charge_controls[subentry.subentry_id].numbers = numbers
 

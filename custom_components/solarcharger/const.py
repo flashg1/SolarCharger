@@ -180,9 +180,11 @@ OPTION_GLOBAL_DEFAULT_ENTITY_LIST: dict[str, str] = {
     OPTION_WAIT_CHARGER_AMP_CHANGE: f"number.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{OPTION_WAIT_CHARGER_AMP_CHANGE}",
 }
 
-OPTION_GLOBAL_DEFAULT_VALUE_LIST: dict[str, Any] = {
+OPTION_DEFAULT_VALUE_LIST: dict[str, Any] = {
+    #####################################
+    # General config defaults
+    #####################################
     OPTION_CHARGER_EFFECTIVE_VOLTAGE: 230,
-    OPTION_CHARGER_MAX_CURRENT: 15,
     OPTION_CHARGER_MAX_SPEED: 6.1448,
     OPTION_CHARGER_MIN_CURRENT: 1,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT: 0,
@@ -197,9 +199,14 @@ OPTION_GLOBAL_DEFAULT_VALUE_LIST: dict[str, Any] = {
     OPTION_WAIT_CHARGER_OFF: 5,
     OPTION_WAIT_CHARGER_AMP_CHANGE: 1,
     #####################################
-    # Internal entities
+    # Internal control defaults
     #####################################
     CONTROL_CHARGER_ALLOCATED_POWER: 0,
+    #####################################
+    # Device control defaults
+    #####################################
+    OPTION_CHARGER_MAX_CURRENT: 15,
+    OPTION_CHARGEE_CHARGE_LIMIT: 100,
 }
 
 # API entities
@@ -255,7 +262,7 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_GET_CHARGE_CURRENT: f"sensor.{DEVICE_NAME_MARKER}current_import",
     OPTION_CHARGER_SET_CHARGE_CURRENT: f"number.{DEVICE_NAME_MARKER}charge_current",
     OPTION_CHARGEE_SOC_SENSOR: None,
-    OPTION_CHARGEE_CHARGE_LIMIT: None,
+    OPTION_CHARGEE_CHARGE_LIMIT: f"number.{DOMAIN}_{CONFIG_NAME_MARKER}_{OPTION_CHARGEE_CHARGE_LIMIT}",
     OPTION_CHARGEE_LOCATION_SENSOR: None,
     OPTION_CHARGEE_LOCATION_STATE_LIST: None,
     OPTION_CHARGEE_WAKE_UP_BUTTON: None,

@@ -105,6 +105,12 @@
             }
         },
         "number": {
+            "charger_allocated_power": {
+                "name": "Allocated power"
+            },
+            "chargee_charge_limit": {
+                "name": "Charge limit"
+            },
             "charger_effective_voltage": {
                 "name": "Effective voltage"
             },
@@ -149,9 +155,6 @@
             },
             "wait_charger_amp_change": {
                 "name": "Wait current change"
-            },
-            "charger_allocated_power": {
-                "name": "Allocated power"
             }
         }
     }

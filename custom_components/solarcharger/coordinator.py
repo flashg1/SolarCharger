@@ -41,7 +41,7 @@ from .const import (
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_GLOBAL_DEFAULT_VALUE_LIST,
+    OPTION_DEFAULT_VALUE_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_WAIT_NET_POWER_UPDATE,
     SOLAR_CHARGER_COORDINATOR_EVENT,
@@ -160,9 +160,7 @@ class SolarChargerCoordinator(ScOptionState):
         #     raise SystemError(
         #         f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
         #     )
-        wait_net_power_update = OPTION_GLOBAL_DEFAULT_VALUE_LIST[
-            OPTION_WAIT_NET_POWER_UPDATE
-        ]
+        wait_net_power_update = OPTION_DEFAULT_VALUE_LIST[OPTION_WAIT_NET_POWER_UPDATE]
 
         self._unsub.append(
             async_track_time_interval(
