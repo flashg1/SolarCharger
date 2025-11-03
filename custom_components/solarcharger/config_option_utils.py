@@ -324,7 +324,7 @@ def get_saved_option_value(
             final_val = saved_global_val
 
     _LOGGER.debug(
-        "Required option=%s, final=%s, local=%s, global=%s",
+        "%s: final=%s, local=%s, global=%s",
         config_item,
         final_val,
         saved_local_val,
@@ -382,12 +382,14 @@ def reset_api_entities(
                     if device_domain:
                         api_entities = CHARGE_API_ENTITIES.get(device_domain)
                         if api_entities:
-                            if reset_all_entities:
-                                # Only reset all entities during subentry initial setup
-                                key_list = list(api_entities.keys())
-                            else:
-                                # This will only reset dependent entities when device name is changed
-                                key_list = OPTION_DEVICE_ENTITY_LIST
+                            key_list = list(api_entities.keys())
+
+                            # if reset_all_entities:
+                            #     # Only reset all entities during subentry initial setup
+                            #     key_list = list(api_entities.keys())
+                            # else:
+                            #     # This will only reset dependent entities when device name is changed
+                            #     key_list = OPTION_DEVICE_ENTITY_LIST
 
                             for config_item in key_list:
                                 entity_name = get_default_entity(

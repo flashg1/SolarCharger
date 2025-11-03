@@ -6,6 +6,8 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
+from ..model_config import ConfigValueDict  # noqa: TID252
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -47,11 +49,13 @@ class Charger(ABC):
         """Set up charger."""
 
     @abstractmethod
-    def get_max_charge_current(self) -> float | None:
+    def get_max_charge_current(
+        self, val_dict: ConfigValueDict | None = None
+    ) -> float | None:
         """Get charger max allowable current in amps."""
 
     @abstractmethod
-    def is_connected(self) -> bool:
+    def is_connected(self, val_dict: ConfigValueDict | None = None) -> bool:
         """Is charger connected to chargeable device?
 
         This does not mean that the car is actually able to charge, for which
@@ -62,27 +66,35 @@ class Charger(ABC):
         """
 
     @abstractmethod
-    def is_charger_switch_on(self) -> bool:
+    def is_charger_switch_on(self, val_dict: ConfigValueDict | None = None) -> bool:
         """Is charger switched on?"""
 
     @abstractmethod
-    async def async_turn_charger_switch_on(self) -> None:
+    async def async_turn_charger_switch_on(
+        self, val_dict: ConfigValueDict | None = None
+    ) -> None:
         """Switch on charger."""
 
     @abstractmethod
-    async def async_turn_charger_switch_off(self) -> None:
+    async def async_turn_charger_switch_off(
+        self, val_dict: ConfigValueDict | None = None
+    ) -> None:
         """Switch off charger."""
 
     @abstractmethod
-    def is_charging(self) -> bool:
+    def is_charging(self, val_dict: ConfigValueDict | None = None) -> bool:
         """Is device charging?"""
 
     @abstractmethod
-    def get_charge_current(self) -> float | None:
+    def get_charge_current(
+        self, val_dict: ConfigValueDict | None = None
+    ) -> float | None:
         """Get charger charge current in AMPS."""
 
     @abstractmethod
-    async def async_set_charge_current(self, charge_current: float) -> None:
+    async def async_set_charge_current(
+        self, charge_current: float, val_dict: ConfigValueDict | None = None
+    ) -> None:
         """Set charger charge current in AMPS."""
 
     @abstractmethod

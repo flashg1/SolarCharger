@@ -6,7 +6,6 @@ from collections.abc import Callable, Coroutine
 import inspect
 import logging
 from time import time
-from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import (
@@ -21,6 +20,10 @@ from homeassistant.helpers.event import async_track_state_change_event
 
 from ..const import (  # noqa: TID252
     CONTROL_CHARGER_ALLOCATED_POWER,
+    OPTION_CHARGEE_LOCATION_SENSOR,
+    OPTION_CHARGEE_SOC_SENSOR,
+    OPTION_CHARGEE_UPDATE_HA_BUTTON,
+    OPTION_CHARGEE_WAKE_UP_BUTTON,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
@@ -31,6 +34,7 @@ from ..const import (  # noqa: TID252
     OPTION_WAIT_CHARGER_ON,
     OPTION_WAIT_NET_POWER_UPDATE,
 )
+from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import log_is_event_loop  # noqa: TID252
 from .chargeable import Chargeable
@@ -99,7 +103,7 @@ class ChargeController(ScOptionState):
         await self._charger.async_unload()
 
     # ----------------------------------------------------------------------------
-    def _get_entity_id(self, config_item: str) -> str:
+    def _get_must_have_entity_id(self, config_item: str) -> str:
         entity_id = self.option_get_id(config_item)
         if entity_id is None:
             raise SystemError(
@@ -126,18 +130,38 @@ class ChargeController(ScOptionState):
         await asyncio.sleep(duration)
 
     # ----------------------------------------------------------------------------
+    async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
+        config_item = OPTION_CHARGEE_WAKE_UP_BUTTON
+        val_dict = ConfigValueDict(config_item, {})
+
+        await chargeable.async_wake_up(val_dict)
+        if val_dict.config_values[config_item].entity_id is not None:
+            await self._async_sleep(OPTION_WAIT_CHARGEE_WAKEUP)
+
+    # ----------------------------------------------------------------------------
     async def _async_update_ha(self, chargeable: Chargeable) -> None:
-        await chargeable.async_update_ha()
-        await self._async_sleep(OPTION_WAIT_CHARGEE_UPDATE_HA)
+        config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
+        val_dict = ConfigValueDict(config_item, {})
+
+        await chargeable.async_update_ha(val_dict)
+        if val_dict.config_values[config_item].entity_id is not None:
+            await self._async_sleep(OPTION_WAIT_CHARGEE_UPDATE_HA)
+
+    # ----------------------------------------------------------------------------
+    def _check_is_at_location(self, chargeable: Chargeable) -> None:
+        config_item = OPTION_CHARGEE_LOCATION_SENSOR
+        val_dict = ConfigValueDict(config_item, {})
+
+        is_at_location = chargeable.is_at_location(val_dict)
+        if val_dict.config_values[config_item].entity_id is not None:
+            if not is_at_location:
+                raise SystemError(f"{self.device_name}: Device not at charger location")
 
     # ----------------------------------------------------------------------------
     async def _async_init_device(self, chargeable: Chargeable) -> None:
-        await chargeable.async_wake_up()
-        await self._async_sleep(OPTION_WAIT_CHARGEE_WAKEUP)
+        await self._async_wakeup_device(chargeable)
         await self._async_update_ha(chargeable)
-
-        if not chargeable.is_at_location():
-            raise SystemError(f"{self.device_name}: Device not at charger location")
+        self._check_is_at_location(chargeable)
 
     # ----------------------------------------------------------------------------
     async def _async_init_charge_limit(
@@ -156,7 +180,13 @@ class ChargeController(ScOptionState):
 
         try:
             charge_limit = chargeable.get_charge_limit()
-            soc = chargeable.get_state_of_charge()
+
+            config_item = OPTION_CHARGEE_SOC_SENSOR
+            val_dict = ConfigValueDict(config_item, {})
+            soc = chargeable.get_state_of_charge(val_dict)
+            if val_dict.config_values[config_item].entity_id is None:
+                return True
+
             if soc is not None and charge_limit is not None:
                 is_below_limit = soc < charge_limit
                 if is_below_limit:
@@ -379,7 +409,9 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _track_allocated_power_update(self) -> None:
-        allocated_power_entity_id = self._get_entity_id(CONTROL_CHARGER_ALLOCATED_POWER)
+        allocated_power_entity_id = self._get_must_have_entity_id(
+            CONTROL_CHARGER_ALLOCATED_POWER
+        )
 
         # Need both changed and unchanged events, eg. update1 at time1=-500W, update2 at time2=-500W
         # Need to handle both updates to make use of the spare power.

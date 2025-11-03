@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 # from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceResponse
 
 # from .config_option_utils import get_saved_option_value
 
@@ -156,44 +156,58 @@ class ScState:
 
     # ----------------------------------------------------------------------------
     async def async_ha_call(
-        self, domain_name: str, service_name: str, entity_id: str
-    ) -> None:
+        self,
+        domain_name: str,
+        service_name: str,
+        service_data: dict[str, Any],
+        target: dict[str, Any] | None = None,
+        return_response: bool = False,
+    ) -> ServiceResponse:
         """HA service call for entity."""
 
         try:
             # Call the Home Assistant service
-            await self.hass.services.async_call(
+            return await self.hass.services.async_call(
                 domain=domain_name,
                 service=service_name,
-                service_data={
-                    "entity_id": entity_id,
-                },
+                service_data=service_data,
                 blocking=True,
+                target=target,
+                return_response=return_response,
             )
         except (ValueError, RuntimeError, TimeoutError) as e:
             _LOGGER.warning(
-                "%s: Failed %s %s for entity '%s': %s",
+                "%s: Failed %s %s: data='%s': %s",
                 self._caller,
                 domain_name,
                 service_name,
-                entity_id,
+                service_data,
                 e,
             )
+
+    # ----------------------------------------------------------------------------
+    async def async_ha_entity_call(
+        self, domain_name: str, service_name: str, entity_id: str
+    ) -> None:
+        """HA service call for entity."""
+
+        service_data: dict[str, Any] = {"entity_id": entity_id}
+        await self.async_ha_call(domain_name, service_name, service_data)
 
     # ----------------------------------------------------------------------------
     async def async_press_button(self, entity_id: str) -> None:
         """Press button entity."""
 
-        await self.async_ha_call("button", "press", entity_id)
+        await self.async_ha_entity_call("button", "press", entity_id)
 
     # ----------------------------------------------------------------------------
     async def async_turn_switch_on(self, entity_id: str) -> None:
         """Turn on switch entity."""
 
-        await self.async_ha_call("switch", "turn_on", entity_id)
+        await self.async_ha_entity_call("switch", "turn_on", entity_id)
 
     # ----------------------------------------------------------------------------
     async def async_turn_switch_off(self, entity_id: str) -> None:
         """Turn off switch entity."""
 
-        await self.async_ha_call("switch", "turn_off", entity_id)
+        await self.async_ha_entity_call("switch", "turn_off", entity_id)

@@ -232,6 +232,8 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         }
 
     # ----------------------------------------------------------------------------
+    # TODO: Create dynamic list base on sensor, number, etc., otherwise it is text selector.
+
     def _charger_control_entities_schema(
         self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:

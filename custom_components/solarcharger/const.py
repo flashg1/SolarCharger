@@ -147,6 +147,8 @@ OPTION_CHARGER_CHARGING_SENSOR = "charger_charging_sensor"
 OPTION_CHARGER_CHARGING_STATE_LIST = "charger_charging_state_list"
 OPTION_CHARGER_GET_CHARGE_CURRENT = "charger_get_charge_current"
 OPTION_CHARGER_SET_CHARGE_CURRENT = "charger_set_charge_current"
+OPTION_CHARGER_SPECIFIC_ID = "charger_specific_id"
+OPTION_CHARGER_TRANSACTION_ID = "charger_transaction_id"
 
 #####################################
 # Chargee control entities
@@ -268,6 +270,8 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGEE_WAKE_UP_BUTTON: None,
     OPTION_CHARGEE_UPDATE_HA_BUTTON: None,
     CONTROL_CHARGER_ALLOCATED_POWER: f"number.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
+    OPTION_CHARGER_SPECIFIC_ID: f"sensor.{DEVICE_NAME_MARKER}id",
+    OPTION_CHARGER_TRANSACTION_ID: f"sensor.{DEVICE_NAME_MARKER}transaction_id",
 }
 
 CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {

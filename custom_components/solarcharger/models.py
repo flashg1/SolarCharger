@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from homeassistant.config_entries import ConfigEntry
-
 from .chargers.controller import ChargeController
 
 #######################################################
@@ -62,8 +60,4 @@ class ChargeControl:
     switch_charge: bool | None = None
 
 
-type ChargerConfigEntry = ConfigEntry[ChargeControl]
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
+# type ChargerConfigEntry = ConfigEntry[ChargeControl]
