@@ -15,7 +15,7 @@ from .chargers.controller import ChargeController
 from .config_option_utils import get_subentry
 from .const import (
     DOMAIN,
-    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
+    OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_THIRDPARTY_DEVICE_ID,
     SUBENTRY_THIRDPARTY_DEVICE_NAME,
@@ -76,7 +76,7 @@ async def async_create_global_defaults_subentry(
             config_entry,
             options=config_entry.options
             | {
-                OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
+                OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULT_ENTITIES,
             },
         )
 

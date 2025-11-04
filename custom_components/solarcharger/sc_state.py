@@ -4,10 +4,7 @@ from collections.abc import Callable
 import logging
 from typing import Any
 
-# from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.core import HomeAssistant, ServiceResponse
-
-# from .config_option_utils import get_saved_option_value
+from homeassistant.core import HomeAssistant, ServiceResponse, State
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -22,29 +19,37 @@ class ScState:
     def __init__(
         self,
         hass: HomeAssistant,
-        # config_entry: ConfigEntry,
-        # config_subentry: ConfigSubentry,
         caller: str,
     ) -> None:
         """Initialize the HaState instance."""
 
-        self.hass = hass
-        # self._config_entry = config_entry
-        # self._config_subentry = config_subentry
+        self._hass = hass
         self._caller = caller
 
     # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    def _get_entity_state(
+        self, entity_id: str | None, parser_fn: Callable | None = None
+    ) -> State | None:
+        """Get the state of the entity for a given entity."""
+
+        if entity_id is None:
+            raise ValueError("Cannot get entity state because entity ID is None")
+        state = self._hass.states.get(entity_id)
+        if state is None:
+            _LOGGER.debug("State not found for entity %s", entity_id)
+            return None
+
+        return state
+
     # ----------------------------------------------------------------------------
     def _get_entity_value(
         self, entity_id: str | None, parser_fn: Callable | None = None
     ) -> Any | None:
         """Get the state of the entity for a given entity. Can be parsed."""
 
-        if entity_id is None:
-            raise ValueError("Cannot get entity state because entity ID is None")
-        state = self.hass.states.get(entity_id)
+        state = self._get_entity_state(entity_id)
         if state is None:
-            _LOGGER.debug("State not found for entity %s", entity_id)
             return None
 
         try:
@@ -125,36 +130,6 @@ class ScState:
         return str_val
 
     # ----------------------------------------------------------------------------
-    async def async_set_number(self, entity_id: str, num: float) -> None:
-        """Set number entity."""
-
-        try:
-            # Call the Home Assistant number.set_value service
-            await self.hass.services.async_call(
-                domain="number",
-                service="set_value",
-                service_data={
-                    "entity_id": entity_id,
-                    "value": num,
-                },
-                blocking=True,
-            )
-        except (ValueError, RuntimeError, TimeoutError) as e:
-            _LOGGER.warning(
-                "%s: Failed to set number %s for entity '%s': %s",
-                self._caller,
-                num,
-                entity_id,
-                e,
-            )
-
-    # ----------------------------------------------------------------------------
-    async def async_set_integer(self, entity_id: str, num: int) -> None:
-        """Set integer entity."""
-
-        await self.async_set_number(entity_id, float(num))
-
-    # ----------------------------------------------------------------------------
     async def async_ha_call(
         self,
         domain_name: str,
@@ -167,7 +142,7 @@ class ScState:
 
         try:
             # Call the Home Assistant service
-            return await self.hass.services.async_call(
+            return await self._hass.services.async_call(
                 domain=domain_name,
                 service=service_name,
                 service_data=service_data,
@@ -184,6 +159,24 @@ class ScState:
                 service_data,
                 e,
             )
+
+    # ----------------------------------------------------------------------------
+    async def async_set_number(self, entity_id: str, num: float) -> None:
+        """Set number entity."""
+
+        domain_name = "number"
+        service_name = "set_value"
+        service_data: dict[str, Any] = {
+            "entity_id": entity_id,
+            "value": num,
+        }
+        await self.async_ha_call(domain_name, service_name, service_data)
+
+    # ----------------------------------------------------------------------------
+    async def async_set_integer(self, entity_id: str, num: int) -> None:
+        """Set integer entity."""
+
+        await self.async_set_number(entity_id, float(num))
 
     # ----------------------------------------------------------------------------
     async def async_ha_entity_call(

@@ -24,23 +24,21 @@ class ScOptionState(ScConfigState):
     def __init__(
         self,
         hass: HomeAssistant,
-        config_entry: ConfigEntry,
-        config_subentry: ConfigSubentry,
+        entry: ConfigEntry,
+        subentry: ConfigSubentry,
         caller: str,
     ) -> None:
         """Initialize the ScOptionState instance."""
 
-        self.hass = hass
-        self._config_entry = config_entry
-        self._config_subentry = config_subentry
-        self._caller = caller
+        self._subentry = subentry
+        ScConfigState.__init__(self, hass, entry, caller)
 
-        ScConfigState.__init__(self, hass, config_entry, caller)
-
+    # ----------------------------------------------------------------------------
+    # Utils
     # ----------------------------------------------------------------------------
     def _get_subentry(self, subentry: ConfigSubentry | None) -> ConfigSubentry:
         if subentry is None:
-            subentry = self._config_subentry
+            subentry = self._subentry
         return subentry
 
     # ----------------------------------------------------------------------------
@@ -66,9 +64,6 @@ class ScOptionState(ScConfigState):
         )
 
     # ----------------------------------------------------------------------------
-    # Get entity ID from options config, then get entity value.
-    # Requires config_subentry and config_entry.options.
-    # ----------------------------------------------------------------------------
     def option_get_id(
         self, config_item: str, subentry: ConfigSubentry | None = None
     ) -> str | None:
@@ -76,7 +71,7 @@ class ScOptionState(ScConfigState):
 
         subentry = self._get_subentry(subentry)
         return get_saved_option_value(
-            self._config_entry, subentry, config_item, use_default=True
+            self._entry, subentry, config_item, use_default=True
         )
 
     # ----------------------------------------------------------------------------
@@ -90,7 +85,7 @@ class ScOptionState(ScConfigState):
 
         subentry = self._get_subentry(subentry)
         str_val = get_saved_option_value(
-            self._config_entry, subentry, config_item, use_default=True
+            self._entry, subentry, config_item, use_default=True
         )
 
         self._set_config_value_dict(
@@ -114,6 +109,9 @@ class ScOptionState(ScConfigState):
 
         return json.loads(json_str)
 
+    # ----------------------------------------------------------------------------
+    # Get entity ID from options config, then get entity value.
+    # Requires config_subentry and config_entry.options.
     # ----------------------------------------------------------------------------
     def option_get_entity_number(
         self,

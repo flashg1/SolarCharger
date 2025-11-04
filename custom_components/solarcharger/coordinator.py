@@ -41,7 +41,7 @@ from .const import (
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_LIMITS,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_DEFAULT_VALUE_LIST,
+    OPTION_GLOBAL_DEFAULT_VALUES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_WAIT_NET_POWER_UPDATE,
     SOLAR_CHARGER_COORDINATOR_EVENT,
@@ -160,7 +160,9 @@ class SolarChargerCoordinator(ScOptionState):
         #     raise SystemError(
         #         f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
         #     )
-        wait_net_power_update = OPTION_DEFAULT_VALUE_LIST[OPTION_WAIT_NET_POWER_UPDATE]
+        wait_net_power_update = OPTION_GLOBAL_DEFAULT_VALUES[
+            OPTION_WAIT_NET_POWER_UPDATE
+        ]
 
         self._unsub.append(
             async_track_time_interval(
@@ -279,6 +281,23 @@ class SolarChargerCoordinator(ScOptionState):
                 control.sensors[ENTITY_KEY_LAST_CHECK_SENSOR].set_state(
                     datetime.now().astimezone()
                 )
+
+        # state.state = 'below_horizon'
+        # state.attributes = {
+        #     "next_dawn": "2025-11-04T18:25:01.044505+00:00",
+        #     "next_dusk": "2025-11-05T08:53:46.360780+00:00",
+        #     "next_midnight": "2025-11-04T13:39:07+00:00",
+        #     "next_noon": "2025-11-05T01:39:06+00:00",
+        #     "next_rising": "2025-11-04T18:52:10.267297+00:00",
+        #     "next_setting": "2025-11-05T08:26:32.189258+00:00",
+        #     "elevation": -38.55,
+        #     "azimuth": 199.59,
+        #     "rising": False,
+        #     "friendly_name": "Sun",
+        # }
+        # state: State | None = self._get_entity_state("sun.sun")
+        # if state is not None:
+        #     _LOGGER.info("%s: sun.sun: %s", self._caller, state)
 
         # if control.controller:
         #     control.sensor_last_check_timestamp = datetime.now().astimezone()

@@ -22,6 +22,7 @@ class Charger(ABC):
         device: DeviceEntry,
     ) -> None:
         """Initialize the Charger instance."""
+
         self._hass = hass
         self._entry = entry
         self._subentry = subentry

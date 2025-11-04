@@ -9,8 +9,8 @@ from homeassistant.helpers.device_registry import DeviceEntry
 
 from ..const import (  # noqa: TID252
     CHARGER_DOMAIN_OCPP,
-    OPTION_CHARGER_SPECIFIC_ID,
-    OPTION_CHARGER_TRANSACTION_ID,
+    OPTION_OCPP_CHARGER_ID,
+    OPTION_OCPP_TRANSACTION_ID,
 )
 from ..model_config import ConfigValueDict  # noqa: TID252
 from .charger_chargeable_base import ChargerChargeableBase
@@ -33,6 +33,7 @@ class OcppCharger(ChargerChargeableBase):
         device: DeviceEntry,
     ) -> None:
         """Initialize the OCPP charger."""
+
         ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
 
     # ----------------------------------------------------------------------------
@@ -64,7 +65,7 @@ class OcppCharger(ChargerChargeableBase):
         """Get OCPP charge profile max stack level. This stack level will be used to override all others."""
         # ocpp_max_stack_level_map: dict[str, Any] = {}
 
-        ocpp_charger_id = self.option_get_entity_string(OPTION_CHARGER_SPECIFIC_ID)
+        ocpp_charger_id = self.option_get_entity_string(OPTION_OCPP_CHARGER_ID)
         # service_name = "ocpp.get_configuration"
         service_name = "get_configuration"
         service_data: dict[str, Any] = {
@@ -89,7 +90,7 @@ class OcppCharger(ChargerChargeableBase):
         """Set charger charge current."""
         new_charge_current = int(round(charge_current))
         ocpp_charger_transaction_id = self.option_get_entity_integer(
-            OPTION_CHARGER_TRANSACTION_ID
+            OPTION_OCPP_TRANSACTION_ID
         )
         ocpp_max_stack_level_map: ServiceResponse = (
             await self._async_get_ocpp_max_stack_level()

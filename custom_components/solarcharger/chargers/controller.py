@@ -64,10 +64,7 @@ class ChargeController(ScOptionState):
         chargeable: Chargeable,
     ) -> None:
         """Initialize the Charge instance."""
-        self._hass = hass
-        self._entry = entry
-        self._subentry = subentry
-        self.device_name = subentry.unique_id
+
         self._charger = charger
         self._chargeable = chargeable
         self._charge_task: Task | None = None
@@ -77,7 +74,10 @@ class ChargeController(ScOptionState):
         # self._unsub_list: list[Callable[[], Coroutine[Any, Any, None] | None]] = []
         self._unsub_list: list[CALLBACK_TYPE] = []
 
-        ScOptionState.__init__(self, hass, entry, subentry, __name__)
+        caller = subentry.unique_id
+        if caller is None:
+            caller = __name__
+        ScOptionState.__init__(self, hass, entry, subentry, caller)
 
     # ----------------------------------------------------------------------------
     @property
@@ -103,22 +103,22 @@ class ChargeController(ScOptionState):
         await self._charger.async_unload()
 
     # ----------------------------------------------------------------------------
+    # Utils
+    # ----------------------------------------------------------------------------
     def _get_must_have_entity_id(self, config_item: str) -> str:
         entity_id = self.option_get_id(config_item)
         if entity_id is None:
             raise SystemError(
-                f"{self.device_name}: Failed to get entity ID for {config_item}"
+                f"{self._caller}: Failed to get entity ID for {config_item}"
             )
 
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def _get_number(self, config_item: str) -> float:
+    def _get_must_have_number(self, config_item: str) -> float:
         num = self.option_get_entity_number(config_item)
         if num is None:
-            raise SystemError(
-                f"{self.device_name}: Failed to get number for {config_item}"
-            )
+            raise SystemError(f"{self._caller}: Failed to get number for {config_item}")
 
         return num
 
@@ -126,9 +126,10 @@ class ChargeController(ScOptionState):
     async def _async_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
-        duration = self._get_number(config_item)
+        duration = self._get_must_have_number(config_item)
         await asyncio.sleep(duration)
 
+    # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
     async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
         config_item = OPTION_CHARGEE_WAKE_UP_BUTTON
@@ -155,7 +156,7 @@ class ChargeController(ScOptionState):
         is_at_location = chargeable.is_at_location(val_dict)
         if val_dict.config_values[config_item].entity_id is not None:
             if not is_at_location:
-                raise SystemError(f"{self.device_name}: Device not at charger location")
+                raise SystemError(f"{self._caller}: Device not at charger location")
 
     # ----------------------------------------------------------------------------
     async def _async_init_device(self, chargeable: Chargeable) -> None:
@@ -168,6 +169,10 @@ class ChargeController(ScOptionState):
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         pass
+
+        # Moved status wait out of if statement to apply wait for all after charge limit change.
+        # Tesla BLE need 25 seconds here.
+        # ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
@@ -194,23 +199,19 @@ class ChargeController(ScOptionState):
                         "SOC %s %% is below charge limit %s %%, continuing charger %s",
                         soc,
                         charge_limit,
-                        self.device_name,
+                        self._caller,
                     )
                 else:
                     _LOGGER.info(
                         "SOC %s %% is at or above charge limit %s %%, stopping charger %s",
                         soc,
                         charge_limit,
-                        self.device_name,
+                        self._caller,
                     )
         except TimeoutError:
-            _LOGGER.warning(
-                "Timeout while communicating with charger %s", self.device_name
-            )
+            _LOGGER.warning("Timeout while communicating with charger %s", self._caller)
         except Exception as e:
-            _LOGGER.error(
-                "Error in charging task for charger %s: %s", self.device_name, e
-            )
+            _LOGGER.error("Error in charging task for charger %s: %s", self._caller, e)
 
         return is_below_limit
 
@@ -257,19 +258,21 @@ class ChargeController(ScOptionState):
         return current
 
     # ----------------------------------------------------------------------------
-    def _calc_current_change(self, charger: Charger, allocated_power: float):
+    def _calc_current_change(
+        self, charger: Charger, allocated_power: float
+    ) -> tuple[float, float]:
         charger_max_current = charger.get_max_charge_current()
         if charger_max_current is None or charger_max_current <= 0:
-            raise SystemError(f"{self.device_name}: Failed to get charger max current")
+            raise SystemError(f"{self._caller}: Failed to get charger max current")
 
         battery_charge_current = charger.get_charge_current()
         if battery_charge_current is None:
-            raise SystemError(f"{self.device_name}: Failed to get charge current")
+            raise SystemError(f"{self._caller}: Failed to get charge current")
         old_charge_current = self._check_current(
             charger_max_current, battery_charge_current
         )
 
-        config_min_current = self._get_number(OPTION_CHARGER_MIN_CURRENT)
+        config_min_current = self._get_must_have_number(OPTION_CHARGER_MIN_CURRENT)
         config_min_current = self._check_current(
             charger_max_current, config_min_current
         )
@@ -283,9 +286,11 @@ class ChargeController(ScOptionState):
         #####################################
         # allocated_power = self._get_number(CONTROL_CHARGER_ALLOCATED_POWER)
 
-        charger_effective_voltage = self._get_number(OPTION_CHARGER_EFFECTIVE_VOLTAGE)
+        charger_effective_voltage = self._get_must_have_number(
+            OPTION_CHARGER_EFFECTIVE_VOLTAGE
+        )
         if charger_effective_voltage <= 0:
-            raise SystemError(f"{self.device_name}: Charger effective voltage is 0")
+            raise SystemError(f"{self._caller}: Charger effective voltage is 0")
 
         one_amp_watt_step = charger_effective_voltage * 1
         power_offset = 0
@@ -302,7 +307,7 @@ class ChargeController(ScOptionState):
             )
         propose_new_charge_current = max([charger_min_current, propose_charge_current])
 
-        charger_min_workable_current = self._get_number(
+        charger_min_workable_current = self._get_must_have_number(
             OPTION_CHARGER_MIN_WORKABLE_CURRENT
         )
         if propose_new_charge_current < charger_min_workable_current:
@@ -324,7 +329,7 @@ class ChargeController(ScOptionState):
             "propose_new_charge_current=%s "
             "charger_min_workable_current=%s "
             "new_charge_current=%s ",
-            self.device_name,
+            self._caller,
             allocated_power,
             charger_effective_voltage,
             config_min_current,
@@ -351,7 +356,7 @@ class ChargeController(ScOptionState):
         if new_charge_current != old_charge_current:
             _LOGGER.info(
                 "%s: Update current from %s to %s",
-                self.device_name,
+                self._caller,
                 old_charge_current,
                 new_charge_current,
             )
@@ -386,7 +391,7 @@ class ChargeController(ScOptionState):
             if old_alloc_power is not None:
                 _LOGGER.debug(
                     "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
-                    self.device_name,
+                    self._caller,
                     entity_id,
                     old_alloc_power.state,
                     new_alloc_power.state,
@@ -395,7 +400,7 @@ class ChargeController(ScOptionState):
             else:
                 _LOGGER.debug(
                     "%s: entity_id=%s, new_state=%s, duration_since_last_change=%s",
-                    self.device_name,
+                    self._caller,
                     entity_id,
                     new_alloc_power.state,
                     duration_since_last_change,
@@ -464,11 +469,11 @@ class ChargeController(ScOptionState):
 
             except TimeoutError:
                 _LOGGER.warning(
-                    "Timeout while communicating with charger %s", self.device_name
+                    "Timeout while communicating with charger %s", self._caller
                 )
             except Exception as e:
                 _LOGGER.error(
-                    "Error in charge task for charger %s: %s", self.device_name, e
+                    "Error in charge task for charger %s: %s", self._caller, e
                 )
 
             loop_count = loop_count + 1
@@ -480,9 +485,12 @@ class ChargeController(ScOptionState):
     async def _async_tidy_up_on_exit(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
-        await self._async_set_charge_current(charger, 0)
-        await self._async_turn_charger_switch_off(charger)
         await self._async_update_ha(chargeable)
+
+        switched_on = charger.is_charger_switch_on()
+        if switched_on:
+            await self._async_set_charge_current(charger, 0)
+            await self._async_turn_charger_switch_off(charger)
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge_task(
@@ -519,10 +527,10 @@ class ChargeController(ScOptionState):
             _LOGGER.warning("Task %s already running", self._charge_task.get_name())
             return self._charge_task
 
-        _LOGGER.info("Starting charge task for charger %s", self.device_name)
+        _LOGGER.info("Starting charge task for charger %s", self._caller)
         self._charge_task = self._hass.async_create_task(
             self._async_start_charge(self._charger, self._chargeable),
-            f"{self.device_name} charge",
+            f"{self._caller} charge",
         )
         return self._charge_task
 
@@ -546,7 +554,7 @@ class ChargeController(ScOptionState):
                 except Exception as e:
                     _LOGGER.error(
                         "Error stopping charge task for charger %s: %s",
-                        self.device_name,
+                        self._caller,
                         e,
                     )
 
@@ -576,16 +584,14 @@ class ChargeController(ScOptionState):
                         )
                         return self._end_charge_task
 
-                _LOGGER.info("Ending charge task for charger %s", self.device_name)
+                _LOGGER.info("Ending charge task for charger %s", self._caller)
                 self._end_charge_task = self._hass.async_create_task(
                     self._async_stop_charge(self._charger, self._chargeable),
-                    f"{self.device_name} end charge",
+                    f"{self._caller} end charge",
                 )
                 return self._end_charge_task
 
             _LOGGER.info("Task %s already completed", self._charge_task.get_name())
         else:
-            _LOGGER.info(
-                "No running charge task to stop for charger %s", self.device_name
-            )
+            _LOGGER.info("No running charge task to stop for charger %s", self._caller)
         return None

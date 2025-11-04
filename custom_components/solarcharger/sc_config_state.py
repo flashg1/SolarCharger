@@ -20,15 +20,12 @@ class ScConfigState(ScState):
     def __init__(
         self,
         hass: HomeAssistant,
-        config_entry: ConfigEntry,
+        entry: ConfigEntry,
         caller: str,
     ) -> None:
         """Initialize the ScConfigState instance."""
 
-        self.hass = hass
-        self._config_entry = config_entry
-        self._caller = caller
-
+        self._entry = entry
         ScState.__init__(self, hass, caller)
 
     # ----------------------------------------------------------------------------
@@ -41,7 +38,7 @@ class ScConfigState(ScState):
     ) -> str | None:
         """Get config from config data."""
 
-        config_str = self._config_entry.data.get(config_item)
+        config_str = self._entry.data.get(config_item)
         if config_str is None:
             _LOGGER.error("%s: Config not found for '%s'", self._caller, config_item)
 

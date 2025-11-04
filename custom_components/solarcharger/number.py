@@ -34,7 +34,7 @@ from .const import (
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_DEFAULT_VALUE_LIST,
+    OPTION_GLOBAL_DEFAULT_VALUES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
@@ -382,7 +382,8 @@ async def async_setup_entry(
                 config_item,
                 subentry,
                 entity_description,
-                OPTION_DEFAULT_VALUE_LIST[config_item],
+                # TODO: Set default value using CHARGE_API_DEFAULT_VALUES
+                OPTION_GLOBAL_DEFAULT_VALUES[config_item],
             )
         coordinator.charge_controls[subentry.subentry_id].numbers = numbers
 

@@ -23,10 +23,6 @@ class TeslaCustomCharger(ChargerChargeableBase):
         device: DeviceEntry,
     ) -> None:
         """Initialize the Tesla Custom charger."""
-        self._hass = hass
-        self._entry = entry
-        self._subentry = subentry
-        self._device = device
 
         ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
 

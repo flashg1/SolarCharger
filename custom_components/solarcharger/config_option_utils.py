@@ -30,7 +30,7 @@ from .const import (
     DEVICE_NAME_MARKER,
     OPTION_CHARGER_DEVICE_NAME,
     OPTION_DELETE_ENTITY,
-    OPTION_DEVICE_ENTITY_LIST,
+    # OPTION_DEVICE_ENTITY_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_THIRDPARTY_DOMAIN,
 )
@@ -174,37 +174,35 @@ def entity_selector(
 
 
 # ----------------------------------------------------------------------------
-def get_default_entity(
+def get_device_entity_id_with_substitution(
     api_entities: dict[str, str | None] | None,
     config_item: str,
     device_name: str | None,
     config_name: str | None,
 ) -> str | None:
-    """Get default value from dictionary with substition."""
-    entity_str: str | None = None
+    """Get device entity template from dictionary with string substitions."""
+    entity_id: str | None = None
 
     # The test "if substr:" cannot distinguish between substr='' and substr=None.  Must explicitly test for None!
     if api_entities:
-        entity_str = api_entities.get(config_item)
-        if entity_str:
+        entity_id = api_entities.get(config_item)
+        if entity_id:
             if device_name is not None:
-                if entity_str == DEVICE_NAME_MARKER:
-                    entity_str = device_name
+                if entity_id == DEVICE_NAME_MARKER:
+                    entity_id = device_name
                 elif device_name == "":
-                    entity_str = entity_str.replace(DEVICE_NAME_MARKER, "")
+                    entity_id = entity_id.replace(DEVICE_NAME_MARKER, "")
                 else:
-                    entity_str = entity_str.replace(
-                        DEVICE_NAME_MARKER, f"{device_name}_"
-                    )
+                    entity_id = entity_id.replace(DEVICE_NAME_MARKER, f"{device_name}_")
 
             if config_name is not None:
-                entity_str = entity_str.replace(CONFIG_NAME_MARKER, f"{config_name}")
+                entity_id = entity_id.replace(CONFIG_NAME_MARKER, config_name)
 
-    return entity_str
+    return entity_id
 
 
 # ----------------------------------------------------------------------------
-def get_entity_name(
+def get_device_entity_id(
     subentry: ConfigSubentry,
     config_item: str,
     device_name: str,
@@ -216,7 +214,7 @@ def get_entity_name(
         api_entities = CHARGE_API_ENTITIES.get(device_domain)
 
         if api_entities:
-            return get_default_entity(
+            return get_device_entity_id_with_substitution(
                 api_entities,
                 config_item,
                 device_name,
@@ -392,7 +390,7 @@ def reset_api_entities(
                             #     key_list = OPTION_DEVICE_ENTITY_LIST
 
                             for config_item in key_list:
-                                entity_name = get_default_entity(
+                                entity_name = get_device_entity_id_with_substitution(
                                     api_entities,
                                     config_item,
                                     device_name,

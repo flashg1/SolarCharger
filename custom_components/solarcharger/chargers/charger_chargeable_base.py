@@ -43,13 +43,13 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         device: DeviceEntry,
     ) -> None:
         """Initialize the charger and chargeable devices."""
-        self._hass = hass
-        self._entry = entry
-        self._subentry = subentry
-        self._device = device
+
+        caller = subentry.unique_id
+        if caller is None:
+            caller = __name__
 
         HaDevice.__init__(self, hass, device)
-        ScOptionState.__init__(self, hass, entry, subentry, __name__)
+        ScOptionState.__init__(self, hass, entry, subentry, caller)
         Charger.__init__(self, hass, entry, subentry, device)
         Chargeable.__init__(self, hass, entry, subentry, device)
 
@@ -102,7 +102,9 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         state = self.option_get_entity_string(
             OPTION_CHARGEE_LOCATION_SENSOR, val_dict=val_dict
         )
-        state_list = self.option_get_list(OPTION_CHARGEE_LOCATION_STATE_LIST)
+        state_list = self.option_get_list(
+            OPTION_CHARGEE_LOCATION_STATE_LIST, val_dict=val_dict
+        )
         if state is not None and state_list is not None:
             is_at_location = state in state_list
 
@@ -174,7 +176,9 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         state = self.option_get_entity_string(
             OPTION_CHARGER_PLUGGED_IN_SENSOR, val_dict=val_dict
         )
-        state_list = self.option_get_list(OPTION_CHARGER_CONNECT_STATE_LIST)
+        state_list = self.option_get_list(
+            OPTION_CHARGER_CONNECT_STATE_LIST, val_dict=val_dict
+        )
         if state is not None and state_list is not None:
             is_connected = state in state_list
 

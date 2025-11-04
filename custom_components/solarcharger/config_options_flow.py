@@ -60,7 +60,7 @@ from .const import (
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
-    OPTION_GLOBAL_DEFAULT_ENTITY_LIST,
+    OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_ID,
     OPTION_NAME,
@@ -136,7 +136,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     @staticmethod
     def get_option_value(config_entry: ConfigEntry, key: str) -> Any:
         """Get the value of an option from the config entry."""
-        return config_entry.options.get(key, OPTION_GLOBAL_DEFAULT_ENTITY_LIST.get(key))
+        return config_entry.options.get(key, OPTION_GLOBAL_DEFAULT_ENTITIES.get(key))
 
     # ----------------------------------------------------------------------------
     def _prompt(
