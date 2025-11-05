@@ -163,6 +163,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Solar Charger from a config entry."""
 
     #####################################
+    # Object creation order and initialisation order are important.
     # Create global defaults subentry
     #####################################
     await async_create_global_defaults_subentry(hass, entry)
@@ -195,7 +196,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise RuntimeError("Global defaults subentry not found")
 
     #####################################
-    # Initialize coordinator
+    # Create the coordinator and charge controls but not initialized
     #####################################
     coordinator = SolarChargerCoordinator(
         hass=hass,
@@ -204,25 +205,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     coordinator.charge_controls = charge_controls
     hass.data[DOMAIN][entry.entry_id] = coordinator
-    # await coordinator.async_setup()
 
     # Registers update listener to update config entry when options are updated.
     # entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     #####################################
-    # Create entites for each platform
+    # Create entites for each platform with dependency on coordinator
     #####################################
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
 
     #####################################
-    # Initialise coordinator here after _PLATFORMS entities
+    # Initialise coordinator and charge control after _PLATFORMS entities
     #####################################
     await coordinator.async_setup()
-    _LOGGER.warning(
-        "SolarChargerCoordinator initialized (config_entry_id=%s)", entry.entry_id
-    )
 
-    _LOGGER.debug("SolarCharger initialized (config_entry_id=%s)", entry.entry_id)
+    _LOGGER.info("SolarCharger initialized (config_entry_id=%s)", entry.entry_id)
     return True
 
 
