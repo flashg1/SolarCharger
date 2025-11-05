@@ -12,13 +12,15 @@ from homeassistant.core import Event, HomeAssistant, callback
 
 from .const import (
     DOMAIN,
-    EVENT_ACTION_NEW_CHARGER_LIMITS,
+    EVENT_ACTION_NEW_CHARGE_CURRENT,
     EVENT_ATTR_ACTION,
-    EVENT_ATTR_NEW_LIMITS,
+    EVENT_ATTR_NEW_CURRENT,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 @callback
 def async_describe_events(
     _hass: HomeAssistant,
@@ -32,9 +34,9 @@ def async_describe_events(
         data = event.data
         action = data.get(EVENT_ATTR_ACTION)
 
-        if action == EVENT_ACTION_NEW_CHARGER_LIMITS:
-            limit = data.get(EVENT_ATTR_NEW_LIMITS, {})
-            message = f"charger limits set to: {limit}A"
+        if action == EVENT_ACTION_NEW_CHARGE_CURRENT:
+            new_current = data.get(EVENT_ATTR_NEW_CURRENT, {})
+            message = f"charge current set to {new_current}A"
         else:
             msg = f"Unknown action: {action}"
             raise ValueError(msg)

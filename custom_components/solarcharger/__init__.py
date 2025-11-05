@@ -199,7 +199,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #####################################
     coordinator = SolarChargerCoordinator(
         hass=hass,
-        config_entry=entry,
+        entry=entry,
         global_defaults_subentry=global_defaults_subentry,
     )
     coordinator.charge_controls = charge_controls

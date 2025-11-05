@@ -48,7 +48,8 @@ class ScState:
     ) -> Any | None:
         """Get the state of the entity for a given entity. Can be parsed."""
 
-        state = self._get_entity_state(entity_id)
+        # Python got confused and call _get_entity_state() in ha_device.py
+        state: State | None = self._get_entity_state(entity_id)
         if state is None:
             return None
 

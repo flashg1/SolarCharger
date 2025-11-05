@@ -7,7 +7,10 @@ import inspect
 import logging
 from time import time
 
+from propcache.api import cached_property
+
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -16,10 +19,15 @@ from homeassistant.core import (
     State,
     callback,
 )
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_state_change_event
 
 from ..const import (  # noqa: TID252
     CONTROL_CHARGER_ALLOCATED_POWER,
+    DOMAIN,
+    EVENT_ACTION_NEW_CHARGE_CURRENT,
+    EVENT_ATTR_ACTION,
+    EVENT_ATTR_NEW_CURRENT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
@@ -33,6 +41,7 @@ from ..const import (  # noqa: TID252
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
     OPTION_WAIT_NET_POWER_UPDATE,
+    SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import ScOptionState  # noqa: TID252
@@ -80,6 +89,18 @@ class ChargeController(ScOptionState):
         ScOptionState.__init__(self, hass, entry, subentry, caller)
 
     # ----------------------------------------------------------------------------
+    @cached_property
+    def _device(self) -> dr.DeviceEntry:
+        """Get the device entry for the controller."""
+        device_registry = dr.async_get(self._hass)
+        device = device_registry.async_get_device(
+            identifiers={(DOMAIN, self._subentry.subentry_id)}
+        )
+        if device is None:
+            raise RuntimeError(f"{self._caller} device entry not found.")
+        return device
+
+    # ----------------------------------------------------------------------------
     @property
     def is_chargeable(self) -> bool:
         """Return True if the charger is chargeable."""
@@ -104,6 +125,21 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     # Utils
+    # ----------------------------------------------------------------------------
+    def _emit_charger_event(self, action: str, new_current: float) -> None:
+        """Emit an event to Home Assistant's device event log."""
+        self._hass.bus.async_fire(
+            SOLAR_CHARGER_COORDINATOR_EVENT,
+            {
+                ATTR_DEVICE_ID: self._device.id,
+                EVENT_ATTR_ACTION: action,
+                EVENT_ATTR_NEW_CURRENT: new_current,
+            },
+        )
+        _LOGGER.info(
+            "Emitted charger event: action=%s, new_limits=%s", action, new_current
+        )
+
     # ----------------------------------------------------------------------------
     def _get_must_have_entity_id(self, config_item: str) -> str:
         entity_id = self.option_get_id(config_item)
@@ -362,6 +398,9 @@ class ChargeController(ScOptionState):
             )
             await self._async_set_charge_current(charger, int(new_charge_current))
             self._charge_current_updatetime = int(time())
+            self._emit_charger_event(
+                EVENT_ACTION_NEW_CHARGE_CURRENT, new_charge_current
+            )
             await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------

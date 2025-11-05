@@ -105,7 +105,10 @@ class HaDevice:
         return entity.entity_id
 
     # ----------------------------------------------------------------------------
-    def _get_entity_state(
+    # Cannot use function name _get_entity_state() here because Python got confused with
+    # _get_entity_state() in sc_state.py and called the function here with the same name.
+
+    def _get_entity_state_state(
         self, entity_id: str | None, parser_fn: Callable | None = None
     ) -> Any | None:
         """Get the state of the entity for a given entity. Can be parsed."""
@@ -148,7 +151,7 @@ class HaDevice:
 
         entity_id = self._get_entity_id_by_translation_key(entity_translation_key)
 
-        return self._get_entity_state(entity_id, parser_fn)
+        return self._get_entity_state_state(entity_id, parser_fn)
 
     # ----------------------------------------------------------------------------
     def _get_entity_state_attrs_by_translation_key(
@@ -168,7 +171,7 @@ class HaDevice:
 
         entity_id = self._get_entity_id_by_unique_id(entity_unique_id)
 
-        return self._get_entity_state(entity_id, parser_fn)
+        return self._get_entity_state_state(entity_id, parser_fn)
 
     # ----------------------------------------------------------------------------
     def _get_entity_state_attrs_by_unique_id(
@@ -188,7 +191,7 @@ class HaDevice:
 
         entity_id = self._get_entity_id_by_key(entity_key)
 
-        return self._get_entity_state(entity_id, parser_fn)
+        return self._get_entity_state_state(entity_id, parser_fn)
 
     # ----------------------------------------------------------------------------
     def _get_entity_state_attrs_by_key(self, entity_key: str) -> dict | None:

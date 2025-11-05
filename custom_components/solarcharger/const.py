@@ -76,9 +76,9 @@ COORDINATOR_STATES: tuple[str, ...] = (
 
 # Event constants
 SOLAR_CHARGER_COORDINATOR_EVENT = f"{DOMAIN}_coordinator_event"
-EVENT_ACTION_NEW_CHARGER_LIMITS = "new_charger_limits"
+EVENT_ACTION_NEW_CHARGE_CURRENT = "new_charge_current"
 EVENT_ATTR_ACTION = "action"
-EVENT_ATTR_NEW_LIMITS = "new_limits"
+EVENT_ATTR_NEW_CURRENT = "new_current"
 
 #######################################################
 # Subentry constants

@@ -37,9 +37,9 @@ from .const import (
     ENTITY_KEY_CHARGE_SWITCH,
     ENTITY_KEY_LAST_CHECK_SENSOR,
     ENTITY_KEY_RUN_STATE_SENSOR,
-    EVENT_ACTION_NEW_CHARGER_LIMITS,
+    EVENT_ACTION_NEW_CHARGE_CURRENT,
     EVENT_ATTR_ACTION,
-    EVENT_ATTR_NEW_LIMITS,
+    EVENT_ATTR_NEW_CURRENT,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULT_VALUES,
     OPTION_GLOBAL_DEFAULTS_ID,
@@ -74,12 +74,12 @@ class SolarChargerCoordinator(ScOptionState):
     def __init__(
         self,
         hass: HomeAssistant,
-        config_entry: ConfigEntry,
+        entry: ConfigEntry,
         global_defaults_subentry: ConfigSubentry,
     ):
         """Initialize the coordinator."""
-        self.hass: HomeAssistant = hass
-        self.config_entry: ConfigEntry = config_entry
+        # self._hass: HomeAssistant = hass
+        # self._entry: ConfigEntry = config_entry
         # self.global_defaults_subentry: ConfigSubentry = global_defaults_subentry
         self.listeners = []
         self.charge_controls: dict[str, ChargeControl] = {}
@@ -91,7 +91,11 @@ class SolarChargerCoordinator(ScOptionState):
         # self._numbers: list[NumberEntity] = []
 
         ScOptionState.__init__(
-            self, hass, config_entry, global_defaults_subentry, __name__
+            self,
+            hass,
+            entry,
+            global_defaults_subentry,
+            "SolarChargerCoordinator",
         )
 
         # self.entity_id_net_power: str | None = get_parameter(
@@ -104,9 +108,9 @@ class SolarChargerCoordinator(ScOptionState):
     @cached_property
     def _device(self) -> dr.DeviceEntry:
         """Get the device entry for the coordinator."""
-        device_registry = dr.async_get(self.hass)
+        device_registry = dr.async_get(self._hass)
         device = device_registry.async_get_device(
-            identifiers={(DOMAIN, self.config_entry.entry_id)}
+            identifiers={(DOMAIN, self._entry.entry_id)}
         )
         if device is None:
             raise RuntimeError("SolarCharger device entry not found.")
@@ -166,15 +170,13 @@ class SolarChargerCoordinator(ScOptionState):
 
         self._unsub.append(
             async_track_time_interval(
-                self.hass,
+                self._hass,
                 self._async_execute_update_cycle,
                 timedelta(seconds=wait_net_power_update),
             )
         )
 
-        self._unsub.append(
-            self.config_entry.add_update_listener(self._handle_options_update)
-        )
+        self._unsub.append(self._entry.add_update_listener(self._handle_options_update))
 
         # Use for Home Assistant 2024.6 or newer
         # if self.entity_id_net_power:
@@ -210,7 +212,7 @@ class SolarChargerCoordinator(ScOptionState):
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
 
-            subentry = self.config_entry.subentries.get(control.subentry_id)
+            subentry = self._entry.subentries.get(control.subentry_id)
             if subentry:
                 allocation_weight = self.option_get_entity_number(
                     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, subentry
@@ -529,12 +531,12 @@ class SolarChargerCoordinator(ScOptionState):
 
     def _emit_charger_event(self, action: str, new_limits: float) -> None:
         """Emit an event to Home Assistant's device event log."""
-        self.hass.bus.async_fire(
+        self._hass.bus.async_fire(
             SOLAR_CHARGER_COORDINATOR_EVENT,
             {
                 ATTR_DEVICE_ID: self._device.id,
                 EVENT_ATTR_ACTION: action,
-                EVENT_ATTR_NEW_LIMITS: new_limits,
+                EVENT_ATTR_NEW_CURRENT: new_limits,
             },
         )
         _LOGGER.info(
