@@ -4,7 +4,10 @@ from collections.abc import Callable
 import logging
 from typing import Any
 
+from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceResponse, State
+
+from .const import EVENT_ATTR_ACTION, EVENT_ATTR_VALUE, SOLAR_CHARGER_COORDINATOR_EVENT
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -25,6 +28,25 @@ class ScState:
 
         self._hass = hass
         self._caller = caller
+
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    def emit_solarcharger_event(
+        self, device_id: str, action: str, new_current: float
+    ) -> None:
+        """Emit an event to Home Assistant's device event log."""
+        self._hass.bus.async_fire(
+            SOLAR_CHARGER_COORDINATOR_EVENT,
+            {
+                ATTR_DEVICE_ID: device_id,
+                EVENT_ATTR_ACTION: action,
+                EVENT_ATTR_VALUE: new_current,
+            },
+        )
+
+        _LOGGER.debug(
+            "Emitted SolarCharger event: action=%s, value=%s", action, new_current
+        )
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------

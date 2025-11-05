@@ -7,11 +7,13 @@ import threading
 from types import FrameType
 
 
+# ----------------------------------------------------------------------------
 def combined_conf_key(*conf_keys: list) -> str:
     """Combine configuration keys into a single string."""
     return ".".join(conf_keys)
 
 
+# ----------------------------------------------------------------------------
 def get_callable_name(obj: Callable) -> str:
     """Get the name as string of a callable object."""
     if isinstance(obj, property):
@@ -19,6 +21,7 @@ def get_callable_name(obj: Callable) -> str:
     return obj.__name__
 
 
+# ----------------------------------------------------------------------------
 def is_event_loop_thread():
     """Check if the current thread is the main event loop thread."""
     try:
@@ -39,6 +42,7 @@ def is_event_loop_thread():
         return False
 
 
+# ----------------------------------------------------------------------------
 def log_is_event_loop(
     logger: logging.Logger, classname: str, methodframe: FrameType | None
 ) -> None:

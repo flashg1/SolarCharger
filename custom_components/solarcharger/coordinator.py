@@ -8,10 +8,8 @@ from time import time
 
 # from functools import cached_property
 from propcache.api import cached_property
-from regex import W
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -25,6 +23,7 @@ from homeassistant.helpers.event import (
     async_call_later,
     async_track_state_change,
     async_track_state_change_event,
+    async_track_sunrise,
     async_track_time_change,
     async_track_time_interval,
 )
@@ -37,14 +36,11 @@ from .const import (
     ENTITY_KEY_CHARGE_SWITCH,
     ENTITY_KEY_LAST_CHECK_SENSOR,
     ENTITY_KEY_RUN_STATE_SENSOR,
-    EVENT_ACTION_NEW_CHARGE_CURRENT,
-    EVENT_ATTR_ACTION,
-    EVENT_ATTR_NEW_CURRENT,
+    HA_SUN_ENTITY,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULT_VALUES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_WAIT_NET_POWER_UPDATE,
-    SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 from .helpers.general import async_set_allocated_power
 from .models import ChargeControl
@@ -95,7 +91,7 @@ class SolarChargerCoordinator(ScOptionState):
             hass,
             entry,
             global_defaults_subentry,
-            "SolarChargerCoordinator",
+            caller="SolarChargerCoordinator",
         )
 
         # self.entity_id_net_power: str | None = get_parameter(
@@ -149,6 +145,52 @@ class SolarChargerCoordinator(ScOptionState):
         await hass.config_entries.async_reload(entry.entry_id)
 
     # ----------------------------------------------------------------------------
+    def _seconds_per_degree_sun_elevation(self, sun_state: State) -> float:
+        next_rising: datetime | None = sun_state.attributes.get("next_rising")
+        next_setting: datetime | None = sun_state.attributes.get("next_setting")
+        if next_rising is None or next_setting is None:
+            raise ValueError("Invalid Sun attribute values")
+        seconds_per_degree: float = (
+            abs(next_setting.timestamp() - next_rising.timestamp()) / 180
+        )
+
+        return seconds_per_degree
+
+    # ----------------------------------------------------------------------------
+    def _check_sun_trigger(self) -> None:
+        # state.state = 'below_horizon'
+        # state.attributes = {
+        #     "next_dawn": "2025-11-04T18:25:01.044505+00:00",
+        #     "next_dusk": "2025-11-05T08:53:46.360780+00:00",
+        #     "next_midnight": "2025-11-04T13:39:07+00:00",
+        #     "next_noon": "2025-11-05T01:39:06+00:00",
+        #     "next_rising": "2025-11-04T18:52:10.267297+00:00",
+        #     "next_setting": "2025-11-05T08:26:32.189258+00:00",
+        #     "elevation": -38.55,
+        #     "azimuth": 199.59,
+        #     "rising": False,
+        #     "friendly_name": "Sun",
+        # }
+
+        state: State | None = self._get_entity_state(HA_SUN_ENTITY)
+        if state is not None:
+            _LOGGER.debug("%s: Sun state: %s", self._caller, state)
+            is_rising = state.attributes.get("rising")
+            if is_rising is None:
+                raise ValueError(f"Entity {HA_SUN_ENTITY} missing attribute")
+
+        offset = timedelta(seconds=30)
+        # async_track_sunrise(self._hass, callback_function, offset)
+
+        # self._unsub.append(
+        #     async_track_sunrise(
+        #         self._hass,
+        #         self._async_execute_update_cycle,
+        #         timedelta(seconds=wait_net_power_update),
+        #     )
+        # )
+
+    # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the coordinator and its managed components."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
@@ -157,17 +199,15 @@ class SolarChargerCoordinator(ScOptionState):
             if control.controller is not None:
                 await control.controller.async_setup()
 
-        # TODO: Think about how to fix this.
-        # Global default entities are yet to be created, so cannot get config here.
-        # wait_net_power_update = self.option_get_number(OPTION_WAIT_NET_POWER_UPDATE)
-        # if wait_net_power_update is None:
-        #     raise SystemError(
-        #         f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
-        #     )
-        wait_net_power_update = OPTION_GLOBAL_DEFAULT_VALUES[
+        # Global default entities MUST be created first before running the coordinator.setup().
+        # Otherwise cannot get entity config values here.
+        wait_net_power_update = self.option_get_entity_number(
             OPTION_WAIT_NET_POWER_UPDATE
-        ]
-
+        )
+        if wait_net_power_update is None:
+            raise SystemError(
+                f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
+            )
         self._unsub.append(
             async_track_time_interval(
                 self._hass,
@@ -175,6 +215,8 @@ class SolarChargerCoordinator(ScOptionState):
                 timedelta(seconds=wait_net_power_update),
             )
         )
+
+        # TODO: Subscribe to sun elevation triggers for each charger.
 
         self._unsub.append(self._entry.add_update_listener(self._handle_options_update))
 
@@ -271,6 +313,15 @@ class SolarChargerCoordinator(ScOptionState):
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
         self._last_check_timestamp = datetime.now().astimezone()
+
+        # #####################################
+        # # Check sun rise trigger
+        # #####################################
+        # self._check_sun_trigger()
+
+        #####################################
+        # Power allocation
+        #####################################
         await self._async_allocate_net_power()
 
         # self._async_update_sensors()
@@ -283,23 +334,6 @@ class SolarChargerCoordinator(ScOptionState):
                 control.sensors[ENTITY_KEY_LAST_CHECK_SENSOR].set_state(
                     datetime.now().astimezone()
                 )
-
-        # state.state = 'below_horizon'
-        # state.attributes = {
-        #     "next_dawn": "2025-11-04T18:25:01.044505+00:00",
-        #     "next_dusk": "2025-11-05T08:53:46.360780+00:00",
-        #     "next_midnight": "2025-11-04T13:39:07+00:00",
-        #     "next_noon": "2025-11-05T01:39:06+00:00",
-        #     "next_rising": "2025-11-04T18:52:10.267297+00:00",
-        #     "next_setting": "2025-11-05T08:26:32.189258+00:00",
-        #     "elevation": -38.55,
-        #     "azimuth": 199.59,
-        #     "rising": False,
-        #     "friendly_name": "Sun",
-        # }
-        # state: State | None = self._get_entity_state("sun.sun")
-        # if state is not None:
-        #     _LOGGER.info("%s: sun.sun: %s", self._caller, state)
 
         # if control.controller:
         #     control.sensor_last_check_timestamp = datetime.now().astimezone()
@@ -525,23 +559,6 @@ class SolarChargerCoordinator(ScOptionState):
     #     )
     #     self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)
     #     self.hass.async_create_task(control.charger.set_charge_current(new_current))
-
-    # ----------------------------------------------------------------------------
-    # eg. self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)
-
-    def _emit_charger_event(self, action: str, new_limits: float) -> None:
-        """Emit an event to Home Assistant's device event log."""
-        self._hass.bus.async_fire(
-            SOLAR_CHARGER_COORDINATOR_EVENT,
-            {
-                ATTR_DEVICE_ID: self._device.id,
-                EVENT_ATTR_ACTION: action,
-                EVENT_ATTR_NEW_CURRENT: new_limits,
-            },
-        )
-        _LOGGER.info(
-            "Emitted charger event: action=%s, new_limits=%s", action, new_limits
-        )
 
     # ----------------------------------------------------------------------------
     async def init_sensors(self, control: ChargeControl) -> None:

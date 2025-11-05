@@ -27,6 +27,9 @@ ICON_TIME = "mdi:clock-time-four-outline"
 ICON_TIMER = "mdi:camera-timer"
 ICON_POWER = "mdi:power"
 
+# HA entities
+HA_SUN_ENTITY = "sun.sun"
+
 # Platforms
 SENSOR = Platform.SENSOR
 SWITCH = Platform.SWITCH
@@ -78,7 +81,7 @@ COORDINATOR_STATES: tuple[str, ...] = (
 SOLAR_CHARGER_COORDINATOR_EVENT = f"{DOMAIN}_coordinator_event"
 EVENT_ACTION_NEW_CHARGE_CURRENT = "new_charge_current"
 EVENT_ATTR_ACTION = "action"
-EVENT_ATTR_NEW_CURRENT = "new_current"
+EVENT_ATTR_VALUE = "new_current"
 
 #######################################################
 # Subentry constants

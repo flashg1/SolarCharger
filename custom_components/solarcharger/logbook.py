@@ -14,7 +14,7 @@ from .const import (
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     EVENT_ATTR_ACTION,
-    EVENT_ATTR_NEW_CURRENT,
+    EVENT_ATTR_VALUE,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 
@@ -35,7 +35,7 @@ def async_describe_events(
         action = data.get(EVENT_ATTR_ACTION)
 
         if action == EVENT_ACTION_NEW_CHARGE_CURRENT:
-            new_current = data.get(EVENT_ATTR_NEW_CURRENT, {})
+            new_current = data.get(EVENT_ATTR_VALUE, {})
             message = f"charge current set to {new_current}A"
         else:
             msg = f"Unknown action: {action}"
