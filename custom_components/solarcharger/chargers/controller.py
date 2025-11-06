@@ -162,17 +162,17 @@ class ChargeController(ScOptionState):
         return dt_utc
 
     # ----------------------------------------------------------------------------
+    def _get_sun_attribute_time(self, sun_state: State, attrib: str) -> datetime:
+        # sun_attrib_time_str in utc
+        sun_attrib_time_str: str = self._get_sun_attribute_or_abort(sun_state, attrib)
+        return self._get_utc_time(sun_attrib_time_str)
+
+    # ----------------------------------------------------------------------------
     def _seconds_per_degree_sun_elevation(self, sun_state: State) -> float:
-        next_setting_str: str = self._get_sun_attribute_or_abort(
-            sun_state, "next_setting"
-        )
-        next_setting_utc = self._get_utc_time(next_setting_str)
+        next_setting_utc = self._get_sun_attribute_time(sun_state, "next_setting")
         next_setting_sec = next_setting_utc.timestamp()
 
-        next_rising_str: str = self._get_sun_attribute_or_abort(
-            sun_state, "next_rising"
-        )
-        next_rising_utc = self._get_utc_time(next_rising_str)
+        next_rising_utc = self._get_sun_attribute_time(sun_state, "next_rising")
         next_rising_sec = next_rising_utc.timestamp()
 
         seconds_per_degree: float = abs(next_setting_sec - next_rising_sec) / 180
@@ -245,20 +245,11 @@ class ChargeController(ScOptionState):
         sun_state: State = self._get_sun_state_or_abort()
         _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
 
-        next_setting_str: str = self._get_sun_attribute_or_abort(
-            sun_state, "next_setting"
-        )
-        next_setting_utc = self._get_utc_time(next_setting_str)
-        next_setting_sec = next_setting_utc.timestamp()
-
-        next_rising_str: str = self._get_sun_attribute_or_abort(
-            sun_state, "next_rising"
-        )
-        next_rising_utc = self._get_utc_time(next_rising_str)
-        next_rising_sec = next_rising_utc.timestamp()
+        next_setting_utc = self._get_sun_attribute_time(sun_state, "next_setting")
+        next_rising_utc = self._get_sun_attribute_time(sun_state, "next_rising")
 
         # Missed sunset, so need to manually set sunrise trigger.
-        if next_setting_sec > next_rising_sec:
+        if next_setting_utc.timestamp() > next_rising_utc.timestamp():
             self._setup_next_sunrise_trigger()
 
     # ----------------------------------------------------------------------------
