@@ -75,6 +75,17 @@ class ScOptionState(ScConfigState):
         )
 
     # ----------------------------------------------------------------------------
+    def option_get_id_or_abort(
+        self, config_item: str, subentry: ConfigSubentry | None = None
+    ) -> str:
+        """Get entity ID from option config data."""
+
+        entity_id = self.option_get_id(config_item, subentry)
+        if entity_id is None:
+            raise ValueError(f"{self._caller}: {config_item}: Failed to get entity ID")
+        return entity_id
+
+    # ----------------------------------------------------------------------------
     def option_get_string(
         self,
         config_item: str,
@@ -130,6 +141,23 @@ class ScOptionState(ScConfigState):
         self._set_config_value_dict(
             val_dict, subentry.unique_id, config_item, entity_id, entity_val
         )
+
+        return entity_val
+
+    # ----------------------------------------------------------------------------
+    def option_get_entity_number_or_abort(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry | None = None,
+        val_dict: ConfigValueDict | None = None,
+    ) -> float:
+        """Get entity ID from saved options, then get value for entity."""
+
+        entity_val = self.option_get_entity_number(config_item, subentry, val_dict)
+        if entity_val is None:
+            raise ValueError(
+                f"{self._caller: {config_item}: Failed to get entity number value}"
+            )
 
         return entity_val
 

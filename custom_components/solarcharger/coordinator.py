@@ -145,52 +145,6 @@ class SolarChargerCoordinator(ScOptionState):
         await hass.config_entries.async_reload(entry.entry_id)
 
     # ----------------------------------------------------------------------------
-    def _seconds_per_degree_sun_elevation(self, sun_state: State) -> float:
-        next_rising: datetime | None = sun_state.attributes.get("next_rising")
-        next_setting: datetime | None = sun_state.attributes.get("next_setting")
-        if next_rising is None or next_setting is None:
-            raise ValueError("Invalid Sun attribute values")
-        seconds_per_degree: float = (
-            abs(next_setting.timestamp() - next_rising.timestamp()) / 180
-        )
-
-        return seconds_per_degree
-
-    # ----------------------------------------------------------------------------
-    def _check_sun_trigger(self) -> None:
-        # state.state = 'below_horizon'
-        # state.attributes = {
-        #     "next_dawn": "2025-11-04T18:25:01.044505+00:00",
-        #     "next_dusk": "2025-11-05T08:53:46.360780+00:00",
-        #     "next_midnight": "2025-11-04T13:39:07+00:00",
-        #     "next_noon": "2025-11-05T01:39:06+00:00",
-        #     "next_rising": "2025-11-04T18:52:10.267297+00:00",
-        #     "next_setting": "2025-11-05T08:26:32.189258+00:00",
-        #     "elevation": -38.55,
-        #     "azimuth": 199.59,
-        #     "rising": False,
-        #     "friendly_name": "Sun",
-        # }
-
-        state: State | None = self._get_entity_state(HA_SUN_ENTITY)
-        if state is not None:
-            _LOGGER.debug("%s: Sun state: %s", self._caller, state)
-            is_rising = state.attributes.get("rising")
-            if is_rising is None:
-                raise ValueError(f"Entity {HA_SUN_ENTITY} missing attribute")
-
-        offset = timedelta(seconds=30)
-        # async_track_sunrise(self._hass, callback_function, offset)
-
-        # self._unsub.append(
-        #     async_track_sunrise(
-        #         self._hass,
-        #         self._async_execute_update_cycle,
-        #         timedelta(seconds=wait_net_power_update),
-        #     )
-        # )
-
-    # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the coordinator and its managed components."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
@@ -312,6 +266,8 @@ class SolarChargerCoordinator(ScOptionState):
         """Execute an update cycle."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
+        # Get datetime in local time zone. HA OS running in UTC timezone.
+        # local_timezone=ZoneInfo(hass.config.time_zone)
         self._last_check_timestamp = datetime.now().astimezone()
 
         # #####################################

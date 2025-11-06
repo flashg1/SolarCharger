@@ -57,9 +57,6 @@ SUPPORTED_CHARGER_DOMAIN_LIST: list[str] = [
 ENTITY_KEY_LAST_CHECK_SENSOR = "last_check"
 ENTITY_KEY_RUN_STATE_SENSOR = "run_state"
 
-# Numbers
-ENTITY_KEY_CHARGEE_CHARGE_LIMIT = "chargee_charge_limit"
-
 # Switches
 ENTITY_KEY_CHARGE_SWITCH = "charge"
 

@@ -3,9 +3,12 @@
 import asyncio
 from asyncio import Task, timeout
 from collections.abc import Callable, Coroutine
+from datetime import datetime, timedelta
 import inspect
 import logging
 from time import time
+from typing import Any
+from zoneinfo import ZoneInfo
 
 from propcache.api import cached_property
 
@@ -19,12 +22,17 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import (
+    async_track_state_change_event,
+    async_track_sunrise,
+    async_track_sunset,
+)
 
 from ..const import (  # noqa: TID252
     CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
+    HA_SUN_ENTITY,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
@@ -32,6 +40,8 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
+    OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+    OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGEE_UPDATE_HA,
     OPTION_WAIT_CHARGEE_WAKEUP,
     OPTION_WAIT_CHARGER_AMP_CHANGE,
@@ -52,11 +62,13 @@ _LOGGER = logging.getLogger(__name__)
 INITIAL_CHARGE_CURRENT = 6
 MIN_TIME_BETWEEN_UPDATE = 10  # 10 seconds
 
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-# TODO: Need to clean up if removed subentry
+CALLBACK_START_CHARGE_ON_SUNRISE = "callback_start_charge_on_sunrise"
+CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
+CALLBACK_ALLOCATE_POWER = "callback_allocate_power"
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class ChargeController(ScOptionState):
     """Class to manage the charging process."""
 
@@ -76,8 +88,10 @@ class ChargeController(ScOptionState):
         self._end_charge_task: Task | None = None
         self._charge_current_updatetime: int = 0
 
-        # self._unsub_list: list[Callable[[], Coroutine[Any, Any, None] | None]] = []
-        self._unsub_list: list[CALLBACK_TYPE] = []
+        # self._unsub_callbacks: dict[
+        #     str, Callable[[], Coroutine[Any, Any, None] | None]
+        # ] = {}
+        self._unsub_callbacks: dict[str, CALLBACK_TYPE] = {}
 
         caller = subentry.unique_id
         if caller is None:
@@ -110,43 +124,164 @@ class ChargeController(ScOptionState):
         return None
 
     # ----------------------------------------------------------------------------
-    async def async_setup(self) -> None:
-        """Async setup of the ChargeController."""
-        await self._charger.async_setup()
-
-    # ----------------------------------------------------------------------------
-    async def async_unload(self) -> None:
-        """Async unload of the ChargeController."""
-        await self._charger.async_unload()
-
-    # ----------------------------------------------------------------------------
     # Utils
     # ----------------------------------------------------------------------------
-    def _get_must_have_entity_id(self, config_item: str) -> str:
-        entity_id = self.option_get_id(config_item)
-        if entity_id is None:
-            raise SystemError(
-                f"{self._caller}: Failed to get entity ID for {config_item}"
-            )
+    # ----------------------------------------------------------------------------
+    # state.state = 'below_horizon'
+    # state.attributes = {
+    #     "next_dawn": "2025-11-04T18:25:01.044505+00:00",
+    #     "next_dusk": "2025-11-05T08:53:46.360780+00:00",
+    #     "next_midnight": "2025-11-04T13:39:07+00:00",
+    #     "next_noon": "2025-11-05T01:39:06+00:00",
+    #     "next_rising": "2025-11-04T18:52:10.267297+00:00",
+    #     "next_setting": "2025-11-05T08:26:32.189258+00:00",
+    #     "elevation": -38.55,
+    #     "azimuth": 199.59,
+    #     "rising": False,
+    #     "friendly_name": "Sun",
+    # }
+    # ----------------------------------------------------------------------------
+    def _get_utc_time(self, utc_str: str) -> datetime:
+        # Parse into a timezone-aware datetime
+        # Time string in UTC, ie. 2025-11-05T08:26:32.189258+00:00
+        dt = datetime.fromisoformat(utc_str)
 
-        return entity_id
+        # convert to UTC explicitly
+        dt_utc = dt.astimezone(ZoneInfo("UTC"))
+
+        # HA Local timezone has been set to UTC, ie. dt_utc = dt_localtime
+        # dt_localtime = dt_utc.astimezone()
+
+        # Convert the string to a datetime object
+        # format_string = "%Y-%m-%dT%H:%M:%S"
+        # dt_utc = datetime.strptime(utc_str, format_string)
+
+        # now_time = datetime.now()
+        # now_time_sec = now_time.timestamp()
+
+        return dt_utc
 
     # ----------------------------------------------------------------------------
-    def _get_must_have_number(self, config_item: str) -> float:
-        num = self.option_get_entity_number(config_item)
-        if num is None:
-            raise SystemError(f"{self._caller}: Failed to get number for {config_item}")
+    def _seconds_per_degree_sun_elevation(self, sun_state: State) -> float:
+        next_setting_str: str = self._get_sun_attribute_or_abort(
+            sun_state, "next_setting"
+        )
+        next_setting_utc = self._get_utc_time(next_setting_str)
+        next_setting_sec = next_setting_utc.timestamp()
 
-        return num
+        next_rising_str: str = self._get_sun_attribute_or_abort(
+            sun_state, "next_rising"
+        )
+        next_rising_utc = self._get_utc_time(next_rising_str)
+        next_rising_sec = next_rising_utc.timestamp()
+
+        seconds_per_degree: float = abs(next_setting_sec - next_rising_sec) / 180
+
+        return seconds_per_degree
+
+    # ----------------------------------------------------------------------------
+    def _setup_daily_maintenance_at_sunset(self) -> None:
+        """Every day, set up next sunrise trigger at sunset."""
+        # offset=timedelta(minutes=2)
+        subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
+        self._save_callback_subscription(
+            CALLBACK_SUNSET_DAILY_MAINTENANCE, subscription
+        )
+
+    # ----------------------------------------------------------------------------
+    def _get_sun_state_or_abort(self) -> State:
+        sun_state: State | None = self._get_entity_state(HA_SUN_ENTITY)
+        if sun_state is None:
+            raise ValueError(f"{self._caller}: Failed to get sun state")
+        _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
+
+        return sun_state
+
+    # ----------------------------------------------------------------------------
+    def _get_sun_attribute_or_abort(self, sun_state: State, attrib_name: str) -> Any:
+        sun_attrib = sun_state.attributes.get(attrib_name)
+        if sun_attrib is None:
+            raise ValueError(
+                f"{self._caller}: Failed to get sun attribute '{attrib_name}'"
+            )
+        _LOGGER.debug("%s: Sun %s=%s", self._caller, attrib_name, sun_attrib)
+
+        return sun_attrib
 
     # ----------------------------------------------------------------------------
     async def _async_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
-        duration = self._get_must_have_number(config_item)
+        duration = self.option_get_entity_number_or_abort(config_item)
         await asyncio.sleep(duration)
 
     # ----------------------------------------------------------------------------
+    # Sunrise/sunset trigger code
+    # ----------------------------------------------------------------------------
+    def _start_charge_on_sunrise(self) -> None:
+        self.start_charge()
+
+    # ----------------------------------------------------------------------------
+    def _setup_next_sunrise_trigger(self) -> None:
+        """Recalculate and setup next morning's sunrise trigger."""
+
+        sun_state = self._get_sun_state_or_abort()
+        sec_per_degree = self._seconds_per_degree_sun_elevation(sun_state)
+        elevation_start_trigger = self.option_get_entity_number_or_abort(
+            OPTION_SUNRISE_ELEVATION_START_TRIGGER
+        )
+        offset = timedelta(seconds=sec_per_degree * elevation_start_trigger)
+        subscription = async_track_sunrise(
+            self._hass, self._start_charge_on_sunrise, offset
+        )
+        self._save_callback_subscription(CALLBACK_START_CHARGE_ON_SUNRISE, subscription)
+
+    # ----------------------------------------------------------------------------
+    def _set_up_sun_triggers(self) -> None:
+        # Set up sunset daily maintenance
+        self._setup_daily_maintenance_at_sunset()
+
+        # Manually set up sunrise trigger if sun has already set when starting SolarCharger.
+        sun_state: State = self._get_sun_state_or_abort()
+        _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
+
+        next_setting_str: str = self._get_sun_attribute_or_abort(
+            sun_state, "next_setting"
+        )
+        next_setting_utc = self._get_utc_time(next_setting_str)
+        next_setting_sec = next_setting_utc.timestamp()
+
+        next_rising_str: str = self._get_sun_attribute_or_abort(
+            sun_state, "next_rising"
+        )
+        next_rising_utc = self._get_utc_time(next_rising_str)
+        next_rising_sec = next_rising_utc.timestamp()
+
+        # Missed sunset, so need to manually set sunrise trigger.
+        if next_setting_sec > next_rising_sec:
+            self._setup_next_sunrise_trigger()
+
+    # ----------------------------------------------------------------------------
+    async def async_setup(self) -> None:
+        """Async setup of the ChargeController."""
+        await self._charger.async_setup()
+        self._set_up_sun_triggers()
+
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    def _unload_sun_triggers(self) -> None:
+        for unsubscribe in self._unsub_callbacks.values():
+            unsubscribe()
+        self._unsub_callbacks.clear()
+
+    # ----------------------------------------------------------------------------
+    async def async_unload(self) -> None:
+        """Async unload of the ChargeController."""
+        self._unload_sun_triggers()
+        await self._charger.async_unload()
+
+    # ----------------------------------------------------------------------------
+    # Charger code
     # ----------------------------------------------------------------------------
     async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
         config_item = OPTION_CHARGEE_WAKE_UP_BUTTON
@@ -234,7 +369,24 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_sun_above_start_end_elevations(self) -> bool:
-        return True
+        sun_above_start_end_elevations = False
+
+        sun_state: State = self._get_sun_state_or_abort()
+        sunrise_elevation_start_trigger: float = self.option_get_entity_number_or_abort(
+            OPTION_SUNRISE_ELEVATION_START_TRIGGER
+        )
+        sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
+            OPTION_SUNSET_ELEVATION_END_TRIGGER
+        )
+        sun_elevation: float = self._get_sun_attribute_or_abort(sun_state, "elevation")
+        sun_is_rising: bool = self._get_sun_attribute_or_abort(sun_state, "rising")
+
+        if (sun_is_rising and sun_elevation >= sunrise_elevation_start_trigger) or (
+            not sun_is_rising and sun_elevation > sunset_elevation_end_trigger
+        ):
+            sun_above_start_end_elevations = True
+
+        return sun_above_start_end_elevations
 
     # ----------------------------------------------------------------------------
     def _is_use_secondary_power_source(self) -> bool:
@@ -289,7 +441,9 @@ class ChargeController(ScOptionState):
             charger_max_current, battery_charge_current
         )
 
-        config_min_current = self._get_must_have_number(OPTION_CHARGER_MIN_CURRENT)
+        config_min_current = self.option_get_entity_number_or_abort(
+            OPTION_CHARGER_MIN_CURRENT
+        )
         config_min_current = self._check_current(
             charger_max_current, config_min_current
         )
@@ -303,7 +457,7 @@ class ChargeController(ScOptionState):
         #####################################
         # allocated_power = self._get_number(CONTROL_CHARGER_ALLOCATED_POWER)
 
-        charger_effective_voltage = self._get_must_have_number(
+        charger_effective_voltage = self.option_get_entity_number_or_abort(
             OPTION_CHARGER_EFFECTIVE_VOLTAGE
         )
         if charger_effective_voltage <= 0:
@@ -324,7 +478,7 @@ class ChargeController(ScOptionState):
             )
         propose_new_charge_current = max([charger_min_current, propose_charge_current])
 
-        charger_min_workable_current = self._get_must_have_number(
+        charger_min_workable_current = self.option_get_entity_number_or_abort(
             OPTION_CHARGER_MIN_WORKABLE_CURRENT
         )
         if propose_new_charge_current < charger_min_workable_current:
@@ -433,8 +587,41 @@ class ChargeController(ScOptionState):
                 )
 
     # ----------------------------------------------------------------------------
+    def _remove_callback_subscription(self, callback_key: str) -> CALLBACK_TYPE | None:
+        unsubscribe = self._unsub_callbacks.get(callback_key)
+        if unsubscribe is not None:
+            unsubscribe()
+            self._unsub_callbacks.pop(callback_key)
+            _LOGGER.debug(
+                "%s: Removed callback subscription: %s", self._caller, callback_key
+            )
+        else:
+            _LOGGER.debug(
+                "%s: Callback subscription not exist for removal: %s",
+                self._caller,
+                callback_key,
+            )
+
+        return unsubscribe
+
+    # ----------------------------------------------------------------------------
+    def _save_callback_subscription(
+        self, callback_key: str, subscription: CALLBACK_TYPE
+    ) -> None:
+        unsubscribe = self._remove_callback_subscription(callback_key)
+        self._unsub_callbacks[callback_key] = subscription
+        _LOGGER.debug("%s: Saved callback subscription: %s", self._caller, callback_key)
+
+        if unsubscribe is not None:
+            _LOGGER.warning(
+                "%s: Removed and replaced unexpected existing callback: %s",
+                self._caller,
+                callback_key,
+            )
+
+    # ----------------------------------------------------------------------------
     def _track_allocated_power_update(self) -> None:
-        allocated_power_entity_id = self._get_must_have_entity_id(
+        allocated_power_entity_id = self.option_get_id_or_abort(
             CONTROL_CHARGER_ALLOCATED_POWER
         )
 
@@ -443,19 +630,13 @@ class ChargeController(ScOptionState):
         # async_track_state_report_event - send unchanged events.
         # async_track_state_change_event - send changed events.
         # So need both to see all events?
-        self._unsub_list.append(
-            async_track_state_change_event(
-                self._hass,
-                allocated_power_entity_id,
-                self._async_handle_allocated_power_update,
-            )
+        subscription = async_track_state_change_event(
+            self._hass,
+            allocated_power_entity_id,
+            self._async_handle_allocated_power_update,
         )
 
-    # ----------------------------------------------------------------------------
-    def _untrack_allocated_power_update(self) -> None:
-        for unsub_func in self._unsub_list:
-            unsub_func()
-        self._unsub_list.clear()
+        self._save_callback_subscription(CALLBACK_ALLOCATE_POWER, subscription)
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -499,7 +680,7 @@ class ChargeController(ScOptionState):
             loop_count = loop_count + 1
             await self._async_sleep(OPTION_WAIT_NET_POWER_UPDATE)
 
-        self._untrack_allocated_power_update()
+        self._remove_callback_subscription(CALLBACK_ALLOCATE_POWER)
 
     # ----------------------------------------------------------------------------
     async def _async_tidy_up_on_exit(
@@ -578,7 +759,7 @@ class ChargeController(ScOptionState):
                         e,
                     )
 
-                self._untrack_allocated_power_update()
+                self._remove_callback_subscription(CALLBACK_ALLOCATE_POWER)
 
             else:
                 _LOGGER.info("Task %s already completed", self._charge_task.get_name())
