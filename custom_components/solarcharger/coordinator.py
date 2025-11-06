@@ -20,10 +20,12 @@ from homeassistant.core import (
 )
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import (
+    async_call_at,
     async_call_later,
     async_track_state_change,
     async_track_state_change_event,
     async_track_sunrise,
+    async_track_sunset,
     async_track_time_change,
     async_track_time_interval,
 )
@@ -155,13 +157,9 @@ class SolarChargerCoordinator(ScOptionState):
 
         # Global default entities MUST be created first before running the coordinator.setup().
         # Otherwise cannot get entity config values here.
-        wait_net_power_update = self.option_get_entity_number(
+        wait_net_power_update = self.option_get_entity_number_or_abort(
             OPTION_WAIT_NET_POWER_UPDATE
         )
-        if wait_net_power_update is None:
-            raise SystemError(
-                f"Missing global defaults for {OPTION_WAIT_NET_POWER_UPDATE}"
-            )
         self._unsub.append(
             async_track_time_interval(
                 self._hass,

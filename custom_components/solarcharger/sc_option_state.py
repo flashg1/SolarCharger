@@ -156,7 +156,7 @@ class ScOptionState(ScConfigState):
         entity_val = self.option_get_entity_number(config_item, subentry, val_dict)
         if entity_val is None:
             raise ValueError(
-                f"{self._caller: {config_item}: Failed to get entity number value}"
+                f"{self._caller}: {config_item}: Failed to get entity number value"
             )
 
         return entity_val
