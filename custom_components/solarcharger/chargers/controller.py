@@ -219,7 +219,8 @@ class ChargeController(ScOptionState):
     # Sunrise/sunset trigger code
     # ----------------------------------------------------------------------------
     def _start_charge_on_sunrise(self) -> None:
-        self.start_charge()
+        # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
+        self._hass.loop.create_task(self.async_start_charge())
 
     # ----------------------------------------------------------------------------
     def _setup_next_sunrise_trigger(self) -> None:
@@ -247,9 +248,8 @@ class ChargeController(ScOptionState):
 
         next_setting_utc = self._get_sun_attribute_time(sun_state, "next_setting")
         next_rising_utc = self._get_sun_attribute_time(sun_state, "next_rising")
-
-        # Missed sunset, so need to manually set sunrise trigger.
         if next_setting_utc.timestamp() > next_rising_utc.timestamp():
+            # Missed sunset, so need to manually set sunrise trigger.
             self._setup_next_sunrise_trigger()
 
     # ----------------------------------------------------------------------------
@@ -705,7 +705,7 @@ class ChargeController(ScOptionState):
         await self._async_start_charge_task(charger, chargeable)
 
     # ----------------------------------------------------------------------------
-    def start_charge(self) -> Task:
+    async def async_start_charge(self) -> Task:
         """Start charge."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
