@@ -217,8 +217,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #####################################
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
 
-    # Must wait for entities to be created, otherwise coordinator init can fail.
-    # Or init had failed causing entities not to be created.
+    # Must wait for entities to be created, otherwise will fail after adding Tesla or OCPP charger, eg.
+    # ValueError: tesla_custom_tesla23m3: charger_plugged_in_sensor: Failed to get entity ID
+    # Most likely coordinator init had fail, or init had failed causing entities not to be available on first run.
+    # Restart for second run and SolarCharger spinned up without issue.
     await asyncio.sleep(3)
 
     #####################################

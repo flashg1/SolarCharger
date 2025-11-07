@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -225,13 +226,24 @@ class ChargeController(ScOptionState):
         )
 
         # Not sure why on startup, getting a lot of updates here with old_state=None causing crash.
+        # if new_state is not None:
+        #     if old_state is not None:
+        #         if new_state.state == old_state.state:
+        #             return
+        #         # Only process updates with both old and new states
+        #         if self._charger.is_connected():
+        #             self._turn_on_charger_switch()
+
+        # Not sure why on startup, getting a lot of updates here with old_state=None causing crash.
         if new_state is not None:
             if old_state is not None:
-                if new_state.state == old_state.state:
-                    return
-                # Only process updates with both old and new states
-                if self._charger.is_connected():
-                    self._turn_on_charger_switch()
+                if (
+                    new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                    and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                    and new_state.state != old_state.state
+                ):
+                    if self._charger.is_connected():
+                        self._turn_on_charger_switch()
 
     # ----------------------------------------------------------------------------
     def _track_plug_in_charger(self) -> None:
