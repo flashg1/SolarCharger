@@ -440,7 +440,7 @@ class SolarChargerCoordinator(ScOptionState):
                 control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
                     COORDINATOR_STATE_CHARGING
                 )
-            control.charge_task = control.controller.async_start_charge()
+            control.charge_task = await control.controller.async_start_charge()
             control.instance_count = 1
             control.charge_task.add_done_callback(_callback_on_charge_end)
 

@@ -1,5 +1,6 @@
 """Solar Charger Integration."""
 
+import asyncio
 import logging
 from types import MappingProxyType
 from typing import cast
@@ -213,6 +214,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create entites for each platform with dependency on coordinator
     #####################################
     await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+
+    # Must wait for entities to be created, otherwise coordinator init can fail.
+    # Or init had failed causing entities not to be created.
+    await asyncio.sleep(3)
 
     #####################################
     # Initialise coordinator and charge control after _PLATFORMS entities

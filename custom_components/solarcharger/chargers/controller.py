@@ -40,6 +40,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
+    OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGEE_UPDATE_HA,
@@ -62,7 +63,10 @@ _LOGGER = logging.getLogger(__name__)
 INITIAL_CHARGE_CURRENT = 6
 MIN_TIME_BETWEEN_UPDATE = 10  # 10 seconds
 
-CALLBACK_START_CHARGE_ON_SUNRISE = "callback_start_charge_on_sunrise"
+# Naming convention
+# CALLBACK_<ACTION> OR CALLBACK_<EVENT>_<ACTION>
+CALLBACK_PLUG_IN_CHARGER = "callback_charger_plug_in"
+CALLBACK_SUNRISE_START_CHARGE = "callback_sunrise_start_charge"
 CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
 CALLBACK_ALLOCATE_POWER = "callback_allocate_power"
 
@@ -180,13 +184,37 @@ class ChargeController(ScOptionState):
         return seconds_per_degree
 
     # ----------------------------------------------------------------------------
-    def _setup_daily_maintenance_at_sunset(self) -> None:
-        """Every day, set up next sunrise trigger at sunset."""
-        # offset=timedelta(minutes=2)
-        subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
-        self._save_callback_subscription(
-            CALLBACK_SUNSET_DAILY_MAINTENANCE, subscription
-        )
+    def _remove_callback_subscription(self, callback_key: str) -> CALLBACK_TYPE | None:
+        unsubscribe = self._unsub_callbacks.get(callback_key)
+        if unsubscribe is not None:
+            unsubscribe()
+            self._unsub_callbacks.pop(callback_key)
+            _LOGGER.debug(
+                "%s: Removed callback subscription: %s", self._caller, callback_key
+            )
+        else:
+            _LOGGER.debug(
+                "%s: Callback subscription not exist for removal: %s",
+                self._caller,
+                callback_key,
+            )
+
+        return unsubscribe
+
+    # ----------------------------------------------------------------------------
+    def _save_callback_subscription(
+        self, callback_key: str, subscription: CALLBACK_TYPE
+    ) -> None:
+        unsubscribe = self._remove_callback_subscription(callback_key)
+        self._unsub_callbacks[callback_key] = subscription
+        _LOGGER.debug("%s: Saved callback subscription: %s", self._caller, callback_key)
+
+        if unsubscribe is not None:
+            _LOGGER.warning(
+                "%s: Removed and replaced unexpected existing callback: %s",
+                self._caller,
+                callback_key,
+            )
 
     # ----------------------------------------------------------------------------
     def _get_sun_state_or_abort(self) -> State:
@@ -218,6 +246,15 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     # Sunrise/sunset trigger code
     # ----------------------------------------------------------------------------
+    def _setup_daily_maintenance_at_sunset(self) -> None:
+        """Every day, set up next sunrise trigger at sunset."""
+        # offset=timedelta(minutes=2)
+        subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
+        self._save_callback_subscription(
+            CALLBACK_SUNSET_DAILY_MAINTENANCE, subscription
+        )
+
+    # ----------------------------------------------------------------------------
     def _start_charge_on_sunrise(self) -> None:
         # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
         self._hass.loop.create_task(self.async_start_charge())
@@ -235,7 +272,7 @@ class ChargeController(ScOptionState):
         subscription = async_track_sunrise(
             self._hass, self._start_charge_on_sunrise, offset
         )
-        self._save_callback_subscription(CALLBACK_START_CHARGE_ON_SUNRISE, subscription)
+        self._save_callback_subscription(CALLBACK_SUNRISE_START_CHARGE, subscription)
 
     # ----------------------------------------------------------------------------
     def _set_up_sun_triggers(self) -> None:
@@ -257,10 +294,11 @@ class ChargeController(ScOptionState):
         """Async setup of the ChargeController."""
         await self._charger.async_setup()
         self._set_up_sun_triggers()
+        self._track_plug_in_charger()
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
-    def _unload_sun_triggers(self) -> None:
+    def _remove_all_callbacks(self) -> None:
         for unsubscribe in self._unsub_callbacks.values():
             unsubscribe()
         self._unsub_callbacks.clear()
@@ -268,8 +306,43 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Async unload of the ChargeController."""
-        self._unload_sun_triggers()
+        self._remove_all_callbacks()
         await self._charger.async_unload()
+
+    # ----------------------------------------------------------------------------
+    # Monitored entities
+    # ----------------------------------------------------------------------------
+    def _track_plug_in_charger(self) -> None:
+        charger_plug_in_entity_id = self.option_get_id_or_abort(
+            OPTION_CHARGER_PLUGGED_IN_SENSOR
+        )
+
+        subscription = async_track_state_change_event(
+            self._hass,
+            charger_plug_in_entity_id,
+            self._async_handle_plug_in_charger_event,
+        )
+
+        self._save_callback_subscription(CALLBACK_PLUG_IN_CHARGER, subscription)
+
+    # ----------------------------------------------------------------------------
+    def _track_allocated_power_update(self) -> None:
+        allocated_power_entity_id = self.option_get_id_or_abort(
+            CONTROL_CHARGER_ALLOCATED_POWER
+        )
+
+        # Need both changed and unchanged events, eg. update1 at time1=-500W, update2 at time2=-500W
+        # Need to handle both updates to make use of the spare power.
+        # async_track_state_report_event - send unchanged events.
+        # async_track_state_change_event - send changed events.
+        # So need both to see all events?
+        subscription = async_track_state_change_event(
+            self._hass,
+            allocated_power_entity_id,
+            self._async_handle_allocated_power_update,
+        )
+
+        self._save_callback_subscription(CALLBACK_ALLOCATE_POWER, subscription)
 
     # ----------------------------------------------------------------------------
     # Charger code
@@ -545,21 +618,21 @@ class ChargeController(ScOptionState):
         """Fetch and process state change event."""
         data = event.data
         entity_id = data["entity_id"]
-        old_alloc_power = data["old_state"]
-        new_alloc_power = data["new_state"]
+        old_state = data["old_state"]
+        new_state = data["new_state"]
 
-        if new_alloc_power is not None:
+        if new_state is not None:
             duration_since_last_change = (
-                new_alloc_power.last_changed_timestamp - self._charge_current_updatetime
+                new_state.last_changed_timestamp - self._charge_current_updatetime
             )
 
-            if old_alloc_power is not None:
+            if old_state is not None:
                 _LOGGER.debug(
                     "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
                     self._caller,
                     entity_id,
-                    old_alloc_power.state,
-                    new_alloc_power.state,
+                    old_state.state,
+                    new_state.state,
                     duration_since_last_change,
                 )
             else:
@@ -567,67 +640,42 @@ class ChargeController(ScOptionState):
                     "%s: entity_id=%s, new_state=%s, duration_since_last_change=%s",
                     self._caller,
                     entity_id,
-                    new_alloc_power.state,
+                    new_state.state,
                     duration_since_last_change,
                 )
 
             # Make sure we don't change the charge current too often
             if duration_since_last_change >= MIN_TIME_BETWEEN_UPDATE:
                 await self._async_adjust_charge_current(
-                    self._charger, self._chargeable, float(new_alloc_power.state)
+                    self._charger, self._chargeable, float(new_state.state)
                 )
 
     # ----------------------------------------------------------------------------
-    def _remove_callback_subscription(self, callback_key: str) -> CALLBACK_TYPE | None:
-        unsubscribe = self._unsub_callbacks.get(callback_key)
-        if unsubscribe is not None:
-            unsubscribe()
-            self._unsub_callbacks.pop(callback_key)
-            _LOGGER.debug(
-                "%s: Removed callback subscription: %s", self._caller, callback_key
-            )
-        else:
-            _LOGGER.debug(
-                "%s: Callback subscription not exist for removal: %s",
-                self._caller,
-                callback_key,
-            )
-
-        return unsubscribe
-
-    # ----------------------------------------------------------------------------
-    def _save_callback_subscription(
-        self, callback_key: str, subscription: CALLBACK_TYPE
+    async def _async_handle_plug_in_charger_event(
+        self, event: Event[EventStateChangedData]
     ) -> None:
-        unsubscribe = self._remove_callback_subscription(callback_key)
-        self._unsub_callbacks[callback_key] = subscription
-        _LOGGER.debug("%s: Saved callback subscription: %s", self._caller, callback_key)
+        """Fetch and process state change event."""
+        data = event.data
+        entity_id = data["entity_id"]
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
 
-        if unsubscribe is not None:
-            _LOGGER.warning(
-                "%s: Removed and replaced unexpected existing callback: %s",
-                self._caller,
-                callback_key,
-            )
-
-    # ----------------------------------------------------------------------------
-    def _track_allocated_power_update(self) -> None:
-        allocated_power_entity_id = self.option_get_id_or_abort(
-            CONTROL_CHARGER_ALLOCATED_POWER
+        _LOGGER.debug(
+            "%s: entity_id=%s, old_state=%s, new_state=%s",
+            self._caller,
+            entity_id,
+            old_state,
+            new_state,
         )
 
-        # Need both changed and unchanged events, eg. update1 at time1=-500W, update2 at time2=-500W
-        # Need to handle both updates to make use of the spare power.
-        # async_track_state_report_event - send unchanged events.
-        # async_track_state_change_event - send changed events.
-        # So need both to see all events?
-        subscription = async_track_state_change_event(
-            self._hass,
-            allocated_power_entity_id,
-            self._async_handle_allocated_power_update,
-        )
-
-        self._save_callback_subscription(CALLBACK_ALLOCATE_POWER, subscription)
+        # Not sure why on startup, getting a lot of updates here with old_state=None causing crash.
+        if new_state is not None:
+            if old_state is not None:
+                if new_state.state == old_state.state:
+                    return
+                # Only process updates with both old and new states
+                if self._charger.is_connected():
+                    await self.async_start_charge()
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(

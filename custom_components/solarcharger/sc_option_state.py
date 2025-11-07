@@ -56,11 +56,11 @@ class ScOptionState(ScConfigState):
             )
 
         _LOGGER.debug(
-            "%s: %s: val='%s': id='%s':",
+            "%s: %s: '%s' = '%s'",
             config_name,
             config_item,
-            entity_val,
             entity_id,
+            entity_val,
         )
 
     # ----------------------------------------------------------------------------
