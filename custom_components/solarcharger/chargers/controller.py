@@ -394,8 +394,7 @@ class ChargeController(ScOptionState):
         ):
             sun_above_start_end_elevations = True
 
-        # return sun_above_start_end_elevations
-        return True
+        return sun_above_start_end_elevations
 
     # ----------------------------------------------------------------------------
     def _is_use_secondary_power_source(self) -> bool:
