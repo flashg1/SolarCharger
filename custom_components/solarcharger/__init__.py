@@ -112,6 +112,7 @@ async def async_init_charger_subentry(
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
+        unsub_callbacks={},
         controller=controller,
     )
 
@@ -147,6 +148,7 @@ async def async_init_global_defaults_subentry(
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
+        unsub_callbacks={},
         controller=None,
     )
 

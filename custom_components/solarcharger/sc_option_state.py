@@ -1,5 +1,6 @@
 """SolarCharger entity state using config from config_entry.options and config_subentry."""
 
+import asyncio
 import json
 import logging
 from typing import Any
@@ -34,7 +35,7 @@ class ScOptionState(ScConfigState):
         ScConfigState.__init__(self, hass, entry, caller)
 
     # ----------------------------------------------------------------------------
-    # Utils
+    # General utils
     # ----------------------------------------------------------------------------
     def _get_subentry(self, subentry: ConfigSubentry | None) -> ConfigSubentry:
         if subentry is None:
@@ -294,3 +295,12 @@ class ScOptionState(ScConfigState):
 
         if entity_id:
             await self.async_turn_switch_off(entity_id)
+
+    # ----------------------------------------------------------------------------
+    # General utils
+    # ----------------------------------------------------------------------------
+    async def _async_option_sleep(self, config_item: str) -> None:
+        """Wait sleep time."""
+
+        duration = self.option_get_entity_number_or_abort(config_item)
+        await asyncio.sleep(duration)

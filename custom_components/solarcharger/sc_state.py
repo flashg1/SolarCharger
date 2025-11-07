@@ -7,7 +7,12 @@ from typing import Any
 from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceResponse, State
 
-from .const import EVENT_ATTR_ACTION, EVENT_ATTR_VALUE, SOLAR_CHARGER_COORDINATOR_EVENT
+from .const import (
+    EVENT_ATTR_ACTION,
+    EVENT_ATTR_VALUE,
+    HA_SUN_ENTITY,
+    SOLAR_CHARGER_COORDINATOR_EVENT,
+)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -28,25 +33,6 @@ class ScState:
 
         self._hass = hass
         self._caller = caller
-
-    # ----------------------------------------------------------------------------
-    # ----------------------------------------------------------------------------
-    def emit_solarcharger_event(
-        self, device_id: str, action: str, new_current: float
-    ) -> None:
-        """Emit an event to Home Assistant's device event log."""
-        self._hass.bus.async_fire(
-            SOLAR_CHARGER_COORDINATOR_EVENT,
-            {
-                ATTR_DEVICE_ID: device_id,
-                EVENT_ATTR_ACTION: action,
-                EVENT_ATTR_VALUE: new_current,
-            },
-        )
-
-        _LOGGER.debug(
-            "Emitted SolarCharger event: action=%s, value=%s", action, new_current
-        )
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
@@ -227,3 +213,33 @@ class ScState:
         """Turn off switch entity."""
 
         await self.async_ha_entity_call("switch", "turn_off", entity_id)
+
+    # ----------------------------------------------------------------------------
+    # Utils
+    # ----------------------------------------------------------------------------
+    def get_sun_state_or_abort(self) -> State:
+        """Get sun state or abort."""
+        sun_state: State | None = self._get_entity_state(HA_SUN_ENTITY)
+        if sun_state is None:
+            raise ValueError(f"{self._caller}: Failed to get sun state")
+        _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
+
+        return sun_state
+
+    # ----------------------------------------------------------------------------
+    def emit_solarcharger_event(
+        self, device_id: str, action: str, new_current: float
+    ) -> None:
+        """Emit an event to Home Assistant's device event log."""
+        self._hass.bus.async_fire(
+            SOLAR_CHARGER_COORDINATOR_EVENT,
+            {
+                ATTR_DEVICE_ID: device_id,
+                EVENT_ATTR_ACTION: action,
+                EVENT_ATTR_VALUE: new_current,
+            },
+        )
+
+        _LOGGER.debug(
+            "Emitted SolarCharger event: action=%s, value=%s", action, new_current
+        )

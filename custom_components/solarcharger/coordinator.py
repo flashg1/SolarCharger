@@ -31,6 +31,9 @@ from homeassistant.helpers.event import (
 )
 
 from .const import (
+    CALLBACK_PLUG_IN_CHARGER,
+    CALLBACK_SUNRISE_START_CHARGE,
+    CALLBACK_SUNSET_DAILY_MAINTENANCE,
     CONF_NET_POWER,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
@@ -38,16 +41,24 @@ from .const import (
     ENTITY_KEY_CHARGE_SWITCH,
     ENTITY_KEY_LAST_CHECK_SENSOR,
     ENTITY_KEY_RUN_STATE_SENSOR,
-    HA_SUN_ENTITY,
+    OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_GLOBAL_DEFAULT_VALUES,
     OPTION_GLOBAL_DEFAULTS_ID,
+    OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_WAIT_NET_POWER_UPDATE,
 )
 from .helpers.general import async_set_allocated_power
 from .models import ChargeControl
 from .sc_option_state import ScOptionState
-from .utils import log_is_event_loop
+from .utils import (
+    get_sec_per_degree_sun_elevation,
+    get_sun_attribute_or_abort,
+    get_sun_attribute_time,
+    log_is_event_loop,
+    remove_all_callback_subscriptions,
+    remove_callback_subscription,
+    save_callback_subscription,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -146,6 +157,117 @@ class SolarChargerCoordinator(ScOptionState):
         """Handle options update by reloading the config entry."""
         await hass.config_entries.async_reload(entry.entry_id)
 
+    # # ----------------------------------------------------------------------------
+    # # Sunrise/sunset trigger code
+    # # ----------------------------------------------------------------------------
+    # def _start_charge_on_sunrise(self, control: ChargeControl) -> None:
+    #     # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
+    #     self._hass.loop.create_task(self.async_start_charge())
+
+    # # ----------------------------------------------------------------------------
+    # def _setup_next_sunrise_trigger(self, control: ChargeControl) -> None:
+    #     """Recalculate and setup next morning's sunrise trigger."""
+
+    #     sun_state = self.get_sun_state_or_abort()
+    #     sec_per_degree = get_sec_per_degree_sun_elevation(self._caller, sun_state)
+    #     elevation_start_trigger = self.option_get_entity_number_or_abort(
+    #         OPTION_SUNRISE_ELEVATION_START_TRIGGER
+    #     )
+    #     offset = timedelta(seconds=sec_per_degree * elevation_start_trigger)
+    #     subscription = async_track_sunrise(
+    #         self._hass, self._start_charge_on_sunrise, offset
+    #     )
+    #     save_callback_subscription(
+    #         self._caller,
+    #         control.unsub_callbacks,
+    #         CALLBACK_SUNRISE_START_CHARGE,
+    #         subscription,
+    #     )
+
+    # # ----------------------------------------------------------------------------
+    # def _setup_daily_maintenance_at_sunset(self, control: ChargeControl) -> None:
+    #     """Every day, set up next sunrise trigger at sunset."""
+    #     # offset=timedelta(minutes=2)
+    #     subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
+    #     save_callback_subscription(
+    #         self._caller,
+    #         control.unsub_callbacks,
+    #         CALLBACK_SUNSET_DAILY_MAINTENANCE,
+    #         subscription,
+    #     )
+
+    # # ----------------------------------------------------------------------------
+    # def _set_up_sun_triggers(self, control: ChargeControl) -> None:
+    #     # Set up sunset daily maintenance
+    #     self._setup_daily_maintenance_at_sunset(control)
+
+    #     # Manually set up sunrise trigger if sun has already set when starting SolarCharger.
+    #     sun_state: State = self.get_sun_state_or_abort()
+    #     _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
+
+    #     next_setting_utc = get_sun_attribute_time(
+    #         self._caller, sun_state, "next_setting"
+    #     )
+    #     next_rising_utc = get_sun_attribute_time(self._caller, sun_state, "next_rising")
+    #     if next_setting_utc.timestamp() > next_rising_utc.timestamp():
+    #         # Missed sunset, so need to manually set sunrise trigger.
+    #         self._setup_next_sunrise_trigger(control)
+
+    # # ----------------------------------------------------------------------------
+    # # Monitored entities
+    # # ----------------------------------------------------------------------------
+    # async def _async_handle_plug_in_charger_event(
+    #     self, event: Event[EventStateChangedData]
+    # ) -> None:
+    #     """Fetch and process state change event."""
+    #     data = event.data
+    #     entity_id = data["entity_id"]
+    #     old_state: State | None = data["old_state"]
+    #     new_state: State | None = data["new_state"]
+
+    #     _LOGGER.debug(
+    #         "%s: entity_id=%s, old_state=%s, new_state=%s",
+    #         self._caller,
+    #         entity_id,
+    #         old_state,
+    #         new_state,
+    #     )
+
+    #     # Not sure why on startup, getting a lot of updates here with old_state=None causing crash.
+    #     if new_state is not None:
+    #         if old_state is not None:
+    #             if new_state.state == old_state.state:
+    #                 return
+    #             # Only process updates with both old and new states
+    #             if self._charger.is_connected():
+    #                 await self.async_start_charge()
+
+    # # ----------------------------------------------------------------------------
+    # def _track_plug_in_charger(self, control: ChargeControl) -> None:
+    #     charger_plug_in_entity_id = self.option_get_id_or_abort(
+    #         OPTION_CHARGER_PLUGGED_IN_SENSOR
+    #     )
+
+    #     subscription = async_track_state_change_event(
+    #         self._hass,
+    #         charger_plug_in_entity_id,
+    #         self._async_handle_plug_in_charger_event,
+    #     )
+
+    #     save_callback_subscription(
+    #         self._caller,
+    #         control.unsub_callbacks,
+    #         CALLBACK_PLUG_IN_CHARGER,
+    #         subscription,
+    #     )
+
+    # # ----------------------------------------------------------------------------
+    # def _setup_triggers(self, control: ChargeControl) -> None:
+    #     self._set_up_sun_triggers(control)
+    #     self._track_plug_in_charger(control)
+
+    # ----------------------------------------------------------------------------
+    # Setup
     # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the coordinator and its managed components."""
@@ -153,7 +275,9 @@ class SolarChargerCoordinator(ScOptionState):
 
         for control in self.charge_controls.values():
             if control.controller is not None:
+                # Only setup real chargers with controller
                 await control.controller.async_setup()
+                # self._setup_triggers(control)
 
         # Global default entities MUST be created first before running the coordinator.setup().
         # Otherwise cannot get entity config values here.
@@ -183,6 +307,8 @@ class SolarChargerCoordinator(ScOptionState):
         #     )
 
     # ----------------------------------------------------------------------------
+    # Unload
+    # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Unload the coordinator and its managed components."""
         for control in self.charge_controls.values():
@@ -193,6 +319,8 @@ class SolarChargerCoordinator(ScOptionState):
             unsub_method()
         self._unsub.clear()
 
+    # ----------------------------------------------------------------------------
+    # Others
     # ----------------------------------------------------------------------------
     def _get_net_power(self) -> float | None:
         """Get household net power."""

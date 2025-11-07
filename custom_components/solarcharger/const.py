@@ -258,9 +258,24 @@ TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
     CONTROL_CHARGER_ALLOCATED_POWER: f"number.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
 }
 
+
+# See OCPP spec v1.6j page 38 transition states, and page 77 ChargePointStatus (sensor.charger_status_connector).
+# Available (no EV connected)
+# Preparing (EV plugged in but charging yet to start)
+# Charging (EV plugged in with active charging session)
+# SuspendedEV (EV plugged in but not accepting charge, eg. EV getting ready, charge limit reached)
+# SuspendedEVSE (EV plugged in but EVSE does not allow charging, eg. current drops below 6A)
+# Finishing (EV plugged in but charging session ending, ie. charger switched off)
+# OCPP uses single sensor to indicate plugged in and charging
+# Use 'Available' state for trigger testing with IAMMeter. Just need to turn on then off OCPP "Charge Control" to trigger the automation.
+# OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing", "Available"]',
+# Add 'Available' to rc_ocpp_charger_connected for normal testing, and switch off charger to exit automation.
+# OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
 OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_DEVICE_NAME: DEVICE_NAME_MARKER,
     OPTION_CHARGER_PLUGGED_IN_SENSOR: f"sensor.{DEVICE_NAME_MARKER}status_connector",
+    # OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing", "Available"]',
+    # OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing"]',
     OPTION_CHARGER_ON_OFF_SWITCH: f"switch.{DEVICE_NAME_MARKER}charge_control",
@@ -302,6 +317,16 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
 #     OPTION_OCPP_CHARGER_ID,
 #     OPTION_OCPP_TRANSACTION_ID,
 # }
+
+#######################################################
+# Subscription callbacks
+#######################################################
+# Naming convention
+# CALLBACK_<ACTION> OR CALLBACK_<EVENT>_<ACTION>
+CALLBACK_PLUG_IN_CHARGER = "callback_charger_plug_in"
+CALLBACK_SUNRISE_START_CHARGE = "callback_sunrise_start_charge"
+CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
+CALLBACK_ALLOCATE_POWER = "callback_allocate_power"
 
 
 #######################################################

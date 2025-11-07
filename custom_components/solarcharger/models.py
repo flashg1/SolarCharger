@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
+from homeassistant.core import CALLBACK_TYPE
+
 from .chargers.controller import ChargeController
 
 #######################################################
@@ -39,15 +41,17 @@ class ChargeControl:
 
     subentry_id: str
     config_name: str
-    # charger: Charger | None = None
+    # Callbacks
+    unsub_callbacks: dict[str, CALLBACK_TYPE]
+
     controller: ChargeController | None = None
 
     charge_task: Task | None = None
     instance_count: int = 0
     end_charge_task: Task | None = None
-    last_charger_target_update: tuple[float, int] | None = (
-        None  # (new_current, timestamp)
-    )
+    # last_charger_target_update: tuple[float, int] | None = (
+    #     None  # (new_current, timestamp)
+    # )
 
     sensors: dict[str, "SolarChargerSensorEntity"] | None = None
     numbers: dict[str, "SolarChargerNumberEntity"] | None = None
