@@ -558,11 +558,11 @@ class ChargeController(ScOptionState):
             "charger_min_current=%s, "
             "charger_max_current=%s, "
             "old_charge_current=%s, "
-            "all_power_net=%s "
-            "all_current_net=%s "
-            "propose_charge_current=%s "
-            "propose_new_charge_current=%s "
-            "charger_min_workable_current=%s "
+            "all_power_net=%s, "
+            "all_current_net=%s, "
+            "propose_charge_current=%s, "
+            "propose_new_charge_current=%s, "
+            "charger_min_workable_current=%s, "
             "new_charge_current=%s ",
             self._caller,
             allocated_power,

@@ -322,7 +322,8 @@ def get_saved_option_value(
             final_val = saved_global_val
 
     _LOGGER.debug(
-        "%s: final=%s, local=%s, global=%s",
+        "%s: %s: final=%s, local=%s, global=%s",
+        subentry.unique_id,
         config_item,
         final_val,
         saved_local_val,
