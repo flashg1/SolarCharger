@@ -323,7 +323,8 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
 #######################################################
 # Naming convention
 # CALLBACK_<ACTION> OR CALLBACK_<EVENT>_<ACTION>
-CALLBACK_PLUG_IN_CHARGER = "callback_charger_plug_in"
+CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER = "callback_change_sunrise_elevation_trigger"
+CALLBACK_PLUG_IN_CHARGER = "callback_plug_in_charger"
 CALLBACK_SUNRISE_START_CHARGE = "callback_sunrise_start_charge"
 CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
 CALLBACK_ALLOCATE_POWER = "callback_allocate_power"

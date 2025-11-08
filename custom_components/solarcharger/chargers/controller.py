@@ -31,6 +31,7 @@ from homeassistant.helpers.event import (
 
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
+    CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
     CALLBACK_PLUG_IN_CHARGER,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
@@ -141,6 +142,21 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     # General utils
     # ----------------------------------------------------------------------------
+    def _log_state_change(self, event: Event[EventStateChangedData]) -> None:
+        data = event.data
+        entity_id = data["entity_id"]
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
+
+        _LOGGER.debug(
+            "%s: entity_id=%s, old_state=%s, new_state=%s",
+            self._caller,
+            entity_id,
+            old_state,
+            new_state,
+        )
+
+    # ----------------------------------------------------------------------------
     def _turn_on_charger_switch(self) -> None:
         # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
         # self._hass.loop.create_task(self.async_start_charge())
@@ -153,6 +169,7 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     def _setup_daily_maintenance_at_sunset(self) -> None:
         """Every day, set up next sunrise trigger at sunset."""
+        _LOGGER.info("%s: Setup sunset daily maintenance", self._caller)
         # offset=timedelta(minutes=2)
         subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
         save_callback_subscription(
@@ -178,6 +195,9 @@ class ChargeController(ScOptionState):
             OPTION_SUNRISE_ELEVATION_START_TRIGGER
         )
         offset = timedelta(seconds=sec_per_degree * elevation_start_trigger)
+        _LOGGER.info(
+            "%s: Setup next sunrise trigger offset at %s", self._caller, offset
+        )
         subscription = async_track_sunrise(
             self._hass, self._start_charge_on_sunrise, offset
         )
@@ -208,22 +228,59 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     # Monitored entities
     # ----------------------------------------------------------------------------
+    async def _async_handle_sunrise_elevation_trigger_change(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Fetch and process state change event."""
+        data = event.data
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
+
+        self._log_state_change(event)
+
+        if new_state is not None:
+            if old_state is not None:
+                if (
+                    new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                    and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                    and new_state.state != old_state.state
+                ):
+                    self._setup_next_sunrise_trigger()
+
+    # ----------------------------------------------------------------------------
+    def _track_sunrise_elevation_trigger_change(self) -> None:
+        sunrise_elevation_trigger = self.option_get_id_or_abort(
+            OPTION_SUNRISE_ELEVATION_START_TRIGGER
+        )
+        _LOGGER.info(
+            "%s: Tracking sunrise elevation trigger change: %s",
+            self._caller,
+            sunrise_elevation_trigger,
+        )
+
+        subscription = async_track_state_change_event(
+            self._hass,
+            sunrise_elevation_trigger,
+            self._async_handle_sunrise_elevation_trigger_change,
+        )
+
+        save_callback_subscription(
+            self._caller,
+            self._unsub_callbacks,
+            CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
+            subscription,
+        )
+
+    # ----------------------------------------------------------------------------
     async def _async_handle_plug_in_charger_event(
         self, event: Event[EventStateChangedData]
     ) -> None:
         """Fetch and process state change event."""
         data = event.data
-        entity_id = data["entity_id"]
         old_state: State | None = data["old_state"]
         new_state: State | None = data["new_state"]
 
-        _LOGGER.debug(
-            "%s: entity_id=%s, old_state=%s, new_state=%s",
-            self._caller,
-            entity_id,
-            old_state,
-            new_state,
-        )
+        self._log_state_change(event)
 
         # Not sure why on startup, getting a lot of updates here with old_state=None causing crash.
         # if new_state is not None:
@@ -246,14 +303,19 @@ class ChargeController(ScOptionState):
                         self._turn_on_charger_switch()
 
     # ----------------------------------------------------------------------------
-    def _track_plug_in_charger(self) -> None:
-        charger_plug_in_entity_id = self.option_get_id_or_abort(
+    def _track_charger_plugged_in_sensor(self) -> None:
+        charger_plugged_in_sensor = self.option_get_id_or_abort(
             OPTION_CHARGER_PLUGGED_IN_SENSOR
+        )
+        _LOGGER.info(
+            "%s: Tracking charger plugged-in sensor: %s",
+            self._caller,
+            charger_plugged_in_sensor,
         )
 
         subscription = async_track_state_change_event(
             self._hass,
-            charger_plug_in_entity_id,
+            charger_plugged_in_sensor,
             self._async_handle_plug_in_charger_event,
         )
 
@@ -265,6 +327,11 @@ class ChargeController(ScOptionState):
     def _track_allocated_power_update(self) -> None:
         allocated_power_entity_id = self.option_get_id_or_abort(
             CONTROL_CHARGER_ALLOCATED_POWER
+        )
+        _LOGGER.info(
+            "%s: Tracking allocated power update: %s",
+            self._caller,
+            allocated_power_entity_id,
         )
 
         # Need both changed and unchanged events, eg. update1 at time1=-500W, update2 at time2=-500W
@@ -287,7 +354,8 @@ class ChargeController(ScOptionState):
         """Async setup of the ChargeController."""
         await self._charger.async_setup()
         self._set_up_sun_triggers()
-        self._track_plug_in_charger()
+        self._track_charger_plugged_in_sensor()
+        self._track_sunrise_elevation_trigger_change()
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
@@ -507,18 +575,10 @@ class ChargeController(ScOptionState):
             new_charge_current = propose_new_charge_current
 
         _LOGGER.debug(
-            "%s: "
-            "allocated_power=%s, "
-            "charger_effective_voltage=%s, "
-            "config_min_current=%s, "
-            "charger_min_current=%s, "
-            "charger_max_current=%s, "
-            "old_charge_current=%s, "
-            "all_power_net=%s, "
-            "all_current_net=%s, "
-            "propose_charge_current=%s, "
-            "propose_new_charge_current=%s, "
-            "charger_min_workable_current=%s, "
+            "%s: allocated_power=%s, charger_effective_voltage=%s, config_min_current=%s, "
+            "charger_min_current=%s, charger_max_current=%s, old_charge_current=%s, "
+            "all_power_net=%s, all_current_net=%s, propose_charge_current=%s, "
+            "propose_new_charge_current=%s, charger_min_workable_current=%s, "
             "new_charge_current=%s ",
             self._caller,
             allocated_power,
@@ -607,22 +667,55 @@ class ChargeController(ScOptionState):
                 )
 
     # ----------------------------------------------------------------------------
+    def _is_continue_charge(
+        self, charger: Charger, chargeable: Chargeable, loop_count: int
+    ) -> bool:
+        is_abort_charge = self._is_abort_charge()
+        is_connected = charger.is_connected()
+        is_below_charge_limit = self._is_below_charge_limit(chargeable)
+        is_charging = charger.is_charging()
+        is_sun_above_start_end_elevations = self._is_sun_above_start_end_elevations()
+        is_use_secondary_power_source = self._is_use_secondary_power_source()
+        is_on_charge_schedule = self._is_on_charge_schedule()
+
+        continue_charge = (
+            not is_abort_charge
+            and is_connected
+            and is_below_charge_limit
+            and (loop_count == 0 or is_charging)
+            and (
+                is_sun_above_start_end_elevations
+                or is_use_secondary_power_source
+                or is_on_charge_schedule
+            )
+        )
+
+        if not continue_charge:
+            _LOGGER.warning(
+                "%s: Stopping charge: is_abort_charge=%s, is_connected=%s, "
+                "is_below_charge_limit=%s, loop_count=%s, is_charging=%s, "
+                "is_sun_above_start_end_elevations=%s, is_use_secondary_power_source=%s, "
+                "is_on_charge_schedule=%s",
+                self._caller,
+                is_abort_charge,
+                is_connected,
+                is_below_charge_limit,
+                loop_count,
+                is_charging,
+                is_sun_above_start_end_elevations,
+                is_use_secondary_power_source,
+                is_on_charge_schedule,
+            )
+
+        return continue_charge
+
+    # ----------------------------------------------------------------------------
     async def _async_charge_device(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         loop_count = 0
 
-        while (
-            not self._is_abort_charge()
-            and charger.is_connected()
-            and self._is_below_charge_limit(chargeable)
-            and (loop_count == 0 or charger.is_charging())
-            and (
-                self._is_sun_above_start_end_elevations()
-                or self._is_use_secondary_power_source()
-                or self._is_on_charge_schedule()
-            )
-        ):
+        while self._is_continue_charge(charger, chargeable, loop_count):
             try:
                 # Turn on charger if looping for the first time
                 if loop_count == 0:
