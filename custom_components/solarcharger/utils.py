@@ -128,12 +128,24 @@ def get_sun_attribute_time(caller: str, sun_state: State, attrib: str) -> dateti
 
 
 # ----------------------------------------------------------------------------
+def get_next_sunrise_time(caller: str, sun_state: State) -> datetime:
+    """Get next sunrise time."""
+    return get_sun_attribute_time(caller, sun_state, "next_rising")
+
+
+# ----------------------------------------------------------------------------
+def get_next_sunset_time(caller: str, sun_state: State) -> datetime:
+    """Get next sunset time."""
+    return get_sun_attribute_time(caller, sun_state, "next_setting")
+
+
+# ----------------------------------------------------------------------------
 def get_sec_per_degree_sun_elevation(caller: str, sun_state: State) -> float:
     """Get seconds per degree sun elevation for the today."""
-    next_setting_utc = get_sun_attribute_time(caller, sun_state, "next_setting")
+    next_setting_utc = get_next_sunset_time(caller, sun_state)
     next_setting_sec = next_setting_utc.timestamp()
 
-    next_rising_utc = get_sun_attribute_time(caller, sun_state, "next_rising")
+    next_rising_utc = get_next_sunrise_time(caller, sun_state)
     next_rising_sec = next_rising_utc.timestamp()
 
     seconds_per_degree: float = abs(next_setting_sec - next_rising_sec) / 180
