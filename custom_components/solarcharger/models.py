@@ -42,7 +42,7 @@ class ChargeControl:
     subentry_id: str
     config_name: str
     # Callbacks
-    unsub_callbacks: dict[str, CALLBACK_TYPE]
+    # unsub_callbacks: dict[str, CALLBACK_TYPE]
 
     controller: ChargeController | None = None
 
