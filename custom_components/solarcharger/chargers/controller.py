@@ -29,6 +29,7 @@ from homeassistant.helpers.event import (
     async_track_sunrise,
     async_track_sunset,
 )
+from homeassistant.util.dt import utcnow
 
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
@@ -62,10 +63,12 @@ from ..entity import compose_entity_id  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
+    get_is_sun_rising,
     get_next_sunrise_time,
     get_sec_per_degree_sun_elevation,
     get_sun_attribute_or_abort,
     get_sun_attribute_time,
+    get_sun_elevation,
     log_is_event_loop,
     remove_all_callback_subscriptions,
     remove_callback_subscription,
@@ -202,52 +205,51 @@ class ChargeController(ScOptionState):
         elevation_start_trigger = self.option_get_entity_number_or_abort(
             OPTION_SUNRISE_ELEVATION_START_TRIGGER
         )
-        offset = timedelta(seconds=sec_per_degree * elevation_start_trigger)
+        sunrise_offset = timedelta(seconds=sec_per_degree * elevation_start_trigger)
 
         # today = date.today()
         # Combine the date with the minimum time (00:00:00)
         # midnight_datetime = datetime.combine(today, datetime.min.time())
-        nowtime = datetime.now()
-        next_sunrise_time: datetime = get_next_sunrise_time(self._caller, sun_state)
 
-        # today_sunrise_time = next_sunrise_time - timedelta(days=1)
-        # today_sunrise_trigger = today_sunrise_time + offset
+        # This is not working because time is in UTC. This method only works with local timezone.
+        # today_sunrise_time = now_time.replace(
+        #     hour=next_sunrise_time.hour,
+        #     minute=next_sunrise_time.minute,
+        #     second=next_sunrise_time.second,
+        #     microsecond=next_sunrise_time.microsecond,
+        # )
 
-        today_sunrise_time = nowtime.replace(
-            hour=next_sunrise_time.hour,
-            minute=next_sunrise_time.minute,
-            second=next_sunrise_time.second,
-            microsecond=next_sunrise_time.microsecond,
-        )
-        today_sunrise_trigger_time = today_sunrise_time + offset
+        is_sun_rising: bool = get_is_sun_rising(self._caller, sun_state)
+        current_elevation: float = get_sun_elevation(self._caller, sun_state)
 
-        current_elevation: float = get_sun_attribute_or_abort(
-            self._caller, sun_state, "elevation"
-        )
-        # if elevation_start_trigger > current_elevation:
-        if nowtime > today_sunrise_trigger_time:
-            # Passed trigger time, so set next sunrise
+        if is_sun_rising and current_elevation < elevation_start_trigger:
+            # Today
+            now_time = utcnow()
+            next_sunrise_time: datetime = get_next_sunrise_time(self._caller, sun_state)
+            next_sunrise_trigger_time = next_sunrise_time + sunrise_offset
+            # last_sunrise_time = next_sunrise_time - timedelta(days=1)
+            # last_sunrise_trigger_time = last_sunrise_time + sunrise_offset
+            duration_from_now = next_sunrise_trigger_time - now_time
+            duration_to_trigger = timedelta(seconds=duration_from_now.total_seconds())
             _LOGGER.info(
-                "%s: Setup next sunrise trigger offset at %s (current_elevation=%s)",
+                "%s: Setup today sunrise trigger offset %s from now (current_elevation=%s)",
                 self._caller,
-                offset,
-                current_elevation,
-            )
-            subscription = async_track_sunrise(
-                self._hass, self._start_charge_on_sunrise, offset
-            )
-        else:
-            time_diff = today_sunrise_trigger_time - nowtime
-            sec_from_now = timedelta(seconds=time_diff.total_seconds())
-
-            _LOGGER.info(
-                "%s: Setup today sunrise trigger offset at %s (current_elevation=%s)",
-                self._caller,
-                sec_from_now,
+                duration_to_trigger,
                 current_elevation,
             )
             subscription = async_call_later(
-                self._hass, offset, self._async_turn_on_charger_switch
+                self._hass, duration_to_trigger, self._async_turn_on_charger_switch
+            )
+        else:
+            # Tomorrow
+            _LOGGER.info(
+                "%s: Setup next sunrise trigger offset %s from sunrise (current_elevation=%s)",
+                self._caller,
+                sunrise_offset,
+                current_elevation,
+            )
+            subscription = async_track_sunrise(
+                self._hass, self._start_charge_on_sunrise, sunrise_offset
             )
 
         save_callback_subscription(

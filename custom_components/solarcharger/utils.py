@@ -10,6 +10,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from homeassistant.core import CALLBACK_TYPE, State
+from homeassistant.util.dt import parse_datetime
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -86,14 +87,16 @@ def log_is_event_loop(
 #     "friendly_name": "Sun",
 # }
 # ----------------------------------------------------------------------------
-def convert_utc_time_string(utc_str: str) -> datetime:
+def convert_to_timezone_aware_datetime(utc_str: str) -> datetime:
     """Convert HA UTC time string to timezone-aware datetime object."""
     # Parse into a timezone-aware datetime
     # Time string in UTC, ie. 2025-11-05T08:26:32.189258+00:00
-    dt = datetime.fromisoformat(utc_str)
 
+    # dt: datetime = datetime.fromisoformat(utc_str)
     # convert to UTC explicitly
-    dt_utc = dt.astimezone(ZoneInfo("UTC"))
+    # dt_utc = dt.astimezone(ZoneInfo("UTC"))
+
+    dt_utc: datetime = parse_datetime(utc_str, raise_on_error=True)
 
     # HA Local timezone has been set to UTC, ie. dt_utc = dt_localtime
     # dt_localtime = dt_utc.astimezone()
@@ -124,7 +127,19 @@ def get_sun_attribute_time(caller: str, sun_state: State, attrib: str) -> dateti
     """Get sun time attribute."""
     # sun_attrib_time_str in utc
     sun_attrib_time_str: str = get_sun_attribute_or_abort(caller, sun_state, attrib)
-    return convert_utc_time_string(sun_attrib_time_str)
+    return convert_to_timezone_aware_datetime(sun_attrib_time_str)
+
+
+# ----------------------------------------------------------------------------
+def get_is_sun_rising(caller: str, sun_state: State) -> bool:
+    """Is sun rising?"""
+    return get_sun_attribute_or_abort(caller, sun_state, "rising")
+
+
+# ----------------------------------------------------------------------------
+def get_sun_elevation(caller: str, sun_state: State) -> float:
+    """Get sun elevation."""
+    return get_sun_attribute_or_abort(caller, sun_state, "elevation")
 
 
 # ----------------------------------------------------------------------------
@@ -181,16 +196,16 @@ def save_callback_subscription(
     subscription: CALLBACK_TYPE,
 ) -> None:
     """Save callback subscription."""
-    unsubscribe = remove_callback_subscription(caller, unsub_callbacks, callback_key)
+    # unsubscribe = remove_callback_subscription(caller, unsub_callbacks, callback_key)
+    # if unsubscribe is not None:
+    #     _LOGGER.warning(
+    #         "%s: Removed and replaced existing callback: %s",
+    #         caller,
+    #         callback_key,
+    #     )
+    remove_callback_subscription(caller, unsub_callbacks, callback_key)
     unsub_callbacks[callback_key] = subscription
     _LOGGER.debug("%s: Saved callback subscription: %s", caller, callback_key)
-
-    if unsubscribe is not None:
-        _LOGGER.warning(
-            "%s: Removed and replaced unexpected existing callback: %s",
-            caller,
-            callback_key,
-        )
 
 
 # ----------------------------------------------------------------------------
