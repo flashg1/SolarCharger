@@ -17,6 +17,10 @@ from .entity import SolarChargerEntity
 if TYPE_CHECKING:
     from .coordinator import SolarChargerCoordinator
 
+# Examples:
+# homeassistant/components/netgear/switch.py
+# homeassistant/components/ring/switch.py
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

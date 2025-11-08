@@ -354,6 +354,10 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
         await super().async_set_native_value(value)
+
+        # TODO: Think about using dedicated coordinator to update values in local device.
+        # Custom EntityDescrption can contain the key to update value in dictionary.
+        # Coordinator need to determine if device is using local or global config.
         # self.coordinator.max_charging_current = value
         # await self.coordinator.update_configuration()
 
