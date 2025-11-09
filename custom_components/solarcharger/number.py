@@ -270,15 +270,17 @@ class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
 
     def __init__(
         self,
+        config_item: str,
         subentry: ConfigSubentry,
     ) -> None:
         """Initialize the number."""
 
-        super().__init__(subentry)
-        id_name = slugify(f"{self._entity_key}")
-        self._attr_unique_id = (
-            f"{subentry.subentry_id}.{subentry.unique_id}.{NUMBER}.{id_name}"
-        )
+        super().__init__(config_item, subentry)
+        # id_name = slugify(f"{self._entity_key}")
+        # self._attr_unique_id = (
+        #     f"{subentry.subentry_id}.{subentry.unique_id}.{NUMBER}.{id_name}"
+        # )
+        self.set_entity_unique_id(NUMBER, self._entity_key)
         self.set_entity_id(NUMBER, self._entity_key)
 
     # def set_state(self, new_status):
@@ -329,7 +331,9 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         default_val: float,
     ) -> None:
         """Initialise number."""
-        self._entity_key = config_item
+        super().__init__(config_item, subentry)
+        self.entity_description = desc
+
         if desc.entity_category == EntityCategory.CONFIG:
             # Disable local device entities. User needs to manually enable if required.
             if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
@@ -341,8 +345,6 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         self._attr_native_step = 1.0
         self._attr_mode = NumberMode.BOX
 
-        super().__init__(subentry)
-        self.entity_description = desc
         self._attr_has_entity_name = True
         # Must set _attr_should_poll=True (default) for HA to register value changes
         # self._attr_should_poll = False

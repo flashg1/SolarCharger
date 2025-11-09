@@ -102,6 +102,9 @@
         "switch": {
             "charge": {
                 "name": "Charge"
+            },
+            "fast_charge": {
+                "name": "Fast charge"
             }
         },
         "number": {

@@ -5,6 +5,7 @@ import logging
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
+from homeassistant.util import slugify
 
 from .const import CONFIG_URL, DOMAIN, ICON, MANUFACTURER, VERSION
 
@@ -15,7 +16,16 @@ _LOGGER = logging.getLogger(__name__)
 # ----------------------------------------------------------------------------
 def compose_entity_id(platform_str: str, subentry_unique_id: str | None, key: str):
     """Compose the entity id."""
-    return f"{platform_str}.{DOMAIN}_{subentry_unique_id}_{key}"
+
+    id_name = slugify(f"{DOMAIN}_{subentry_unique_id}_{key}")
+    return f"{platform_str}.{id_name}"
+
+
+# ----------------------------------------------------------------------------
+def compose_entity_unique_id(platform_str: str, subentry: ConfigSubentry, key: str):
+    """Compose the entity unique id for HA internal use only."""
+
+    return f"{subentry.subentry_id}.{slugify(subentry.unique_id)}.{platform_str}.{slugify(key)}"
 
 
 # ----------------------------------------------------------------------------
@@ -30,11 +40,13 @@ class SolarChargerEntity(Entity):
 
     def __init__(
         self,
+        config_item: str,
         subentry: ConfigSubentry,
     ) -> None:
         """Initialize the SolarCharger base entity."""
-        self._subentry = subentry
+        self._entity_key = config_item
         self._attr_translation_key = self._entity_key
+        self._subentry = subentry
 
         # self._attr_should_poll = False
         # self._attr_has_entity_name = True
@@ -50,13 +62,28 @@ class SolarChargerEntity(Entity):
             configuration_url=(CONFIG_URL),
         )
 
+    # ----------------------------------------------------------------------------
     def set_entity_id(self, platform_str, key):
         """Set the entity id."""
-        entity_id = compose_entity_id(platform_str, self._subentry.unique_id, key)
-        _LOGGER.debug("entity_id = %s", entity_id)
-        self.entity_id = entity_id
 
+        self.entity_id = compose_entity_id(platform_str, self._subentry.unique_id, key)
+        _LOGGER.debug("entity_id = %s", self.entity_id)
+
+    # ----------------------------------------------------------------------------
+    def set_entity_unique_id(self, platform_str, key):
+        """Set the entity unique id for HA internal use only."""
+
+        # id_name = self._entity_key.replace("_", "").lower()
+        # self._attr_unique_id = f"{subentry.subentry_id}.{SWITCH}.{id_name}"
+        # self._attr_unique_id = f"{self._subentry.subentry_id}.{self._subentry.unique_id}.{platform_str}.{slugify(key)}"
+        self._attr_unique_id = compose_entity_unique_id(
+            platform_str, self._subentry, key
+        )
+        _LOGGER.debug("unique_entity_id = %s", self._attr_unique_id)
+
+    # ----------------------------------------------------------------------------
     def update_ha_state(self):
         """Update the HA state."""
+
         if self.entity_id is not None and self.hass is not None:
             self.async_schedule_update_ha_state()

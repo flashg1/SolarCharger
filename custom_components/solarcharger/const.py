@@ -58,10 +58,11 @@ ENTITY_KEY_LAST_CHECK_SENSOR = "last_check"
 ENTITY_KEY_RUN_STATE_SENSOR = "run_state"
 
 # Switches
-ENTITY_KEY_CHARGE_SWITCH = "charge"
+CONTROL_CHARGE_SWITCH = "charge"
+CONTROL_FAST_CHARGE_SWITCH = "fast_charge"
 
 # Buttons
-ENTITY_KEY_CHARGE_BUTTON = "start_charge"
+CONTROL_CHARGE_BUTTON = "start_charge"
 
 #######################################################
 # Make sure the entity key names are unique.

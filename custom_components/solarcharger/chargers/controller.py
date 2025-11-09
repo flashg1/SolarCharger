@@ -39,7 +39,7 @@ from ..const import (  # noqa: TID252
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
     CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
-    ENTITY_KEY_CHARGE_SWITCH,
+    CONTROL_CHARGE_SWITCH,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
@@ -106,7 +106,7 @@ class ChargeController(ScOptionState):
         self._end_charge_task: Task | None = None
         self._charge_current_updatetime: int = 0
         self._charger_switch_entity_id = compose_entity_id(
-            SWITCH, subentry.unique_id, ENTITY_KEY_CHARGE_SWITCH
+            SWITCH, subentry.unique_id, CONTROL_CHARGE_SWITCH
         )
 
         # self._unsub_callbacks: dict[
@@ -178,7 +178,7 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     def _setup_daily_maintenance_at_sunset(self) -> None:
         """Every day, set up next sunrise trigger at sunset."""
-        _LOGGER.info("%s: Setup sunset daily maintenance", self._caller)
+        _LOGGER.info("%s: Setup daily maintenance at sunset", self._caller)
         # offset=timedelta(minutes=2)
         subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
         save_callback_subscription(

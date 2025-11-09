@@ -38,7 +38,7 @@ from .const import (
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     DOMAIN,
-    ENTITY_KEY_CHARGE_SWITCH,
+    CONTROL_CHARGE_SWITCH,
     ENTITY_KEY_LAST_CHECK_SENSOR,
     ENTITY_KEY_RUN_STATE_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
@@ -556,8 +556,8 @@ class SolarChargerCoordinator(ScOptionState):
 
                 if control.switches:
                     control.switch_charge = False
-                    control.switches[ENTITY_KEY_CHARGE_SWITCH].turn_off()
-                    control.switches[ENTITY_KEY_CHARGE_SWITCH].update_ha_state()
+                    control.switches[CONTROL_CHARGE_SWITCH].turn_off()
+                    control.switches[CONTROL_CHARGE_SWITCH].update_ha_state()
 
                 if control.sensors:
                     control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(

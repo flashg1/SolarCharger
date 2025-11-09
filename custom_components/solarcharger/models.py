@@ -28,6 +28,7 @@ from .chargers.controller import ChargeController
 #   You still need to use string literals for forward references if the type isn't available at runtime.
 #######################################################
 if TYPE_CHECKING:
+    from .button import SolarChargerButtonEntity
     from .number import SolarChargerNumberEntity
     from .sensor import SolarChargerSensorEntity
     from .switch import SolarChargerSwitchEntity
@@ -56,6 +57,7 @@ class ChargeControl:
     sensors: dict[str, "SolarChargerSensorEntity"] | None = None
     numbers: dict[str, "SolarChargerNumberEntity"] | None = None
     switches: dict[str, "SolarChargerSwitchEntity"] | None = None
+    buttons: dict[str, "SolarChargerButtonEntity"] | None = None
 
     # Sensors
     sensor_last_check_timestamp: datetime | None = None
