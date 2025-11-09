@@ -9,7 +9,6 @@ from homeassistant.const import STATE_ON
 from homeassistant.core import State
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.util import slugify
 
 from .const import (
     CONTROL_CHARGE_SWITCH,
@@ -43,14 +42,13 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
     ) -> None:
         """Initialize the SolarCharger switch entity."""
         SolarChargerEntity.__init__(self, config_item, subentry)
+        self.set_entity_id(SWITCH, config_item)
+        self.set_entity_unique_id(SWITCH, config_item)
         self.entity_description = desc
 
         # self._attr_has_entity_name = True
         self._coordinator = coordinator
         self._is_restore_state = is_restore_state
-
-        self.set_entity_unique_id(SWITCH, config_item)
-        self.set_entity_id(SWITCH, config_item)
 
     # ----------------------------------------------------------------------------
     def turn_on(self, **kwargs: Any) -> None:
@@ -102,6 +100,7 @@ class SolarChargerSwitchCharge(SolarChargerSwitchEntity):
     ) -> None:
         """Initialize the switch."""
         super().__init__(config_item, subentry, desc, coordinator, is_restore_state)
+
         if self.is_on is None:
             self._attr_is_on = False
             self.update_ha_state()

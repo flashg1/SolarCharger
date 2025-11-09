@@ -54,6 +54,103 @@ from .helpers.general import is_config_entity_used_as_local_device_entity
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
+    """SolarCharger number entity."""
+
+    def __init__(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry,
+        desc: NumberEntityDescription,
+    ) -> None:
+        """Initialize the number."""
+        SolarChargerEntity.__init__(self, config_item, subentry)
+        self.set_entity_id(NUMBER, config_item)
+        self.set_entity_unique_id(NUMBER, config_item)
+        self.entity_description = desc
+
+    # ----------------------------------------------------------------------------
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        self._attr_native_value = value
+
+    # ----------------------------------------------------------------------------
+    async def async_added_to_hass(self) -> None:
+        """Run when entity about to be added to hass."""
+
+        restore_num: (
+            NumberExtraStoredData | None
+        ) = await self.async_get_last_number_data()
+        if restore_num is not None and restore_num.native_value is not None:
+            await self.async_set_native_value(restore_num.native_value)
+            _LOGGER.debug(
+                "Restored %s: %s",
+                self.entity_id,
+                self._attr_native_value,
+            )
+        else:
+            _LOGGER.debug("No restored data for %s", self.entity_id)
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
+    """SolarCharger configurable number entity."""
+
+    #     _entity_key = ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE
+    #     _attr_entity_category = EntityCategory.CONFIG
+    #     _attr_native_min_value = 100.0
+    #     _attr_native_max_value = 700.0
+    #     _attr_native_step = 1.0
+    #     _attr_native_unit_of_measurement = "V"
+    #     _attr_mode = NumberMode.BOX
+    #     # _attr_mode = NumberMode.AUTO
+
+    def __init__(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry,
+        desc: NumberEntityDescription,
+        default_val: float,
+    ) -> None:
+        """Initialise number."""
+        super().__init__(config_item, subentry, desc)
+
+        if desc.entity_category == EntityCategory.CONFIG:
+            # Disable local device entities. User needs to manually enable if required.
+            if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
+                if not is_config_entity_used_as_local_device_entity(
+                    subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN), config_item
+                ):
+                    self._attr_entity_registry_enabled_default = False
+
+        self._attr_native_step = 1.0
+        self._attr_mode = NumberMode.BOX
+
+        self._attr_has_entity_name = True
+        # Must set _attr_should_poll=True (default) for HA to register value changes
+        # self._attr_should_poll = False
+
+        if self.value is None:
+            self._attr_native_value = default_val
+            self.update_ha_state()
+
+    # ----------------------------------------------------------------------------
+    async def async_set_native_value(self, value: float) -> None:
+        """Set new value."""
+        await super().async_set_native_value(value)
+
+        # TODO: Think about using dedicated coordinator to update values in local device.
+        # Custom EntityDescrption can contain the key to update value in dictionary.
+        # Coordinator need to determine if device is using local or global config.
+        # self.coordinator.max_charging_current = value
+        # await self.coordinator.update_configuration()
+
+
+# ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     #####################################
@@ -260,103 +357,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     # entity_category=EntityCategory.DIAGNOSTIC
     #####################################
 )
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
-    """SolarCharger number entity."""
-
-    def __init__(
-        self,
-        config_item: str,
-        subentry: ConfigSubentry,
-        desc: NumberEntityDescription,
-    ) -> None:
-        """Initialize the number."""
-
-        super().__init__(config_item, subentry)
-        self.entity_description = desc
-
-        self.set_entity_unique_id(NUMBER, self._entity_key)
-        self.set_entity_id(NUMBER, self._entity_key)
-
-    # ----------------------------------------------------------------------------
-    async def async_set_native_value(self, value: float) -> None:
-        """Set new value."""
-        self._attr_native_value = value
-
-    # ----------------------------------------------------------------------------
-    async def async_added_to_hass(self) -> None:
-        """Run when entity about to be added to hass."""
-
-        restore_num: (
-            NumberExtraStoredData | None
-        ) = await self.async_get_last_number_data()
-        if restore_num is not None and restore_num.native_value is not None:
-            await self.async_set_native_value(restore_num.native_value)
-            _LOGGER.debug(
-                "Restored %s: %s",
-                self.entity_id,
-                self._attr_native_value,
-            )
-        else:
-            _LOGGER.debug("No restored data for %s", self.entity_id)
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
-    """SolarCharger configurable number entity."""
-
-    #     _entity_key = ENTITY_KEY_CHARGER_EFFECTIVE_VOLTAGE
-    #     _attr_entity_category = EntityCategory.CONFIG
-    #     _attr_native_min_value = 100.0
-    #     _attr_native_max_value = 700.0
-    #     _attr_native_step = 1.0
-    #     _attr_native_unit_of_measurement = "V"
-    #     _attr_mode = NumberMode.BOX
-    #     # _attr_mode = NumberMode.AUTO
-
-    def __init__(
-        self,
-        config_item: str,
-        subentry: ConfigSubentry,
-        desc: NumberEntityDescription,
-        default_val: float,
-    ) -> None:
-        """Initialise number."""
-        super().__init__(config_item, subentry, desc)
-
-        if desc.entity_category == EntityCategory.CONFIG:
-            # Disable local device entities. User needs to manually enable if required.
-            if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
-                if not is_config_entity_used_as_local_device_entity(
-                    subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN), config_item
-                ):
-                    self._attr_entity_registry_enabled_default = False
-
-        self._attr_native_step = 1.0
-        self._attr_mode = NumberMode.BOX
-
-        self._attr_has_entity_name = True
-        # Must set _attr_should_poll=True (default) for HA to register value changes
-        # self._attr_should_poll = False
-
-        if self.value is None:
-            self._attr_native_value = default_val
-            self.update_ha_state()
-
-    # ----------------------------------------------------------------------------
-    async def async_set_native_value(self, value: float) -> None:
-        """Set new value."""
-        await super().async_set_native_value(value)
-
-        # TODO: Think about using dedicated coordinator to update values in local device.
-        # Custom EntityDescrption can contain the key to update value in dictionary.
-        # Coordinator need to determine if device is using local or global config.
-        # self.coordinator.max_charging_current = value
-        # await self.coordinator.update_configuration()
 
 
 # ----------------------------------------------------------------------------

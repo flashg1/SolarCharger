@@ -31,11 +31,10 @@ class SolarChargerButtonEntity(SolarChargerEntity, ButtonEntity):
         coordinator: SolarChargerCoordinator,
     ) -> None:
         """Initialize the SolarCharger button entity."""
-        super().__init__(config_item, subentry)
-        self.entity_description = desc
-
-        self.set_entity_unique_id(BUTTON, config_item)
+        SolarChargerEntity.__init__(self, config_item, subentry)
         self.set_entity_id(BUTTON, config_item)
+        self.set_entity_unique_id(BUTTON, config_item)
+        self.entity_description = desc
 
         self._coordinator = coordinator
 
