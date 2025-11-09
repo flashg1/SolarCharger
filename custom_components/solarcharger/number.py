@@ -21,7 +21,6 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.util import slugify
 
 from .const import (
     CONTROL_CHARGER_ALLOCATED_POWER,
@@ -272,26 +271,22 @@ class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        desc: NumberEntityDescription,
     ) -> None:
         """Initialize the number."""
 
         super().__init__(config_item, subentry)
-        # id_name = slugify(f"{self._entity_key}")
-        # self._attr_unique_id = (
-        #     f"{subentry.subentry_id}.{subentry.unique_id}.{NUMBER}.{id_name}"
-        # )
+        self.entity_description = desc
+
         self.set_entity_unique_id(NUMBER, self._entity_key)
         self.set_entity_id(NUMBER, self._entity_key)
 
-    # def set_state(self, new_status):
-    #     """Set new status."""
-    #     self._attr_native_value = new_status
-    #     self.update_ha_state()
-
+    # ----------------------------------------------------------------------------
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
         self._attr_native_value = value
 
+    # ----------------------------------------------------------------------------
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
 
@@ -331,8 +326,7 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         default_val: float,
     ) -> None:
         """Initialise number."""
-        super().__init__(config_item, subentry)
-        self.entity_description = desc
+        super().__init__(config_item, subentry, desc)
 
         if desc.entity_category == EntityCategory.CONFIG:
             # Disable local device entities. User needs to manually enable if required.
@@ -353,6 +347,7 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
             self._attr_native_value = default_val
             self.update_ha_state()
 
+    # ----------------------------------------------------------------------------
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
         await super().async_set_native_value(value)

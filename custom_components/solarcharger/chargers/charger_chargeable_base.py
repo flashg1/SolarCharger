@@ -3,6 +3,7 @@
 import logging
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
@@ -192,7 +193,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         state = self.option_get_entity_string(
             OPTION_CHARGER_ON_OFF_SWITCH, val_dict=val_dict
         )
-        if state == "on":
+        if state == STATE_ON:
             switched_on = True
 
         return switched_on

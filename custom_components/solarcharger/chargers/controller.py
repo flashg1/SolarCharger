@@ -37,9 +37,10 @@ from ..const import (  # noqa: TID252
     CALLBACK_PLUG_IN_CHARGER,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
-    CONTROL_CHARGER_ALLOCATED_POWER,
-    DOMAIN,
     CONTROL_CHARGE_SWITCH,
+    CONTROL_CHARGER_ALLOCATED_POWER,
+    CONTROL_FAST_CHARGE_SWITCH,
+    DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
@@ -108,6 +109,9 @@ class ChargeController(ScOptionState):
         self._charger_switch_entity_id = compose_entity_id(
             SWITCH, subentry.unique_id, CONTROL_CHARGE_SWITCH
         )
+        self._fast_charge_switch_entity_id = compose_entity_id(
+            SWITCH, subentry.unique_id, CONTROL_FAST_CHARGE_SWITCH
+        )
 
         # self._unsub_callbacks: dict[
         #     str, Callable[[], Coroutine[Any, Any, None] | None]
@@ -160,6 +164,11 @@ class ChargeController(ScOptionState):
             old_state,
             new_state,
         )
+
+    # ----------------------------------------------------------------------------
+    def _is_fast_charge(self) -> bool:
+        state = self.get_string(self._fast_charge_switch_entity_id)
+        return state == STATE_ON
 
     # ----------------------------------------------------------------------------
     def _turn_on_charger_switch(self) -> None:
@@ -264,19 +273,7 @@ class ChargeController(ScOptionState):
         # Set up sunset daily maintenance
         self._setup_daily_maintenance_at_sunset()
 
-        # Manually set up sunrise trigger if sun has already set when starting SolarCharger.
-        sun_state: State = self.get_sun_state_or_abort()
-        _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
-
-        # next_setting_utc = get_sun_attribute_time(
-        #     self._caller, sun_state, "next_setting"
-        # )
-        # next_rising_utc = get_sun_attribute_time(self._caller, sun_state, "next_rising")
-
-        # if next_setting_utc.timestamp() > next_rising_utc.timestamp():
-        #     # Missed sunset, so need to manually set sunrise trigger.
-        #     self._setup_next_sunrise_trigger()
-
+        # Set up sunrise trigger
         self._setup_next_sunrise_trigger()
 
     # ----------------------------------------------------------------------------
@@ -532,7 +529,7 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_use_secondary_power_source(self) -> bool:
-        return False
+        return self._is_fast_charge()
 
     # ----------------------------------------------------------------------------
     def _is_on_charge_schedule(self) -> bool:
@@ -574,14 +571,22 @@ class ChargeController(ScOptionState):
     ) -> tuple[float, float]:
         charger_max_current = charger.get_max_charge_current()
         if charger_max_current is None or charger_max_current <= 0:
-            raise SystemError(f"{self._caller}: Failed to get charger max current")
+            raise ValueError(f"{self._caller}: Failed to get charger max current")
 
         battery_charge_current = charger.get_charge_current()
         if battery_charge_current is None:
-            raise SystemError(f"{self._caller}: Failed to get charge current")
+            raise ValueError(f"{self._caller}: Failed to get charge current")
         old_charge_current = self._check_current(
             charger_max_current, battery_charge_current
         )
+
+        #####################################
+        # Charge at max current if fast charge
+        #####################################
+        is_fast_charge = self._is_fast_charge()
+        if is_fast_charge:
+            new_charge_current = charger_max_current
+            return (new_charge_current, old_charge_current)
 
         config_min_current = self.option_get_entity_number_or_abort(
             OPTION_CHARGER_MIN_CURRENT
@@ -603,7 +608,7 @@ class ChargeController(ScOptionState):
             OPTION_CHARGER_EFFECTIVE_VOLTAGE
         )
         if charger_effective_voltage <= 0:
-            raise SystemError(f"{self._caller}: Charger effective voltage is 0")
+            raise ValueError(f"{self._caller}: Charger effective voltage is 0")
 
         one_amp_watt_step = charger_effective_voltage * 1
         power_offset = 0

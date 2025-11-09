@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-# class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
 class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
     """SolarCharger switch base entity."""
 
@@ -50,14 +49,7 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
         self._coordinator = coordinator
         self._is_restore_state = is_restore_state
 
-        # id_name = self._entity_key.replace("_", "").lower()
-        # self._attr_unique_id = f"{subentry.subentry_id}.{SWITCH}.{id_name}"
-        # id_name = slugify(f"{self._entity_key}")
-        # self._attr_unique_id = (
-        #     f"{subentry.subentry_id}.{subentry.unique_id}.{SWITCH}.{id_name}"
-        # )
         self.set_entity_unique_id(SWITCH, config_item)
-        # self.set_entity_id(SWITCH, self._entity_key)
         self.set_entity_id(SWITCH, config_item)
 
     # ----------------------------------------------------------------------------
@@ -65,18 +57,22 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
         """Turn the entity on."""
         self._attr_is_on = True
 
+    # ----------------------------------------------------------------------------
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         self._attr_is_on = False
 
+    # ----------------------------------------------------------------------------
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         self._attr_is_on = True
 
+    # ----------------------------------------------------------------------------
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         self._attr_is_on = False
 
+    # ----------------------------------------------------------------------------
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
         if self._is_restore_state:
@@ -150,7 +146,7 @@ CONFIG_SWITCH_LIST: tuple[tuple[str, Any, bool, SwitchEntityDescription], ...] =
     (
         CONTROL_FAST_CHARGE_SWITCH,
         SolarChargerSwitchEntity,
-        False,
+        True,
         SwitchEntityDescription(
             key=CONTROL_FAST_CHARGE_SWITCH,
         ),
@@ -159,31 +155,6 @@ CONFIG_SWITCH_LIST: tuple[tuple[str, Any, bool, SwitchEntityDescription], ...] =
 
 
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-# async def async_setup_entry(
-#     hass: core.HomeAssistant,
-#     config_entry: config_entries.ConfigEntry,
-#     async_add_entities: AddConfigEntryEntitiesCallback,
-#     # async_add_entities: Callable,
-# ) -> None:
-#     """Set up buttons based on config entry."""
-#     coordinator: "SolarChargerCoordinator" = hass.data[DOMAIN][config_entry.entry_id]
-
-#     for subentry in config_entry.subentries.values():
-#         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-#             switches: dict[str, SolarChargerSwitchEntity] = {}
-#             switches[ENTITY_KEY_CHARGE_SWITCH] = SolarChargerSwitchCharge(
-#                 subentry, coordinator
-#             )
-#             coordinator.charge_controls[subentry.subentry_id].switches = switches
-
-#             async_add_entities(
-#                 switches.values(),
-#                 update_before_add=False,
-#                 config_subentry_id=subentry.subentry_id,
-#             )
-
-
 # ----------------------------------------------------------------------------
 async def async_setup_entry(
     hass: core.HomeAssistant,

@@ -38,11 +38,6 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
         super().__init__(config_item, subentry)
         self.entity_description = desc
 
-        # id_name = self._entity_key.replace("_", "").lower()
-        # id_name = slugify(f"{self._entity_key}")
-        # self._attr_unique_id = (
-        #     f"{subentry.subentry_id}.{subentry.unique_id}.{SENSOR}.{id_name}"
-        # )
         self.set_entity_unique_id(SENSOR, config_item)
         self.set_entity_id(SENSOR, config_item)
 
@@ -150,21 +145,3 @@ async def async_setup_entry(
             # await coordinator.init_sensors(
             #     coordinator.charge_controls[subentry.subentry_id]
             # )
-
-    # for subentry in config_entry.subentries.values():
-    #     if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-    #         sensors: dict[str, SolarChargerSensorEntity] = {}
-    #         sensors[ENTITY_KEY_RUN_STATE_SENSOR] = SolarChargerSensorRunState(subentry)
-    #         sensors[ENTITY_KEY_LAST_CHECK_SENSOR] = SolarChargerSensorLastCheck(
-    #             subentry
-    #         )
-    #         coordinator.charge_controls[subentry.subentry_id].sensors = sensors
-
-    #         async_add_entities(
-    #             sensors.values(),
-    #             update_before_add=False,
-    #             config_subentry_id=subentry.subentry_id,
-    #         )
-    #         # await coordinator.init_sensors(
-    #         #     coordinator.charge_controls[subentry.subentry_id]
-    #         # )

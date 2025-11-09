@@ -34,11 +34,6 @@ class SolarChargerButtonEntity(SolarChargerEntity, ButtonEntity):
         super().__init__(config_item, subentry)
         self.entity_description = desc
 
-        # id_name = self._entity_key.replace("_", "").lower()
-        # id_name = slugify(f"{self._entity_key}")
-        # self._attr_unique_id = (
-        #     f"{subentry.subentry_id}.{subentry.unique_id}.{BUTTON}.{id_name}"
-        # )
         self.set_entity_unique_id(BUTTON, config_item)
         self.set_entity_id(BUTTON, config_item)
 
@@ -51,9 +46,9 @@ class SolarChargerButtonCharge(SolarChargerButtonEntity):
     """Representation of a SolarCharger start button."""
 
     # _entity_key = CONTROL_CHARGE_BUTTON
-    _attr_icon = ICON_START
     # _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = True
+    _attr_icon = ICON_START
+    _attr_entity_registry_enabled_default = False
 
     async def async_press(self) -> None:
         """Press the button."""
@@ -112,13 +107,3 @@ async def async_setup_entry(
                 update_before_add=False,
                 config_subentry_id=subentry.subentry_id,
             )
-
-    # for subentry in config_entry.subentries.values():
-    #     if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-    #         entities = []
-    #         entities.append(SolarChargerButtonCharge(subentry, coordinator))
-    #         async_add_entities(
-    #             entities,
-    #             update_before_add=False,
-    #             config_subentry_id=subentry.subentry_id,
-    #         )
