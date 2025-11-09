@@ -106,6 +106,8 @@ class ChargeController(ScOptionState):
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
         self._charge_current_updatetime: int = 0
+
+        # Fixed control entities
         self._charger_switch_entity_id = compose_entity_id(
             SWITCH, subentry.unique_id, CONTROL_CHARGE_SWITCH
         )
@@ -299,19 +301,19 @@ class ChargeController(ScOptionState):
                     self._setup_next_sunrise_trigger()
 
     # ----------------------------------------------------------------------------
-    def _track_sunrise_elevation_trigger_change(self) -> None:
-        sunrise_elevation_trigger = self.option_get_id_or_abort(
+    def _track_sunrise_elevation_trigger(self) -> None:
+        sunrise_elevation_trigger_entity = self.option_get_id_or_abort(
             OPTION_SUNRISE_ELEVATION_START_TRIGGER
         )
         _LOGGER.info(
-            "%s: Tracking sunrise elevation trigger change: %s",
+            "%s: Tracking sunrise elevation trigger: %s",
             self._caller,
-            sunrise_elevation_trigger,
+            sunrise_elevation_trigger_entity,
         )
 
         subscription = async_track_state_change_event(
             self._hass,
-            sunrise_elevation_trigger,
+            sunrise_elevation_trigger_entity,
             self._async_handle_sunrise_elevation_trigger_change,
         )
 
@@ -355,18 +357,18 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _track_charger_plugged_in_sensor(self) -> None:
-        charger_plugged_in_sensor = self.option_get_id_or_abort(
+        charger_plugged_in_sensor_entity = self.option_get_id_or_abort(
             OPTION_CHARGER_PLUGGED_IN_SENSOR
         )
         _LOGGER.info(
             "%s: Tracking charger plugged-in sensor: %s",
             self._caller,
-            charger_plugged_in_sensor,
+            charger_plugged_in_sensor_entity,
         )
 
         subscription = async_track_state_change_event(
             self._hass,
-            charger_plugged_in_sensor,
+            charger_plugged_in_sensor_entity,
             self._async_handle_plug_in_charger_event,
         )
 
@@ -376,13 +378,13 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _track_allocated_power_update(self) -> None:
-        allocated_power_entity_id = self.option_get_id_or_abort(
+        allocated_power_entity = self.option_get_id_or_abort(
             CONTROL_CHARGER_ALLOCATED_POWER
         )
         _LOGGER.info(
             "%s: Tracking allocated power update: %s",
             self._caller,
-            allocated_power_entity_id,
+            allocated_power_entity,
         )
 
         # Need both changed and unchanged events, eg. update1 at time1=-500W, update2 at time2=-500W
@@ -392,7 +394,7 @@ class ChargeController(ScOptionState):
         # So need both to see all events?
         subscription = async_track_state_change_event(
             self._hass,
-            allocated_power_entity_id,
+            allocated_power_entity,
             self._async_handle_allocated_power_update,
         )
 
@@ -406,7 +408,7 @@ class ChargeController(ScOptionState):
         await self._charger.async_setup()
         self._set_up_sun_triggers()
         self._track_charger_plugged_in_sensor()
-        self._track_sunrise_elevation_trigger_change()
+        self._track_sunrise_elevation_trigger()
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------

@@ -35,12 +35,12 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
         desc: SensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(config_item, subentry)
+        SolarChargerEntity.__init__(self, config_item, subentry)
+        self.set_entity_id(SENSOR, config_item)
+        self.set_entity_unique_id(SENSOR, config_item)
         self.entity_description = desc
 
-        self.set_entity_unique_id(SENSOR, config_item)
-        self.set_entity_id(SENSOR, config_item)
-
+    # ----------------------------------------------------------------------------
     def set_state(self, new_status):
         """Set new status."""
         self._attr_native_value = new_status

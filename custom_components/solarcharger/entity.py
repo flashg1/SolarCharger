@@ -45,7 +45,7 @@ class SolarChargerEntity(Entity):
     ) -> None:
         """Initialize the SolarCharger base entity."""
         self._entity_key = config_item
-        self._attr_translation_key = self._entity_key
+        self._attr_translation_key = config_item
         self._subentry = subentry
 
         # self._attr_should_poll = False
