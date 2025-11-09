@@ -53,8 +53,8 @@ Manual installation
 ===================
 - Copy the solarcharger directory to your Home Assistant machine, ie.
 ```
-From:  <Your git clone directory>\SolarCharger\custom_components
-To:    \\homeassistant.local\config\custom_components
+From:  <Your git clone directory>\SolarCharger\custom_components\solarcharger
+To:    \\homeassistant.local\config\custom_components\solarcharger
 ```
 -  Restart Home Assistant.
 -  Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
@@ -72,10 +72,11 @@ Device class: Power
 State class: Measurement
 Device: Envoy [YourEnvoyId]
 ```
+- Add charger device, eg. Tesla, OCPP, etc.
 
 - If using OCPP charger, configure your charger to point to your HA OCPP central server, eg. ws://homeassistant.local:9000
 
--	Config the integration specifying the power feedback loop sensor, charger effective voltage, maximum current, maximum charge speed, ie. SolarCharger > Settings > Global defaults
+-	Config the integration specifying the charger effective voltage, maximum current, maximum charge speed, ie. SolarCharger > Settings > Global defaults
 
 
 How to use
