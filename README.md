@@ -1,12 +1,13 @@
+# <img src="https://brands.home-assistant.io/solarcharger/dark_icon.png" alt="SolarCharger" width="50" style="vertical-align:Left;" /> Solar charger custom integration for Home Assistant
 # Solar Charger - Work in progress
 Home Assistant solar charger custom integration using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
 
-###############################################################################
+####################################
 # Disclaimer:
 #
 # Even though this custom integration has been created with care, the author cannot be responsible for any damage caused by this integration.  Use at your own risk.
 #
-###############################################################################
+####################################
 
 ![Screenshot_20230702-094232_Home Assistant](https://github.com/flashg1/TeslaSolarCharger/assets/122323972/58d1df89-905b-422c-8542-0081b9fa342f)
 
