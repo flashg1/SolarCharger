@@ -1,21 +1,36 @@
 # <img src="https://brands.home-assistant.io/solarcharger/dark_icon.png" alt="SolarCharger" width="50" style="vertical-align:Left;" /> Solar charger custom integration for Home Assistant
-# Solar Charger - Work in progress
-Home Assistant solar charger custom integration using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
 
-####################################
-# Disclaimer:
-#
-# Even though this custom integration has been created with care, the author cannot be responsible for any damage caused by this integration.  Use at your own risk.
-#
-####################################
+[![Stable][releases-shield]][releases] [![HACS Badge][hacs-badge]][hacs-link] ![Project Maintenance][maintenance-shield] [![GitHub Activity][commits-shield]][commits] [![License][license-shield]](LICENSE)
+
+<!-- ![Downloads][downloads]  -->
+
+[commits-shield]: https://img.shields.io/github/commit-activity/y/flashg1/SolarCharger.svg
+[commits]: https://github.com/flashg1/SolarCharger/commits/main
+[license-shield]: https://img.shields.io/github/license/flashg1/SolarCharger.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
+[releases-shield]: https://img.shields.io/github/release/flashg1/SolarCharger.svg
+[releases]: https://github.com/flashg1/SolarCharger/releases/latest
+[hacs-badge]: https://img.shields.io/badge/HACS-Default-41BDF5.svg
+[downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total
+[hacs-link]: https://hacs.xyz/
+
+
+## Solar Charger - Work in progress
+
+
+## Disclaimer:
+Even though this custom integration has been created with care, the author cannot be responsible for any damage caused by this integration.  Use at your own risk.
+
+
+## Overview
+Home Assistant solar charger custom integration using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
 
 ![Screenshot_20230702-094232_Home Assistant](https://github.com/flashg1/TeslaSolarCharger/assets/122323972/58d1df89-905b-422c-8542-0081b9fa342f)
 
 ![Screenshot_20230630-135925_Home Assistant](https://github.com/flashg1/TeslaSolarCharger/assets/122323972/2f04b1e2-b56d-493c-977f-82d5dd04cbe5)
 
 
-Features
-========
+## Features
 
 -   Charge from excess solar adjusting car charging current according to feedback loop value "Main Power Net".  The "Main Power Net" sensor expresses negative value in Watts for available power for charging car, or positive value for consumed power.
 -   Support multi-day solar charging using sun elevation triggers to start and stop. (In progress)
@@ -38,9 +53,7 @@ Features
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/flashg1)
 
 
-My setup
-========
-
+## My setup
 -	Home Assistant, https://www.home-assistant.io/
 -	Enphase Envoy Integration configured for 30 seconds update interval, https://www.home-assistant.io/integrations/enphase_envoy
 -	Tesla Custom Integration v3.20.4 (this is for people who want to control their Tesla via Tesla cloud), https://github.com/alandtse/tesla
@@ -50,8 +63,19 @@ My setup
 -	Tesla Model 3.
 
 
-Manual installation
-===================
+## Installation
+### HACS (Recommended)
+The [Home Assistant Community Store (HACS)](https://www.hacs.xyz/) is a custom integration that provides a UI to manage custom elements such as Solar Charger Custom Integration in Home Assistant.
+You first need to [install and configure](https://www.hacs.xyz/docs/use/) it before following these instructions below.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=flashg1&repository=SolarCharger&category=Integration)
+
+1. Go to **HACS > Integrations** in Home Assistant
+2. Search and install **SolarCharger Integration**
+3. Restart Home Assistant
+
+
+### Manual
 - Copy the solarcharger directory to your Home Assistant machine, ie.
 ```
 From:  <Your git clone directory>\SolarCharger\custom_components\solarcharger
@@ -60,8 +84,7 @@ To:    \\homeassistant.local\config\custom_components\solarcharger
 -  Restart Home Assistant.
 -  Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
 
-Configuration
-=============
+## Configuration
 -	Set up "Main Power Net" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor main_power_net expresses negative value in Watts for available power for charging or positive value for consumed power.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
 ```
 Settings > Devices & services > Helpers > Create helper > Template > Template a sensor >
@@ -97,6 +120,6 @@ To charge from excess solar, just plug in the charger.  The initial charge curre
 
 Option 2
 --------
-To charge from secondary power source and solar, set minimum charge current or power offset to draw from secondary power source.  Also need to toggle on secondary power source if charging at night.
+To charge from secondary power source and solar, toggle on "Fast charge" mode.  Also need to toggle on "Fast charge" mode if charging at night.
 
 Please also check out the [wiki](https://github.com/flashg1/evSolarCharger/wiki) pages.
