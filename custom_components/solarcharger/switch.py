@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 # Examples:
 # homeassistant/components/netgear/switch.py
 # homeassistant/components/ring/switch.py
+# homeassistant/components/sun/sensor.py
 
 
 # ----------------------------------------------------------------------------

@@ -29,12 +29,16 @@ from homeassistant.helpers.event import (
     async_track_sunrise,
     async_track_sunset,
 )
+
+# Might be of help in the future.
+# from homeassistant.helpers.sun import get_astral_event_next
 from homeassistant.util.dt import utcnow
 
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
     CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
     CALLBACK_PLUG_IN_CHARGER,
+    CALLBACK_SUN_ELEVATION_UPDATE,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
     CONTROL_CHARGE_SWITCH,
@@ -42,6 +46,7 @@ from ..const import (  # noqa: TID252
     CONTROL_FAST_CHARGE_SWITCH,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
+    HA_SUN_ENTITY,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
@@ -182,201 +187,276 @@ class ChargeController(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
-    async def _async_turn_on_charger_switch(self, now: datetime) -> None:
-        await self.async_turn_switch_on(self._charger_switch_entity_id)
+    # async def _async_turn_on_charger_switch(self, now: datetime) -> None:
+    #     await self.async_turn_switch_on(self._charger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     # Sunrise/sunset trigger code
     # ----------------------------------------------------------------------------
-    def _setup_daily_maintenance_at_sunset(self) -> None:
-        """Every day, set up next sunrise trigger at sunset."""
-        _LOGGER.info("%s: Setup daily maintenance at sunset", self._caller)
-        # offset=timedelta(minutes=2)
-        subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
-        save_callback_subscription(
-            self._caller,
-            self._unsub_callbacks,
-            CALLBACK_SUNSET_DAILY_MAINTENANCE,
-            subscription,
-        )
+    # def _setup_daily_maintenance_at_sunset(self) -> None:
+    #     """Every day, set up next sunrise trigger at sunset."""
+    #     _LOGGER.info("%s: Setup daily maintenance at sunset", self._caller)
+    #     # offset=timedelta(minutes=2)
+    #     subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
+    #     save_callback_subscription(
+    #         self._caller,
+    #         self._unsub_callbacks,
+    #         CALLBACK_SUNSET_DAILY_MAINTENANCE,
+    #         subscription,
+    #     )
 
     # ----------------------------------------------------------------------------
-    def _start_charge_on_sunrise(self) -> None:
-        # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
-        # self._hass.loop.create_task(self.async_start_charge())
-        self._turn_on_charger_switch()
+    # def _start_charge_on_sunrise(self) -> None:
+    #     # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
+    #     # self._hass.loop.create_task(self.async_start_charge())
+    #     self._turn_on_charger_switch()
 
     # ----------------------------------------------------------------------------
-    def _setup_next_sunrise_trigger(self) -> None:
-        """Recalculate and setup next morning's sunrise trigger."""
+    # # Convert sun elevation to time offset calculation not correct and hard to do.
+    # # So just monitor sun.sun state changes instead.
 
-        sun_state = self.get_sun_state_or_abort()
-        sec_per_degree: float = get_sec_per_degree_sun_elevation(
-            self._caller, sun_state
-        )
-        elevation_start_trigger = self.option_get_entity_number_or_abort(
-            OPTION_SUNRISE_ELEVATION_START_TRIGGER
-        )
-        # Just in case, add 120 seconds.
-        buffer = 120
-        sunrise_offset = timedelta(
-            seconds=sec_per_degree * elevation_start_trigger + buffer
-        )
+    # def _setup_next_sunrise_trigger(self) -> None:
+    #     """Recalculate and setup next morning's sunrise trigger."""
 
-        # today = date.today()
-        # Combine the date with the minimum time (00:00:00)
-        # midnight_datetime = datetime.combine(today, datetime.min.time())
+    #     sun_state = self.get_sun_state_or_abort()
+    #     sec_per_degree: float = get_sec_per_degree_sun_elevation(
+    #         self._caller, sun_state
+    #     )
+    #     elevation_start_trigger = self.option_get_entity_number_or_abort(
+    #         OPTION_SUNRISE_ELEVATION_START_TRIGGER
+    #     )
+    #     # Just in case, add 120 seconds.
+    #     buffer = 120
+    #     sunrise_offset = timedelta(
+    #         seconds=sec_per_degree * elevation_start_trigger + buffer
+    #     )
 
-        # This is not working because time is in UTC. This method only works with local timezone.
-        # today_sunrise_time = now_time.replace(
-        #     hour=next_sunrise_time.hour,
-        #     minute=next_sunrise_time.minute,
-        #     second=next_sunrise_time.second,
-        #     microsecond=next_sunrise_time.microsecond,
-        # )
+    #     # today = date.today()
+    #     # Combine the date with the minimum time (00:00:00)
+    #     # midnight_datetime = datetime.combine(today, datetime.min.time())
 
-        is_sun_rising: bool = get_is_sun_rising(self._caller, sun_state)
-        current_elevation: float = get_sun_elevation(self._caller, sun_state)
+    #     # This is not working because time is in UTC. This method only works with local timezone.
+    #     # today_sunrise_time = now_time.replace(
+    #     #     hour=next_sunrise_time.hour,
+    #     #     minute=next_sunrise_time.minute,
+    #     #     second=next_sunrise_time.second,
+    #     #     microsecond=next_sunrise_time.microsecond,
+    #     # )
 
-        if is_sun_rising and current_elevation < elevation_start_trigger:
-            # Today
-            now_time = utcnow()
-            next_sunrise_time: datetime = get_next_sunrise_time(self._caller, sun_state)
-            next_sunset_time: datetime = get_next_sunset_time(self._caller, sun_state)
-            if next_sunrise_time > next_sunset_time:
-                # Passed today sunrise
-                today_sunrise_time = next_sunrise_time - timedelta(days=1)
-                today_sunrise_trigger_time = today_sunrise_time + sunrise_offset
-                duration_from_now = today_sunrise_trigger_time - now_time
-                duration_to_trigger = timedelta(
-                    seconds=duration_from_now.total_seconds()
-                )
-                _LOGGER.warning(
-                    "elevation_start_trigger=%s, "
-                    "sec_per_degree=%s, "
-                    "sunrise_offset=%s, "
-                    "now_time=%s, "
-                    "current_elevation=%s, "
-                    "today_sunrise_time=%s, "
-                    "today_sunrise_trigger_time=%s, "
-                    "duration_from_now=%s, "
-                    "duration_to_trigger=%s, "
-                    "next_sunrise_time=%s, "
-                    "next_sunset_time=%s",
-                    elevation_start_trigger,
-                    sec_per_degree,
-                    sunrise_offset,
-                    now_time,
-                    current_elevation,
-                    today_sunrise_time,
-                    today_sunrise_trigger_time,
-                    duration_from_now,
-                    duration_to_trigger,
-                    next_sunrise_time,
-                    next_sunset_time,
-                )
+    #     is_sun_rising: bool = get_is_sun_rising(self._caller, sun_state)
+    #     current_elevation: float = get_sun_elevation(self._caller, sun_state)
 
-                _LOGGER.info(
-                    "%s: Past sunrise today with trigger offset %s from now (current_elevation=%s, sec_per_degree=%s)",
-                    self._caller,
-                    duration_to_trigger,
-                    current_elevation,
-                    sec_per_degree,
-                )
-                subscription = async_call_later(
-                    self._hass, duration_to_trigger, self._async_turn_on_charger_switch
-                )
+    #     if is_sun_rising and current_elevation < elevation_start_trigger:
+    #         # Today
+    #         now_time = utcnow()
+    #         next_sunrise_time: datetime = get_next_sunrise_time(self._caller, sun_state)
+    #         next_sunset_time: datetime = get_next_sunset_time(self._caller, sun_state)
+    #         if next_sunrise_time > next_sunset_time:
+    #             # Passed today sunrise
+    #             today_sunrise_time = next_sunrise_time - timedelta(days=1)
+    #             today_sunrise_trigger_time = today_sunrise_time + sunrise_offset
+    #             duration_from_now = today_sunrise_trigger_time - now_time
+    #             duration_to_trigger = timedelta(
+    #                 seconds=duration_from_now.total_seconds()
+    #             )
 
-            else:
-                # Sunrise yet to happen today
-                _LOGGER.info(
-                    "%s: Setup today sunrise trigger offset %s from sunrise (current_elevation=%s, sec_per_degree=%s)",
-                    self._caller,
-                    sunrise_offset,
-                    current_elevation,
-                    sec_per_degree,
-                )
-                subscription = async_track_sunrise(
-                    self._hass, self._start_charge_on_sunrise, sunrise_offset
-                )
+    #             _LOGGER.warning(
+    #                 "elevation_start_trigger=%s, "
+    #                 "sec_per_degree=%s, "
+    #                 "sunrise_offset=%s, "
+    #                 "now_time=%s, "
+    #                 "current_elevation=%s, "
+    #                 "today_sunrise_time=%s, "
+    #                 "today_sunrise_trigger_time=%s, "
+    #                 "duration_from_now=%s, "
+    #                 "duration_to_trigger=%s, "
+    #                 "next_sunrise_time=%s, "
+    #                 "next_sunset_time=%s",
+    #                 elevation_start_trigger,
+    #                 sec_per_degree,
+    #                 sunrise_offset,
+    #                 now_time,
+    #                 current_elevation,
+    #                 today_sunrise_time,
+    #                 today_sunrise_trigger_time,
+    #                 duration_from_now,
+    #                 duration_to_trigger,
+    #                 next_sunrise_time,
+    #                 next_sunset_time,
+    #             )
 
-                # next_sunrise_trigger_time = next_sunrise_time + sunrise_offset
-                # duration_from_now = next_sunrise_trigger_time - now_time
-                # duration_to_trigger = timedelta(
-                #     seconds=duration_from_now.total_seconds()
-                # )
+    #             _LOGGER.info(
+    #                 "%s: Past sunrise today with trigger offset %s from now (current_elevation=%s, sec_per_degree=%s)",
+    #                 self._caller,
+    #                 duration_to_trigger,
+    #                 current_elevation,
+    #                 sec_per_degree,
+    #             )
+    #             subscription = async_call_later(
+    #                 self._hass, duration_to_trigger, self._async_turn_on_charger_switch
+    #             )
 
-        else:
-            # Tomorrow
-            _LOGGER.info(
-                "%s: Setup tomorrow sunrise trigger offset %s from sunrise (current_elevation=%s, sec_per_degree=%s)",
-                self._caller,
-                sunrise_offset,
-                current_elevation,
-                sec_per_degree,
-            )
-            subscription = async_track_sunrise(
-                self._hass, self._start_charge_on_sunrise, sunrise_offset
-            )
+    #         else:
+    #             # Sunrise yet to happen today
+    #             _LOGGER.info(
+    #                 "%s: Setup today sunrise trigger offset %s from sunrise (current_elevation=%s, sec_per_degree=%s)",
+    #                 self._caller,
+    #                 sunrise_offset,
+    #                 current_elevation,
+    #                 sec_per_degree,
+    #             )
+    #             subscription = async_track_sunrise(
+    #                 self._hass, self._start_charge_on_sunrise, sunrise_offset
+    #             )
 
-        save_callback_subscription(
-            self._caller,
-            self._unsub_callbacks,
-            CALLBACK_SUNRISE_START_CHARGE,
-            subscription,
-        )
+    #             # next_sunrise_trigger_time = next_sunrise_time + sunrise_offset
+    #             # duration_from_now = next_sunrise_trigger_time - now_time
+    #             # duration_to_trigger = timedelta(
+    #             #     seconds=duration_from_now.total_seconds()
+    #             # )
+
+    #     else:
+    #         # Tomorrow
+    #         _LOGGER.info(
+    #             "%s: Setup tomorrow sunrise trigger offset %s from sunrise (current_elevation=%s, sec_per_degree=%s)",
+    #             self._caller,
+    #             sunrise_offset,
+    #             current_elevation,
+    #             sec_per_degree,
+    #         )
+    #         subscription = async_track_sunrise(
+    #             self._hass, self._start_charge_on_sunrise, sunrise_offset
+    #         )
+
+    #     save_callback_subscription(
+    #         self._caller,
+    #         self._unsub_callbacks,
+    #         CALLBACK_SUNRISE_START_CHARGE,
+    #         subscription,
+    #     )
 
     # ----------------------------------------------------------------------------
-    def _set_up_sun_triggers(self) -> None:
-        # Set up sunset daily maintenance
-        self._setup_daily_maintenance_at_sunset()
+    # def _set_up_sun_triggers(self) -> None:
+    #     # Set up sunset daily maintenance
+    #     self._setup_daily_maintenance_at_sunset()
 
-        # Set up sunrise trigger
-        self._setup_next_sunrise_trigger()
+    #     # Set up sunrise trigger
+    #     self._setup_next_sunrise_trigger()
 
     # ----------------------------------------------------------------------------
     # Monitored entities
     # ----------------------------------------------------------------------------
-    async def _async_handle_sunrise_elevation_trigger_change(
+    # async def _async_handle_sunrise_elevation_trigger_change(
+    #     self, event: Event[EventStateChangedData]
+    # ) -> None:
+    #     """Fetch and process state change event."""
+    #     data = event.data
+    #     old_state: State | None = data["old_state"]
+    #     new_state: State | None = data["new_state"]
+
+    #     self._log_state_change(event)
+
+    #     if new_state is not None:
+    #         if old_state is not None:
+    #             if (
+    #                 new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+    #                 and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+    #                 and new_state.state != old_state.state
+    #             ):
+    #                 self._setup_next_sunrise_trigger()
+
+    # ----------------------------------------------------------------------------
+    # def _track_sunrise_elevation_trigger(self) -> None:
+    #     sunrise_elevation_trigger_entity = self.option_get_id_or_abort(
+    #         OPTION_SUNRISE_ELEVATION_START_TRIGGER
+    #     )
+    #     _LOGGER.info(
+    #         "%s: Tracking sunrise elevation trigger: %s",
+    #         self._caller,
+    #         sunrise_elevation_trigger_entity,
+    #     )
+
+    #     subscription = async_track_state_change_event(
+    #         self._hass,
+    #         sunrise_elevation_trigger_entity,
+    #         self._async_handle_sunrise_elevation_trigger_change,
+    #     )
+
+    #     save_callback_subscription(
+    #         self._caller,
+    #         self._unsub_callbacks,
+    #         CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
+    #         subscription,
+    #     )
+
+    # ----------------------------------------------------------------------------
+    async def _async_handle_sun_elevation_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
         """Fetch and process state change event."""
         data = event.data
-        old_state: State | None = data["old_state"]
-        new_state: State | None = data["new_state"]
+        old_sun_state: State | None = data["old_state"]
+        new_sun_state: State | None = data["new_state"]
 
         self._log_state_change(event)
 
-        if new_state is not None:
-            if old_state is not None:
-                if (
-                    new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-                    and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-                    and new_state.state != old_state.state
-                ):
-                    self._setup_next_sunrise_trigger()
+        if new_sun_state is not None:
+            if old_sun_state is not None:
+                # new_state.state can equal old_state.state, ie. below_horizon or above_horizon
+                if new_sun_state.state not in (
+                    STATE_UNKNOWN,
+                    STATE_UNAVAILABLE,
+                ) and old_sun_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                    elevation_start_trigger = self.option_get_entity_number_or_abort(
+                        OPTION_SUNRISE_ELEVATION_START_TRIGGER
+                    )
+
+                    is_sun_rising: bool = get_is_sun_rising(self._caller, old_sun_state)
+                    old_elevation: float = get_sun_elevation(
+                        self._caller, old_sun_state
+                    )
+                    new_elevation: float = get_sun_elevation(
+                        self._caller, new_sun_state
+                    )
+
+                    _LOGGER.info(
+                        "%s: is_sun_rising=%s, old_elevation=%s, new_elevation=%s",
+                        self._caller,
+                        is_sun_rising,
+                        old_elevation,
+                        new_elevation,
+                    )
+
+                    if (
+                        is_sun_rising
+                        and elevation_start_trigger > old_elevation
+                        and elevation_start_trigger <= new_elevation
+                    ):
+                        # Start charger
+                        await self.async_turn_switch_on(self._charger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
-    def _track_sunrise_elevation_trigger(self) -> None:
-        sunrise_elevation_trigger_entity = self.option_get_id_or_abort(
-            OPTION_SUNRISE_ELEVATION_START_TRIGGER
-        )
+    # See sun.sun entity.  Updates are at specific intervals.
+    # Hard to calculate sun elevation offset time.
+    # So just compare state change with configured elevation to trigger start of charge.
+
+    def _track_sun_elevation(self) -> None:
         _LOGGER.info(
-            "%s: Tracking sunrise elevation trigger: %s",
+            "%s: Tracking sun elevation: %s",
             self._caller,
-            sunrise_elevation_trigger_entity,
+            HA_SUN_ENTITY,
         )
 
         subscription = async_track_state_change_event(
             self._hass,
-            sunrise_elevation_trigger_entity,
-            self._async_handle_sunrise_elevation_trigger_change,
+            HA_SUN_ENTITY,
+            self._async_handle_sun_elevation_update,
         )
 
         save_callback_subscription(
             self._caller,
             self._unsub_callbacks,
-            CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
+            CALLBACK_SUN_ELEVATION_UPDATE,
             subscription,
         )
 
@@ -462,9 +542,14 @@ class ChargeController(ScOptionState):
     async def async_setup(self) -> None:
         """Async setup of the ChargeController."""
         await self._charger.async_setup()
-        self._set_up_sun_triggers()
+
+        # Track charger plug in
         self._track_charger_plugged_in_sensor()
-        self._track_sunrise_elevation_trigger()
+
+        # Track sun elevation
+        # self._set_up_sun_triggers()
+        # self._track_sunrise_elevation_trigger()
+        self._track_sun_elevation()
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------

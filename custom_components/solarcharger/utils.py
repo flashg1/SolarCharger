@@ -87,6 +87,9 @@ def log_is_event_loop(
 #     "rising": False,
 #     "friendly_name": "Sun",
 # }
+#
+# Other possible values:
+# state.state = 'above_horizon'
 # ----------------------------------------------------------------------------
 def convert_to_timezone_aware_datetime(utc_str: str) -> datetime:
     """Convert HA UTC time string to timezone-aware datetime object."""
@@ -156,6 +159,9 @@ def get_next_sunset_time(caller: str, sun_state: State) -> datetime:
 
 
 # ----------------------------------------------------------------------------
+# This is not correct.
+# Sun elevation degree is not same as 180 degree horizon.
+# Sun elevation degree rate of change varies with day of time and season.
 def get_sec_per_degree_sun_elevation(caller: str, sun_state: State) -> float:
     """Get seconds per degree sun elevation for the today."""
     next_setting_utc = get_next_sunset_time(caller, sun_state)

@@ -9,7 +9,7 @@ MANUFACTURER = "FlashG"
 NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.1beta8"
+VERSION = "0.1beta9"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -324,6 +324,7 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
 #######################################################
 # Naming convention
 # CALLBACK_<ACTION> OR CALLBACK_<EVENT>_<ACTION>
+CALLBACK_SUN_ELEVATION_UPDATE = "callback_sun_elevation_update"
 CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER = "callback_change_sunrise_elevation_trigger"
 CALLBACK_PLUG_IN_CHARGER = "callback_plug_in_charger"
 CALLBACK_SUNRISE_START_CHARGE = "callback_sunrise_start_charge"
