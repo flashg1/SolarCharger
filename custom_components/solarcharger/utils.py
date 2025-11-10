@@ -2,13 +2,14 @@
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import threading
 from types import FrameType
 from typing import Any
 from zoneinfo import ZoneInfo
 
+# import pytz
 from homeassistant.core import CALLBACK_TYPE, State
 from homeassistant.util.dt import parse_datetime
 
@@ -158,12 +159,29 @@ def get_next_sunset_time(caller: str, sun_state: State) -> datetime:
 def get_sec_per_degree_sun_elevation(caller: str, sun_state: State) -> float:
     """Get seconds per degree sun elevation for the today."""
     next_setting_utc = get_next_sunset_time(caller, sun_state)
-    next_setting_sec = next_setting_utc.timestamp()
-
     next_rising_utc = get_next_sunrise_time(caller, sun_state)
-    next_rising_sec = next_rising_utc.timestamp()
 
-    seconds_per_degree: float = abs(next_setting_sec - next_rising_sec) / 180
+    if next_rising_utc > next_setting_utc:
+        # Passed sunrise today
+        from_time = next_rising_utc - timedelta(days=1)
+        to_time = next_setting_utc
+    else:
+        # Tomorrow
+        from_time = next_rising_utc
+        to_time = next_setting_utc
+
+    total_sunlight_seconds = to_time.timestamp() - from_time.timestamp()
+    seconds_per_degree: float = total_sunlight_seconds / 180
+
+    # sydney_tz = pytz.timezone("Australia/Sydney")
+    # next_rising_sydney = next_rising_utc.astimezone(sydney_tz)
+    # next_setting_sydney = next_setting_utc.astimezone(sydney_tz)
+    # _LOGGER.info(
+    #     "next_rising_sydney=%s, next_setting_sydney=%s, total_sunlight_seconds=%s",
+    #     next_rising_sydney,
+    #     next_setting_sydney,
+    #     total_sunlight_seconds,
+    # )
 
     return seconds_per_degree
 

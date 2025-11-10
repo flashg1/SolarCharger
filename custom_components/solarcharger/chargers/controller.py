@@ -66,6 +66,7 @@ from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
     get_is_sun_rising,
     get_next_sunrise_time,
+    get_next_sunset_time,
     get_sec_per_degree_sun_elevation,
     get_sun_attribute_or_abort,
     get_sun_attribute_time,
@@ -216,7 +217,11 @@ class ChargeController(ScOptionState):
         elevation_start_trigger = self.option_get_entity_number_or_abort(
             OPTION_SUNRISE_ELEVATION_START_TRIGGER
         )
-        sunrise_offset = timedelta(seconds=sec_per_degree * elevation_start_trigger)
+        # Just in case, add 120 seconds.
+        buffer = 120
+        sunrise_offset = timedelta(
+            seconds=sec_per_degree * elevation_start_trigger + buffer
+        )
 
         # today = date.today()
         # Combine the date with the minimum time (00:00:00)
@@ -237,27 +242,78 @@ class ChargeController(ScOptionState):
             # Today
             now_time = utcnow()
             next_sunrise_time: datetime = get_next_sunrise_time(self._caller, sun_state)
-            next_sunrise_trigger_time = next_sunrise_time + sunrise_offset
-            # last_sunrise_time = next_sunrise_time - timedelta(days=1)
-            # last_sunrise_trigger_time = last_sunrise_time + sunrise_offset
-            duration_from_now = next_sunrise_trigger_time - now_time
-            duration_to_trigger = timedelta(seconds=duration_from_now.total_seconds())
-            _LOGGER.info(
-                "%s: Setup today sunrise trigger offset %s from now (current_elevation=%s)",
-                self._caller,
-                duration_to_trigger,
-                current_elevation,
-            )
-            subscription = async_call_later(
-                self._hass, duration_to_trigger, self._async_turn_on_charger_switch
-            )
+            next_sunset_time: datetime = get_next_sunset_time(self._caller, sun_state)
+            if next_sunrise_time > next_sunset_time:
+                # Passed today sunrise
+                today_sunrise_time = next_sunrise_time - timedelta(days=1)
+                today_sunrise_trigger_time = today_sunrise_time + sunrise_offset
+                duration_from_now = today_sunrise_trigger_time - now_time
+                duration_to_trigger = timedelta(
+                    seconds=duration_from_now.total_seconds()
+                )
+                _LOGGER.warning(
+                    "elevation_start_trigger=%s, "
+                    "sec_per_degree=%s, "
+                    "sunrise_offset=%s, "
+                    "now_time=%s, "
+                    "current_elevation=%s, "
+                    "today_sunrise_time=%s, "
+                    "today_sunrise_trigger_time=%s, "
+                    "duration_from_now=%s, "
+                    "duration_to_trigger=%s, "
+                    "next_sunrise_time=%s, "
+                    "next_sunset_time=%s",
+                    elevation_start_trigger,
+                    sec_per_degree,
+                    sunrise_offset,
+                    now_time,
+                    current_elevation,
+                    today_sunrise_time,
+                    today_sunrise_trigger_time,
+                    duration_from_now,
+                    duration_to_trigger,
+                    next_sunrise_time,
+                    next_sunset_time,
+                )
+
+                _LOGGER.info(
+                    "%s: Past sunrise today with trigger offset %s from now (current_elevation=%s, sec_per_degree=%s)",
+                    self._caller,
+                    duration_to_trigger,
+                    current_elevation,
+                    sec_per_degree,
+                )
+                subscription = async_call_later(
+                    self._hass, duration_to_trigger, self._async_turn_on_charger_switch
+                )
+
+            else:
+                # Sunrise yet to happen today
+                _LOGGER.info(
+                    "%s: Setup today sunrise trigger offset %s from sunrise (current_elevation=%s, sec_per_degree=%s)",
+                    self._caller,
+                    sunrise_offset,
+                    current_elevation,
+                    sec_per_degree,
+                )
+                subscription = async_track_sunrise(
+                    self._hass, self._start_charge_on_sunrise, sunrise_offset
+                )
+
+                # next_sunrise_trigger_time = next_sunrise_time + sunrise_offset
+                # duration_from_now = next_sunrise_trigger_time - now_time
+                # duration_to_trigger = timedelta(
+                #     seconds=duration_from_now.total_seconds()
+                # )
+
         else:
             # Tomorrow
             _LOGGER.info(
-                "%s: Setup next sunrise trigger offset %s from sunrise (current_elevation=%s)",
+                "%s: Setup tomorrow sunrise trigger offset %s from sunrise (current_elevation=%s, sec_per_degree=%s)",
                 self._caller,
                 sunrise_offset,
                 current_elevation,
+                sec_per_degree,
             )
             subscription = async_track_sunrise(
                 self._hass, self._start_charge_on_sunrise, sunrise_offset
@@ -449,6 +505,10 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def _async_init_device(self, chargeable: Chargeable) -> None:
+        sun_state = self.get_sun_state_or_abort()
+        sun_elevation: float = get_sun_elevation(self._caller, sun_state)
+        _LOGGER.warning("%s: sun_elevation=%s", self._caller, sun_elevation)
+
         await self._async_wakeup_device(chargeable)
         await self._async_update_ha(chargeable)
         self._check_is_at_location(chargeable)
@@ -505,7 +565,7 @@ class ChargeController(ScOptionState):
         return is_below_limit
 
     # ----------------------------------------------------------------------------
-    def _is_sun_above_start_end_elevations(self) -> bool:
+    def _is_sun_above_start_end_elevations(self) -> tuple[bool, float]:
         sun_above_start_end_elevations = False
 
         sun_state: State = self.get_sun_state_or_abort()
@@ -527,7 +587,7 @@ class ChargeController(ScOptionState):
         ):
             sun_above_start_end_elevations = True
 
-        return sun_above_start_end_elevations
+        return (sun_above_start_end_elevations, sun_elevation)
 
     # ----------------------------------------------------------------------------
     def _is_use_secondary_power_source(self) -> bool:
@@ -735,7 +795,9 @@ class ChargeController(ScOptionState):
         is_connected = charger.is_connected()
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
         is_charging = charger.is_charging()
-        is_sun_above_start_end_elevations = self._is_sun_above_start_end_elevations()
+        (is_sun_above_start_end_elevations, elevation) = (
+            self._is_sun_above_start_end_elevations()
+        )
         is_use_secondary_power_source = self._is_use_secondary_power_source()
         is_on_charge_schedule = self._is_on_charge_schedule()
 
@@ -755,7 +817,7 @@ class ChargeController(ScOptionState):
             _LOGGER.warning(
                 "%s: Stopping charge: is_abort_charge=%s, is_connected=%s, "
                 "is_below_charge_limit=%s, loop_count=%s, is_charging=%s, "
-                "is_sun_above_start_end_elevations=%s, is_use_secondary_power_source=%s, "
+                "is_sun_above_start_end_elevations=%s, elevation=%s, is_use_secondary_power_source=%s, "
                 "is_on_charge_schedule=%s",
                 self._caller,
                 is_abort_charge,
@@ -764,6 +826,7 @@ class ChargeController(ScOptionState):
                 loop_count,
                 is_charging,
                 is_sun_above_start_end_elevations,
+                elevation,
                 is_use_secondary_power_source,
                 is_on_charge_schedule,
             )
