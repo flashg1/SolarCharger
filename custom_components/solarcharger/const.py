@@ -9,7 +9,7 @@ MANUFACTURER = "FlashG"
 NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.1beta9"
+VERSION = "0.1beta10"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 

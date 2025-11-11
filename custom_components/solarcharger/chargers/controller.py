@@ -419,7 +419,7 @@ class ChargeController(ScOptionState):
                         self._caller, new_sun_state
                     )
 
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "%s: is_sun_rising=%s, old_elevation=%s, new_elevation=%s",
                         self._caller,
                         is_sun_rising,
@@ -592,7 +592,7 @@ class ChargeController(ScOptionState):
     async def _async_init_device(self, chargeable: Chargeable) -> None:
         sun_state = self.get_sun_state_or_abort()
         sun_elevation: float = get_sun_elevation(self._caller, sun_state)
-        _LOGGER.warning("%s: sun_elevation=%s", self._caller, sun_elevation)
+        _LOGGER.warning("%s: Started at sun_elevation=%s", self._caller, sun_elevation)
 
         await self._async_wakeup_device(chargeable)
         await self._async_update_ha(chargeable)
@@ -964,6 +964,10 @@ class ChargeController(ScOptionState):
         if switched_on:
             await self._async_set_charge_current(charger, 0)
             await self._async_turn_charger_switch_off(charger)
+
+        sun_state = self.get_sun_state_or_abort()
+        sun_elevation: float = get_sun_elevation(self._caller, sun_state)
+        _LOGGER.warning("%s: Stopped at sun_elevation=%s", self._caller, sun_elevation)
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge_task(
