@@ -324,6 +324,10 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     def _get_net_power(self) -> float | None:
         """Get household net power."""
+
+        # SolarChargerCoordinator: Failed to parse state 'unavailable' for entity 'sensor.main_power_net':
+        # could not convert string to float: 'unavailable'
+
         return self.config_get_entity_number(CONF_NET_POWER)
 
     # ----------------------------------------------------------------------------
