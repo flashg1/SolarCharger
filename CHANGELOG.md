@@ -2,6 +2,7 @@
 
 ## v0.1beta11 2025-12-22
 - Added change log.
+- Updated doc.
 
 ## v0.1beta10 2025-11-11
 ### Improvement
