@@ -3,9 +3,9 @@
   "name": "SolarCharger",
   "after_dependencies": [
     "button",
-	"number",
+    "number",
     "sensor",
-	"switch"
+    "switch"
   ],
   "codeowners": [
     "@flashg1"
@@ -17,5 +17,5 @@
   "issue_tracker": "https://github.com/flashg1/solarcharger/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.1beta1"
+  "version": "0.1beta11"
 }
