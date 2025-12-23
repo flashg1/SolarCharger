@@ -23,6 +23,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
+    # CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,
@@ -43,7 +44,6 @@ from .const import (
     OPTION_WAIT_CHARGER_AMP_CHANGE,
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
-    OPTION_WAIT_NET_POWER_UPDATE,
     SUBENTRY_THIRDPARTY_DOMAIN,
 )
 from .coordinator import SolarChargerCoordinator
@@ -275,17 +275,17 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
             native_max_value=+90.0,
         ),
     ),
-    (
-        OPTION_WAIT_NET_POWER_UPDATE,
-        NumberEntityDescription(
-            key=OPTION_WAIT_NET_POWER_UPDATE,
-            entity_category=EntityCategory.CONFIG,
-            device_class=NumberDeviceClass.DURATION,
-            native_unit_of_measurement=UnitOfTime.SECONDS,
-            native_min_value=1.0,
-            native_max_value=600.0,
-        ),
-    ),
+    # (
+    #     CONF_WAIT_NET_POWER_UPDATE,
+    #     NumberEntityDescription(
+    #         key=CONF_WAIT_NET_POWER_UPDATE,
+    #         entity_category=EntityCategory.CONFIG,
+    #         device_class=NumberDeviceClass.DURATION,
+    #         native_unit_of_measurement=UnitOfTime.SECONDS,
+    #         native_min_value=1.0,
+    #         native_max_value=600.0,
+    #     ),
+    # ),
     (
         OPTION_WAIT_CHARGEE_WAKEUP,
         NumberEntityDescription(

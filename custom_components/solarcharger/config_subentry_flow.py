@@ -32,8 +32,8 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.util import slugify
 
-from .config_option_utils import get_subentry_id
 from .config_options_flow import reset_api_entities
+from .config_utils import get_subentry_id
 from .const import (
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,

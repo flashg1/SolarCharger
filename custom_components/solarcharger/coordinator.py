@@ -35,6 +35,7 @@ from .const import (
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
     CONF_NET_POWER,
+    CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGE_SWITCH,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
@@ -45,7 +46,6 @@ from .const import (
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
-    OPTION_WAIT_NET_POWER_UPDATE,
 )
 from .helpers.general import async_set_allocated_power
 from .models import ChargeControl
@@ -281,9 +281,16 @@ class SolarChargerCoordinator(ScOptionState):
 
         # Global default entities MUST be created first before running the coordinator.setup().
         # Otherwise cannot get entity config values here.
-        wait_net_power_update = self.option_get_entity_number_or_abort(
-            OPTION_WAIT_NET_POWER_UPDATE
+        # wait_net_power_update = self.option_get_entity_number_or_abort(
+        #     CONF_WAIT_NET_POWER_UPDATE
+        # )
+
+        wait_net_power_update = self.config_get_number_or_abort(
+            CONF_WAIT_NET_POWER_UPDATE
         )
+        if wait_net_power_update is None:
+            raise ValueError(f"Cannot get {CONF_WAIT_NET_POWER_UPDATE} from config")
+
         self._unsub.append(
             async_track_time_interval(
                 self._hass,
@@ -370,6 +377,7 @@ class SolarChargerCoordinator(ScOptionState):
 
         if total_weight > 0:
             for control in self.charge_controls.values():
+                # Information only. Global default variable shows net power available for allocation.
                 if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                     await async_set_allocated_power(control, net_power)
                     continue

@@ -7,13 +7,27 @@
         },
         "step": {
             "user": {
-                "title": "Net power",
-                "description": "Net Power in Watts is negative for exported power and positive for imported power.",
+                "title": "Net power config",
+                "description": "Config for net power entity and update interval.",
                 "data": {
-                    "net_power": "Net Power (W)"
+                    "net_power": "Net Power (W)",
+                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 60)"
                 },
                 "data_description": {
-                    "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption."
+                    "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
+                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current. The waiting period should be equal to the sensor update interval."
+                }
+            },
+            "reconfigure": {
+                "title": "Net power config",
+                "description": "Config for net power entity and update interval.",
+                "data": {
+                    "net_power": "Net Power (W)",
+                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 60)"
+                },
+                "data_description": {
+                    "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
+                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current. The waiting period should be equal to the sensor update interval."
                 }
             }
         },

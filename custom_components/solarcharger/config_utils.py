@@ -1,10 +1,11 @@
-"""Common option utils."""
+"""Common config utils."""
 
 from __future__ import annotations
 
 import logging
 from typing import Any
 
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -69,6 +70,9 @@ TARGET_TEMPERATURE_FEATURE_SELECTOR = SelectSelector(
     )
 )
 
+#####################################
+# Entity selectors
+#####################################
 NUMBER_ENTITY_SELECTOR = EntitySelector(
     EntitySelectorConfig(
         multiple=False,
@@ -135,7 +139,17 @@ LOCATION_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
     )
 )
 
+POWER_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["sensor", "number", "input_number"],
+        device_class=[SensorDeviceClass.POWER],
+    )
+)
 
+#####################################
+# Number selectors
+#####################################
 ELECTRIC_CURRENT_SELECTOR = NumberSelector(
     NumberSelectorConfig(
         mode=NumberSelectorMode.BOX, min=0, max=100, unit_of_measurement="A"
@@ -173,6 +187,8 @@ def entity_selector(
     return default_selector
 
 
+# ----------------------------------------------------------------------------
+# Subentry options utils
 # ----------------------------------------------------------------------------
 def get_device_entity_id_with_substitution(
     api_entities: dict[str, str | None] | None,

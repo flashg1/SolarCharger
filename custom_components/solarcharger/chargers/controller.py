@@ -41,6 +41,7 @@ from ..const import (  # noqa: TID252
     CALLBACK_SUN_ELEVATION_UPDATE,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
+    CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGE_SWITCH,
     CONTROL_CHARGER_ALLOCATED_POWER,
     CONTROL_FAST_CHARGE_SWITCH,
@@ -62,7 +63,6 @@ from ..const import (  # noqa: TID252
     OPTION_WAIT_CHARGER_AMP_CHANGE,
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
-    OPTION_WAIT_NET_POWER_UPDATE,
     SWITCH,
 )
 from ..entity import compose_entity_id  # noqa: TID252
@@ -948,7 +948,7 @@ class ChargeController(ScOptionState):
                 )
 
             loop_count = loop_count + 1
-            await self._async_option_sleep(OPTION_WAIT_NET_POWER_UPDATE)
+            await self._async_config_sleep(CONF_WAIT_NET_POWER_UPDATE)
 
         remove_callback_subscription(
             self._caller, self._unsub_callbacks, CALLBACK_ALLOCATE_POWER

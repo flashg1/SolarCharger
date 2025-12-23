@@ -8,8 +8,6 @@ from typing import Any
 from packaging.version import parse as parse_version
 import voluptuous as vol
 
-from homeassistant.components.sensor import SensorDeviceClass
-
 # import homeassistant.helpers.config_validation as cv
 from homeassistant.config_entries import (
     SOURCE_RECONFIGURE,
@@ -20,11 +18,16 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import __version__ as ha_version
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.selector import EntitySelector, EntitySelectorConfig
 
 from .config_options_flow import ConfigOptionsFlowHandler
 from .config_subentry_flow import AddChargerSubEntryFlowHandler
-from .const import CONF_NET_POWER, DOMAIN, SUBENTRY_TYPE_CHARGER
+from .config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
+from .const import (
+    CONF_NET_POWER,
+    CONF_WAIT_NET_POWER_UPDATE,
+    DOMAIN,
+    SUBENTRY_TYPE_CHARGER,
+)
 from .exceptions.validation_exception import ValidationExceptionError
 
 # ----------------------------------------------------------------------------
@@ -40,33 +43,13 @@ CONF_DEVICE_NAME_DEFAULT = "device_name_default"
 
 STEP_SOURCE_POWER_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_NET_POWER, default=None): EntitySelector(
-            EntitySelectorConfig(
-                multiple=False,
-                domain=["sensor", "number", "input_number"],
-                device_class=[SensorDeviceClass.POWER],
-            )
-        ),
+        vol.Required(CONF_NET_POWER, default=None): POWER_ENTITY_SELECTOR,
+        vol.Optional(CONF_WAIT_NET_POWER_UPDATE, default=60): WAIT_TIME_SELECTOR,
     }
 )
 
-# _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
-#     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
-#     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_OCPP),
-# ]
 
-# STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
-#     {
-#         vol.Required(CONF_CHARGER_DEVICE): DeviceSelector(
-#             DeviceSelectorConfig(
-#                 multiple=False,
-#                 filter=_charger_integration_filter_list,
-#             )
-#         ),
-#     }
-# )
-
-
+# ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 def validate_charger_selection(
     _hass: HomeAssistant, data: dict[str, Any]
@@ -166,18 +149,18 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     self._get_reconfigure_entry(), data_updates=user_input
                 )
 
-        # Get entity name
+        # Get previously configured valies to show as defaults in the form.
         net_power: str = self._get_reconfigure_entry().data[CONF_NET_POWER]
+        wait_net_power_update: float = self._get_reconfigure_entry().data[
+            CONF_WAIT_NET_POWER_UPDATE
+        ]
 
         net_power_schema = vol.Schema(
             {
-                vol.Required(CONF_NET_POWER, default=net_power): EntitySelector(
-                    EntitySelectorConfig(
-                        multiple=False,
-                        domain="sensor",
-                        device_class=[SensorDeviceClass.POWER],
-                    )
-                ),
+                vol.Required(CONF_NET_POWER, default=net_power): POWER_ENTITY_SELECTOR,
+                vol.Optional(
+                    CONF_WAIT_NET_POWER_UPDATE, default=wait_net_power_update
+                ): WAIT_TIME_SELECTOR,
             }
         )
 

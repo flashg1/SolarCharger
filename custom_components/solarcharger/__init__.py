@@ -13,7 +13,7 @@ from homeassistant.helpers import config_validation as cv
 from .chargers import Charger, charger_factory
 from .chargers.chargeable import Chargeable
 from .chargers.controller import ChargeController
-from .config_option_utils import get_subentry
+from .config_utils import get_subentry
 from .const import (
     DOMAIN,
     OPTION_GLOBAL_DEFAULT_ENTITIES,

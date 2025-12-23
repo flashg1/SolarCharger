@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2beta1 2025-12-23
+- Added reconfigure flow description.
+- Moved wait_net_power_update from subentry options flow to config flow.
+
 ## v0.1beta11 2025-12-22
 - Added change log.
 - Updated doc.

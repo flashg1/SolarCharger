@@ -18,7 +18,7 @@ from homeassistant.config_entries import (
 from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
-from .config_option_utils import (
+from .config_utils import (
     BUTTON_ENTITY_SELECTOR,
     BUTTON_ENTITY_SELECTOR_READ_ONLY,
     LOCATION_ENTITY_SELECTOR,
@@ -38,6 +38,7 @@ from .config_option_utils import (
 )
 from .const import (
     CHARGE_API_ENTITIES,
+    # CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
@@ -73,7 +74,6 @@ from .const import (
     OPTION_WAIT_CHARGER_AMP_CHANGE,
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
-    OPTION_WAIT_NET_POWER_UPDATE,
     SUBENTRY_THIRDPARTY_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
 )
@@ -208,9 +208,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, OPTION_WAIT_NET_POWER_UPDATE, use_default
-            ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, CONF_WAIT_NET_POWER_UPDATE, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_WAIT_CHARGEE_WAKEUP, use_default
             ): NUMBER_ENTITY_SELECTOR,

@@ -1,5 +1,6 @@
 """SolarCharger entity state using config from config_entry.data."""
 
+import asyncio
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -36,13 +37,26 @@ class ScConfigState(ScState):
         self,
         config_item: str,
     ) -> str | None:
-        """Get config from config data."""
+        """Get string from config data."""
 
         config_str = self._entry.data.get(config_item)
         if config_str is None:
             _LOGGER.error("%s: Config not found for '%s'", self._caller, config_item)
 
         return config_str
+
+    # ----------------------------------------------------------------------------
+    def config_get_number_or_abort(
+        self,
+        config_item: str,
+    ) -> float:
+        """Get number from config data."""
+
+        num = self._entry.data.get(config_item)
+        if num is None:
+            raise SystemError(f"{self._caller}: {config_item}: Config not found")
+
+        return num
 
     # ----------------------------------------------------------------------------
     def config_get_id(
@@ -66,3 +80,12 @@ class ScConfigState(ScState):
             entity_val = self.get_number(entity_id)
 
         return entity_val
+
+    # ----------------------------------------------------------------------------
+    # General utils
+    # ----------------------------------------------------------------------------
+    async def _async_config_sleep(self, config_item: str) -> None:
+        """Wait sleep time."""
+
+        duration = self.config_get_number_or_abort(config_item)
+        await asyncio.sleep(duration)

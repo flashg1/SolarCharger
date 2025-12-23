@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 
-from .config_option_utils import get_saved_option_value
+from .config_utils import get_saved_option_value
 from .model_config import ConfigValue, ConfigValueDict
 from .sc_config_state import ScConfigState
 
