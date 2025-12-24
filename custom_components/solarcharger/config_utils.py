@@ -26,6 +26,7 @@ from homeassistant.helpers.selector import (
 from homeassistant.util import slugify
 
 from .const import (
+    CHARGE_API_DEFAULT_VALUES,
     CHARGE_API_ENTITIES,
     CONFIG_NAME_MARKER,
     DEVICE_NAME_MARKER,
@@ -190,6 +191,101 @@ def entity_selector(
 # ----------------------------------------------------------------------------
 # Subentry options utils
 # ----------------------------------------------------------------------------
+def get_device_domain(subentry: ConfigSubentry) -> str | None:
+    """Get device domain from subentry. Return None for global defaults subentry."""
+
+    if subentry.unique_id is None:
+        raise SystemError(
+            "Failed to get device domain because subentry unique_id is None"
+        )
+
+    if subentry.unique_id == OPTION_GLOBAL_DEFAULTS_ID:
+        device_domain = None
+    else:
+        device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
+        if device_domain is None:
+            raise SystemError(
+                f"Subentry {subentry.subentry_id}: Failed to get device domain"
+            )
+
+    return device_domain
+
+
+# ----------------------------------------------------------------------------
+def get_device_api_entities(subentry: ConfigSubentry) -> dict[str, str | None] | None:
+    """Get device API entities dictionary from subentry. Return None for global defaults subentry."""
+
+    device_domain = get_device_domain(subentry)
+    if device_domain is not None:
+        return CHARGE_API_ENTITIES.get(device_domain)
+
+    return None
+
+
+# ----------------------------------------------------------------------------
+def is_config_entity_used_as_local_device_entity(
+    subentry: ConfigSubentry, config_item: str
+) -> bool:
+    """Check if SolarCharger config entity is used as local device entity."""
+    used_as_local_device_entity = False
+
+    api_entities = get_device_api_entities(subentry)
+    if api_entities is not None:
+        entity_id = api_entities.get(config_item)
+        if entity_id is not None:
+            used_as_local_device_entity = config_item in entity_id
+
+    return used_as_local_device_entity
+
+
+# ----------------------------------------------------------------------------
+def _get_device_global_default_value(config_item: str) -> Any | None:
+    """Get device global default value for config item."""
+
+    global_defaults = CHARGE_API_DEFAULT_VALUES.get(OPTION_GLOBAL_DEFAULTS_ID)
+    if global_defaults is None:
+        raise SystemError(
+            f"No global default dictionary found for subentry ID '{OPTION_GLOBAL_DEFAULTS_ID}'"
+        )
+
+    return global_defaults.get(config_item)
+
+
+# ----------------------------------------------------------------------------
+def _get_device_local_default_value(device_domain: str, config_item: str) -> Any | None:
+    """Get device local default value for config item."""
+
+    local_defaults = CHARGE_API_DEFAULT_VALUES.get(device_domain)
+    if local_defaults is None:
+        raise SystemError(
+            f"No local default dictionary found for domain '{device_domain}'"
+        )
+
+    return local_defaults.get(config_item)
+
+
+# ----------------------------------------------------------------------------
+def get_device_config_default_value(subentry: ConfigSubentry, config_item: str) -> Any:
+    """Try getting value from local default dictionary first, otherwise from global default dictionary."""
+
+    device_domain = get_device_domain(subentry)
+
+    if device_domain is None:
+        val = _get_device_global_default_value(config_item)
+    else:
+        val = _get_device_local_default_value(device_domain, config_item)
+        if val is None:
+            val = _get_device_global_default_value(config_item)
+
+    if val is None:
+        raise SystemError(
+            f"No default value found for config item '{config_item}' in subentry ID '{subentry.unique_id}'"
+        )
+
+    return val
+
+
+# ----------------------------------------------------------------------------
 def get_device_entity_id_with_substitution(
     api_entities: dict[str, str | None] | None,
     config_item: str,
@@ -225,17 +321,14 @@ def get_device_entity_id(
 ) -> str | None:
     """Get entity name for config item with string substitution for device name."""
 
-    device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
-    if device_domain:
-        api_entities = CHARGE_API_ENTITIES.get(device_domain)
-
-        if api_entities:
-            return get_device_entity_id_with_substitution(
-                api_entities,
-                config_item,
-                device_name,
-                subentry.unique_id,
-            )
+    api_entities = get_device_api_entities(subentry)
+    if api_entities:
+        return get_device_entity_id_with_substitution(
+            api_entities,
+            config_item,
+            device_name,
+            subentry.unique_id,
+        )
 
     return None
 
@@ -393,26 +486,24 @@ def reset_api_entities(
                     device_name = slugify(device_name.strip())
                     data[OPTION_CHARGER_DEVICE_NAME] = device_name
 
-                    device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
-                    if device_domain:
-                        api_entities = CHARGE_API_ENTITIES.get(device_domain)
-                        if api_entities:
-                            key_list = list(api_entities.keys())
+                    api_entities = get_device_api_entities(subentry)
+                    if api_entities:
+                        key_list = list(api_entities.keys())
 
-                            # if reset_all_entities:
-                            #     # Only reset all entities during subentry initial setup
-                            #     key_list = list(api_entities.keys())
-                            # else:
-                            #     # This will only reset dependent entities when device name is changed
-                            #     key_list = OPTION_DEVICE_ENTITY_LIST
+                        # if reset_all_entities:
+                        #     # Only reset all entities during subentry initial setup
+                        #     key_list = list(api_entities.keys())
+                        # else:
+                        #     # This will only reset dependent entities when device name is changed
+                        #     key_list = OPTION_DEVICE_ENTITY_LIST
 
-                            for config_item in key_list:
-                                entity_name = get_device_entity_id_with_substitution(
-                                    api_entities,
-                                    config_item,
-                                    device_name,
-                                    subentry.unique_id,
-                                )
-                                if entity_name:
-                                    data[config_item] = entity_name
+                        for config_item in key_list:
+                            entity_name = get_device_entity_id_with_substitution(
+                                api_entities,
+                                config_item,
+                                device_name,
+                                subentry.unique_id,
+                            )
+                            if entity_name:
+                                data[config_item] = entity_name
     return data

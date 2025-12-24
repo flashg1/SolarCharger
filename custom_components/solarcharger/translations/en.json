@@ -75,14 +75,14 @@
             },
             "config_device": {
                 "title": "Charger options",
-                "description": "These are entities controlling charger behaviour with values defined in \"Configuration\" section. Replace with your own entities if required. Greyed-out entries are FYI only.",
+                "description": "These are entities controlling charger behaviour with values defined in \"Configuration\" section. Replace with your own entities if required. Greyed-out entries are FYI only.\n\nTo delete an entity, add \".deleteme\" to the name, eg. sensor.deleteme",
                 "data": {
                     "charger_effective_voltage": "Charger effective voltage (V)",
                     "sunrise_elevation_start_trigger": "Sunrise elevation start trigger (degrees)",
                     "sunset_elevation_end_trigger": "Sunset elevation end trigger (degrees)",
                     "set_daily_charge_limit": "Set daily charge limit",
                     "adjust_charge_limit_based_on_weather": "Adjust charge limit based on weather forecast",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current"
+                    "charger_device_name": "Charger device name (single space to clear)"
                 }
             }
         },
@@ -146,14 +146,17 @@
             "charger_power_allocation_weight": {
                 "name": "Power allocation weight"
             },
+            "chargee_min_charge_limit": {
+                "name": "Min charge limit"
+            },
+            "chargee_max_charge_limit": {
+                "name": "Max charge limit"
+            },
             "sunrise_elevation_start_trigger": {
                 "name": "Sunrise elevation start trigger"
             },
             "sunset_elevation_end_trigger": {
                 "name": "Sunset elevation end trigger"
-            },
-            "wait_net_power_update": {
-                "name": "Wait net power update"
             },
             "wait_chargee_wakeup": {
                 "name": "Wait wakeup"

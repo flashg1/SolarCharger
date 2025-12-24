@@ -32,17 +32,19 @@ from .config_utils import (
     TEXT_SELECTOR,
     TEXT_SELECTOR_READ_ONLY,
     entity_selector,
+    get_device_api_entities,
     get_saved_option_value,
     get_subentry_id,
     reset_api_entities,
 )
 from .const import (
-    CHARGE_API_ENTITIES,
     # CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
+    OPTION_CHARGEE_MAX_CHARGE_LIMIT,
+    OPTION_CHARGEE_MIN_CHARGE_LIMIT,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
@@ -74,7 +76,6 @@ from .const import (
     OPTION_WAIT_CHARGER_AMP_CHANGE,
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
-    SUBENTRY_THIRDPARTY_DOMAIN,
     SUBENTRY_TYPE_CHARGER,
 )
 from .exceptions.validation_exception import ValidationExceptionError
@@ -203,6 +204,12 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
+                subentry, OPTION_CHARGEE_MIN_CHARGE_LIMIT, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGEE_MAX_CHARGE_LIMIT, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
                 subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
@@ -238,11 +245,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:
         """Charger control entities."""
-        api_entities: dict[str, str | None] | None = None
-
-        device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
-        if device_domain:
-            api_entities = CHARGE_API_ENTITIES.get(device_domain)
+        api_entities: dict[str, str | None] | None = get_device_api_entities(subentry)
 
         return {
             self._optional(

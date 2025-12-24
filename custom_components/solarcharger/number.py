@@ -1,6 +1,7 @@
 """SolarCharger number platform."""
 
 import logging
+from typing import Any
 
 from homeassistant import config_entries, core
 from homeassistant.components.number import (
@@ -22,19 +23,24 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .config_utils import (
+    get_device_config_default_value,
+    is_config_entity_used_as_local_device_entity,
+)
 from .const import (
     # CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,
     OPTION_CHARGEE_CHARGE_LIMIT,
+    OPTION_CHARGEE_MAX_CHARGE_LIMIT,
+    OPTION_CHARGEE_MIN_CHARGE_LIMIT,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_MAX_SPEED,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_GLOBAL_DEFAULT_VALUES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
@@ -44,11 +50,9 @@ from .const import (
     OPTION_WAIT_CHARGER_AMP_CHANGE,
     OPTION_WAIT_CHARGER_OFF,
     OPTION_WAIT_CHARGER_ON,
-    SUBENTRY_THIRDPARTY_DOMAIN,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity
-from .helpers.general import is_config_entity_used_as_local_device_entity
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -123,7 +127,7 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
             # Disable local device entities. User needs to manually enable if required.
             if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
                 if not is_config_entity_used_as_local_device_entity(
-                    subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN), config_item
+                    subentry, config_item
                 ):
                     self._attr_entity_registry_enabled_default = False
 
@@ -256,6 +260,26 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
         ),
     ),
     (
+        OPTION_CHARGEE_MIN_CHARGE_LIMIT,
+        NumberEntityDescription(
+            key=OPTION_CHARGEE_MIN_CHARGE_LIMIT,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGEE_MAX_CHARGE_LIMIT,
+        NumberEntityDescription(
+            key=OPTION_CHARGEE_MAX_CHARGE_LIMIT,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
         OPTION_SUNRISE_ELEVATION_START_TRIGGER,
         NumberEntityDescription(
             key=OPTION_SUNRISE_ELEVATION_START_TRIGGER,
@@ -360,7 +384,6 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
 
 
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
@@ -383,8 +406,7 @@ async def async_setup_entry(
                 config_item,
                 subentry,
                 entity_description,
-                # TODO: Set default value using CHARGE_API_DEFAULT_VALUES
-                OPTION_GLOBAL_DEFAULT_VALUES[config_item],
+                get_device_config_default_value(subentry, config_item),
             )
         coordinator.charge_controls[subentry.subentry_id].numbers = numbers
 

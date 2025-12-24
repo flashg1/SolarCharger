@@ -38,41 +38,41 @@ class Chargeable(ABC):
     def get_chargeable_name(self) -> str:
         """Get chargeable name."""
 
-    # @abstractmethod
+    @abstractmethod
     async def async_setup_chargeable(self) -> None:
         """Set up chargeable device."""
-        return
+        # return
 
-    # @abstractmethod
+    @abstractmethod
     async def async_wake_up(self, val_dict: ConfigValueDict | None = None) -> None:
         """Wake up chargeable device."""
-        return
+        # return
 
-    # @abstractmethod
+    @abstractmethod
     async def async_update_ha(self, val_dict: ConfigValueDict | None = None) -> None:
         """Force chargeable device to update data in HA."""
-        return
+        # return
 
-    # @abstractmethod
+    @abstractmethod
     def is_at_location(self, val_dict: ConfigValueDict | None = None) -> bool:
         """Is chargeable device at charger location?"""
-        return True
+        # return True
 
-    # @abstractmethod
+    @abstractmethod
     def get_state_of_charge(
         self, val_dict: ConfigValueDict | None = None
     ) -> int | None:
         """Get state of charge (SoC) of chargeable device."""
-        return 0
+        # return 0
 
-    # @abstractmethod
+    @abstractmethod
     def get_charge_limit(self, val_dict: ConfigValueDict | None = None) -> int | None:
         """Get chargeable device charge limit."""
-        return 100
+        # return 100
 
-    # @abstractmethod
+    @abstractmethod
     async def async_set_charge_limit(
         self, charge_limit: int, val_dict: ConfigValueDict | None = None
     ) -> None:
         """Set chargeable device charge limit."""
-        return
+        # return

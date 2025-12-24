@@ -586,7 +586,7 @@ class ChargeController(ScOptionState):
         is_at_location = chargeable.is_at_location(val_dict)
         if val_dict.config_values[config_item].entity_id is not None:
             if not is_at_location:
-                raise SystemError(f"{self._caller}: Device not at charger location")
+                raise RuntimeError(f"{self._caller}: Device not at charger location")
 
     # ----------------------------------------------------------------------------
     async def _async_init_device(self, chargeable: Chargeable) -> None:
@@ -755,7 +755,9 @@ class ChargeController(ScOptionState):
             OPTION_CHARGER_EFFECTIVE_VOLTAGE
         )
         if charger_effective_voltage <= 0:
-            raise ValueError(f"{self._caller}: Charger effective voltage is 0")
+            raise ValueError(
+                f"{self._caller}: Invalid charger effective voltage {charger_effective_voltage}"
+            )
 
         one_amp_watt_step = charger_effective_voltage * 1
         power_offset = 0
