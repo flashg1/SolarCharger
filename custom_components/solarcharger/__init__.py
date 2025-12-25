@@ -25,7 +25,7 @@ from .const import (
     SUBENTRY_TYPE_DEFAULTS,
 )
 from .coordinator import SolarChargerCoordinator
-from .models import ChargeControl
+from .model_control import ChargeControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -36,6 +36,8 @@ _PLATFORMS: list[Platform] = [
     Platform.BUTTON,
     Platform.SWITCH,
     Platform.NUMBER,
+    Platform.TIME,
+    Platform.DATETIME,
 ]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)

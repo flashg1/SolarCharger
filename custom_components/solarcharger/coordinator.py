@@ -48,7 +48,7 @@ from .const import (
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
 )
 from .helpers.general import async_set_allocated_power
-from .models import ChargeControl
+from .model_control import ChargeControl
 from .sc_option_state import ScOptionState
 from .utils import (
     get_sec_per_degree_sun_elevation,

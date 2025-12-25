@@ -175,6 +175,55 @@
             },
             "wait_charger_amp_change": {
                 "name": "Wait current change"
+            },
+            "charge_limit_monday": {
+                "name": "Monday charge limit"
+            },
+            "charge_limit_tuesday": {
+                "name": "Tuesday charge limit"
+            },
+            "charge_limit_wednesday": {
+                "name": "Wednesday charge limit"
+            },
+            "charge_limit_thursday": {
+                "name": "Thursday charge limit"
+            },
+            "charge_limit_friday": {
+                "name": "Friday charge limit"
+            },
+            "charge_limit_saturday": {
+                "name": "Saturday charge limit"
+            },
+            "charge_limit_sunday": {
+                "name": "Sunday charge limit"
+            }
+        },
+        "time": {
+            "charge_endtime_monday": {
+                "name": "Monday charge end time"
+            },
+            "charge_endtime_tuesday": {
+                "name": "Tuesday charge end time"
+            },
+            "charge_endtime_wednesday": {
+                "name": "Wednesday charge end time"
+            },
+            "charge_endtime_thursday": {
+                "name": "Thursday charge end time"
+            },
+            "charge_endtime_friday": {
+                "name": "Friday charge end time"
+            },
+            "charge_endtime_saturday": {
+                "name": "Saturday charge end time"
+            },
+            "charge_endtime_sunday": {
+                "name": "Sunday charge end time"
+            }
+        },
+        "datetime": {
+            "next_charge_time_trigger": {
+                "name": "Next charge time trigger"
             }
         }
     }

@@ -10,7 +10,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.2beta1"
+VERSION = "0.2beta2"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -36,8 +36,10 @@ SENSOR = Platform.SENSOR
 SWITCH = Platform.SWITCH
 BUTTON = Platform.BUTTON
 NUMBER = Platform.NUMBER
+TIME = Platform.TIME
+DATETIME = Platform.DATETIME
 SELECT = Platform.SELECT
-PLATFORMS = [BUTTON, NUMBER, SELECT, SENSOR, SWITCH]
+PLATFORMS = [BUTTON, NUMBER, SELECT, SENSOR, SWITCH, TIME, DATETIME]
 PLATFORM_OCPP = "ocpp"
 PLATFORM_USER_CUSTOM = "user_custom"
 
@@ -166,6 +168,27 @@ OPTION_CHARGEE_LOCATION_STATE_LIST = "chargee_location_state_list"
 OPTION_CHARGEE_WAKE_UP_BUTTON = "chargee_wake_up_button"
 OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 
+#####################################
+# Charge schedule entities
+#####################################
+OPTION_CHARGE_LIMIT_MONDAY = "charge_limit_monday"
+OPTION_CHARGE_LIMIT_TUESDAY = "charge_limit_tuesday"
+OPTION_CHARGE_LIMIT_WEDNESDAY = "charge_limit_wednesday"
+OPTION_CHARGE_LIMIT_THURSDAY = "charge_limit_thursday"
+OPTION_CHARGE_LIMIT_FRIDAY = "charge_limit_friday"
+OPTION_CHARGE_LIMIT_SATURDAY = "charge_limit_saturday"
+OPTION_CHARGE_LIMIT_SUNDAY = "charge_limit_sunday"
+
+OPTION_CHARGE_ENDTIME_MONDAY = "charge_endtime_monday"
+OPTION_CHARGE_ENDTIME_TUESDAY = "charge_endtime_tuesday"
+OPTION_CHARGE_ENDTIME_WEDNESDAY = "charge_endtime_wednesday"
+OPTION_CHARGE_ENDTIME_THURSDAY = "charge_endtime_thursday"
+OPTION_CHARGE_ENDTIME_FRIDAY = "charge_endtime_friday"
+OPTION_CHARGE_ENDTIME_SATURDAY = "charge_endtime_saturday"
+OPTION_CHARGE_ENDTIME_SUNDAY = "charge_endtime_sunday"
+
+OPTION_NEXT_CHARGE_TIME_TRIGGER = "next_charge_time_trigger"
+
 #######################################################
 # Default values
 #######################################################
@@ -198,6 +221,16 @@ OPTION_GLOBAL_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     OPTION_CHARGER_MAX_CURRENT: 15,
     OPTION_CHARGEE_CHARGE_LIMIT: 100,
+    #####################################
+    # Schedule charge limit defaults
+    #####################################
+    OPTION_CHARGE_LIMIT_MONDAY: 70,
+    OPTION_CHARGE_LIMIT_TUESDAY: 70,
+    OPTION_CHARGE_LIMIT_WEDNESDAY: 70,
+    OPTION_CHARGE_LIMIT_THURSDAY: 70,
+    OPTION_CHARGE_LIMIT_FRIDAY: 80,
+    OPTION_CHARGE_LIMIT_SATURDAY: 80,
+    OPTION_CHARGE_LIMIT_SUNDAY: 80,
 }
 
 TESLA_BLE_DEFAULT_VALUES: dict[str, Any] = {

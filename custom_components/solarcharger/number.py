@@ -32,6 +32,13 @@ from .const import (
     CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,
+    OPTION_CHARGE_LIMIT_FRIDAY,
+    OPTION_CHARGE_LIMIT_MONDAY,
+    OPTION_CHARGE_LIMIT_SATURDAY,
+    OPTION_CHARGE_LIMIT_SUNDAY,
+    OPTION_CHARGE_LIMIT_THURSDAY,
+    OPTION_CHARGE_LIMIT_TUESDAY,
+    OPTION_CHARGE_LIMIT_WEDNESDAY,
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGEE_MAX_CHARGE_LIMIT,
     OPTION_CHARGEE_MIN_CHARGE_LIMIT,
@@ -374,6 +381,77 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+        ),
+    ),
+    #####################################
+    (
+        OPTION_CHARGE_LIMIT_MONDAY,
+        NumberEntityDescription(
+            key=OPTION_CHARGE_LIMIT_MONDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGE_LIMIT_TUESDAY,
+        NumberEntityDescription(
+            key=OPTION_CHARGE_LIMIT_TUESDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGE_LIMIT_WEDNESDAY,
+        NumberEntityDescription(
+            key=OPTION_CHARGE_LIMIT_WEDNESDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGE_LIMIT_THURSDAY,
+        NumberEntityDescription(
+            key=OPTION_CHARGE_LIMIT_THURSDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGE_LIMIT_FRIDAY,
+        NumberEntityDescription(
+            key=OPTION_CHARGE_LIMIT_FRIDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGE_LIMIT_SATURDAY,
+        NumberEntityDescription(
+            key=OPTION_CHARGE_LIMIT_SATURDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        OPTION_CHARGE_LIMIT_SUNDAY,
+        NumberEntityDescription(
+            key=OPTION_CHARGE_LIMIT_SUNDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
         ),
     ),
     #####################################

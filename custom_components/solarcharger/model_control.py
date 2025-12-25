@@ -29,9 +29,11 @@ from .chargers.controller import ChargeController
 #######################################################
 if TYPE_CHECKING:
     from .button import SolarChargerButtonEntity
+    from .datetime import SolarChargerDateTimeEntity
     from .number import SolarChargerNumberEntity
     from .sensor import SolarChargerSensorEntity
     from .switch import SolarChargerSwitchEntity
+    from .time import SolarChargerTimeEntity
 
 
 # ----------------------------------------------------------------------------
@@ -58,6 +60,8 @@ class ChargeControl:
     numbers: dict[str, "SolarChargerNumberEntity"] | None = None
     switches: dict[str, "SolarChargerSwitchEntity"] | None = None
     buttons: dict[str, "SolarChargerButtonEntity"] | None = None
+    times: dict[str, "SolarChargerTimeEntity"] | None = None
+    datetimes: dict[str, "SolarChargerDateTimeEntity"] | None = None
 
     # Sensors
     sensor_last_check_timestamp: datetime | None = None
