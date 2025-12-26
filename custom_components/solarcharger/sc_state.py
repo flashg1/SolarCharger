@@ -1,6 +1,7 @@
 """Support basic HA state requests."""
 
 from collections.abc import Callable
+from datetime import time
 import logging
 from typing import Any
 
@@ -137,6 +138,36 @@ class ScState:
             return None
 
         return str_val
+
+    # ----------------------------------------------------------------------------
+    def get_boolean(self, entity_id: str) -> bool | None:
+        """Get boolean entity."""
+
+        str_val = self.get_value(entity_id)
+        if str_val is None:
+            _LOGGER.warning(
+                "%s: Cannot get boolean for entity '%s'",
+                self._caller,
+                entity_id,
+            )
+            return None
+
+        return str_val == "on" or str_val is True
+
+    # ----------------------------------------------------------------------------
+    def get_time(self, entity_id: str) -> time | None:
+        """Get time entity."""
+
+        val = self.get_value(entity_id)
+        if val is None:
+            _LOGGER.warning(
+                "%s: Cannot get time for entity '%s'",
+                self._caller,
+                entity_id,
+            )
+            return None
+
+        return val
 
     # ----------------------------------------------------------------------------
     async def async_ha_call(

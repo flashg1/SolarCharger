@@ -66,13 +66,13 @@ class Chargeable(ABC):
         # return 0
 
     @abstractmethod
-    def get_charge_limit(self, val_dict: ConfigValueDict | None = None) -> int | None:
+    def get_charge_limit(self, val_dict: ConfigValueDict | None = None) -> float | None:
         """Get chargeable device charge limit."""
         # return 100
 
     @abstractmethod
     async def async_set_charge_limit(
-        self, charge_limit: int, val_dict: ConfigValueDict | None = None
+        self, charge_limit: float, val_dict: ConfigValueDict | None = None
     ) -> None:
         """Set chargeable device charge limit."""
         # return

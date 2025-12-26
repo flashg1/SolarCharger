@@ -148,6 +148,13 @@ POWER_ENTITY_SELECTOR = EntitySelector(
     )
 )
 
+TIME_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["time", "input_datetime"],
+    )
+)
+
 #####################################
 # Number selectors
 #####################################

@@ -2,11 +2,12 @@
 
 import asyncio
 from asyncio import Task, timeout
+from calendar import week
 from collections.abc import Callable, Coroutine
-from datetime import date, datetime, timedelta
+from dataclasses import dataclass
+from datetime import date, datetime, time, timedelta
 import inspect
 import logging
-from time import time
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -45,9 +46,24 @@ from ..const import (  # noqa: TID252
     CONTROL_CHARGE_SWITCH,
     CONTROL_CHARGER_ALLOCATED_POWER,
     CONTROL_FAST_CHARGE_SWITCH,
+    CONTROL_SCHEDULE_CHARGE_SWITCH,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     HA_SUN_ENTITY,
+    OPTION_CHARGE_ENDTIME_FRIDAY,
+    OPTION_CHARGE_ENDTIME_MONDAY,
+    OPTION_CHARGE_ENDTIME_SATURDAY,
+    OPTION_CHARGE_ENDTIME_SUNDAY,
+    OPTION_CHARGE_ENDTIME_THURSDAY,
+    OPTION_CHARGE_ENDTIME_TUESDAY,
+    OPTION_CHARGE_ENDTIME_WEDNESDAY,
+    OPTION_CHARGE_LIMIT_FRIDAY,
+    OPTION_CHARGE_LIMIT_MONDAY,
+    OPTION_CHARGE_LIMIT_SATURDAY,
+    OPTION_CHARGE_LIMIT_SUNDAY,
+    OPTION_CHARGE_LIMIT_THURSDAY,
+    OPTION_CHARGE_LIMIT_TUESDAY,
+    OPTION_CHARGE_LIMIT_WEDNESDAY,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
@@ -94,6 +110,16 @@ MIN_TIME_BETWEEN_UPDATE = 10  # 10 seconds
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+@dataclass
+class ChargeSchedule:
+    """Daily charge schedule."""
+
+    charge_limit: float
+    charge_end_time: time
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class ChargeController(ScOptionState):
     """Class to manage the charging process."""
 
@@ -119,6 +145,9 @@ class ChargeController(ScOptionState):
         )
         self._fast_charge_switch_entity_id = compose_entity_id(
             SWITCH, subentry.unique_id, CONTROL_FAST_CHARGE_SWITCH
+        )
+        self._schedule_charge_switch_entity_id = compose_entity_id(
+            SWITCH, subentry.unique_id, CONTROL_SCHEDULE_CHARGE_SWITCH
         )
 
         # self._unsub_callbacks: dict[
@@ -176,6 +205,11 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     def _is_fast_charge(self) -> bool:
         state = self.get_string(self._fast_charge_switch_entity_id)
+        return state == STATE_ON
+
+    # ----------------------------------------------------------------------------
+    def _is_schedule_charge(self) -> bool:
+        state = self.get_string(self._schedule_charge_switch_entity_id)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
@@ -599,14 +633,98 @@ class ChargeController(ScOptionState):
         self._check_is_at_location(chargeable)
 
     # ----------------------------------------------------------------------------
+    def _get_charge_schedule(self) -> list[ChargeSchedule]:
+        """Get daily charge schedule."""
+
+        weekly_schedule: list[ChargeSchedule] = [
+            ChargeSchedule(
+                charge_limit=self.option_get_entity_number_or_abort(
+                    OPTION_CHARGE_LIMIT_MONDAY
+                ),
+                charge_end_time=self.option_get_entity_time_or_abort(
+                    OPTION_CHARGE_ENDTIME_MONDAY
+                ),
+            ),
+            ChargeSchedule(
+                charge_limit=self.option_get_entity_number_or_abort(
+                    OPTION_CHARGE_LIMIT_TUESDAY
+                ),
+                charge_end_time=self.option_get_entity_time_or_abort(
+                    OPTION_CHARGE_ENDTIME_TUESDAY
+                ),
+            ),
+            ChargeSchedule(
+                charge_limit=self.option_get_entity_number_or_abort(
+                    OPTION_CHARGE_LIMIT_WEDNESDAY
+                ),
+                charge_end_time=self.option_get_entity_time_or_abort(
+                    OPTION_CHARGE_ENDTIME_WEDNESDAY
+                ),
+            ),
+            ChargeSchedule(
+                charge_limit=self.option_get_entity_number_or_abort(
+                    OPTION_CHARGE_LIMIT_THURSDAY
+                ),
+                charge_end_time=self.option_get_entity_time_or_abort(
+                    OPTION_CHARGE_ENDTIME_THURSDAY
+                ),
+            ),
+            ChargeSchedule(
+                charge_limit=self.option_get_entity_number_or_abort(
+                    OPTION_CHARGE_LIMIT_FRIDAY
+                ),
+                charge_end_time=self.option_get_entity_time_or_abort(
+                    OPTION_CHARGE_ENDTIME_FRIDAY
+                ),
+            ),
+            ChargeSchedule(
+                charge_limit=self.option_get_entity_number_or_abort(
+                    OPTION_CHARGE_LIMIT_SATURDAY
+                ),
+                charge_end_time=self.option_get_entity_time_or_abort(
+                    OPTION_CHARGE_ENDTIME_SATURDAY
+                ),
+            ),
+            ChargeSchedule(
+                charge_limit=self.option_get_entity_number_or_abort(
+                    OPTION_CHARGE_LIMIT_SUNDAY
+                ),
+                charge_end_time=self.option_get_entity_time_or_abort(
+                    OPTION_CHARGE_ENDTIME_SUNDAY
+                ),
+            ),
+        ]
+
+        _LOGGER.debug("Weekly schedule: %s", weekly_schedule)
+
+        return weekly_schedule
+
+    # ----------------------------------------------------------------------------
     async def _async_init_charge_limit(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
-        pass
-
+        """Initialize charge limit if charge schedule is enabled, otherwise use existing charge limit."""
         # Moved status wait out of if statement to apply wait for all after charge limit change.
         # Tesla BLE need 25 seconds here.
         # ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
+
+        if self._is_schedule_charge():
+            weekly_schedule = self._get_charge_schedule()
+
+            # Ensure time is in local timezone
+            tz = ZoneInfo(self._hass.config.time_zone)
+            now_time = datetime.now(tz)
+            # 0 = Monday, 6 = Sunday
+            day_of_week = now_time.weekday()
+            charge_limit = weekly_schedule[day_of_week].charge_limit
+
+            await chargeable.async_set_charge_limit(charge_limit)
+            _LOGGER.info(
+                "%s: Set charge limit to %.1f%% for %s",
+                self._caller,
+                charge_limit,
+                now_time.strftime("%A"),
+            )
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:

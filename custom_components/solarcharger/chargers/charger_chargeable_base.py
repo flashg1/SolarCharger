@@ -123,15 +123,15 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         )
 
     # ----------------------------------------------------------------------------
-    def get_charge_limit(self, val_dict: ConfigValueDict | None = None) -> int | None:
+    def get_charge_limit(self, val_dict: ConfigValueDict | None = None) -> float | None:
         """Get chargeable device charge limit."""
-        return self.option_get_entity_integer(
+        return self.option_get_entity_number(
             OPTION_CHARGEE_CHARGE_LIMIT, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_limit(
-        self, charge_limit: int, val_dict: ConfigValueDict | None = None
+        self, charge_limit: float, val_dict: ConfigValueDict | None = None
     ) -> None:
         """Set chargeable device charge limit."""
         min_limit = self.option_get_entity_number_or_abort(
@@ -143,7 +143,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         if not min_limit <= charge_limit <= max_limit:
             msg = f"Invalid charge limit. Must be between {min_limit} and {max_limit}."
             raise ValueError(msg)
-        await self.async_option_set_entity_integer(
+        await self.async_option_set_entity_number(
             OPTION_CHARGEE_CHARGE_LIMIT, charge_limit, val_dict=val_dict
         )
 

@@ -1,6 +1,7 @@
 """SolarCharger entity state using config from config_entry.options and config_subentry."""
 
 import asyncio
+from datetime import time
 import json
 import logging
 from typing import Any
@@ -205,6 +206,66 @@ class ScOptionState(ScConfigState):
         self._set_config_value_dict(
             val_dict, subentry.unique_id, config_item, entity_id, entity_val
         )
+
+        return entity_val
+
+    # ----------------------------------------------------------------------------
+    def option_get_entity_boolean(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry | None = None,
+        val_dict: ConfigValueDict | None = None,
+    ) -> bool | None:
+        """Get entity name from saved options, then get value for entity."""
+        entity_val = None
+
+        subentry = self._get_subentry(subentry)
+        entity_id = self.option_get_id(config_item, subentry)
+        if entity_id:
+            entity_val = self.get_boolean(entity_id)
+
+        self._set_config_value_dict(
+            val_dict, subentry.unique_id, config_item, entity_id, entity_val
+        )
+
+        return entity_val
+
+    # ----------------------------------------------------------------------------
+    def option_get_entity_time(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry | None = None,
+        val_dict: ConfigValueDict | None = None,
+    ) -> time | None:
+        """Get entity name from saved options, then get value for entity."""
+        entity_val = None
+
+        subentry = self._get_subentry(subentry)
+        entity_id = self.option_get_id(config_item, subentry)
+        if entity_id:
+            entity_val = self.get_time(entity_id)
+
+        self._set_config_value_dict(
+            val_dict, subentry.unique_id, config_item, entity_id, entity_val
+        )
+
+        return entity_val
+
+    # ----------------------------------------------------------------------------
+    def option_get_entity_time_or_abort(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry | None = None,
+        val_dict: ConfigValueDict | None = None,
+    ) -> time:
+        """Get entity ID from saved options, then get value for entity."""
+
+        subentry = self._get_subentry(subentry)
+        entity_val = self.option_get_entity_time(config_item, subentry, val_dict)
+        if entity_val is None:
+            raise ValueError(
+                f"{subentry.unique_id}: {config_item}: Failed to get entity time value"
+            )
 
         return entity_val
 

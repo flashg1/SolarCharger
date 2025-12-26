@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.2beta2 2025-12-25
+- Tested setting daily charge limit.
 - Refactored code to determine hidden entities.
 - Created entities for schedule charging.
 

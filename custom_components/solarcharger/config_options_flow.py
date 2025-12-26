@@ -31,6 +31,7 @@ from .config_utils import (
     SWITCH_ENTITY_SELECTOR_READ_ONLY,
     TEXT_SELECTOR,
     TEXT_SELECTOR_READ_ONLY,
+    TIME_ENTITY_SELECTOR,
     entity_selector,
     get_device_api_entities,
     get_saved_option_value,
@@ -40,6 +41,20 @@ from .config_utils import (
 from .const import (
     # CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGER_ALLOCATED_POWER,
+    OPTION_CHARGE_ENDTIME_FRIDAY,
+    OPTION_CHARGE_ENDTIME_MONDAY,
+    OPTION_CHARGE_ENDTIME_SATURDAY,
+    OPTION_CHARGE_ENDTIME_SUNDAY,
+    OPTION_CHARGE_ENDTIME_THURSDAY,
+    OPTION_CHARGE_ENDTIME_TUESDAY,
+    OPTION_CHARGE_ENDTIME_WEDNESDAY,
+    OPTION_CHARGE_LIMIT_FRIDAY,
+    OPTION_CHARGE_LIMIT_MONDAY,
+    OPTION_CHARGE_LIMIT_SATURDAY,
+    OPTION_CHARGE_LIMIT_SUNDAY,
+    OPTION_CHARGE_LIMIT_THURSDAY,
+    OPTION_CHARGE_LIMIT_TUESDAY,
+    OPTION_CHARGE_LIMIT_WEDNESDAY,
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
@@ -179,18 +194,19 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         return vol.Optional(config_item)
 
     # ----------------------------------------------------------------------------
+    # Matches with const.py OPTION_GLOBAL_DEFAULT_ENTITIES
     def _charger_general_options_schema(
         self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:
         """Charger general options."""
 
         return {
+            #####################################
+            # Charge environment
+            #####################################
             self._optional(
                 subentry, OPTION_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, OPTION_CHARGER_MAX_CURRENT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_CHARGER_MAX_SPEED, use_default
             ): NUMBER_ENTITY_SELECTOR,
@@ -209,15 +225,63 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, OPTION_CHARGEE_MAX_CHARGE_LIMIT, use_default
             ): NUMBER_ENTITY_SELECTOR,
+            #####################################
+            # Charge scheduling
+            #####################################
+            self._optional(
+                subentry, OPTION_CHARGE_LIMIT_MONDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_ENDTIME_MONDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_LIMIT_TUESDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_ENDTIME_TUESDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_LIMIT_WEDNESDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_ENDTIME_WEDNESDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_LIMIT_THURSDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_ENDTIME_THURSDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_LIMIT_FRIDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_ENDTIME_FRIDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_LIMIT_SATURDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_ENDTIME_SATURDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_LIMIT_SUNDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, OPTION_CHARGE_ENDTIME_SUNDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            #####################################
+            # Sunrise/sunset triggers
+            #####################################
             self._optional(
                 subentry, OPTION_SUNRISE_ELEVATION_START_TRIGGER, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, OPTION_SUNSET_ELEVATION_END_TRIGGER, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, CONF_WAIT_NET_POWER_UPDATE, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
+            #####################################
+            # Wait times
+            #####################################
             self._optional(
                 subentry, OPTION_WAIT_CHARGEE_WAKEUP, use_default
             ): NUMBER_ENTITY_SELECTOR,
