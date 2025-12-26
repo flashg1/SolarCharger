@@ -2,7 +2,6 @@
 
 import asyncio
 from asyncio import Task, timeout
-from calendar import week
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
@@ -137,7 +136,7 @@ class ChargeController(ScOptionState):
         self._chargeable = chargeable
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
-        self._charge_current_updatetime: int = 0
+        self._charge_current_updatetime: float = 0
 
         # Fixed control entities
         self._charger_switch_entity_id = compose_entity_id(
@@ -718,13 +717,13 @@ class ChargeController(ScOptionState):
             day_of_week = now_time.weekday()
             charge_limit = weekly_schedule[day_of_week].charge_limit
 
-            await chargeable.async_set_charge_limit(charge_limit)
             _LOGGER.info(
-                "%s: Set charge limit to %.1f%% for %s",
+                "%s: Setting charge limit to %.1f%% for %s",
                 self._caller,
                 charge_limit,
                 now_time.strftime("%A"),
             )
+            await chargeable.async_set_charge_limit(charge_limit)
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
@@ -817,7 +816,7 @@ class ChargeController(ScOptionState):
         await self._async_option_sleep(OPTION_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
-    async def _async_set_charge_current(self, charger: Charger, current: int) -> None:
+    async def _async_set_charge_current(self, charger: Charger, current: float) -> None:
         await charger.async_set_charge_current(current)
         await self._async_option_sleep(OPTION_WAIT_CHARGER_AMP_CHANGE)
 
@@ -937,8 +936,8 @@ class ChargeController(ScOptionState):
                 old_charge_current,
                 new_charge_current,
             )
-            await self._async_set_charge_current(charger, int(new_charge_current))
-            self._charge_current_updatetime = int(time())
+            await self._async_set_charge_current(charger, new_charge_current)
+            self._charge_current_updatetime = utcnow().timestamp()
             self.emit_solarcharger_event(
                 self._device.id, EVENT_ACTION_NEW_CHARGE_CURRENT, new_charge_current
             )

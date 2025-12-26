@@ -141,7 +141,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
             OPTION_CHARGEE_MAX_CHARGE_LIMIT, val_dict=val_dict
         )
         if not min_limit <= charge_limit <= max_limit:
-            msg = f"Invalid charge limit. Must be between {min_limit} and {max_limit}."
+            msg = f"Invalid charge limit {charge_limit}. Must be between {min_limit} and {max_limit}."
             raise ValueError(msg)
         await self.async_option_set_entity_number(
             OPTION_CHARGEE_CHARGE_LIMIT, charge_limit, val_dict=val_dict
