@@ -63,6 +63,7 @@ ENTITY_KEY_RUN_STATE_SENSOR = "run_state"
 # Switches
 CONTROL_CHARGE_SWITCH = "charge"
 CONTROL_FAST_CHARGE_SWITCH = "fast_charge"
+CONTROL_SCHEDULE_CHARGE_SWITCH = "schedule_charge"
 
 # Buttons
 CONTROL_CHARGE_BUTTON = "start_charge"

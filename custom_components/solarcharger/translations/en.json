@@ -119,6 +119,9 @@
             },
             "fast_charge": {
                 "name": "Fast charge"
+            },
+            "schedule_charge": {
+                "name": "Schedule charge"
             }
         },
         "number": {

@@ -1,7 +1,6 @@
 """SolarCharger number platform."""
 
 import logging
-from typing import Any
 
 from homeassistant import config_entries, core
 from homeassistant.components.number import (
@@ -23,10 +22,7 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .config_utils import (
-    get_device_config_default_value,
-    is_config_entity_used_as_local_device_entity,
-)
+from .config_utils import get_device_config_default_value
 from .const import (
     # CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGER_ALLOCATED_POWER,
@@ -48,7 +44,6 @@ from .const import (
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
@@ -59,7 +54,7 @@ from .const import (
     OPTION_WAIT_CHARGER_ON,
 )
 from .coordinator import SolarChargerCoordinator
-from .entity import SolarChargerEntity
+from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -75,10 +70,11 @@ class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: NumberEntityDescription,
     ) -> None:
         """Initialize the number."""
-        SolarChargerEntity.__init__(self, config_item, subentry)
+        SolarChargerEntity.__init__(self, config_item, subentry, entity_type)
         self.set_entity_id(NUMBER, config_item)
         self.set_entity_unique_id(NUMBER, config_item)
         self.entity_description = desc
@@ -124,19 +120,12 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: NumberEntityDescription,
         default_val: float,
     ) -> None:
         """Initialise number."""
-        super().__init__(config_item, subentry, desc)
-
-        if desc.entity_category == EntityCategory.CONFIG:
-            # Disable local device entities. User needs to manually enable if required.
-            if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
-                if not is_config_entity_used_as_local_device_entity(
-                    subentry, config_item
-                ):
-                    self._attr_entity_registry_enabled_default = False
+        super().__init__(config_item, subentry, entity_type, desc)
 
         self._attr_native_step = 1.0
         self._attr_mode = NumberMode.BOX
@@ -163,7 +152,9 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
+CONFIG_NUMBER_LIST: tuple[
+    tuple[str, SolarChargerEntityType, NumberEntityDescription], ...
+] = (
     #####################################
     # Control entities
     # Must haves, ie. not hidden for all
@@ -171,6 +162,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     #####################################
     (
         CONTROL_CHARGER_ALLOCATED_POWER,
+        SolarChargerEntityType.LOCAL_AND_GLOBAL,
         NumberEntityDescription(
             key=CONTROL_CHARGER_ALLOCATED_POWER,
             device_class=NumberDeviceClass.POWER,
@@ -186,6 +178,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     #####################################
     (
         OPTION_CHARGEE_CHARGE_LIMIT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGEE_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
@@ -196,6 +189,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MAX_CURRENT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGER_MAX_CURRENT,
             entity_category=EntityCategory.CONFIG,
@@ -212,6 +206,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     #####################################
     (
         OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
             # translation_key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
@@ -227,6 +222,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MAX_SPEED,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGER_MAX_SPEED,
             entity_category=EntityCategory.CONFIG,
@@ -237,6 +233,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MIN_CURRENT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGER_MIN_CURRENT,
             entity_category=EntityCategory.CONFIG,
@@ -248,6 +245,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_MIN_WORKABLE_CURRENT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGER_MIN_WORKABLE_CURRENT,
             entity_category=EntityCategory.CONFIG,
@@ -259,6 +257,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
             entity_category=EntityCategory.CONFIG,
@@ -268,6 +267,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGEE_MIN_CHARGE_LIMIT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGEE_MIN_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
@@ -278,6 +278,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGEE_MAX_CHARGE_LIMIT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGEE_MAX_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
@@ -288,6 +289,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_SUNRISE_ELEVATION_START_TRIGGER,
             entity_category=EntityCategory.CONFIG,
@@ -298,6 +300,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_SUNSET_ELEVATION_END_TRIGGER,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_SUNSET_ELEVATION_END_TRIGGER,
             entity_category=EntityCategory.CONFIG,
@@ -308,6 +311,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     # (
     #     CONF_WAIT_NET_POWER_UPDATE,
+    #     SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
     #     NumberEntityDescription(
     #         key=CONF_WAIT_NET_POWER_UPDATE,
     #         entity_category=EntityCategory.CONFIG,
@@ -319,6 +323,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     # ),
     (
         OPTION_WAIT_CHARGEE_WAKEUP,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_WAKEUP,
             entity_category=EntityCategory.CONFIG,
@@ -330,6 +335,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGEE_UPDATE_HA,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_UPDATE_HA,
             entity_category=EntityCategory.CONFIG,
@@ -341,6 +347,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
             entity_category=EntityCategory.CONFIG,
@@ -352,6 +359,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGER_ON,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_ON,
             entity_category=EntityCategory.CONFIG,
@@ -363,6 +371,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGER_OFF,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_OFF,
             entity_category=EntityCategory.CONFIG,
@@ -374,6 +383,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_WAIT_CHARGER_AMP_CHANGE,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_WAIT_CHARGER_AMP_CHANGE,
             entity_category=EntityCategory.CONFIG,
@@ -386,6 +396,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     #####################################
     (
         OPTION_CHARGE_LIMIT_MONDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGE_LIMIT_MONDAY,
             entity_category=EntityCategory.CONFIG,
@@ -396,6 +407,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_LIMIT_TUESDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGE_LIMIT_TUESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -406,6 +418,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_LIMIT_WEDNESDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGE_LIMIT_WEDNESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -416,6 +429,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_LIMIT_THURSDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGE_LIMIT_THURSDAY,
             entity_category=EntityCategory.CONFIG,
@@ -426,6 +440,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_LIMIT_FRIDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGE_LIMIT_FRIDAY,
             entity_category=EntityCategory.CONFIG,
@@ -436,6 +451,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_LIMIT_SATURDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGE_LIMIT_SATURDAY,
             entity_category=EntityCategory.CONFIG,
@@ -446,6 +462,7 @@ CONFIG_NUMBER_LIST: tuple[tuple[str, NumberEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_LIMIT_SUNDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
             key=OPTION_CHARGE_LIMIT_SUNDAY,
             entity_category=EntityCategory.CONFIG,
@@ -478,18 +495,22 @@ async def async_setup_entry(
         # else:
         #     continue
 
+        # For both global default and charger subentries
         numbers = {}
-        for config_item, entity_description in CONFIG_NUMBER_LIST:
-            numbers[config_item] = SolarChargerNumberConfigEntity(
-                config_item,
-                subentry,
-                entity_description,
-                get_device_config_default_value(subentry, config_item),
-            )
-        coordinator.charge_controls[subentry.subentry_id].numbers = numbers
+        for config_item, entity_type, entity_description in CONFIG_NUMBER_LIST:
+            if is_create_entity(subentry, entity_type):
+                numbers[config_item] = SolarChargerNumberConfigEntity(
+                    config_item,
+                    subentry,
+                    entity_type,
+                    entity_description,
+                    get_device_config_default_value(subentry, config_item),
+                )
 
-        async_add_entities(
-            numbers.values(),
-            update_before_add=False,
-            config_subentry_id=subentry.subentry_id,
-        )
+        if len(numbers) > 0:
+            coordinator.charge_controls[subentry.subentry_id].numbers = numbers
+            async_add_entities(
+                numbers.values(),
+                update_before_add=False,
+                config_subentry_id=subentry.subentry_id,
+            )

@@ -13,11 +13,12 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .const import (
     CONTROL_CHARGE_SWITCH,
     CONTROL_FAST_CHARGE_SWITCH,
+    CONTROL_SCHEDULE_CHARGE_SWITCH,
     DOMAIN,
     SUBENTRY_TYPE_CHARGER,
     SWITCH,
 )
-from .entity import SolarChargerEntity
+from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 
 if TYPE_CHECKING:
     from .coordinator import SolarChargerCoordinator
@@ -37,12 +38,13 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: SwitchEntityDescription,
         coordinator: "SolarChargerCoordinator",
         is_restore_state: bool = True,
     ) -> None:
         """Initialize the SolarCharger switch entity."""
-        SolarChargerEntity.__init__(self, config_item, subentry)
+        SolarChargerEntity.__init__(self, config_item, subentry, entity_type)
         self.set_entity_id(SWITCH, config_item)
         self.set_entity_unique_id(SWITCH, config_item)
         self.entity_description = desc
@@ -95,12 +97,15 @@ class SolarChargerSwitchCharge(SolarChargerSwitchEntity):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: SwitchEntityDescription,
         coordinator: "SolarChargerCoordinator",
         is_restore_state: bool = False,
     ) -> None:
         """Initialize the switch."""
-        super().__init__(config_item, subentry, desc, coordinator, is_restore_state)
+        super().__init__(
+            config_item, subentry, entity_type, desc, coordinator, is_restore_state
+        )
 
         if self.is_on is None:
             self._attr_is_on = False
@@ -129,26 +134,44 @@ class SolarChargerSwitchCharge(SolarChargerSwitchEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-CONFIG_SWITCH_LIST: tuple[tuple[str, Any, bool, SwitchEntityDescription], ...] = (
+CONFIG_SWITCH_LIST: tuple[
+    tuple[str, Any, bool, SolarChargerEntityType, SwitchEntityDescription], ...
+] = (
     #####################################
     # Control entities
     # Must haves, ie. not hidden for all
     # entity_category=None
     #####################################
+    # Control switches - calls coordinator to perform action
+    #####################################
     (
         CONTROL_CHARGE_SWITCH,
         SolarChargerSwitchCharge,
         False,
+        SolarChargerEntityType.LOCAL_DEFAULT,
         SwitchEntityDescription(
             key=CONTROL_CHARGE_SWITCH,
         ),
     ),
+    #####################################
+    # Boolean switches
+    #####################################
     (
         CONTROL_FAST_CHARGE_SWITCH,
         SolarChargerSwitchEntity,
         True,
+        SolarChargerEntityType.LOCAL_DEFAULT,
         SwitchEntityDescription(
             key=CONTROL_FAST_CHARGE_SWITCH,
+        ),
+    ),
+    (
+        CONTROL_SCHEDULE_CHARGE_SWITCH,
+        SolarChargerSwitchEntity,
+        True,
+        SolarChargerEntityType.LOCAL_DEFAULT,
+        SwitchEntityDescription(
+            key=CONTROL_SCHEDULE_CHARGE_SWITCH,
         ),
     ),
 )
@@ -166,6 +189,7 @@ async def async_setup_entry(
     coordinator: "SolarChargerCoordinator" = hass.data[DOMAIN][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
+        # For charger subentries only
         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
             switches: dict[str, SolarChargerSwitchEntity] = {}
 
@@ -173,19 +197,23 @@ async def async_setup_entry(
                 config_item,
                 cls,
                 is_restore_state,
+                entity_type,
                 entity_description,
             ) in CONFIG_SWITCH_LIST:
-                switches[config_item] = cls(
-                    config_item,
-                    subentry,
-                    entity_description,
-                    coordinator,
-                    is_restore_state,
-                )
-            coordinator.charge_controls[subentry.subentry_id].switches = switches
+                if is_create_entity(subentry, entity_type):
+                    switches[config_item] = cls(
+                        config_item,
+                        subentry,
+                        entity_type,
+                        entity_description,
+                        coordinator,
+                        is_restore_state,
+                    )
 
-            async_add_entities(
-                switches.values(),
-                update_before_add=False,
-                config_subentry_id=subentry.subentry_id,
-            )
+            if len(switches) > 0:
+                coordinator.charge_controls[subentry.subentry_id].switches = switches
+                async_add_entities(
+                    switches.values(),
+                    update_before_add=False,
+                    config_subentry_id=subentry.subentry_id,
+                )

@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.2beta2 2025-12-25
+- Refactored code to determine hidden entities.
 - Created entities for schedule charging.
 
 ## v0.2beta1 2025-12-23

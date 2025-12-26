@@ -9,7 +9,6 @@ from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .config_utils import is_config_entity_used_as_local_device_entity
 from .const import (
     DOMAIN,
     OPTION_CHARGE_ENDTIME_FRIDAY,
@@ -19,11 +18,10 @@ from .const import (
     OPTION_CHARGE_ENDTIME_THURSDAY,
     OPTION_CHARGE_ENDTIME_TUESDAY,
     OPTION_CHARGE_ENDTIME_WEDNESDAY,
-    OPTION_GLOBAL_DEFAULTS_ID,
     TIME,
 )
 from .coordinator import SolarChargerCoordinator
-from .entity import SolarChargerEntity
+from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -39,10 +37,11 @@ class SolarChargerTimeEntity(SolarChargerEntity, TimeEntity):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: TimeEntityDescription,
     ) -> None:
         """Initialize the time."""
-        SolarChargerEntity.__init__(self, config_item, subentry)
+        SolarChargerEntity.__init__(self, config_item, subentry, entity_type)
         self.set_entity_id(TIME, config_item)
         self.set_entity_unique_id(TIME, config_item)
         self.entity_description = desc
@@ -63,19 +62,12 @@ class SolarChargerTimeConfigEntity(SolarChargerTimeEntity):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: TimeEntityDescription,
         default_val: time = time.min,
     ) -> None:
         """Initialise datetime."""
-        super().__init__(config_item, subentry, desc)
-
-        if desc.entity_category == EntityCategory.CONFIG:
-            # Disable local device entities. User needs to manually enable if required.
-            if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
-                if not is_config_entity_used_as_local_device_entity(
-                    subentry, config_item
-                ):
-                    self._attr_entity_registry_enabled_default = False
+        super().__init__(config_item, subentry, entity_type, desc)
 
         self._attr_has_entity_name = True
         self._attr_native_value = default_val
@@ -88,7 +80,9 @@ class SolarChargerTimeConfigEntity(SolarChargerTimeEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
+CONFIG_TIME_LIST: tuple[
+    tuple[str, SolarChargerEntityType, TimeEntityDescription], ...
+] = (
     #####################################
     # Control entities
     # Must haves, ie. not hidden for all
@@ -101,6 +95,7 @@ CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
     #####################################
     (
         OPTION_CHARGE_ENDTIME_MONDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
             key=OPTION_CHARGE_ENDTIME_MONDAY,
             entity_category=EntityCategory.CONFIG,
@@ -108,6 +103,7 @@ CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_ENDTIME_TUESDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
             key=OPTION_CHARGE_ENDTIME_TUESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -115,6 +111,7 @@ CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_ENDTIME_WEDNESDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
             key=OPTION_CHARGE_ENDTIME_WEDNESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -122,6 +119,7 @@ CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_ENDTIME_THURSDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
             key=OPTION_CHARGE_ENDTIME_THURSDAY,
             entity_category=EntityCategory.CONFIG,
@@ -129,6 +127,7 @@ CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_ENDTIME_FRIDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
             key=OPTION_CHARGE_ENDTIME_FRIDAY,
             entity_category=EntityCategory.CONFIG,
@@ -136,6 +135,7 @@ CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_ENDTIME_SATURDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
             key=OPTION_CHARGE_ENDTIME_SATURDAY,
             entity_category=EntityCategory.CONFIG,
@@ -143,6 +143,7 @@ CONFIG_DATETIME_LIST: tuple[tuple[str, TimeEntityDescription], ...] = (
     ),
     (
         OPTION_CHARGE_ENDTIME_SUNDAY,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
             key=OPTION_CHARGE_ENDTIME_SUNDAY,
             entity_category=EntityCategory.CONFIG,
@@ -165,15 +166,18 @@ async def async_setup_entry(
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
+        # For both global default and charger subentries
         times = {}
-        for config_item, entity_description in CONFIG_DATETIME_LIST:
-            times[config_item] = SolarChargerTimeConfigEntity(
-                config_item, subentry, entity_description
-            )
-        coordinator.charge_controls[subentry.subentry_id].times = times
+        for config_item, entity_type, entity_description in CONFIG_TIME_LIST:
+            if is_create_entity(subentry, entity_type):
+                times[config_item] = SolarChargerTimeConfigEntity(
+                    config_item, subentry, entity_type, entity_description
+                )
 
-        async_add_entities(
-            times.values(),
-            update_before_add=False,
-            config_subentry_id=subentry.subentry_id,
-        )
+        if len(times) > 0:
+            coordinator.charge_controls[subentry.subentry_id].times = times
+            async_add_entities(
+                times.values(),
+                update_before_add=False,
+                config_subentry_id=subentry.subentry_id,
+            )

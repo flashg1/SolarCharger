@@ -20,7 +20,7 @@ from .const import (
     SUBENTRY_TYPE_CHARGER,
 )
 from .coordinator import SolarChargerCoordinator
-from .entity import SolarChargerEntity
+from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 
 
 # ----------------------------------------------------------------------------
@@ -32,10 +32,11 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
     ) -> None:
         """Initialize the sensor."""
-        SolarChargerEntity.__init__(self, config_item, subentry)
+        SolarChargerEntity.__init__(self, config_item, subentry, entity_type)
         self.set_entity_id(SENSOR, config_item)
         self.set_entity_unique_id(SENSOR, config_item)
         self.entity_description = desc
@@ -55,16 +56,17 @@ class SolarChargerSensorRunState(SolarChargerSensorEntity):
     # _entity_key = ENTITY_KEY_RUN_STATE_SENSOR
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = list(COORDINATOR_STATES)
-    _attr_entity_registry_enabled_default = True
+    # _attr_entity_registry_enabled_default = True
 
     def __init__(
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
     ) -> None:
         """Initialise sensor."""
-        super().__init__(config_item, subentry, desc)
+        super().__init__(config_item, subentry, entity_type, desc)
 
 
 # ----------------------------------------------------------------------------
@@ -74,21 +76,24 @@ class SolarChargerSensorLastCheck(SolarChargerSensorEntity):
 
     # _entity_key = ENTITY_KEY_LAST_CHECK_SENSOR
     _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_entity_registry_enabled_default = False
+    # _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
     ) -> None:
         """Initialise sensor."""
-        super().__init__(config_item, subentry, desc)
+        super().__init__(config_item, subentry, entity_type, desc)
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-CONFIG_SENSOR_LIST: tuple[tuple[str, Any, SensorEntityDescription], ...] = (
+CONFIG_SENSOR_LIST: tuple[
+    tuple[str, Any, SolarChargerEntityType, SensorEntityDescription], ...
+] = (
     #####################################
     # Sensor entities
     # entity_category=None
@@ -96,6 +101,7 @@ CONFIG_SENSOR_LIST: tuple[tuple[str, Any, SensorEntityDescription], ...] = (
     (
         ENTITY_KEY_RUN_STATE_SENSOR,
         SolarChargerSensorRunState,
+        SolarChargerEntityType.LOCAL_DEFAULT,
         SensorEntityDescription(
             key=ENTITY_KEY_RUN_STATE_SENSOR,
         ),
@@ -103,6 +109,7 @@ CONFIG_SENSOR_LIST: tuple[tuple[str, Any, SensorEntityDescription], ...] = (
     (
         ENTITY_KEY_LAST_CHECK_SENSOR,
         SolarChargerSensorLastCheck,
+        SolarChargerEntityType.HIDDEN_DEFAULT,
         SensorEntityDescription(
             key=ENTITY_KEY_LAST_CHECK_SENSOR,
         ),
@@ -122,26 +129,31 @@ async def async_setup_entry(
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
+        # For charger subentries only
         if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
             sensors: dict[str, SolarChargerSensorEntity] = {}
 
             for (
                 config_item,
                 cls,
+                entity_type,
                 entity_description,
             ) in CONFIG_SENSOR_LIST:
-                sensors[config_item] = cls(
-                    config_item,
-                    subentry,
-                    entity_description,
-                )
-            coordinator.charge_controls[subentry.subentry_id].sensors = sensors
+                if is_create_entity(subentry, entity_type):
+                    sensors[config_item] = cls(
+                        config_item,
+                        subentry,
+                        entity_type,
+                        entity_description,
+                    )
 
-            async_add_entities(
-                sensors.values(),
-                update_before_add=False,
-                config_subentry_id=subentry.subentry_id,
-            )
-            # await coordinator.init_sensors(
-            #     coordinator.charge_controls[subentry.subentry_id]
-            # )
+            if len(sensors) > 0:
+                coordinator.charge_controls[subentry.subentry_id].sensors = sensors
+                async_add_entities(
+                    sensors.values(),
+                    update_before_add=False,
+                    config_subentry_id=subentry.subentry_id,
+                )
+                # await coordinator.init_sensors(
+                #     coordinator.charge_controls[subentry.subentry_id]
+                # )

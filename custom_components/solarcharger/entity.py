@@ -1,13 +1,23 @@
 """SolarCharger base entity."""
 
+from enum import Enum
 import logging
+from operator import is_
 
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import slugify
 
-from .const import CONFIG_URL, DOMAIN, ICON, MANUFACTURER, VERSION
+from .config_utils import is_config_entity_used_as_local_device_entity
+from .const import (
+    CONFIG_URL,
+    DOMAIN,
+    ICON,
+    MANUFACTURER,
+    SUBENTRY_TYPE_CHARGER,
+    VERSION,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +40,65 @@ def compose_entity_unique_id(platform_str: str, subentry: ConfigSubentry, key: s
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+class SolarChargerEntityType(Enum):
+    """Enumeration of Solar Charger entity types."""
+
+    # Create global default entities only
+    GLOBAL_DEFAULT = "global_default"
+
+    # Create local default entities only
+    LOCAL_DEFAULT = "local_default"
+    LOCAL_HIDDEN = "local_hidden"
+
+    # Create both local and global default entities
+    HIDDEN_DEFAULT = "hidden_default"
+    LOCAL_AND_GLOBAL = "local_and_global"
+    # Local default if exists will take precedence over global default. Local default entities are hidden.
+    LOCAL_HIDDEN_OR_GLOBAL = "local_hidden_or_global"
+
+
+# ----------------------------------------------------------------------------
+def is_entity_enabled(
+    subentry: ConfigSubentry, entity_type: SolarChargerEntityType
+) -> bool:
+    """Check if entity is enabled."""
+    enabled: bool = True
+
+    if entity_type == SolarChargerEntityType.HIDDEN_DEFAULT or (
+        subentry.subentry_type == SUBENTRY_TYPE_CHARGER
+        and entity_type
+        in (
+            SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+            SolarChargerEntityType.LOCAL_HIDDEN,
+        )
+    ):
+        enabled = False
+
+    return enabled
+
+
+# ----------------------------------------------------------------------------
+def is_create_entity(
+    subentry: ConfigSubentry, entity_type: SolarChargerEntityType
+) -> bool:
+    """Check if entity is enabled."""
+    is_create: bool = True
+
+    if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+        if entity_type == SolarChargerEntityType.GLOBAL_DEFAULT:
+            is_create = False
+    else:
+        if entity_type in (
+            SolarChargerEntityType.LOCAL_DEFAULT,
+            SolarChargerEntityType.LOCAL_HIDDEN,
+        ):
+            is_create = False
+
+    return is_create
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class SolarChargerEntity(Entity):
     """SolarCharger base entity class."""
 
@@ -42,17 +111,22 @@ class SolarChargerEntity(Entity):
         self,
         config_item: str,
         subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
     ) -> None:
         """Initialize the SolarCharger base entity."""
         self._entity_key = config_item
         self._attr_translation_key = config_item
         self._subentry = subentry
-
+        self._entity_type = entity_type
         # self._attr_should_poll = False
         # self._attr_has_entity_name = True
         # self._attr_unique_id = entity_full_name
         # self._attr_name = self.type.capitalize()
         # self._attr_entity_registry_enabled_default = self._enabled_by_default
+
+        self._attr_entity_registry_enabled_default = is_entity_enabled(
+            subentry, entity_type
+        ) or is_config_entity_used_as_local_device_entity(subentry, config_item)
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._subentry.subentry_id)},
