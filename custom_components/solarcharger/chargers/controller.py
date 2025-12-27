@@ -41,7 +41,7 @@ from ..const import (  # noqa: TID252
     CALLBACK_SUN_ELEVATION_UPDATE,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
-    CONF_WAIT_NET_POWER_UPDATE,
+    CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
     CONTROL_CHARGE_SWITCH,
     CONTROL_CHARGER_ALLOCATED_POWER,
     CONTROL_FAST_CHARGE_SWITCH,
@@ -68,11 +68,14 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
     OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+    OPTION_CHARGER_MAX_SPEED,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    OPTION_NEXT_CHARGE_TIME_TRIGGER,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
+    OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
     OPTION_WAIT_CHARGEE_UPDATE_HA,
     OPTION_WAIT_CHARGEE_WAKEUP,
     OPTION_WAIT_CHARGER_AMP_CHANGE,
@@ -103,8 +106,9 @@ from .charger import Charger
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
-INITIAL_CHARGE_CURRENT = 6
-MIN_TIME_BETWEEN_UPDATE = 10  # 10 seconds
+INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
+MIN_TIME_BETWEEN_UPDATE = 10  # Minimum seconds between charger current updates
+ENVIRONMENT_CHECK_INTERVAL = 60  # Seconds to sleep between environment checks
 
 
 # ----------------------------------------------------------------------------
@@ -703,9 +707,6 @@ class ChargeController(ScOptionState):
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Initialize charge limit if charge schedule is enabled, otherwise use existing charge limit."""
-        # Moved status wait out of if statement to apply wait for all after charge limit change.
-        # Tesla BLE need 25 seconds here.
-        # ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
 
         if self._is_schedule_charge():
             weekly_schedule = self._get_charge_schedule()
@@ -714,16 +715,17 @@ class ChargeController(ScOptionState):
             tz = ZoneInfo(self._hass.config.time_zone)
             now_time = datetime.now(tz)
             # 0 = Monday, 6 = Sunday
-            day_of_week = now_time.weekday()
-            charge_limit = weekly_schedule[day_of_week].charge_limit
+            today_index = now_time.weekday()
+            charge_limit = weekly_schedule[today_index].charge_limit
 
             _LOGGER.info(
-                "%s: Setting charge limit to %.1f%% for %s",
+                "%s: Setting charge limit to %.1f %% for %s",
                 self._caller,
                 charge_limit,
                 now_time.strftime("%A"),
             )
             await chargeable.async_set_charge_limit(charge_limit)
+            await self._async_option_sleep(OPTION_WAIT_CHARGEE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
@@ -1054,9 +1056,6 @@ class ChargeController(ScOptionState):
                     await self._async_update_ha(chargeable)
                     self._track_allocated_power_update()
 
-                # await self._async_adjust_charge_current(charger)
-                # await self._async_update_ha(chargeable)
-
             except TimeoutError:
                 _LOGGER.warning(
                     "Timeout while communicating with charger %s", self._caller
@@ -1066,12 +1065,153 @@ class ChargeController(ScOptionState):
                     "Error in charge task for charger %s: %s", self._caller, e
                 )
 
+            # Sleep before re-evaluating charging conditions.
+            # Charging state must be "charging" for loop_count > 0.
+            # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
+            await asyncio.sleep(ENVIRONMENT_CHECK_INTERVAL)
             loop_count = loop_count + 1
-            await self._async_config_sleep(CONF_WAIT_NET_POWER_UPDATE)
 
         remove_callback_subscription(
             self._caller, self._unsub_callbacks, CALLBACK_ALLOCATE_POWER
         )
+
+    # ----------------------------------------------------------------------------
+    async def _async_schedule_next_charge_session(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        """Schedule next charge session."""
+
+        if self._is_schedule_charge():
+            battery_soc = chargeable.get_state_of_charge()
+            if battery_soc is None:
+                _LOGGER.info(
+                    "%s: Unable to get battery SOC, cannot schedule next charge session",
+                    self._caller,
+                )
+                return
+
+            weekly_schedule = self._get_charge_schedule()
+
+            # Ensure time is in local timezone
+            tz = ZoneInfo(self._hass.config.time_zone)
+            now_time = datetime.now(tz)
+            # 0 = Monday, 6 = Sunday
+            today_index = now_time.weekday()
+            tomorrow_index = (today_index + 1) % 7
+            tomorrow_charge_limit = weekly_schedule[tomorrow_index].charge_limit
+            charge_end_time = weekly_schedule[tomorrow_index].charge_end_time
+
+            if charge_end_time != time.min:
+                tomorrow_charge_endtime = datetime.combine(
+                    now_time.date() + timedelta(days=1),
+                    charge_end_time,
+                    tzinfo=tz,
+                )
+
+                if battery_soc >= tomorrow_charge_limit:
+                    _LOGGER.info(
+                        "%s: Battery SOC %.1f %% is at or above tomorrow's charge limit %.1f %%, no need to schedule next charge session",
+                        self._caller,
+                        battery_soc,
+                        tomorrow_charge_limit,
+                    )
+                    return
+
+                sun_state = self.get_sun_state_or_abort()
+                sec_per_degree_sunrise: float = get_sec_per_degree_sun_elevation(
+                    self._caller, sun_state
+                )
+                elevation_start_trigger = self.option_get_entity_number_or_abort(
+                    OPTION_SUNRISE_ELEVATION_START_TRIGGER
+                )
+                sunrise_offset = timedelta(
+                    seconds=(
+                        elevation_start_trigger
+                        + CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE
+                    )
+                    * sec_per_degree_sunrise
+                )
+                next_sunrise_utc: datetime = get_next_sunrise_time(
+                    self._caller, sun_state
+                )
+
+                # Convert to local timezone
+                next_sunrise_localtz = next_sunrise_utc.astimezone().time()
+                tomorrow_charge_starttime = (
+                    datetime.combine(
+                        now_time.date() + timedelta(days=1),
+                        next_sunrise_localtz,
+                        tzinfo=tz,
+                    )
+                    + sunrise_offset
+                )
+                tomorrow_available_charge_duration = (
+                    tomorrow_charge_endtime - tomorrow_charge_starttime
+                )
+
+                battery_max_charge_speed = self.option_get_entity_number_or_abort(
+                    OPTION_CHARGER_MAX_SPEED
+                )
+                # Duration in seconds to increase battery level by 1%
+                one_percent_charge_duration = 60 * 60 / battery_max_charge_speed
+
+                # Sometimes charge can decrease by 1% during charging at the beginning, so add extra onePercentChargeDuration for good measure.
+                tomorrow_need_charge_seconds = (
+                    tomorrow_charge_limit - battery_soc
+                ) * one_percent_charge_duration + one_percent_charge_duration
+                tomorrow_propose_charge_starttime = tomorrow_charge_endtime - timedelta(
+                    seconds=tomorrow_need_charge_seconds
+                )
+
+                if tomorrow_propose_charge_starttime <= now_time:
+                    tomorrow_new_charge_starttime = now_time + timedelta(minutes=2)
+                else:
+                    tomorrow_new_charge_starttime = tomorrow_propose_charge_starttime
+
+                _LOGGER.info(
+                    "%s: tomorrow_charge_limit=%.1f %%, "
+                    "tomorrow_charge_endtime=%s, "
+                    "battery_soc=%.1f %%, "
+                    "sec_per_degree_sunrise=%.2f sec, "
+                    "elevation_start_trigger=%.2f, "
+                    "sunrise_offset=%s, "
+                    "next_sunrise_utc=%s, "
+                    "next_sunrise_localtz=%s, "
+                    "tomorrow_charge_starttime=%s, "
+                    "tomorrow_available_charge_duration=%s, "
+                    "battery_max_charge_speed=%.1f %%/hr, "
+                    "one_percent_charge_duration=%.2f sec, "
+                    "tomorrow_propose_charge_starttime=%s, "
+                    "tomorrow_new_charge_starttime=%s, ",
+                    self._caller,
+                    tomorrow_charge_limit,
+                    tomorrow_charge_endtime,
+                    battery_soc,
+                    sec_per_degree_sunrise,
+                    elevation_start_trigger,
+                    sunrise_offset,
+                    next_sunrise_utc,
+                    next_sunrise_localtz,
+                    tomorrow_charge_starttime,
+                    tomorrow_available_charge_duration,
+                    battery_max_charge_speed,
+                    one_percent_charge_duration,
+                    tomorrow_propose_charge_starttime,
+                    tomorrow_new_charge_starttime,
+                )
+
+                if (
+                    tomorrow_need_charge_seconds
+                    > tomorrow_available_charge_duration.total_seconds()
+                ):
+                    _LOGGER.info(
+                        "%s: Scheduling next charge session at %s",
+                        self._caller,
+                        tomorrow_new_charge_starttime.isoformat(),
+                    )
+                    await self.async_set_datetime(
+                        OPTION_NEXT_CHARGE_TIME_TRIGGER, tomorrow_new_charge_starttime
+                    )
 
     # ----------------------------------------------------------------------------
     async def _async_tidy_up_on_exit(
@@ -1087,6 +1227,8 @@ class ChargeController(ScOptionState):
         sun_state = self.get_sun_state_or_abort()
         sun_elevation: float = get_sun_elevation(self._caller, sun_state)
         _LOGGER.warning("%s: Stopped at sun_elevation=%s", self._caller, sun_elevation)
+
+        await self._async_schedule_next_charge_session(charger, chargeable)
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge_task(

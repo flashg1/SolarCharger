@@ -10,7 +10,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.2beta2"
+VERSION = "0.2beta3"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -417,6 +417,8 @@ class ChargeControlApi(Enum):
     OCPP_CHARGER_API = "ocpp_charger_api"
     USER_CUSTOM_API = "user_custom_api"
 
+
+CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE = 0.833
 
 DEBUG = False
 

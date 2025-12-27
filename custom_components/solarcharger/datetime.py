@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 import logging
+from zoneinfo import ZoneInfo
 
 from homeassistant import config_entries, core
 from homeassistant.components.datetime import DateTimeEntity, DateTimeEntityDescription
@@ -59,6 +60,8 @@ class SolarChargerDateTimeConfigEntity(SolarChargerDateTimeEntity):
         entity_type: SolarChargerEntityType,
         desc: DateTimeEntityDescription,
         default_val: datetime = datetime.min.replace(tzinfo=timezone.utc),
+        # default_val: datetime = datetime.min.astimezone(),
+        # default_val: datetime = datetime.min.replace(tzinfo=ZoneInfo(self._hass.config.time_zone))
     ) -> None:
         """Initialise datetime."""
         super().__init__(config_item, subentry, entity_type, desc)

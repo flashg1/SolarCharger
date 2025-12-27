@@ -1,7 +1,7 @@
 """Support basic HA state requests."""
 
 from collections.abc import Callable
-from datetime import time
+from datetime import datetime, time
 import logging
 from typing import Any
 
@@ -9,9 +9,11 @@ from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceResponse, State
 
 from .const import (
+    DATETIME,
     EVENT_ATTR_ACTION,
     EVENT_ATTR_VALUE,
     HA_SUN_ENTITY,
+    NUMBER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 
@@ -201,10 +203,22 @@ class ScState:
             )
 
     # ----------------------------------------------------------------------------
+    async def async_set_datetime(self, entity_id: str, val: datetime) -> None:
+        """Set datetime entity."""
+
+        domain_name = DATETIME
+        service_name = "set_value"
+        service_data: dict[str, Any] = {
+            "entity_id": entity_id,
+            "value": val,
+        }
+        await self.async_ha_call(domain_name, service_name, service_data)
+
+    # ----------------------------------------------------------------------------
     async def async_set_number(self, entity_id: str, num: float) -> None:
         """Set number entity."""
 
-        domain_name = "number"
+        domain_name = NUMBER
         service_name = "set_value"
         service_data: dict[str, Any] = {
             "entity_id": entity_id,
