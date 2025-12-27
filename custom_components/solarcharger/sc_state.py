@@ -73,30 +73,30 @@ class ScState:
             return None
 
     # ----------------------------------------------------------------------------
-    def get_value(self, entity_id: str) -> Any | None:
-        """Get entity value."""
-        val: Any | None = None
+    def get_state_string(self, entity_id: str) -> str | None:
+        """Get entity state string."""
+        state_str: str | None = None
 
         try:
-            val = self._get_entity_value(entity_id)
+            state_str = self._get_entity_value(entity_id)
         except ValueError as e:
             _LOGGER.debug(
-                "%s: Failed to get value for entity '%s': '%s'",
+                "%s: Failed to get state string for entity '%s': '%s'",
                 self._caller,
                 entity_id,
                 e,
             )
 
-        _LOGGER.debug("%s: '%s' = '%s'", self._caller, entity_id, val)
+        _LOGGER.debug("%s: '%s' = '%s'", self._caller, entity_id, state_str)
 
-        return val
+        return state_str
 
     # ----------------------------------------------------------------------------
     def get_number(self, entity_id: str) -> float | None:
-        """Get number entity."""
+        """Get float object."""
 
-        val = self.get_value(entity_id)
-        if val is None:
+        state_str = self.get_state_string(entity_id)
+        if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get number for entity '%s'",
                 self._caller,
@@ -105,12 +105,12 @@ class ScState:
             return None
 
         try:
-            return float(val)
+            return float(state_str)
         except (ValueError, TypeError) as e:
             _LOGGER.warning(
                 "%s: Failed to parse state '%s' for entity '%s': %s",
                 self._caller,
-                val,
+                state_str,
                 entity_id,
                 e,
             )
@@ -118,7 +118,7 @@ class ScState:
 
     # ----------------------------------------------------------------------------
     def get_integer(self, entity_id: str) -> int | None:
-        """Get integer entity."""
+        """Get int object."""
 
         num: float | None = self.get_number(entity_id)
         if num is None:
@@ -128,10 +128,10 @@ class ScState:
 
     # ----------------------------------------------------------------------------
     def get_string(self, entity_id: str) -> str | None:
-        """Get string entity."""
+        """Get string object."""
 
-        str_val = self.get_value(entity_id)
-        if str_val is None:
+        state_str = self.get_state_string(entity_id)
+        if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get string for entity '%s'",
                 self._caller,
@@ -139,14 +139,14 @@ class ScState:
             )
             return None
 
-        return str_val
+        return state_str
 
     # ----------------------------------------------------------------------------
     def get_boolean(self, entity_id: str) -> bool | None:
-        """Get boolean entity."""
+        """Get boolean object."""
 
-        str_val = self.get_value(entity_id)
-        if str_val is None:
+        state_str = self.get_state_string(entity_id)
+        if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get boolean for entity '%s'",
                 self._caller,
@@ -154,14 +154,14 @@ class ScState:
             )
             return None
 
-        return str_val == "on" or str_val is True
+        return state_str == "on" or state_str is True
 
     # ----------------------------------------------------------------------------
     def get_time(self, entity_id: str) -> time | None:
-        """Get time entity."""
+        """Get time object."""
 
-        val = self.get_value(entity_id)
-        if val is None:
+        state_str = self.get_state_string(entity_id)
+        if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get time for entity '%s'",
                 self._caller,
@@ -169,7 +169,18 @@ class ScState:
             )
             return None
 
-        return val
+        try:
+            # eg. time_str = '00:00:00'
+            return datetime.strptime(state_str, "%H:%M:%S").time()
+        except (ValueError, TypeError) as e:
+            _LOGGER.warning(
+                "%s: Failed to parse state '%s' for entity '%s': %s",
+                self._caller,
+                state_str,
+                entity_id,
+                e,
+            )
+            return None
 
     # ----------------------------------------------------------------------------
     async def async_ha_call(
@@ -204,13 +215,16 @@ class ScState:
 
     # ----------------------------------------------------------------------------
     async def async_set_datetime(self, entity_id: str, val: datetime) -> None:
-        """Set datetime entity."""
+        """Set datetime entity.
+
+        See https://www.home-assistant.io/integrations/datetime/
+        """
 
         domain_name = DATETIME
         service_name = "set_value"
         service_data: dict[str, Any] = {
             "entity_id": entity_id,
-            "value": val,
+            "datetime": val.isoformat(),
         }
         await self.async_ha_call(domain_name, service_name, service_data)
 

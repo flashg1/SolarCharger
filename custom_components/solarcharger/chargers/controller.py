@@ -32,7 +32,7 @@ from homeassistant.helpers.event import (
 
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
-from homeassistant.util.dt import utcnow
+from homeassistant.util.dt import as_local, utcnow
 
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
@@ -46,6 +46,7 @@ from ..const import (  # noqa: TID252
     CONTROL_CHARGER_ALLOCATED_POWER,
     CONTROL_FAST_CHARGE_SWITCH,
     CONTROL_SCHEDULE_CHARGE_SWITCH,
+    DATETIME,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     HA_SUN_ENTITY,
@@ -151,6 +152,9 @@ class ChargeController(ScOptionState):
         )
         self._schedule_charge_switch_entity_id = compose_entity_id(
             SWITCH, subentry.unique_id, CONTROL_SCHEDULE_CHARGE_SWITCH
+        )
+        self._next_charge_time_trigger_entity_id = compose_entity_id(
+            DATETIME, subentry.unique_id, OPTION_NEXT_CHARGE_TIME_TRIGGER
         )
 
         # self._unsub_callbacks: dict[
@@ -1084,11 +1088,12 @@ class ChargeController(ScOptionState):
         if self._is_schedule_charge():
             battery_soc = chargeable.get_state_of_charge()
             if battery_soc is None:
-                _LOGGER.info(
-                    "%s: Unable to get battery SOC, cannot schedule next charge session",
-                    self._caller,
-                )
-                return
+                # _LOGGER.info(
+                #     "%s: Unable to get battery SOC, cannot schedule next charge session",
+                #     self._caller,
+                # )
+                # return
+                battery_soc = 0.0
 
             weekly_schedule = self._get_charge_schedule()
 
@@ -1136,7 +1141,8 @@ class ChargeController(ScOptionState):
                 )
 
                 # Convert to local timezone
-                next_sunrise_localtz = next_sunrise_utc.astimezone().time()
+                # next_sunrise_localtz = next_sunrise_utc.astimezone().time()   # Gave UTC time instead of local time.
+                next_sunrise_localtz = as_local(next_sunrise_utc).time()
                 tomorrow_charge_starttime = (
                     datetime.combine(
                         now_time.date() + timedelta(days=1),
@@ -1159,8 +1165,11 @@ class ChargeController(ScOptionState):
                 tomorrow_need_charge_seconds = (
                     tomorrow_charge_limit - battery_soc
                 ) * one_percent_charge_duration + one_percent_charge_duration
-                tomorrow_propose_charge_starttime = tomorrow_charge_endtime - timedelta(
+                tomorrow_need_charge_duration = timedelta(
                     seconds=tomorrow_need_charge_seconds
+                )
+                tomorrow_propose_charge_starttime = (
+                    tomorrow_charge_endtime - tomorrow_need_charge_duration
                 )
 
                 if tomorrow_propose_charge_starttime <= now_time:
@@ -1181,6 +1190,7 @@ class ChargeController(ScOptionState):
                     "tomorrow_available_charge_duration=%s, "
                     "battery_max_charge_speed=%.1f %%/hr, "
                     "one_percent_charge_duration=%.2f sec, "
+                    "tomorrow_need_charge_duration=%s, "
                     "tomorrow_propose_charge_starttime=%s, "
                     "tomorrow_new_charge_starttime=%s, ",
                     self._caller,
@@ -1196,21 +1206,20 @@ class ChargeController(ScOptionState):
                     tomorrow_available_charge_duration,
                     battery_max_charge_speed,
                     one_percent_charge_duration,
+                    tomorrow_need_charge_duration,
                     tomorrow_propose_charge_starttime,
                     tomorrow_new_charge_starttime,
                 )
 
-                if (
-                    tomorrow_need_charge_seconds
-                    > tomorrow_available_charge_duration.total_seconds()
-                ):
+                if tomorrow_need_charge_duration > tomorrow_available_charge_duration:
                     _LOGGER.info(
                         "%s: Scheduling next charge session at %s",
                         self._caller,
-                        tomorrow_new_charge_starttime.isoformat(),
+                        tomorrow_new_charge_starttime,
                     )
                     await self.async_set_datetime(
-                        OPTION_NEXT_CHARGE_TIME_TRIGGER, tomorrow_new_charge_starttime
+                        self._next_charge_time_trigger_entity_id,
+                        tomorrow_new_charge_starttime,
                     )
 
     # ----------------------------------------------------------------------------
