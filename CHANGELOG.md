@@ -1,6 +1,8 @@
 # Changelog
 
 ## v0.2beta3 2025-12-27
+- Persist datetime and time entites across reboots.
+- Test scheduling next charge session.
 
 ## v0.2beta2 2025-12-25
 - Tested setting daily charge limit.

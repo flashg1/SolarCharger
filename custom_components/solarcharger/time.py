@@ -6,8 +6,10 @@ import logging
 from homeassistant import config_entries, core
 from homeassistant.components.time import TimeEntity, TimeEntityDescription
 from homeassistant.config_entries import ConfigSubentry
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     DOMAIN,
@@ -30,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerTimeEntity(SolarChargerEntity, TimeEntity):
+class SolarChargerTimeEntity(SolarChargerEntity, TimeEntity, RestoreEntity):
     """SolarCharger time entity."""
 
     def __init__(
@@ -51,6 +53,15 @@ class SolarChargerTimeEntity(SolarChargerEntity, TimeEntity):
         """Set new value."""
         self._attr_native_value = value
         self.update_ha_state()
+
+    # ----------------------------------------------------------------------------
+    async def async_added_to_hass(self) -> None:
+        """Restore last state."""
+        await super().async_added_to_hass()
+        if (
+            last_state := await self.async_get_last_state()
+        ) is not None and last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            await self.async_set_value(time.fromisoformat(last_state.state))
 
 
 # ----------------------------------------------------------------------------
