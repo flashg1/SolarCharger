@@ -57,16 +57,20 @@ SUPPORTED_CHARGER_DOMAIN_LIST: list[str] = [
 # Make sure the entity key names are unique.
 #######################################################
 # Sensors
-ENTITY_KEY_LAST_CHECK_SENSOR = "last_check"
-ENTITY_KEY_RUN_STATE_SENSOR = "run_state"
+SENSOR_LAST_CHECK = "last_check"
+SENSOR_RUN_STATE = "run_state"
 
 # Switches
-CONTROL_CHARGE_SWITCH = "charge"
-CONTROL_FAST_CHARGE_SWITCH = "fast_charge"
-CONTROL_SCHEDULE_CHARGE_SWITCH = "schedule_charge"
+SWITCH_START_CHARGE = "charge"
+SWITCH_FAST_CHARGE_MODE = "fast_charge_mode"
+SWITCH_SCHEDULE_CHARGE = "schedule_charge"
 
 # Buttons
-CONTROL_CHARGE_BUTTON = "start_charge"
+BUTTON_START_CHARGE = "start_charge"
+BUTTON_RESET_CHARGE_LIMIT_AND_TIME = "reset_charge_limit_and_time"
+
+# Datetime triggers
+DATETIME_NEXT_CHARGE_TIME = "next_charge_time"
 
 #######################################################
 # Make sure the entity key names are unique.
@@ -187,8 +191,6 @@ OPTION_CHARGE_ENDTIME_THURSDAY = "charge_endtime_thursday"
 OPTION_CHARGE_ENDTIME_FRIDAY = "charge_endtime_friday"
 OPTION_CHARGE_ENDTIME_SATURDAY = "charge_endtime_saturday"
 OPTION_CHARGE_ENDTIME_SUNDAY = "charge_endtime_sunday"
-
-OPTION_NEXT_CHARGE_TIME_TRIGGER = "next_charge_time_trigger"
 
 #######################################################
 # Default values
@@ -402,6 +404,8 @@ CALLBACK_PLUG_IN_CHARGER = "callback_plug_in_charger"
 CALLBACK_SUNRISE_START_CHARGE = "callback_sunrise_start_charge"
 CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
 CALLBACK_ALLOCATE_POWER = "callback_allocate_power"
+CALLBACK_NEXT_CHARGE_TIME_UPDATE = "callback_next_charge_time_update"
+CALLBACK_NEXT_CHARGE_TIME_TRIGGER = "callback_next_charge_time_trigger"
 
 
 #######################################################

@@ -4,9 +4,11 @@ from collections.abc import Callable
 from datetime import datetime, time
 import logging
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from homeassistant.const import ATTR_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceResponse, State
+from homeassistant.util.dt import as_local, utcnow
 
 from .const import (
     DATETIME,
@@ -36,6 +38,54 @@ class ScState:
 
         self._hass = hass
         self._caller = caller
+
+    # ----------------------------------------------------------------------------
+    def get_ha(self) -> HomeAssistant:
+        """Get Home Assistant instance."""
+
+        return self._hass
+
+    # ----------------------------------------------------------------------------
+    def get_utc_datetime(self) -> datetime:
+        """Get the current time in UTC."""
+
+        return utcnow()
+
+    # ----------------------------------------------------------------------------
+    def convert_utc_to_local_datetime(self, utc_dt: datetime) -> datetime:
+        """Convert a UTC datetime to the HA local timezone."""
+
+        return as_local(utc_dt)
+
+    # ----------------------------------------------------------------------------
+    def get_local_timezone(self) -> ZoneInfo:
+        """Get the HA timezone."""
+
+        return ZoneInfo(self._hass.config.time_zone)
+
+    # ----------------------------------------------------------------------------
+    def get_local_datetime(self) -> datetime:
+        """Get the current time in the HA timezone."""
+
+        return datetime.now(self.get_local_timezone())
+
+    # ----------------------------------------------------------------------------
+    def parse_local_datetime(self, datetime_str: str) -> datetime:
+        """Parse a datetime string in the HA local timezone."""
+
+        # Stored string is in ISO format UTC or local (eg. 2025-12-28T05:51:05+00:00).
+        # Convert to local timezone (eg. 2025-12-28 16:51:05+11:00)
+        return datetime.fromisoformat(datetime_str).astimezone(
+            self.get_local_timezone()
+        )
+
+    # ----------------------------------------------------------------------------
+    def parse_local_time(self, time_str: str) -> time:
+        """Parse a time string in the HA local timezone."""
+
+        # eg. time_str = '00:00:00'
+        # return datetime.strptime(time_str, "%H:%M:%S").time()
+        return time.fromisoformat(time_str)
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
@@ -157,6 +207,31 @@ class ScState:
         return state_str == "on" or state_str is True
 
     # ----------------------------------------------------------------------------
+    def get_datetime(self, entity_id: str) -> datetime | None:
+        """Get datetime object."""
+
+        state_str = self.get_state_string(entity_id)
+        if state_str is None:
+            _LOGGER.warning(
+                "%s: Cannot get datetime for entity '%s'",
+                self._caller,
+                entity_id,
+            )
+            return None
+
+        try:
+            return self.parse_local_datetime(state_str)
+        except (ValueError, TypeError) as e:
+            _LOGGER.warning(
+                "%s: Failed to parse state '%s' for entity '%s': %s",
+                self._caller,
+                state_str,
+                entity_id,
+                e,
+            )
+            return None
+
+    # ----------------------------------------------------------------------------
     def get_time(self, entity_id: str) -> time | None:
         """Get time object."""
 
@@ -170,8 +245,7 @@ class ScState:
             return None
 
         try:
-            # eg. time_str = '00:00:00'
-            return datetime.strptime(state_str, "%H:%M:%S").time()
+            return self.parse_local_time(state_str)
         except (ValueError, TypeError) as e:
             _LOGGER.warning(
                 "%s: Failed to parse state '%s' for entity '%s': %s",

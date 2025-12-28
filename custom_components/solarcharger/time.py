@@ -84,7 +84,7 @@ class SolarChargerTimeConfigEntity(SolarChargerTimeEntity):
         self._attr_native_value = default_val
 
     # ----------------------------------------------------------------------------
-    async def async_set_native_value(self, value: time) -> None:
+    async def async_set_value(self, value: time) -> None:
         """Set new value."""
         await super().async_set_value(value)
 

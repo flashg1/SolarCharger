@@ -1,7 +1,9 @@
 """SolarCharger button platform."""
 
+from collections.abc import Callable, Coroutine
 from typing import Any
 
+from config.custom_components.solarcharger.model_control import ChargeControl
 from homeassistant import config_entries, core
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigSubentry
@@ -9,13 +11,20 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
     BUTTON,
-    CONTROL_CHARGE_BUTTON,
+    BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
+    BUTTON_START_CHARGE,
     DOMAIN,
     ICON_START,
-    SUBENTRY_TYPE_CHARGER,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+
+# type BUTTON_ACTION_TYPE = Callable[[ChargeControl], Coroutine[Any, Any, None] | None]
+# type BUTTON_ACTION_TYPE = (
+#     core.HassJob[[ChargeControl], Coroutine[Any, Any, None] | None]
+#     | Callable[[ChargeControl], Coroutine[Any, Any, None] | None]
+# )
+type BUTTON_ACTION_TYPE = Callable[[ChargeControl], Coroutine[Any, Any, None]]
 
 
 # ----------------------------------------------------------------------------
@@ -43,8 +52,8 @@ class SolarChargerButtonEntity(SolarChargerEntity, ButtonEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerButtonCharge(SolarChargerButtonEntity):
-    """Representation of a SolarCharger start button."""
+class SolarChargerButtonAction(SolarChargerButtonEntity):
+    """SolarCharger button action on button press."""
 
     # _entity_key = CONTROL_CHARGE_BUTTON
     # _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -58,38 +67,25 @@ class SolarChargerButtonCharge(SolarChargerButtonEntity):
         entity_type: SolarChargerEntityType,
         desc: ButtonEntityDescription,
         coordinator: SolarChargerCoordinator,
+        action: BUTTON_ACTION_TYPE,
     ) -> None:
-        """Initialize the start button."""
+        """Initialize the button."""
+
         SolarChargerButtonEntity.__init__(
             self, config_item, subentry, entity_type, desc, coordinator
         )
+        self._action = action
 
     # ----------------------------------------------------------------------------
     async def async_press(self) -> None:
         """Press the button."""
-        await self._coordinator.async_start_charger(
+
+        # await self._coordinator.async_start_charger(
+        #     self._coordinator.charge_controls[self._subentry.subentry_id]
+        # )
+        await self._action(
             self._coordinator.charge_controls[self._subentry.subentry_id]
         )
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-CONFIG_BUTTON_LIST: tuple[
-    tuple[str, Any, SolarChargerEntityType, ButtonEntityDescription], ...
-] = (
-    #####################################
-    # Button entities
-    # entity_category=None
-    #####################################
-    (
-        CONTROL_CHARGE_BUTTON,
-        SolarChargerButtonCharge,
-        SolarChargerEntityType.LOCAL_HIDDEN,
-        ButtonEntityDescription(
-            key=CONTROL_CHARGE_BUTTON,
-        ),
-    ),
-)
 
 
 # ----------------------------------------------------------------------------
@@ -103,30 +99,67 @@ async def async_setup_entry(
     """Set up buttons based on config entry."""
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
+    # ----------------------------------------------------------------------------
+    CONFIG_BUTTON_LIST: tuple[
+        tuple[
+            str,
+            Any,
+            BUTTON_ACTION_TYPE,
+            SolarChargerEntityType,
+            ButtonEntityDescription,
+        ],
+        ...,
+    ] = (
+        #####################################
+        # Button entities
+        # entity_category=None
+        #####################################
+        (
+            BUTTON_START_CHARGE,
+            SolarChargerButtonAction,
+            coordinator.async_start_charger,
+            SolarChargerEntityType.LOCAL_HIDDEN,
+            ButtonEntityDescription(
+                key=BUTTON_START_CHARGE,
+            ),
+        ),
+        (
+            BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
+            SolarChargerButtonAction,
+            coordinator.async_reset_charge_limit_default,
+            SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+            ButtonEntityDescription(
+                key=BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
+            ),
+        ),
+    )
+
+    # ----------------------------------------------------------------------------
     for subentry in config_entry.subentries.values():
-        # For charger subentries only
-        if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-            buttons: dict[str, SolarChargerButtonEntity] = {}
+        # For both global default and charger subentries
+        buttons: dict[str, SolarChargerButtonEntity] = {}
 
-            for (
-                config_item,
-                cls,
-                entity_type,
-                entity_description,
-            ) in CONFIG_BUTTON_LIST:
-                if is_create_entity(subentry, entity_type):
-                    buttons[config_item] = cls(
-                        config_item,
-                        subentry,
-                        entity_type,
-                        entity_description,
-                        coordinator,
-                    )
-
-            if len(buttons) > 0:
-                coordinator.charge_controls[subentry.subentry_id].buttons = buttons
-                async_add_entities(
-                    buttons.values(),
-                    update_before_add=False,
-                    config_subentry_id=subentry.subentry_id,
+        for (
+            config_item,
+            cls,
+            action,
+            entity_type,
+            entity_description,
+        ) in CONFIG_BUTTON_LIST:
+            if is_create_entity(subentry, entity_type):
+                buttons[config_item] = cls(
+                    config_item,
+                    subentry,
+                    entity_type,
+                    entity_description,
+                    coordinator,
+                    action,
                 )
+
+        if len(buttons) > 0:
+            coordinator.charge_controls[subentry.subentry_id].buttons = buttons
+            async_add_entities(
+                buttons.values(),
+                update_before_add=False,
+                config_subentry_id=subentry.subentry_id,
+            )

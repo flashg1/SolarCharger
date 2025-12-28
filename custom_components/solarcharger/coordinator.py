@@ -1,11 +1,11 @@
 """Solar charger coordinator."""
 
 from asyncio import Task
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 import inspect
 import logging
-from time import time
 
+# from time import time
 # from functools import cached_property
 from propcache.api import cached_property
 
@@ -30,22 +30,37 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 
+from .config_utils import get_device_config_default_value
 from .const import (
     CALLBACK_PLUG_IN_CHARGER,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
     CONF_NET_POWER,
     CONF_WAIT_NET_POWER_UPDATE,
-    CONTROL_CHARGE_SWITCH,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     DOMAIN,
-    ENTITY_KEY_LAST_CHECK_SENSOR,
-    ENTITY_KEY_RUN_STATE_SENSOR,
+    OPTION_CHARGE_ENDTIME_FRIDAY,
+    OPTION_CHARGE_ENDTIME_MONDAY,
+    OPTION_CHARGE_ENDTIME_SATURDAY,
+    OPTION_CHARGE_ENDTIME_SUNDAY,
+    OPTION_CHARGE_ENDTIME_THURSDAY,
+    OPTION_CHARGE_ENDTIME_TUESDAY,
+    OPTION_CHARGE_ENDTIME_WEDNESDAY,
+    OPTION_CHARGE_LIMIT_FRIDAY,
+    OPTION_CHARGE_LIMIT_MONDAY,
+    OPTION_CHARGE_LIMIT_SATURDAY,
+    OPTION_CHARGE_LIMIT_SUNDAY,
+    OPTION_CHARGE_LIMIT_THURSDAY,
+    OPTION_CHARGE_LIMIT_TUESDAY,
+    OPTION_CHARGE_LIMIT_WEDNESDAY,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+    SENSOR_LAST_CHECK,
+    SENSOR_RUN_STATE,
+    SWITCH_START_CHARGE,
 )
 from .helpers.general import async_set_allocated_power
 from .model_control import ChargeControl
@@ -425,7 +440,7 @@ class SolarChargerCoordinator(ScOptionState):
         # Run the actual charger update
         for control in self.charge_controls.values():
             if control.sensors:
-                control.sensors[ENTITY_KEY_LAST_CHECK_SENSOR].set_state(
+                control.sensors[SENSOR_LAST_CHECK].set_state(
                     datetime.now().astimezone()
                 )
 
@@ -568,18 +583,16 @@ class SolarChargerCoordinator(ScOptionState):
 
                 if control.switches:
                     control.switch_charge = False
-                    control.switches[CONTROL_CHARGE_SWITCH].turn_off()
-                    control.switches[CONTROL_CHARGE_SWITCH].update_ha_state()
+                    control.switches[SWITCH_START_CHARGE].turn_off()
+                    control.switches[SWITCH_START_CHARGE].update_ha_state()
 
                 if control.sensors:
-                    control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
+                    control.sensors[SENSOR_RUN_STATE].set_state(
                         COORDINATOR_STATE_STOPPED
                     )
 
             if control.sensors:
-                control.sensors[ENTITY_KEY_RUN_STATE_SENSOR].set_state(
-                    COORDINATOR_STATE_CHARGING
-                )
+                control.sensors[SENSOR_RUN_STATE].set_state(COORDINATOR_STATE_CHARGING)
             control.charge_task = await control.controller.async_start_charge()
             control.instance_count = 1
             control.charge_task.add_done_callback(_callback_on_charge_end)
@@ -601,6 +614,91 @@ class SolarChargerCoordinator(ScOptionState):
                             return
 
                     control.end_charge_task = control.controller.stop_charge()
+
+    # ----------------------------------------------------------------------------
+    async def async_reset_charge_limit_default(self, control: ChargeControl) -> None:
+        """Reset charge limit defaults."""
+        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+
+        # No need for controller for this function.
+        # Global defaults subentry has no controller.
+        if control:
+            subentry = self._entry.subentries.get(control.subentry_id)
+            if control.numbers and control.times and subentry:
+                _LOGGER.info(
+                    "%s: Resetting charge limit and charge end time defaults",
+                    control.config_name,
+                )
+
+                default_val = get_device_config_default_value(
+                    subentry, OPTION_CHARGE_LIMIT_MONDAY
+                )
+                await control.numbers[
+                    OPTION_CHARGE_LIMIT_MONDAY
+                ].async_set_native_value(default_val)
+                await control.times[OPTION_CHARGE_ENDTIME_MONDAY].async_set_value(
+                    time.min
+                )
+
+                default_val = get_device_config_default_value(
+                    subentry, OPTION_CHARGE_LIMIT_TUESDAY
+                )
+                await control.numbers[
+                    OPTION_CHARGE_LIMIT_TUESDAY
+                ].async_set_native_value(default_val)
+                await control.times[OPTION_CHARGE_ENDTIME_TUESDAY].async_set_value(
+                    time.min
+                )
+
+                default_val = get_device_config_default_value(
+                    subentry, OPTION_CHARGE_LIMIT_WEDNESDAY
+                )
+                await control.numbers[
+                    OPTION_CHARGE_LIMIT_WEDNESDAY
+                ].async_set_native_value(default_val)
+                await control.times[OPTION_CHARGE_ENDTIME_WEDNESDAY].async_set_value(
+                    time.min
+                )
+
+                default_val = get_device_config_default_value(
+                    subentry, OPTION_CHARGE_LIMIT_THURSDAY
+                )
+                await control.numbers[
+                    OPTION_CHARGE_LIMIT_THURSDAY
+                ].async_set_native_value(default_val)
+                await control.times[OPTION_CHARGE_ENDTIME_THURSDAY].async_set_value(
+                    time.min
+                )
+
+                default_val = get_device_config_default_value(
+                    subentry, OPTION_CHARGE_LIMIT_FRIDAY
+                )
+                await control.numbers[
+                    OPTION_CHARGE_LIMIT_FRIDAY
+                ].async_set_native_value(default_val)
+                await control.times[OPTION_CHARGE_ENDTIME_FRIDAY].async_set_value(
+                    time.min
+                )
+
+                default_val = get_device_config_default_value(
+                    subentry, OPTION_CHARGE_LIMIT_SATURDAY
+                )
+                await control.numbers[
+                    OPTION_CHARGE_LIMIT_SATURDAY
+                ].async_set_native_value(default_val)
+                await control.times[OPTION_CHARGE_ENDTIME_SATURDAY].async_set_value(
+                    time.min
+                )
+
+                default_val = get_device_config_default_value(
+                    subentry, OPTION_CHARGE_LIMIT_SUNDAY
+                )
+                await control.numbers[
+                    OPTION_CHARGE_LIMIT_SUNDAY
+                ].async_set_native_value(default_val)
+                await control.times[OPTION_CHARGE_ENDTIME_SUNDAY].async_set_value(
+                    time.min
+                )
 
     # ----------------------------------------------------------------------------
     # def _update_charger_if_needed(

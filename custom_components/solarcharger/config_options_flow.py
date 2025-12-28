@@ -95,8 +95,8 @@ from .const import (
 )
 from .exceptions.validation_exception import ValidationExceptionError
 
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
+# if TYPE_CHECKING:
+#     from homeassistant.core import HomeAssistant
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

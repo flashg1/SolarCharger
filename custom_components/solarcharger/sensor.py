@@ -14,9 +14,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import (
     COORDINATOR_STATES,
     DOMAIN,
-    ENTITY_KEY_LAST_CHECK_SENSOR,
-    ENTITY_KEY_RUN_STATE_SENSOR,
     SENSOR,
+    SENSOR_LAST_CHECK,
+    SENSOR_RUN_STATE,
     SUBENTRY_TYPE_CHARGER,
 )
 from .coordinator import SolarChargerCoordinator
@@ -99,19 +99,19 @@ CONFIG_SENSOR_LIST: tuple[
     # entity_category=None
     #####################################
     (
-        ENTITY_KEY_RUN_STATE_SENSOR,
+        SENSOR_RUN_STATE,
         SolarChargerSensorRunState,
         SolarChargerEntityType.LOCAL_DEFAULT,
         SensorEntityDescription(
-            key=ENTITY_KEY_RUN_STATE_SENSOR,
+            key=SENSOR_RUN_STATE,
         ),
     ),
     (
-        ENTITY_KEY_LAST_CHECK_SENSOR,
+        SENSOR_LAST_CHECK,
         SolarChargerSensorLastCheck,
         SolarChargerEntityType.HIDDEN_DEFAULT,
         SensorEntityDescription(
-            key=ENTITY_KEY_LAST_CHECK_SENSOR,
+            key=SENSOR_LAST_CHECK,
         ),
     ),
 )

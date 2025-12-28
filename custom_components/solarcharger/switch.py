@@ -11,12 +11,12 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
-    CONTROL_CHARGE_SWITCH,
-    CONTROL_FAST_CHARGE_SWITCH,
-    CONTROL_SCHEDULE_CHARGE_SWITCH,
     DOMAIN,
     SUBENTRY_TYPE_CHARGER,
     SWITCH,
+    SWITCH_FAST_CHARGE_MODE,
+    SWITCH_SCHEDULE_CHARGE,
+    SWITCH_START_CHARGE,
 )
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 
@@ -145,33 +145,33 @@ CONFIG_SWITCH_LIST: tuple[
     # Control switches - calls coordinator to perform action
     #####################################
     (
-        CONTROL_CHARGE_SWITCH,
+        SWITCH_START_CHARGE,
         SolarChargerSwitchCharge,
         False,
         SolarChargerEntityType.LOCAL_DEFAULT,
         SwitchEntityDescription(
-            key=CONTROL_CHARGE_SWITCH,
+            key=SWITCH_START_CHARGE,
         ),
     ),
     #####################################
     # Boolean switches
     #####################################
     (
-        CONTROL_FAST_CHARGE_SWITCH,
+        SWITCH_FAST_CHARGE_MODE,
         SolarChargerSwitchEntity,
         True,
         SolarChargerEntityType.LOCAL_DEFAULT,
         SwitchEntityDescription(
-            key=CONTROL_FAST_CHARGE_SWITCH,
+            key=SWITCH_FAST_CHARGE_MODE,
         ),
     ),
     (
-        CONTROL_SCHEDULE_CHARGE_SWITCH,
+        SWITCH_SCHEDULE_CHARGE,
         SolarChargerSwitchEntity,
         True,
         SolarChargerEntityType.LOCAL_DEFAULT,
         SwitchEntityDescription(
-            key=CONTROL_SCHEDULE_CHARGE_SWITCH,
+            key=SWITCH_SCHEDULE_CHARGE,
         ),
     ),
 )

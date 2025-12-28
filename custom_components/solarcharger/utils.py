@@ -7,11 +7,10 @@ import logging
 import threading
 from types import FrameType
 from typing import Any
-from zoneinfo import ZoneInfo
 
 # import pytz
 from homeassistant.core import CALLBACK_TYPE, State
-from homeassistant.util.dt import parse_datetime
+from homeassistant.util.dt import as_local, parse_datetime
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -148,14 +147,16 @@ def get_sun_elevation(caller: str, sun_state: State) -> float:
 
 # ----------------------------------------------------------------------------
 def get_next_sunrise_time(caller: str, sun_state: State) -> datetime:
-    """Get next sunrise time."""
-    return get_sun_attribute_time(caller, sun_state, "next_rising")
+    """Get next sunrise time in local timezone."""
+    utc_time = get_sun_attribute_time(caller, sun_state, "next_rising")
+    return as_local(utc_time)
 
 
 # ----------------------------------------------------------------------------
 def get_next_sunset_time(caller: str, sun_state: State) -> datetime:
-    """Get next sunset time."""
-    return get_sun_attribute_time(caller, sun_state, "next_setting")
+    """Get next sunset time in local timezone."""
+    utc_time = get_sun_attribute_time(caller, sun_state, "next_setting")
+    return as_local(utc_time)
 
 
 # ----------------------------------------------------------------------------
@@ -164,17 +165,17 @@ def get_next_sunset_time(caller: str, sun_state: State) -> datetime:
 # Sun elevation degree rate of change varies with day of time and season.
 def get_sec_per_degree_sun_elevation(caller: str, sun_state: State) -> float:
     """Get seconds per degree sun elevation for the today."""
-    next_setting_utc = get_next_sunset_time(caller, sun_state)
-    next_rising_utc = get_next_sunrise_time(caller, sun_state)
+    next_setting_local = get_next_sunset_time(caller, sun_state)
+    next_rising_local = get_next_sunrise_time(caller, sun_state)
 
-    if next_rising_utc > next_setting_utc:
+    if next_rising_local > next_setting_local:
         # Passed sunrise today
-        from_time = next_rising_utc - timedelta(days=1)
-        to_time = next_setting_utc
+        from_time = next_rising_local - timedelta(days=1)
+        to_time = next_setting_local
     else:
         # Tomorrow
-        from_time = next_rising_utc
-        to_time = next_setting_utc
+        from_time = next_rising_local
+        to_time = next_setting_local
 
     total_sunlight_seconds = to_time.timestamp() - from_time.timestamp()
     seconds_per_degree: float = total_sunlight_seconds / 180

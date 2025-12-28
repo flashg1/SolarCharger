@@ -2,10 +2,8 @@
 
 from asyncio import Task
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import TYPE_CHECKING
-
-from homeassistant.core import CALLBACK_TYPE
 
 from .chargers.controller import ChargeController
 
@@ -28,7 +26,7 @@ from .chargers.controller import ChargeController
 #   You still need to use string literals for forward references if the type isn't available at runtime.
 #######################################################
 if TYPE_CHECKING:
-    from .button import SolarChargerButtonEntity
+    from .button import SolarChargerButtonAction
     from .datetime import SolarChargerDateTimeEntity
     from .number import SolarChargerNumberEntity
     from .sensor import SolarChargerSensorEntity
@@ -59,7 +57,7 @@ class ChargeControl:
     sensors: dict[str, "SolarChargerSensorEntity"] | None = None
     numbers: dict[str, "SolarChargerNumberEntity"] | None = None
     switches: dict[str, "SolarChargerSwitchEntity"] | None = None
-    buttons: dict[str, "SolarChargerButtonEntity"] | None = None
+    buttons: dict[str, "SolarChargerButtonAction"] | None = None
     times: dict[str, "SolarChargerTimeEntity"] | None = None
     datetimes: dict[str, "SolarChargerDateTimeEntity"] | None = None
 

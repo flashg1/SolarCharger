@@ -2,7 +2,6 @@
 
 from enum import Enum
 import logging
-from operator import is_
 
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.device_registry import DeviceInfo

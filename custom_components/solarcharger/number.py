@@ -24,7 +24,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .config_utils import get_device_config_default_value
 from .const import (
-    # CONF_WAIT_NET_POWER_UPDATE,
     CONTROL_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,

@@ -111,14 +111,17 @@
         "button": {
             "start_charge": {
                 "name": "Start charge"
+            },
+            "reset_charge_limit_and_time": {
+                "name": "Reset charge limit and time"
             }
         },
         "switch": {
             "charge": {
                 "name": "Charge"
             },
-            "fast_charge": {
-                "name": "Fast charge"
+            "fast_charge_mode": {
+                "name": "Fast charge mode"
             },
             "schedule_charge": {
                 "name": "Schedule charge"

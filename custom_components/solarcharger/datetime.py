@@ -13,7 +13,7 @@ from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import DATETIME, DOMAIN, OPTION_NEXT_CHARGE_TIME_TRIGGER
+from .const import DATETIME, DATETIME_NEXT_CHARGE_TIME, DOMAIN
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 
@@ -53,6 +53,8 @@ class SolarChargerDateTimeEntity(SolarChargerEntity, DateTimeEntity, RestoreEnti
         if (
             last_state := await self.async_get_last_state()
         ) is not None and last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            # Stored string is in ISO format UTC (eg. 2025-12-28T05:51:05+00:00).
+            # Convert to local timezone (eg. 2025-12-28 16:51:05+11:00)
             await self.async_set_value(
                 datetime.fromisoformat(last_state.state).astimezone(
                     ZoneInfo(self.hass.config.time_zone)
@@ -109,10 +111,10 @@ CONFIG_DATETIME_LIST: tuple[
     # entity_category=None
     #####################################
     (
-        OPTION_NEXT_CHARGE_TIME_TRIGGER,
+        DATETIME_NEXT_CHARGE_TIME,
         SolarChargerEntityType.LOCAL_DEFAULT,
         DateTimeEntityDescription(
-            key=OPTION_NEXT_CHARGE_TIME_TRIGGER,
+            key=DATETIME_NEXT_CHARGE_TIME,
         ),
     ),
     #####################################
