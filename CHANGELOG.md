@@ -1,8 +1,11 @@
 # Changelog
 
+## v0.2beta4 2025-12-29
+- Fixed incorrect buttons.py lib path.
+
 ## v0.2beta3 2025-12-27
 - Just-in-time charge scheduling.
-- Persist datetime and time entites across reboots.
+- Persist datetime and time entities across reboots.
 - Test scheduling next charge session.
 
 ## v0.2beta2 2025-12-25

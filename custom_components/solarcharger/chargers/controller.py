@@ -124,11 +124,11 @@ class ChargeSchedule:
 
 
 @dataclass
-class ChargeData:
-    """Charge limit runtime data."""
+class ScheduleData:
+    """Charge limit schedule data."""
 
     weekly_schedule: list[ChargeSchedule]
-    has_schedule: bool = False
+    use_charge_schedule: bool = False
     has_charge_endtime: bool = False
     day_index: int = -1
     now_time: datetime = datetime.min
@@ -740,7 +740,7 @@ class ChargeController(ScOptionState):
         self._check_is_at_location(chargeable)
 
     # ----------------------------------------------------------------------------
-    def _get_charge_schedule(self) -> list[ChargeSchedule]:
+    def _get_weekly_schedule(self) -> list[ChargeSchedule]:
         """Get daily charge schedule."""
 
         weekly_schedule: list[ChargeSchedule] = [
@@ -843,41 +843,16 @@ class ChargeController(ScOptionState):
     ) -> None:
         """Initialize charge limit if charge schedule is enabled, otherwise use existing charge limit."""
 
-        if self._is_schedule_charge():
-            # weekly_schedule = self._get_charge_schedule()
-
-            # # Ensure time is in local timezone
-            # now_time = self.get_local_datetime()
-            # # 0 = Monday, 6 = Sunday
-            # today_index = now_time.weekday()
-            # today_endtime = weekly_schedule[today_index].charge_end_time
-            # charge_limit = weekly_schedule[today_index].charge_limit
-            # end_time = self.combine_local_date_time(now_time.date(), today_endtime)
-
-            # if today_endtime != time.min:
-            #     if today_endtime < now_time.time():
-            #         # Already past today endtime
-            #         if not self._is_considered_today():
-            #             # Time is between sunset and midnight
-            #             tomorrow_index = (today_index + 1) % 7
-            #             tomorrow_endtime = weekly_schedule[
-            #                 tomorrow_index
-            #             ].charge_end_time
-            #             if tomorrow_endtime != time.min:
-            #                 charge_limit = weekly_schedule[tomorrow_index].charge_limit
-            #                 end_time = self.combine_local_date_time(
-            #                     now_time.date() + timedelta(days=1), tomorrow_endtime
-            #                 )
-
-            cd = self._is_on_charge_schedule()
-            charge_limit = cd.weekly_schedule[cd.day_index].charge_limit
+        sd = self._get_schedule_data()
+        if sd.use_charge_schedule:
+            charge_limit = sd.weekly_schedule[sd.day_index].charge_limit
 
             _LOGGER.info(
                 "%s: Setting charge limit to %.1f %% for %s",
                 self._caller,
                 charge_limit,
                 # now_time.strftime("%A"),
-                cd.weekly_schedule[cd.day_index].charge_day,
+                sd.weekly_schedule[sd.day_index].charge_day,
             )
             await chargeable.async_set_charge_limit(charge_limit)
             await self._async_option_sleep(OPTION_WAIT_CHARGEE_LIMIT_CHANGE)
@@ -953,46 +928,51 @@ class ChargeController(ScOptionState):
         return self._is_fast_charge()
 
     # ----------------------------------------------------------------------------
-    def _is_on_charge_schedule(self) -> ChargeData:
-        cd = ChargeData(weekly_schedule=[])
+    # use_charge_schedule and has_charge_endtime are always set and correct.
+    # If use_charge_schedule is true, all other parameters are set.
+    # If use_charge_schedule is false, only has_charge_endtime is set. All others are not set.
+    def _get_schedule_data(self) -> ScheduleData:
+        """Calculate charge schedule data."""
+
+        sd = ScheduleData(weekly_schedule=[])
 
         if self._is_schedule_charge():
-            cd.has_schedule = True
-            cd.weekly_schedule = self._get_charge_schedule()
+            sd.use_charge_schedule = True
+            sd.weekly_schedule = self._get_weekly_schedule()
 
             # Ensure time is in local timezone
-            cd.now_time = self.get_local_datetime()
+            sd.now_time = self.get_local_datetime()
             # 0 = Monday, 6 = Sunday
-            today_index = cd.now_time.weekday()
-            today_endtime = cd.weekly_schedule[today_index].charge_end_time
-            cd.charge_limit = cd.weekly_schedule[today_index].charge_limit
-            cd.charge_endtime = self.combine_local_date_time(
-                cd.now_time.date(), today_endtime
+            today_index = sd.now_time.weekday()
+            today_endtime = sd.weekly_schedule[today_index].charge_end_time
+            sd.charge_limit = sd.weekly_schedule[today_index].charge_limit
+            sd.day_index = today_index
+            sd.charge_endtime = self.combine_local_date_time(
+                sd.now_time.date(), today_endtime
             )
-            cd.day_index = today_index
 
             if today_endtime != time.min:
-                cd.has_charge_endtime = True
-                if today_endtime < cd.now_time.time():
+                sd.has_charge_endtime = True
+                if today_endtime < sd.now_time.time():
                     # Already past today endtime
-                    cd.has_charge_endtime = False
+                    sd.has_charge_endtime = False
                     if not self._is_considered_today():
                         # Time is between sunset and midnight
                         tomorrow_index = (today_index + 1) % 7
-                        tomorrow_endtime = cd.weekly_schedule[
+                        tomorrow_endtime = sd.weekly_schedule[
                             tomorrow_index
                         ].charge_end_time
                         if tomorrow_endtime != time.min:
-                            cd.has_charge_endtime = True
-                            cd.charge_limit = cd.weekly_schedule[
+                            sd.has_charge_endtime = True
+                            sd.charge_limit = sd.weekly_schedule[
                                 tomorrow_index
                             ].charge_limit
-                            cd.charge_endtime = self.combine_local_date_time(
-                                cd.now_time.date() + timedelta(days=1), tomorrow_endtime
+                            sd.day_index = tomorrow_index
+                            sd.charge_endtime = self.combine_local_date_time(
+                                sd.now_time.date() + timedelta(days=1), tomorrow_endtime
                             )
-                            cd.day_index = tomorrow_index
 
-        return cd
+        return sd
 
     # ----------------------------------------------------------------------------
     def _is_not_enough_time(
@@ -1000,7 +980,7 @@ class ChargeController(ScOptionState):
         chargeable: Chargeable,
         old_charge_current: float,
         charger_max_current: float,
-        cd: ChargeData,
+        cd: ScheduleData,
     ) -> bool:
         """Is there not enough time to complete charging before scheduled end time?"""
         is_not_enough_time = False
@@ -1028,10 +1008,6 @@ class ChargeController(ScOptionState):
                 seconds=60 * 60 / battery_max_charge_speed
             )
 
-            (is_sun_above_start_end_elevations, _) = (
-                self._is_sun_above_start_end_elevations()
-            )
-
             # Maximise minimum charge current if charge end time is set and it is night time or
             # there is not enough time to charge, but only before charge end time.
             # chargerMinCurrent might bounce between 0 and chargerMaxCurrent due to
@@ -1039,7 +1015,7 @@ class ChargeController(ScOptionState):
             # if current is already at chargerMaxCurrent and needChargeDuration is only
             # slightly less than availableChargeDuration.
             is_not_enough_time = available_charge_duration.total_seconds() > 0 and (
-                not is_sun_above_start_end_elevations
+                not self._is_daytime()
                 or need_charge_duration >= available_charge_duration
                 or (
                     (need_charge_duration + one_percent_charge_duration)
@@ -1112,13 +1088,13 @@ class ChargeController(ScOptionState):
         )
 
         charger_min_current = config_min_current
-        cd = self._is_on_charge_schedule()
-        if cd.has_schedule:
+        sd = self._get_schedule_data()
+        if sd.use_charge_schedule:
             if self._is_not_enough_time(
                 chargeable,
                 old_charge_current,
                 charger_max_current,
-                cd,
+                sd,
             ):
                 charger_min_current = charger_max_current
 
@@ -1265,7 +1241,7 @@ class ChargeController(ScOptionState):
             self._is_sun_above_start_end_elevations()
         )
         is_use_secondary_power_source = self._is_use_secondary_power_source()
-        cd = self._is_on_charge_schedule()
+        sd = self._get_schedule_data()
 
         continue_charge = (
             not is_abort_charge
@@ -1275,7 +1251,7 @@ class ChargeController(ScOptionState):
             and (
                 is_sun_above_start_end_elevations
                 or is_use_secondary_power_source
-                or cd.has_charge_endtime
+                or sd.has_charge_endtime
             )
         )
 
@@ -1294,7 +1270,7 @@ class ChargeController(ScOptionState):
                 is_sun_above_start_end_elevations,
                 elevation,
                 is_use_secondary_power_source,
-                cd.has_charge_endtime,
+                sd.has_charge_endtime,
             )
 
         return continue_charge
@@ -1393,7 +1369,7 @@ class ChargeController(ScOptionState):
                 # For testing only
                 battery_soc = 0.0
 
-            weekly_schedule = self._get_charge_schedule()
+            weekly_schedule = self._get_weekly_schedule()
 
             # Ensure time is in local timezone
             local_tz = self.get_local_timezone()

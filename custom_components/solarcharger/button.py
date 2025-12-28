@@ -3,7 +3,6 @@
 from collections.abc import Callable, Coroutine
 from typing import Any
 
-from config.custom_components.solarcharger.model_control import ChargeControl
 from homeassistant import config_entries, core
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigSubentry
@@ -18,6 +17,7 @@ from .const import (
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .model_control import ChargeControl
 
 # type BUTTON_ACTION_TYPE = Callable[[ChargeControl], Coroutine[Any, Any, None] | None]
 # type BUTTON_ACTION_TYPE = (
