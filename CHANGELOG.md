@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.2beta3 2025-12-27
+- Just-in-time charge scheduling.
 - Persist datetime and time entites across reboots.
 - Test scheduling next charge session.
 
