@@ -1375,7 +1375,7 @@ class ChargeController(ScOptionState):
         """Schedule next charge session."""
 
         # Clear next charge time trigger
-        await self._async_set_next_charge_time(datetime.min)
+        await self._async_set_next_charge_time(datetime(2000, 1, 1, 0, 0, 0))
 
         if self._is_schedule_charge():
             battery_soc = chargeable.get_state_of_charge()
