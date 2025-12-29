@@ -1072,13 +1072,12 @@ class ChargeController(ScOptionState):
         #####################################
         # Charge at max current if fast charge
         #####################################
-        is_fast_charge = self._is_fast_charge()
-        if is_fast_charge:
+        if self._is_fast_charge():
             new_charge_current = charger_max_current
             return (new_charge_current, old_charge_current)
 
         #####################################
-        # Charge from available solar power
+        # Set minimum charge current
         #####################################
         config_min_current = self.option_get_entity_number_or_abort(
             OPTION_CHARGER_MIN_CURRENT
@@ -1099,10 +1098,8 @@ class ChargeController(ScOptionState):
                 charger_min_current = charger_max_current
 
         #####################################
-        # Get allocated power
+        # Calculate new current from allocated power
         #####################################
-        # allocated_power = self._get_number(CONTROL_CHARGER_ALLOCATED_POWER)
-
         charger_effective_voltage = self.option_get_entity_number_or_abort(
             OPTION_CHARGER_EFFECTIVE_VOLTAGE
         )
@@ -1361,28 +1358,26 @@ class ChargeController(ScOptionState):
         if self._is_schedule_charge():
             battery_soc = chargeable.get_state_of_charge()
             if battery_soc is None:
-                # _LOGGER.info(
-                #     "%s: Unable to get battery SOC, cannot schedule next charge session",
-                #     self._caller,
-                # )
-                # return
+                _LOGGER.info(
+                    "%s: Unable to get battery SOC, cannot schedule next charge session",
+                    self._caller,
+                )
+                return
                 # For testing only
-                battery_soc = 0.0
+                # battery_soc = 0.0
 
             weekly_schedule = self._get_weekly_schedule()
 
             # Ensure time is in local timezone
-            local_tz = self.get_local_timezone()
-            local_datetime = self.get_local_datetime()
-            # 0 = Monday, 6 = Sunday
-            today_index = local_datetime.weekday()
+            now_time = self.get_local_datetime()
+            today_index = now_time.weekday()
             tomorrow_index = (today_index + 1) % 7
             tomorrow_charge_limit = weekly_schedule[tomorrow_index].charge_limit
             charge_end_time = weekly_schedule[tomorrow_index].charge_end_time
 
             if charge_end_time != time.min:
                 tomorrow_charge_endtime = self.combine_local_date_time(
-                    local_datetime.date() + timedelta(days=1), charge_end_time
+                    now_time.date() + timedelta(days=1), charge_end_time
                 )
 
                 if battery_soc >= tomorrow_charge_limit:
@@ -1408,15 +1403,12 @@ class ChargeController(ScOptionState):
                     )
                     * sec_per_degree_sunrise
                 )
-                next_sunrise_local: datetime = get_next_sunrise_time(
-                    self._caller, sun_state
-                )
+                next_sunrise = get_next_sunrise_time(self._caller, sun_state)
 
                 tomorrow_charge_starttime = (
-                    datetime.combine(
-                        local_datetime.date() + timedelta(days=1),
-                        next_sunrise_local.time(),
-                        tzinfo=local_tz,
+                    self.combine_local_date_time(
+                        now_time.date() + timedelta(days=1),
+                        next_sunrise.time(),
                     )
                     + sunrise_offset
                 )
@@ -1432,10 +1424,8 @@ class ChargeController(ScOptionState):
                     tomorrow_charge_endtime - tomorrow_need_charge_duration
                 )
 
-                if tomorrow_propose_charge_starttime <= local_datetime:
-                    tomorrow_new_charge_starttime = local_datetime + timedelta(
-                        minutes=2
-                    )
+                if tomorrow_propose_charge_starttime <= now_time:
+                    tomorrow_new_charge_starttime = now_time + timedelta(minutes=2)
                 else:
                     tomorrow_new_charge_starttime = tomorrow_propose_charge_starttime
 
@@ -1444,7 +1434,7 @@ class ChargeController(ScOptionState):
                     "sec_per_degree_sunrise=%.2f sec, "
                     "elevation_start_trigger=%.2f, "
                     "sunrise_offset=%s, "
-                    "next_sunrise_local=%s, "
+                    "next_sunrise=%s, "
                     "tomorrow_charge_starttime=%s, "
                     "tomorrow_available_charge_duration=%s, "
                     "tomorrow_need_charge_duration=%s, "
@@ -1455,7 +1445,7 @@ class ChargeController(ScOptionState):
                     sec_per_degree_sunrise,
                     elevation_start_trigger,
                     sunrise_offset,
-                    next_sunrise_local,
+                    next_sunrise,
                     tomorrow_charge_starttime,
                     tomorrow_available_charge_duration,
                     tomorrow_need_charge_duration,
