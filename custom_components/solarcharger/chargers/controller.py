@@ -845,16 +845,14 @@ class ChargeController(ScOptionState):
 
         sd = self._get_schedule_data()
         if sd.use_charge_schedule:
-            charge_limit = sd.weekly_schedule[sd.day_index].charge_limit
-
             _LOGGER.info(
                 "%s: Setting charge limit to %.1f %% for %s",
                 self._caller,
-                charge_limit,
+                sd.charge_limit,
                 # now_time.strftime("%A"),
                 sd.weekly_schedule[sd.day_index].charge_day,
             )
-            await chargeable.async_set_charge_limit(charge_limit)
+            await chargeable.async_set_charge_limit(sd.charge_limit)
             await self._async_option_sleep(OPTION_WAIT_CHARGEE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
