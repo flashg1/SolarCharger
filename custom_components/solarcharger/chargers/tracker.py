@@ -32,15 +32,11 @@ from ..const import (  # noqa: TID252
     CALLBACK_SUN_ELEVATION_UPDATE,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
-    CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
     CONTROL_CHARGER_ALLOCATED_POWER,
-    DATETIME,
-    DATETIME_NEXT_CHARGE_TIME,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     HA_SUN_ENTITY,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
 )
-from ..entity import compose_entity_id  # noqa: TID252
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
     remove_all_callback_subscriptions,
@@ -73,15 +69,12 @@ class Tracker(ScOptionState):
     ) -> None:
         """Initialize the instance."""
 
+        ScOptionState.__init__(self, hass, entry, subentry, caller)
+
         # self._unsub_callbacks: dict[
         #     str, Callable[[], Coroutine[Any, Any, None] | None]
         # ] = {}
         self._unsub_callbacks: dict[str, CALLBACK_TYPE] = {}
-
-        # caller = subentry.unique_id
-        # if caller is None:
-        #     caller = __name__
-        ScOptionState.__init__(self, hass, entry, subentry, caller)
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------

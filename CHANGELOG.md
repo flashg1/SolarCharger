@@ -1,7 +1,9 @@
 # Changelog
 
 ## v0.2beta5 2025-12-30
-- Always reset next charge time on exit.
+- Determine if session is started by timer.
+- Refactored controller.py and added tracker.py.
+- Always set next charge time on exit.
 
 ## v0.2beta4 2025-12-29
 - Fixed incorrect buttons.py lib path.
