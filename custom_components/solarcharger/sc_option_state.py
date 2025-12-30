@@ -50,7 +50,7 @@ class ScheduleData:
     use_charge_schedule: bool = False
     has_charge_endtime: bool = False
     day_index: int = -1
-    now_time: datetime = datetime.min
+    session_starttime: datetime = datetime.min
     charge_limit: float = -1
     charge_endtime = datetime.min
 

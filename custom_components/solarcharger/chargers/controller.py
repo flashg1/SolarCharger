@@ -346,8 +346,10 @@ class ChargeController(ScOptionState):
     # Timer-triggered automation will try to reach charge limit at charge end time using solar and/or grid.
     # For charge limit with charge end time, today = 00:00 to sunset, tomorrow = sunset to 00:00.
     # For charge limit without charge end time, today = 00:00 to 23:59.  Reaching charge limit is best effort only and depends on solar.
-    def _get_schedule_data(self, include_tomorrow: bool) -> ScheduleData:
-        """Calculate charge schedule data."""
+    def _get_schedule_data(
+        self, triggered_by_timer: bool, chargeable: Chargeable
+    ) -> ScheduleData:
+        """Calculate charge schedule data for today or tomorrow if session is started by timer."""
 
         sd = ScheduleData(weekly_schedule=[])
 
@@ -356,9 +358,11 @@ class ChargeController(ScOptionState):
             sd.weekly_schedule = self.get_weekly_schedule()
 
             # Ensure time is in local timezone
-            sd.now_time = self.get_local_datetime()
+            now_time = self.get_local_datetime()
+            sd.session_starttime = now_time
+
             # 0 = Monday, 6 = Sunday
-            today_index = sd.now_time.weekday()
+            today_index = now_time.weekday()
             sd.day_index = today_index
             sd.charge_limit = sd.weekly_schedule[today_index].charge_limit
             today_endtime = sd.weekly_schedule[today_index].charge_end_time
@@ -366,31 +370,38 @@ class ChargeController(ScOptionState):
             if today_endtime != time.min:
                 sd.has_charge_endtime = True
                 sd.charge_endtime = self.combine_local_date_time(
-                    sd.now_time.date(), today_endtime
+                    now_time.date(), today_endtime
                 )
-                # if sd.now_time.time() >= today_endtime:
-                #     # Already past today endtime
-                #     sd.has_charge_endtime = False
 
             # Required if session is started by next_charge_time trigger or to calc next trigger
-            if include_tomorrow:
-                if self.is_between_sunset_and_midnight():
-                    # Use tomorrow charge limit if time is between sunset and midnight
+            if triggered_by_timer:
+                battery_soc = chargeable.get_state_of_charge()
+                if (
+                    sd.has_charge_endtime
+                    and sd.charge_endtime > now_time
+                    and battery_soc is not None
+                    and battery_soc < sd.charge_limit
+                ):
+                    # Use today's goal
+                    pass
+                else:
                     tomorrow_index = (today_index + 1) % 7
                     tomorrow_endtime = sd.weekly_schedule[
                         tomorrow_index
                     ].charge_end_time
                     if tomorrow_endtime != time.min:
+                        # Use tomorrow's goal
                         sd.has_charge_endtime = True
                         sd.day_index = tomorrow_index
                         sd.charge_limit = sd.weekly_schedule[
                             tomorrow_index
                         ].charge_limit
                         sd.charge_endtime = self.combine_local_date_time(
-                            sd.now_time.date() + timedelta(days=1),
+                            now_time.date() + timedelta(days=1),
                             tomorrow_endtime,
                         )
 
+        _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
         return sd
 
     # ----------------------------------------------------------------------------
@@ -872,10 +883,17 @@ class ChargeController(ScOptionState):
         # Duration in seconds to increase battery level by 1%
         one_percent_charge_duration = 60 * 60 / battery_max_charge_speed
 
+        # Give extra 1 hour if required to charge to 100%
+        extra_seconds = 0
+        if charge_limit >= 100:
+            extra_seconds = 60 * 60
+
         # Sometimes charge can decrease by 1% during charging at the beginning, so add extra onePercentChargeDuration for good measure.
         need_charge_seconds = (
-            charge_limit - battery_soc
-        ) * one_percent_charge_duration + one_percent_charge_duration
+            (charge_limit - battery_soc) * one_percent_charge_duration
+            + one_percent_charge_duration
+            + extra_seconds
+        )
 
         _LOGGER.info(
             "%s: charge_limit=%.1f %%, "
@@ -1051,7 +1069,9 @@ class ChargeController(ScOptionState):
         #####################################
         # Must run this first thing to estimate if session started by timer
         self._session_triggered_by_timer = self._is_session_triggered_by_timer()
-        self._goal = self._get_schedule_data(self._session_triggered_by_timer)
+        self._goal = self._get_schedule_data(
+            self._session_triggered_by_timer, chargeable
+        )
 
         #####################################
         # Start charge session

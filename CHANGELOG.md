@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2beta6 2025-12-31
+- Give extra 1 hour if required to charge to 100%.
+- Calculate charge schedule data for today or tomorrow if session is started by timer.
+
 ## v0.2beta5 2025-12-30
 - Determine if session is started by timer.
 - Refactored controller.py and added tracker.py.
