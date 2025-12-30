@@ -2,31 +2,16 @@
 
 import asyncio
 from asyncio import Task, timeout
-from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 import inspect
 import logging
-from zoneinfo import ZoneInfo
 
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import (
-    CALLBACK_TYPE,
-    Event,
-    EventStateChangedData,
-    HomeAssistant,
-    State,
-    callback,
-)
+from homeassistant.core import Event, EventStateChangedData, HomeAssistant, State
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.event import (
-    async_call_later,
-    async_track_state_change_event,
-    async_track_sunrise,
-    async_track_sunset,
-)
 
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
@@ -34,34 +19,11 @@ from homeassistant.util.dt import as_local, utcnow
 
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
-    CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
-    CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
-    CALLBACK_NEXT_CHARGE_TIME_UPDATE,
-    CALLBACK_PLUG_IN_CHARGER,
-    CALLBACK_SUN_ELEVATION_UPDATE,
-    CALLBACK_SUNRISE_START_CHARGE,
-    CALLBACK_SUNSET_DAILY_MAINTENANCE,
     CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
-    CONTROL_CHARGER_ALLOCATED_POWER,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
-    HA_SUN_ENTITY,
-    OPTION_CHARGE_ENDTIME_FRIDAY,
-    OPTION_CHARGE_ENDTIME_MONDAY,
-    OPTION_CHARGE_ENDTIME_SATURDAY,
-    OPTION_CHARGE_ENDTIME_SUNDAY,
-    OPTION_CHARGE_ENDTIME_THURSDAY,
-    OPTION_CHARGE_ENDTIME_TUESDAY,
-    OPTION_CHARGE_ENDTIME_WEDNESDAY,
-    OPTION_CHARGE_LIMIT_FRIDAY,
-    OPTION_CHARGE_LIMIT_MONDAY,
-    OPTION_CHARGE_LIMIT_SATURDAY,
-    OPTION_CHARGE_LIMIT_SUNDAY,
-    OPTION_CHARGE_LIMIT_THURSDAY,
-    OPTION_CHARGE_LIMIT_TUESDAY,
-    OPTION_CHARGE_LIMIT_WEDNESDAY,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
@@ -70,7 +32,6 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_MAX_SPEED,
     OPTION_CHARGER_MIN_CURRENT,
     OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER,
     OPTION_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
@@ -86,19 +47,14 @@ from ..const import (  # noqa: TID252
 )
 from ..entity import compose_entity_id  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
-from ..sc_option_state import ScOptionState  # noqa: TID252
+from ..sc_option_state import ScheduleData, ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
     get_is_sun_rising,
     get_next_sunrise_time,
-    get_next_sunset_time,
     get_sec_per_degree_sun_elevation,
     get_sun_attribute_or_abort,
-    get_sun_attribute_time,
     get_sun_elevation,
     log_is_event_loop,
-    remove_all_callback_subscriptions,
-    remove_callback_subscription,
-    save_callback_subscription,
 )
 from .chargeable import Chargeable
 from .charger import Charger
@@ -111,30 +67,6 @@ _LOGGER = logging.getLogger(__name__)
 INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
 MIN_TIME_BETWEEN_UPDATE = 10  # Minimum seconds between charger current updates
 ENVIRONMENT_CHECK_INTERVAL = 60  # Seconds to sleep between environment checks
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-@dataclass
-class ChargeSchedule:
-    """Daily charge schedule."""
-
-    charge_day: str
-    charge_limit: float
-    charge_end_time: time
-
-
-@dataclass
-class ScheduleData:
-    """Charge limit schedule data."""
-
-    weekly_schedule: list[ChargeSchedule]
-    use_charge_schedule: bool = False
-    has_charge_endtime: bool = False
-    day_index: int = -1
-    now_time: datetime = datetime.min
-    charge_limit: float = -1
-    charge_endtime = datetime.min
 
 
 # ----------------------------------------------------------------------------
@@ -210,7 +142,7 @@ class ChargeController(ScOptionState):
         return None
 
     # ----------------------------------------------------------------------------
-    # General utils
+    # Charger utils
     # ----------------------------------------------------------------------------
     def _is_fast_charge(self) -> bool:
         state = self.get_string(self._fast_charge_switch_entity_id)
@@ -341,6 +273,7 @@ class ChargeController(ScOptionState):
                 )
 
     # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Async setup of the ChargeController."""
         await self._charger.async_setup()
@@ -358,7 +291,8 @@ class ChargeController(ScOptionState):
 
         # Track next charge time trigger
         self._tracker.track_next_charge_time_trigger(
-            self._async_handle_next_charge_time_update
+            self._next_charge_time_trigger_entity_id,
+            self._async_handle_next_charge_time_update,
         )
         # Trigger is lost on restart, so reschedule if applicable.
         next_charge_time = self.get_datetime(self._next_charge_time_trigger_entity_id)
@@ -368,10 +302,8 @@ class ChargeController(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Async unload of the ChargeController."""
-        # remove_all_callback_subscriptions(self._unsub_callbacks)
         await self._tracker.async_unload()
         await self._charger.async_unload()
 
@@ -414,104 +346,6 @@ class ChargeController(ScOptionState):
         await self._async_wakeup_device(chargeable)
         await self._async_update_ha(chargeable)
         self._check_is_at_location(chargeable)
-
-    # ----------------------------------------------------------------------------
-    def _get_weekly_schedule(self) -> list[ChargeSchedule]:
-        """Get daily charge schedule."""
-
-        weekly_schedule: list[ChargeSchedule] = [
-            ChargeSchedule(
-                charge_day="Monday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_MONDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_MONDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Tuesday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_TUESDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_TUESDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Wednesday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_WEDNESDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_WEDNESDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Thursday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_THURSDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_THURSDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Friday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_FRIDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_FRIDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Saturday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_SATURDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_SATURDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Sunday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_SUNDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_SUNDAY
-                ),
-            ),
-        ]
-
-        _LOGGER.debug("Weekly schedule: %s", weekly_schedule)
-
-        return weekly_schedule
-
-    # ----------------------------------------------------------------------------
-    def _is_daytime(self) -> bool:
-        """Return true if within daylight hours."""
-
-        sun_state = self.get_sun_state_or_abort()
-        next_sunrise = get_next_sunrise_time(self._caller, sun_state)
-        next_sunset = get_next_sunset_time(self._caller, sun_state)
-        return next_sunrise > next_sunset
-
-    # ----------------------------------------------------------------------------
-    # Timer-triggered automation usually need to run at night to meet charge limit at charge end time.
-    # Timer-triggered automation will try to reach charge limit at charge end time using solar and/or grid.
-    # For charge limit with charge end time, today = 00:00 to sunset, tomorrow = sunset to 00:00.
-    # For charge limit without charge end time, today = 00:00 to 23:59.  Reaching charge limit is best effort only and depends on solar.
-    def _is_between_sunset_and_midnight(self) -> bool:
-        """Time between sunset and mid-night is considered to be tomorrow."""
-
-        sun_state = self.get_sun_state_or_abort()
-        next_sunset = get_next_sunset_time(self._caller, sun_state)
-        now_time = self.get_local_datetime()
-        today_sunset = self.combine_local_date_time(now_time.date(), next_sunset.time())
-
-        return now_time > today_sunset
 
     # ----------------------------------------------------------------------------
     async def _async_init_charge_limit(
@@ -605,6 +439,11 @@ class ChargeController(ScOptionState):
     # use_charge_schedule and has_charge_endtime are always set and correct.
     # If use_charge_schedule is true, all other parameters are set.
     # If use_charge_schedule is false, only has_charge_endtime is set. All others are not set.
+    #
+    # Timer-triggered automation usually need to run at night to meet charge limit at charge end time.
+    # Timer-triggered automation will try to reach charge limit at charge end time using solar and/or grid.
+    # For charge limit with charge end time, today = 00:00 to sunset, tomorrow = sunset to 00:00.
+    # For charge limit without charge end time, today = 00:00 to 23:59.  Reaching charge limit is best effort only and depends on solar.
     def _get_schedule_data(self, incl_tomorrow: bool = True) -> ScheduleData:
         """Calculate charge schedule data."""
 
@@ -612,7 +451,7 @@ class ChargeController(ScOptionState):
 
         if self._is_schedule_charge():
             sd.use_charge_schedule = True
-            sd.weekly_schedule = self._get_weekly_schedule()
+            sd.weekly_schedule = self.get_weekly_schedule()
 
             # Ensure time is in local timezone
             sd.now_time = self.get_local_datetime()
@@ -633,7 +472,7 @@ class ChargeController(ScOptionState):
 
                     # Required if session is started by next_charge_time trigger
                     if incl_tomorrow:
-                        if self._is_between_sunset_and_midnight():
+                        if self.is_between_sunset_and_midnight():
                             # Time is between sunset and midnight
                             tomorrow_index = (today_index + 1) % 7
                             tomorrow_endtime = sd.weekly_schedule[
@@ -693,7 +532,7 @@ class ChargeController(ScOptionState):
             # if current is already at chargerMaxCurrent and needChargeDuration is only
             # slightly less than availableChargeDuration.
             is_not_enough_time = available_charge_duration.total_seconds() > 0 and (
-                not self._is_daytime()
+                not self.is_daytime()
                 or need_charge_duration >= available_charge_duration
                 or (
                     (need_charge_duration + one_percent_charge_duration)
@@ -968,7 +807,8 @@ class ChargeController(ScOptionState):
                     )
                     await self._async_update_ha(chargeable)
                     self._tracker.track_allocated_power_update(
-                        self._async_handle_allocated_power_update
+                        CALLBACK_ALLOCATE_POWER,
+                        self._async_handle_allocated_power_update,
                     )
 
             except TimeoutError:
@@ -986,10 +826,7 @@ class ChargeController(ScOptionState):
             await asyncio.sleep(ENVIRONMENT_CHECK_INTERVAL)
             loop_count = loop_count + 1
 
-        # remove_callback_subscription(
-        #     self._caller, self._unsub_callbacks, CALLBACK_ALLOCATE_POWER
-        # )
-        self._tracker.remove_callback_subscription(CALLBACK_ALLOCATE_POWER)
+        self._tracker.remove_callback(CALLBACK_ALLOCATE_POWER)
 
     # ----------------------------------------------------------------------------
     def _calculate_need_charge_duration(
@@ -1021,16 +858,6 @@ class ChargeController(ScOptionState):
         )
 
         return timedelta(seconds=need_charge_seconds)
-
-    # ----------------------------------------------------------------------------
-    def combine_local_date_time(self, local_date: date, local_time: time) -> datetime:
-        """Combine local date and time."""
-
-        return datetime.combine(
-            local_date,
-            local_time,
-            tzinfo=self.get_local_timezone(),
-        )
 
     # ----------------------------------------------------------------------------
     async def _async_set_next_charge_time(self, next_charge_time: datetime) -> None:
@@ -1068,7 +895,7 @@ class ChargeController(ScOptionState):
                 # For testing only
                 # battery_soc = 0.0
 
-            weekly_schedule = self._get_weekly_schedule()
+            weekly_schedule = self.get_weekly_schedule()
 
             # Ensure time is in local timezone
             now_time = self.get_local_datetime()
@@ -1244,10 +1071,7 @@ class ChargeController(ScOptionState):
                         e,
                     )
 
-                # remove_callback_subscription(
-                #     self._caller, self._unsub_callbacks, CALLBACK_ALLOCATE_POWER
-                # )
-                self._tracker.remove_callback_subscription(CALLBACK_ALLOCATE_POWER)
+                self._tracker.remove_callback(CALLBACK_ALLOCATE_POWER)
 
             else:
                 _LOGGER.info("Task %s already completed", self._charge_task.get_name())

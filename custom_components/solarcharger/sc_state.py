@@ -1,7 +1,7 @@
 """Support basic HA state requests."""
 
 from collections.abc import Callable
-from datetime import datetime, time
+from datetime import date, datetime, time
 import logging
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -18,6 +18,7 @@ from .const import (
     NUMBER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
+from .utils import get_next_sunrise_time, get_next_sunset_time
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -46,6 +47,8 @@ class ScState:
         return self._hass
 
     # ----------------------------------------------------------------------------
+    # Time utils
+    # ----------------------------------------------------------------------------
     def get_utc_datetime(self) -> datetime:
         """Get the current time in UTC."""
 
@@ -68,6 +71,16 @@ class ScState:
         """Get the current time in the HA timezone."""
 
         return datetime.now(self.get_local_timezone())
+
+    # ----------------------------------------------------------------------------
+    def combine_local_date_time(self, local_date: date, local_time: time) -> datetime:
+        """Combine local date and time."""
+
+        return datetime.combine(
+            local_date,
+            local_time,
+            tzinfo=self.get_local_timezone(),
+        )
 
     # ----------------------------------------------------------------------------
     def parse_local_datetime(self, datetime_str: str) -> datetime:
@@ -358,6 +371,26 @@ class ScState:
         _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
 
         return sun_state
+
+    # ----------------------------------------------------------------------------
+    def is_daytime(self) -> bool:
+        """Return true if within daylight hours."""
+
+        sun_state = self.get_sun_state_or_abort()
+        next_sunrise = get_next_sunrise_time(self._caller, sun_state)
+        next_sunset = get_next_sunset_time(self._caller, sun_state)
+        return next_sunrise > next_sunset
+
+    # ----------------------------------------------------------------------------
+    def is_between_sunset_and_midnight(self) -> bool:
+        """Time between sunset and mid-night is considered to be tomorrow."""
+
+        sun_state = self.get_sun_state_or_abort()
+        next_sunset = get_next_sunset_time(self._caller, sun_state)
+        now_time = self.get_local_datetime()
+        today_sunset = self.combine_local_date_time(now_time.date(), next_sunset.time())
+
+        return now_time > today_sunset
 
     # ----------------------------------------------------------------------------
     def emit_solarcharger_event(
