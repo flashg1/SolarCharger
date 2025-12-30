@@ -913,12 +913,6 @@ class ChargeController(ScOptionState):
     async def _async_set_next_charge_time(self, next_charge_time: datetime) -> None:
         """Set next charge time."""
 
-        _LOGGER.info(
-            "%s: Setting next charge session start time: %s",
-            self._caller,
-            next_charge_time,
-        )
-
         # Note: Cannot set next_charge_time = datetime.min
         await self.async_set_datetime(
             self._next_charge_time_trigger_entity_id,
@@ -999,7 +993,7 @@ class ChargeController(ScOptionState):
                     battery_soc, tomorrow_charge_limit
                 )
 
-                _LOGGER.info(
+                _LOGGER.warning(
                     "%s: tomorrow_charge_endtime=%s, "
                     "sec_per_degree_sunrise=%.2f sec, "
                     "elevation_start_trigger=%.2f, "
@@ -1033,6 +1027,12 @@ class ChargeController(ScOptionState):
                         tomorrow_new_charge_starttime = (
                             tomorrow_propose_charge_starttime
                         )
+
+                    _LOGGER.warning(
+                        "%s: Setting next charge session start time: %s",
+                        self._caller,
+                        tomorrow_new_charge_starttime,
+                    )
 
                     await self._async_set_next_charge_time(
                         tomorrow_new_charge_starttime
