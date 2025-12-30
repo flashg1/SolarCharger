@@ -322,8 +322,7 @@ class ChargeController(ScOptionState):
                 time_diff = charge_start_time - next_charge_time
             else:
                 time_diff = next_charge_time - charge_start_time
-            one_minute = timedelta(seconds=30)
-            if time_diff < one_minute:
+            if time_diff < timedelta(seconds=30):
                 triggered_by_timer = True
 
         _LOGGER.warning(
