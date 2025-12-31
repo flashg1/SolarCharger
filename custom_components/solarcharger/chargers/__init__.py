@@ -37,6 +37,8 @@ async def charger_factory(
     for charger_cls in [
         OcppCharger,
         TeslaCustomCharger,
+        TeslaFleetCharger,
+        TeslaTessieCharger,
     ]:
         if charger_cls.is_charger_device(device):
             return charger_cls(hass, entry, subentry, device)

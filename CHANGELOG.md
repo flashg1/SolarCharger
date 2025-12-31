@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.2beta7 2025-12-31
+- Support for Tesla BLE API.
 - Only calculate tomorrow charge schedule if battery SOC is known.
 
 ## v0.2beta6 2025-12-31
