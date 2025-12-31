@@ -228,8 +228,8 @@
             }
         },
         "datetime": {
-            "next_charge_time_trigger": {
-                "name": "Next charge time trigger"
+            "next_charge_time": {
+                "name": "Next charge time"
             }
         }
     }
