@@ -351,14 +351,13 @@ class ChargeController(ScOptionState):
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
 
         sd = ScheduleData(weekly_schedule=[])
+        # Ensure time is in local timezone
+        now_time = self.get_local_datetime()
+        sd.session_starttime = now_time
 
         if self._is_schedule_charge():
             sd.use_charge_schedule = True
             sd.weekly_schedule = self.get_weekly_schedule()
-
-            # Ensure time is in local timezone
-            now_time = self.get_local_datetime()
-            sd.session_starttime = now_time
 
             # 0 = Monday, 6 = Sunday
             today_index = now_time.weekday()
@@ -375,30 +374,30 @@ class ChargeController(ScOptionState):
             # Required if session is started by next_charge_time trigger or to calc next trigger
             if triggered_by_timer:
                 battery_soc = chargeable.get_state_of_charge()
-                if (
-                    sd.has_charge_endtime
-                    and sd.charge_endtime > now_time
-                    and battery_soc is not None
-                    and battery_soc < sd.charge_limit
-                ):
-                    # Use today's goal
-                    pass
-                else:
-                    tomorrow_index = (today_index + 1) % 7
-                    tomorrow_endtime = sd.weekly_schedule[
-                        tomorrow_index
-                    ].charge_end_time
-                    if tomorrow_endtime != time.min:
-                        # Use tomorrow's goal
-                        sd.has_charge_endtime = True
-                        sd.day_index = tomorrow_index
-                        sd.charge_limit = sd.weekly_schedule[
+                if battery_soc is not None:
+                    if (
+                        sd.has_charge_endtime
+                        and sd.charge_endtime > now_time
+                        and battery_soc < sd.charge_limit
+                    ):
+                        # Use today's goal
+                        pass
+                    else:
+                        tomorrow_index = (today_index + 1) % 7
+                        tomorrow_endtime = sd.weekly_schedule[
                             tomorrow_index
-                        ].charge_limit
-                        sd.charge_endtime = self.combine_local_date_time(
-                            now_time.date() + timedelta(days=1),
-                            tomorrow_endtime,
-                        )
+                        ].charge_end_time
+                        if tomorrow_endtime != time.min:
+                            # Use tomorrow's goal
+                            sd.has_charge_endtime = True
+                            sd.day_index = tomorrow_index
+                            sd.charge_limit = sd.weekly_schedule[
+                                tomorrow_index
+                            ].charge_limit
+                            sd.charge_endtime = self.combine_local_date_time(
+                                now_time.date() + timedelta(days=1),
+                                tomorrow_endtime,
+                            )
 
         _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
         return sd
