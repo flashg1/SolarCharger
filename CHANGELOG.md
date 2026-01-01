@@ -2,7 +2,7 @@
 
 ## v0.2beta7 2025-12-31
 - Support for Tesla MQTT BLE API with initial testing ok.
-- Added support for Tesla Fleet and Tessie API but not tested.
+- Added support for Tesla Fleet and Tessie APIs but not tested.
 - Only calculate tomorrow charge schedule if battery SOC is known.
 
 ## v0.2beta6 2025-12-31
