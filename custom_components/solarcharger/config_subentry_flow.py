@@ -37,6 +37,9 @@ from .config_utils import get_subentry_id
 from .const import (
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
+    CHARGER_DOMAIN_TESLA_FLEET,
+    CHARGER_DOMAIN_TESLA_MQTTBLE,
+    CHARGER_DOMAIN_TESLA_TESSIE,
     OPTION_CHARGER_DEVICE_NAME,
     SUBENTRY_THIRDPARTY_DEVICE_ID,
     SUBENTRY_THIRDPARTY_DEVICE_NAME,
@@ -55,8 +58,11 @@ _LOGGER = logging.getLogger(__name__)
 # SUBENTRY_DEVICE_NAME_DEFAULT = "device_name_default"
 
 _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_OCPP),
+    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
+    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_MQTTBLE),
+    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_FLEET),
+    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_TESSIE),
 ]
 
 STEP_SELECT_CHARGER_SCHEMA = vol.Schema(

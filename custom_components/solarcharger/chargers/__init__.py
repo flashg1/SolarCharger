@@ -11,6 +11,9 @@ from homeassistant.helpers import device_registry as dr
 from .charger import Charger
 from .ocpp_charger import OcppCharger
 from .tesla_custom_charger import TeslaCustomCharger
+from .tesla_fleet_charger import TeslaFleetCharger
+from .tesla_mqttble_charger import TeslaMqttBleCharger
+from .tesla_tessie_charger import TeslaTessieCharger
 
 if TYPE_CHECKING:
     from homeassistant.helpers.device_registry import DeviceEntry
@@ -37,6 +40,7 @@ async def charger_factory(
     for charger_cls in [
         OcppCharger,
         TeslaCustomCharger,
+        TeslaMqttBleCharger,
         TeslaFleetCharger,
         TeslaTessieCharger,
     ]:
