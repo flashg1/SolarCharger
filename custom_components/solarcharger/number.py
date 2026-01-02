@@ -82,6 +82,8 @@ class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
         self._attr_native_value = value
+
+        # Should force state update here, otherwise update by polling only and be delayed by few seconds.
         self.update_ha_state()
 
     # ----------------------------------------------------------------------------
