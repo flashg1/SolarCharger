@@ -203,7 +203,7 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     # Tracker callbacks
     # ----------------------------------------------------------------------------
-    async def _async_handle_sun_elevation_update(
+    async def async_handle_sun_elevation_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
         """Fetch and process state change event."""
@@ -249,7 +249,7 @@ class ChargeController(ScOptionState):
                         await self.async_turn_switch_on(self._charger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
-    async def _async_handle_plug_in_charger_event(
+    async def async_handle_plug_in_charger_event(
         self, event: Event[EventStateChangedData]
     ) -> None:
         """Fetch and process state change event."""
@@ -280,7 +280,7 @@ class ChargeController(ScOptionState):
                         self._turn_on_charger_switch()
 
     # ----------------------------------------------------------------------------
-    async def _async_handle_next_charge_time_update(
+    async def async_handle_next_charge_time_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
         """Fetch and process state change event."""
@@ -302,68 +302,16 @@ class ChargeController(ScOptionState):
                 )
 
     # ----------------------------------------------------------------------------
-    def subscribe_charger_plugin_event(self) -> None:
-        """Subscribe for charger plugin event."""
-
-        if not self._initialising:
-            self._tracker.track_charger_plugged_in_sensor(
-                self._async_handle_plug_in_charger_event
-            )
-
-    # ----------------------------------------------------------------------------
-    def unsubscribe_charger_plugin_event(self) -> None:
-        """Unsubscribe charger plugin event."""
-
-        if not self._initialising:
-            self._tracker.untrack_charger_plugged_in_sensor()
-
-    # ----------------------------------------------------------------------------
-    async def async_switch_plugin_trigger(self, turn_on: bool) -> None:
-        """Plugin trigger switch."""
-        _LOGGER.warning("%s: Plugin trigger: %s", self._caller, turn_on)
-
-        if turn_on:
-            self.subscribe_charger_plugin_event()
-        else:
-            self.unsubscribe_charger_plugin_event()
-
-    # ----------------------------------------------------------------------------
-    def subscribe_sun_elevation_update(self) -> None:
-        """Subscribe for sun elevation update."""
-
-        # self._set_up_sun_triggers()
-        # self._track_sunrise_elevation_trigger()
-        if not self._initialising:
-            self._tracker.track_sun_elevation(self._async_handle_sun_elevation_update)
-
-    # ----------------------------------------------------------------------------
-    def unsubscribe_sun_elevation_update(self) -> None:
-        """Unsubscribe sun elevation update."""
-
-        if not self._initialising:
-            self._tracker.untrack_sun_elevation()
-
-    # ----------------------------------------------------------------------------
-    async def async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
-        """Sun elevation trigger switch."""
-        _LOGGER.warning("%s: Sun elevation trigger: %s", self._caller, turn_on)
-
-        if turn_on:
-            self.subscribe_sun_elevation_update()
-        else:
-            self.unsubscribe_sun_elevation_update()
-
-    # ----------------------------------------------------------------------------
-    def subscribe_next_charge_time_update(self) -> None:
+    def _subscribe_next_charge_time_update(self) -> None:
         """Subscribe for next charge time update. This is always on."""
 
         self._tracker.track_next_charge_time_trigger(
             self._next_charge_time_trigger_entity_id,
-            self._async_handle_next_charge_time_update,
+            self.async_handle_next_charge_time_update,
         )
 
     # ----------------------------------------------------------------------------
-    def init_next_charge_time(self) -> None:
+    def _init_next_charge_time(self) -> None:
         """Init next charge time if time is in future."""
 
         if not self._initialising:
@@ -376,7 +324,7 @@ class ChargeController(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    def unschedule_next_charge_time(self) -> None:
+    def _unschedule_next_charge_time(self) -> None:
         """Unschedule next charge time."""
 
         if not self._initialising:
@@ -385,15 +333,67 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     async def async_switch_schedule_charge(self, turn_on: bool) -> None:
         """Schedule charge switch."""
-        _LOGGER.warning("%s: Schedule charge: %s", self._caller, turn_on)
+        _LOGGER.info("%s: Schedule charge: %s", self._caller, turn_on)
 
         if turn_on:
-            self.init_next_charge_time()
+            self._init_next_charge_time()
         else:
-            self.unschedule_next_charge_time()
+            self._unschedule_next_charge_time()
 
     # ----------------------------------------------------------------------------
-    def subscribe_allocated_power_update(self) -> None:
+    def _subscribe_charger_plugin_event(self) -> None:
+        """Subscribe for charger plugin event."""
+
+        if not self._initialising:
+            self._tracker.track_charger_plugged_in_sensor(
+                self.async_handle_plug_in_charger_event
+            )
+
+    # ----------------------------------------------------------------------------
+    def _unsubscribe_charger_plugin_event(self) -> None:
+        """Unsubscribe charger plugin event."""
+
+        if not self._initialising:
+            self._tracker.untrack_charger_plugged_in_sensor()
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_plugin_trigger(self, turn_on: bool) -> None:
+        """Plugin trigger switch."""
+        _LOGGER.info("%s: Plugin trigger: %s", self._caller, turn_on)
+
+        if turn_on:
+            self._subscribe_charger_plugin_event()
+        else:
+            self._unsubscribe_charger_plugin_event()
+
+    # ----------------------------------------------------------------------------
+    def _subscribe_sun_elevation_update(self) -> None:
+        """Subscribe for sun elevation update."""
+
+        # self._set_up_sun_triggers()
+        # self._track_sunrise_elevation_trigger()
+        if not self._initialising:
+            self._tracker.track_sun_elevation(self.async_handle_sun_elevation_update)
+
+    # ----------------------------------------------------------------------------
+    def _unsubscribe_sun_elevation_update(self) -> None:
+        """Unsubscribe sun elevation update."""
+
+        if not self._initialising:
+            self._tracker.untrack_sun_elevation()
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
+        """Sun elevation trigger switch."""
+        _LOGGER.info("%s: Sun elevation trigger: %s", self._caller, turn_on)
+
+        if turn_on:
+            self._subscribe_sun_elevation_update()
+        else:
+            self._unsubscribe_sun_elevation_update()
+
+    # ----------------------------------------------------------------------------
+    def _subscribe_allocated_power_update(self) -> None:
         """Subscribe for allocated power update."""
 
         if not self._initialising:
@@ -402,7 +402,7 @@ class ChargeController(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    def unsubscribe_allocated_power_update(self) -> None:
+    def _unsubscribe_allocated_power_update(self) -> None:
         """Unsubscribe allocated power update."""
 
         if not self._initialising:
@@ -417,15 +417,15 @@ class ChargeController(ScOptionState):
 
         self._initialising = False
 
+        # Track next charge time trigger
+        self._subscribe_next_charge_time_update()
+        await self.async_switch_schedule_charge(self._is_schedule_charge())
+
         # Track charger plug in
         await self.async_switch_plugin_trigger(self._is_plugin_trigger())
 
         # Track sun elevation
         await self.async_switch_sun_elevation_trigger(self._is_sun_trigger())
-
-        # Track next charge time trigger
-        self.subscribe_next_charge_time_update()
-        await self.async_switch_schedule_charge(self._is_schedule_charge())
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
@@ -975,7 +975,7 @@ class ChargeController(ScOptionState):
                         charger, INITIAL_CHARGE_CURRENT
                     )
                     await self._async_update_ha(chargeable)
-                    self.subscribe_allocated_power_update()
+                    self._subscribe_allocated_power_update()
 
             except TimeoutError:
                 _LOGGER.warning(
@@ -992,7 +992,7 @@ class ChargeController(ScOptionState):
             await asyncio.sleep(ENVIRONMENT_CHECK_INTERVAL)
             loop_count = loop_count + 1
 
-        self.unsubscribe_allocated_power_update()
+        self._unsubscribe_allocated_power_update()
 
     # ----------------------------------------------------------------------------
     def _calculate_need_charge_duration(
@@ -1262,7 +1262,7 @@ class ChargeController(ScOptionState):
                         e,
                     )
 
-                self.unsubscribe_allocated_power_update()
+                self._unsubscribe_allocated_power_update()
 
             else:
                 _LOGGER.info("Task %s already completed", self._charge_task.get_name())

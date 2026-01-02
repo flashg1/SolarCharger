@@ -24,9 +24,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .config_utils import get_device_config_default_value
 from .const import (
-    NUMBER_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,
+    NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGE_LIMIT_FRIDAY,
     OPTION_CHARGE_LIMIT_MONDAY,
     OPTION_CHARGE_LIMIT_SATURDAY,
@@ -82,6 +82,7 @@ class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
     async def async_set_native_value(self, value: float) -> None:
         """Set new value."""
         self._attr_native_value = value
+        self.update_ha_state()
 
     # ----------------------------------------------------------------------------
     async def async_added_to_hass(self) -> None:
@@ -142,11 +143,12 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         """Set new value."""
         await super().async_set_native_value(value)
 
-        # TODO: Think about using dedicated coordinator to update values in local device.
-        # Custom EntityDescrption can contain the key to update value in dictionary.
-        # Coordinator need to determine if device is using local or global config.
-        # self.coordinator.max_charging_current = value
-        # await self.coordinator.update_configuration()
+    # ----------------------------------------------------------------------------
+    # TODO: Think about using dedicated coordinator to update values in local device.
+    # Custom EntityDescrption can contain the key to update value in dictionary.
+    # Coordinator need to determine if device is using local or global config.
+    # self.coordinator.max_charging_current = value
+    # await self.coordinator.update_configuration()
 
 
 # ----------------------------------------------------------------------------
@@ -495,7 +497,7 @@ async def async_setup_entry(
         #     continue
 
         # For both global default and charger subentries
-        numbers = {}
+        numbers: dict[str, SolarChargerNumberConfigEntity] = {}
         for config_item, entity_type, entity_description in CONFIG_NUMBER_LIST:
             if is_create_entity(subentry, entity_type):
                 numbers[config_item] = SolarChargerNumberConfigEntity(

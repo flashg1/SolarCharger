@@ -26,12 +26,12 @@ from .chargers.controller import ChargeController
 #   You still need to use string literals for forward references if the type isn't available at runtime.
 #######################################################
 if TYPE_CHECKING:
-    from .button import SolarChargerButtonAction
-    from .datetime import SolarChargerDateTimeEntity
-    from .number import SolarChargerNumberEntity
+    from .button import SolarChargerButtonActionEntity
+    from .datetime import SolarChargerDateTimeConfigEntity
+    from .number import SolarChargerNumberConfigEntity
     from .sensor import SolarChargerSensorEntity
     from .switch import SolarChargerSwitchEntity
-    from .time import SolarChargerTimeEntity
+    from .time import SolarChargerTimeConfigEntity
 
 
 # ----------------------------------------------------------------------------
@@ -55,11 +55,11 @@ class ChargeControl:
     # )
 
     sensors: dict[str, "SolarChargerSensorEntity"] | None = None
-    numbers: dict[str, "SolarChargerNumberEntity"] | None = None
+    numbers: dict[str, "SolarChargerNumberConfigEntity"] | None = None
     switches: dict[str, "SolarChargerSwitchEntity"] | None = None
-    buttons: dict[str, "SolarChargerButtonAction"] | None = None
-    times: dict[str, "SolarChargerTimeEntity"] | None = None
-    datetimes: dict[str, "SolarChargerDateTimeEntity"] | None = None
+    buttons: dict[str, "SolarChargerButtonActionEntity"] | None = None
+    times: dict[str, "SolarChargerTimeConfigEntity"] | None = None
+    datetimes: dict[str, "SolarChargerDateTimeConfigEntity"] | None = None
 
     # Sensors
     sensor_last_check_timestamp: datetime | None = None

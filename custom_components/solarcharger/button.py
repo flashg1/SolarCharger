@@ -52,7 +52,7 @@ class SolarChargerButtonEntity(SolarChargerEntity, ButtonEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerButtonAction(SolarChargerButtonEntity):
+class SolarChargerButtonActionEntity(SolarChargerButtonEntity):
     """SolarCharger button action on button press."""
 
     # _entity_key = CONTROL_CHARGE_BUTTON
@@ -116,7 +116,7 @@ async def async_setup_entry(
         #####################################
         (
             BUTTON_START_CHARGE,
-            SolarChargerButtonAction,
+            SolarChargerButtonActionEntity,
             coordinator.async_start_charger,
             SolarChargerEntityType.LOCAL_HIDDEN,
             ButtonEntityDescription(
@@ -125,7 +125,7 @@ async def async_setup_entry(
         ),
         (
             BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
-            SolarChargerButtonAction,
+            SolarChargerButtonActionEntity,
             coordinator.async_reset_charge_limit_default,
             SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
             ButtonEntityDescription(
@@ -137,7 +137,7 @@ async def async_setup_entry(
     # ----------------------------------------------------------------------------
     for subentry in config_entry.subentries.values():
         # For both global default and charger subentries
-        buttons: dict[str, SolarChargerButtonEntity] = {}
+        buttons: dict[str, SolarChargerButtonActionEntity] = {}
 
         for (
             config_item,

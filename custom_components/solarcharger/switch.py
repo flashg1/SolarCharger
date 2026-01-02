@@ -104,7 +104,7 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerSwitchAction(SolarChargerSwitchEntity):
+class SolarChargerSwitchActionEntity(SolarChargerSwitchEntity):
     """Representation of a SolarCharger switch."""
 
     def __init__(
@@ -154,7 +154,7 @@ class SolarChargerSwitchAction(SolarChargerSwitchEntity):
 # ----------------------------------------------------------------------------
 # Do not restore switch setting on reboot, otherwise can hold up startup until charging is completed.
 # ----------------------------------------------------------------------------
-class SolarChargerSwitchCharge(SolarChargerSwitchEntity):
+class SolarChargerSwitchChargeEntity(SolarChargerSwitchEntity):
     """Representation of a SolarCharger start switch."""
 
     # _entity_key = ENTITY_KEY_CHARGE_SWITCH
@@ -238,7 +238,7 @@ async def async_setup_entry(
         #####################################
         (
             SWITCH_START_CHARGE,
-            SolarChargerSwitchCharge,
+            SolarChargerSwitchChargeEntity,
             RESTORE_ON_START_FALSE,
             coordinator.switch_charge_update,
             SolarChargerEntityType.LOCAL_DEFAULT,
@@ -259,22 +259,22 @@ async def async_setup_entry(
                 key=SWITCH_FAST_CHARGE_MODE,
             ),
         ),
+        #####################################
+        # Action switches
+        #####################################
         (
             SWITCH_SCHEDULE_CHARGE,
-            SolarChargerSwitchEntity,
+            SolarChargerSwitchActionEntity,
             RESTORE_ON_START_TRUE,
-            coordinator.dummy_switch,
+            coordinator.async_switch_schedule_charge,
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_SCHEDULE_CHARGE,
             ),
         ),
-        #####################################
-        # Action switches
-        #####################################
         (
             SWITCH_PLUGIN_TRIGGER,
-            SolarChargerSwitchAction,
+            SolarChargerSwitchActionEntity,
             RESTORE_ON_START_TRUE,
             coordinator.async_switch_plugin_trigger,
             SolarChargerEntityType.LOCAL_DEFAULT,
@@ -284,7 +284,7 @@ async def async_setup_entry(
         ),
         (
             SWITCH_SUN_TRIGGER,
-            SolarChargerSwitchAction,
+            SolarChargerSwitchActionEntity,
             RESTORE_ON_START_TRUE,
             coordinator.async_switch_sun_elevation_trigger,
             SolarChargerEntityType.LOCAL_DEFAULT,

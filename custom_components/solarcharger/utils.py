@@ -230,7 +230,7 @@ def save_callback_subscription(
     #     )
     remove_callback_subscription(caller, unsub_callbacks, callback_key)
     unsub_callbacks[callback_key] = subscription
-    _LOGGER.debug("%s: Saved callback subscription: %s", caller, callback_key)
+    _LOGGER.warning("%s: Saved callback subscription: %s", caller, callback_key)
 
 
 # ----------------------------------------------------------------------------

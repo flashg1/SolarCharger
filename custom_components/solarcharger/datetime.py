@@ -140,7 +140,7 @@ async def async_setup_entry(
 
     for subentry in config_entry.subentries.values():
         # For both global default and charger subentries
-        datetimes = {}
+        datetimes: dict[str, SolarChargerDateTimeConfigEntity] = {}
         for config_item, entity_type, entity_description in CONFIG_DATETIME_LIST:
             if is_create_entity(subentry, entity_type):
                 datetimes[config_item] = SolarChargerDateTimeConfigEntity(
