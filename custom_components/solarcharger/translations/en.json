@@ -125,6 +125,12 @@
             },
             "schedule_charge": {
                 "name": "Schedule charge"
+            },
+            "plugin_trigger": {
+                "name": "Plugin trigger"
+            },
+            "sun_trigger": {
+                "name": "Sun trigger"
             }
         },
         "number": {

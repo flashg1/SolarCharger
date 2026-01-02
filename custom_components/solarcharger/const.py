@@ -11,7 +11,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.2beta7"
+VERSION = "0.2beta8"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -64,6 +64,9 @@ SUPPORTED_CHARGER_DOMAIN_LIST: list[str] = [
 #######################################################
 # Make sure the entity key names are unique.
 #######################################################
+#####################################
+# Internal entities
+#####################################
 # Sensors
 SENSOR_LAST_CHECK = "last_check"
 SENSOR_RUN_STATE = "run_state"
@@ -72,6 +75,8 @@ SENSOR_RUN_STATE = "run_state"
 SWITCH_START_CHARGE = "charge"
 SWITCH_FAST_CHARGE_MODE = "fast_charge_mode"
 SWITCH_SCHEDULE_CHARGE = "schedule_charge"
+SWITCH_PLUGIN_TRIGGER = "plugin_trigger"
+SWITCH_SUN_TRIGGER = "sun_trigger"
 
 # Buttons
 BUTTON_START_CHARGE = "start_charge"
@@ -79,6 +84,10 @@ BUTTON_RESET_CHARGE_LIMIT_AND_TIME = "reset_charge_limit_and_time"
 
 # Datetime triggers
 DATETIME_NEXT_CHARGE_TIME = "next_charge_time"
+
+# Number triggers
+NUMBER_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
+
 
 #######################################################
 # Make sure the entity key names are unique.
@@ -119,11 +128,6 @@ CONF_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 60 seconds
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 OPTION_LAST_CHARGER_ID = "last_charger_id"
-
-#####################################
-# Internal entities
-#####################################
-CONTROL_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
 
 #####################################
 # Option admin
@@ -203,6 +207,12 @@ OPTION_CHARGE_ENDTIME_SUNDAY = "charge_endtime_sunday"
 #######################################################
 # Default values
 #######################################################
+# Switch defaults
+DEFAULT_ON = True
+DEFAULT_OFF = False
+RESTORE_ON_START_TRUE = True
+RESTORE_ON_START_FALSE = False
+
 OPTION_GLOBAL_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # General config defaults
@@ -216,7 +226,6 @@ OPTION_GLOBAL_DEFAULT_VALUES: dict[str, Any] = {
     OPTION_CHARGEE_MAX_CHARGE_LIMIT: 100,
     OPTION_SUNRISE_ELEVATION_START_TRIGGER: 3,
     OPTION_SUNSET_ELEVATION_END_TRIGGER: 6,
-    # CONF_WAIT_NET_POWER_UPDATE: 60,
     OPTION_WAIT_CHARGEE_WAKEUP: 40,
     OPTION_WAIT_CHARGEE_UPDATE_HA: 5,
     OPTION_WAIT_CHARGEE_LIMIT_CHANGE: 5,
@@ -226,7 +235,7 @@ OPTION_GLOBAL_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Internal control defaults
     #####################################
-    CONTROL_CHARGER_ALLOCATED_POWER: 0,
+    NUMBER_CHARGER_ALLOCATED_POWER: 0,
     #####################################
     # Device control defaults
     #####################################
@@ -242,6 +251,14 @@ OPTION_GLOBAL_DEFAULT_VALUES: dict[str, Any] = {
     OPTION_CHARGE_LIMIT_FRIDAY: 80,
     OPTION_CHARGE_LIMIT_SATURDAY: 80,
     OPTION_CHARGE_LIMIT_SUNDAY: 80,
+    #####################################
+    # Switch defaults
+    #####################################
+    SWITCH_START_CHARGE: DEFAULT_OFF,
+    SWITCH_FAST_CHARGE_MODE: DEFAULT_ON,
+    SWITCH_SCHEDULE_CHARGE: DEFAULT_ON,
+    SWITCH_PLUGIN_TRIGGER: DEFAULT_ON,
+    SWITCH_SUN_TRIGGER: DEFAULT_ON,
 }
 
 TESLA_MQTTBLE_DEFAULT_VALUES: dict[str, Any] = {
@@ -338,8 +355,6 @@ CONFIG_NAME_MARKER = "<ConfigName>"
 OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_DEVICE_NAME: DEVICE_NAME_MARKER,
     OPTION_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}status_connector",
-    # OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing", "Available"]',
-    # OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing"]',
     OPTION_CHARGER_ON_OFF_SWITCH: f"{SWITCH}.{DEVICE_NAME_MARKER}charge_control",
@@ -354,9 +369,17 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGEE_LOCATION_STATE_LIST: None,
     OPTION_CHARGEE_WAKE_UP_BUTTON: None,
     OPTION_CHARGEE_UPDATE_HA_BUTTON: None,
-    CONTROL_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
+    NUMBER_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_ALLOCATED_POWER}",
+    # Extra device specific entities
     OPTION_OCPP_CHARGER_ID: f"{SENSOR}.{DEVICE_NAME_MARKER}id",
     OPTION_OCPP_TRANSACTION_ID: f"{SENSOR}.{DEVICE_NAME_MARKER}transaction_id",
+    # Local device internal control entities (not used here, FYI only)
+    DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
+    SWITCH_START_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_START_CHARGE}",
+    SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
+    SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
+    SWITCH_PLUGIN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PLUGIN_TRIGGER}",
+    SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
 }
 
 TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
@@ -376,7 +399,15 @@ TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGEE_LOCATION_STATE_LIST: '["home"]',
     OPTION_CHARGEE_WAKE_UP_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}wake_up",
     OPTION_CHARGEE_UPDATE_HA_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}force_data_update",
-    CONTROL_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
+    NUMBER_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_ALLOCATED_POWER}",
+    # Extra device specific entities
+    # Local device internal control entities (not used here, FYI only)
+    DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
+    SWITCH_START_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_START_CHARGE}",
+    SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
+    SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
+    SWITCH_PLUGIN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PLUGIN_TRIGGER}",
+    SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
 }
 
 TESLA_MQTTBLE_ENTITIES: dict[str, str | None] = {
@@ -396,9 +427,16 @@ TESLA_MQTTBLE_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGEE_LOCATION_STATE_LIST: None,
     OPTION_CHARGEE_WAKE_UP_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}wake_up_car",
     OPTION_CHARGEE_UPDATE_HA_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}force_update_charge",
-    CONTROL_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
-    # Extra entities required for local device
+    NUMBER_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_ALLOCATED_POWER}",
+    # Extra device specific entities
     OPTION_WAIT_CHARGEE_UPDATE_HA: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{OPTION_WAIT_CHARGEE_UPDATE_HA}",
+    # Local device internal control entities (not used here, FYI only)
+    DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
+    SWITCH_START_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_START_CHARGE}",
+    SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
+    SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
+    SWITCH_PLUGIN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PLUGIN_TRIGGER}",
+    SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
 }
 
 TESLA_FLEET_ENTITIES: dict[str, str | None] = {
@@ -418,7 +456,15 @@ TESLA_FLEET_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGEE_LOCATION_STATE_LIST: '["home"]',
     OPTION_CHARGEE_WAKE_UP_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}wake",
     OPTION_CHARGEE_UPDATE_HA_BUTTON: None,
-    CONTROL_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{CONTROL_CHARGER_ALLOCATED_POWER}",
+    NUMBER_CHARGER_ALLOCATED_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_ALLOCATED_POWER}",
+    # Extra device specific entities
+    # Local device internal control entities (not used here, FYI only)
+    DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
+    SWITCH_START_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_START_CHARGE}",
+    SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
+    SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
+    SWITCH_PLUGIN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PLUGIN_TRIGGER}",
+    SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
 }
 
 TESLA_TESSIE_ENTITIES: dict[str, str | None] = TESLA_FLEET_ENTITIES
@@ -430,24 +476,6 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
     CHARGER_DOMAIN_TESLA_FLEET: TESLA_FLEET_ENTITIES,
     CHARGER_DOMAIN_TESLA_TESSIE: TESLA_TESSIE_ENTITIES,
 }
-
-# OPTION_DEVICE_ENTITY_LIST = {
-#     OPTION_CHARGER_DEVICE_NAME,
-#     OPTION_CHARGER_PLUGGED_IN_SENSOR,
-#     OPTION_CHARGER_ON_OFF_SWITCH,
-#     OPTION_CHARGER_CHARGING_SENSOR,
-#     OPTION_CHARGER_MAX_CURRENT,
-#     OPTION_CHARGER_GET_CHARGE_CURRENT,
-#     OPTION_CHARGER_SET_CHARGE_CURRENT,
-#     OPTION_CHARGEE_SOC_SENSOR,
-#     OPTION_CHARGEE_CHARGE_LIMIT,
-#     OPTION_CHARGEE_LOCATION_SENSOR,
-#     OPTION_CHARGEE_WAKE_UP_BUTTON,
-#     OPTION_CHARGEE_UPDATE_HA_BUTTON,
-#     CONTROL_CHARGER_ALLOCATED_POWER,
-#     OPTION_OCPP_CHARGER_ID,
-#     OPTION_OCPP_TRANSACTION_ID,
-# }
 
 #######################################################
 # Subscription callbacks

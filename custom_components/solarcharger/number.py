@@ -24,7 +24,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .config_utils import get_device_config_default_value
 from .const import (
-    CONTROL_CHARGER_ALLOCATED_POWER,
+    NUMBER_CHARGER_ALLOCATED_POWER,
     DOMAIN,
     NUMBER,
     OPTION_CHARGE_LIMIT_FRIDAY,
@@ -160,10 +160,10 @@ CONFIG_NUMBER_LIST: tuple[
     # entity_category=None
     #####################################
     (
-        CONTROL_CHARGER_ALLOCATED_POWER,
+        NUMBER_CHARGER_ALLOCATED_POWER,
         SolarChargerEntityType.LOCAL_AND_GLOBAL,
         NumberEntityDescription(
-            key=CONTROL_CHARGER_ALLOCATED_POWER,
+            key=NUMBER_CHARGER_ALLOCATED_POWER,
             device_class=NumberDeviceClass.POWER,
             native_unit_of_measurement=UnitOfPower.WATT,
             native_min_value=-23000.0,

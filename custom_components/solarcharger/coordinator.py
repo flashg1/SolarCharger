@@ -528,6 +528,10 @@ class SolarChargerCoordinator(ScOptionState):
         #     await self.turn_off_charging()
 
     # ----------------------------------------------------------------------------
+    async def dummy_switch(self, control: ChargeControl, turn_on: bool):
+        """Dummy switch."""
+
+    # ----------------------------------------------------------------------------
     async def switch_charge_update(self, control: ChargeControl, start_charge: bool):
         """Called by switch entity to start or stop charge."""
 
@@ -614,6 +618,33 @@ class SolarChargerCoordinator(ScOptionState):
                             return
 
                     control.end_charge_task = control.controller.stop_charge()
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_schedule_charge(
+        self, control: ChargeControl, turn_on: bool
+    ) -> None:
+        """Schedule charge switch."""
+
+        if control.controller is not None:
+            await control.controller.async_switch_schedule_charge(turn_on)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_plugin_trigger(
+        self, control: ChargeControl, turn_on: bool
+    ) -> None:
+        """Plugin trigger switch."""
+
+        if control.controller is not None:
+            await control.controller.async_switch_plugin_trigger(turn_on)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_sun_elevation_trigger(
+        self, control: ChargeControl, turn_on: bool
+    ) -> None:
+        """Sun elevation trigger switch."""
+
+        if control.controller is not None:
+            await control.controller.async_switch_sun_elevation_trigger(turn_on)
 
     # ----------------------------------------------------------------------------
     async def async_reset_charge_limit_default(self, control: ChargeControl) -> None:

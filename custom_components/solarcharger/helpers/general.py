@@ -6,7 +6,7 @@ from typing import Any
 
 from homeassistant.core import State
 
-from ..const import CONTROL_CHARGER_ALLOCATED_POWER  # noqa: TID252
+from ..const import NUMBER_CHARGER_ALLOCATED_POWER  # noqa: TID252
 from ..model_control import ChargeControl  # noqa: TID252
 
 # ----------------------------------------------------------------------------
@@ -34,7 +34,7 @@ async def async_set_allocated_power(
     ok: bool = False
 
     if control.numbers:
-        await control.numbers[CONTROL_CHARGER_ALLOCATED_POWER].async_set_native_value(
+        await control.numbers[NUMBER_CHARGER_ALLOCATED_POWER].async_set_native_value(
             allocated_power
         )
         ok = True

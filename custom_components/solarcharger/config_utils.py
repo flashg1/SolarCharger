@@ -232,7 +232,7 @@ def get_device_api_entities(subentry: ConfigSubentry) -> dict[str, str | None] |
 def is_config_entity_used_as_local_device_entity(
     subentry: ConfigSubentry, config_item: str
 ) -> bool:
-    """Check if SolarCharger config entity is used as local device entity."""
+    """Entity with config name indicates local device entity and not a built-in entity."""
     used_as_local_device_entity = False
 
     api_entities = get_device_api_entities(subentry)
@@ -298,7 +298,8 @@ def get_device_entity_id_with_substitution(
     device_name: str | None,
     config_name: str | None,
 ) -> str | None:
-    """Get device entity template from dictionary with string substitions."""
+    """Get entity ID template for config item with string substitution for device name and config name (subentry.unique_id)."""
+
     entity_id: str | None = None
 
     # The test "if substr:" cannot distinguish between substr='' and substr=None.  Must explicitly test for None!
@@ -325,7 +326,7 @@ def get_device_entity_id(
     config_item: str,
     device_name: str,
 ) -> str | None:
-    """Get entity name for config item with string substitution for device name."""
+    """Get entity ID template from dictionary for string substitions."""
 
     api_entities = get_device_api_entities(subentry)
     if api_entities:
@@ -337,24 +338,6 @@ def get_device_entity_id(
         )
 
     return None
-
-
-# ----------------------------------------------------------------------------
-# def get_subentry_id(config_entry: ConfigEntry, config_name: str) -> str | None:
-#     """Get subentry ID for device name."""
-#     subentry_id: str | None = None
-
-#     if config_name == OPTION_GLOBAL_DEFAULTS:
-#         return GLOBAL_DEFAULTS_ID
-
-#     if config_entry.subentries:
-#         for subentry in config_entry.subentries.values():
-#             if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
-#                 if subentry.unique_id == config_name:
-#                     subentry_id = subentry.subentry_id
-#                     break
-
-#     return subentry_id
 
 
 # ----------------------------------------------------------------------------
@@ -397,6 +380,22 @@ def get_saved_local_option_value(
         device_options = config_entry.options.get(subentry.unique_id)
         if device_options:
             saved_val = device_options.get(config_item)
+
+    return saved_val
+
+
+# ----------------------------------------------------------------------------
+def get_saved_local_option_value_or_abort(
+    config_entry: ConfigEntry, subentry: ConfigSubentry | None, config_item: str
+) -> Any:
+    """Get saved option value if exist."""
+
+    if subentry is None:
+        raise SystemError(f"Cannot get {config_item} because subentry is None")
+
+    saved_val = get_saved_local_option_value(config_entry, subentry, config_item)
+    if saved_val is None:
+        raise SystemError(f"Cannot get {config_item} for subentry {subentry.unique_id}")
 
     return saved_val
 
@@ -471,9 +470,8 @@ def reset_api_entities(
     config_entry: ConfigEntry,
     config_name: str,  # Same as subentry unique_id
     data: dict[str, Any],
-    reset_all_entities: bool = False,
 ) -> dict[str, Any]:
-    """Reset entity names using new device mname."""
+    """Reset entity names using new device name."""
 
     if config_name != OPTION_GLOBAL_DEFAULTS_ID:
         # Delete marked entities
@@ -495,14 +493,6 @@ def reset_api_entities(
                     api_entities = get_device_api_entities(subentry)
                     if api_entities:
                         key_list = list(api_entities.keys())
-
-                        # if reset_all_entities:
-                        #     # Only reset all entities during subentry initial setup
-                        #     key_list = list(api_entities.keys())
-                        # else:
-                        #     # This will only reset dependent entities when device name is changed
-                        #     key_list = OPTION_DEVICE_ENTITY_LIST
-
                         for config_item in key_list:
                             entity_name = get_device_entity_id_with_substitution(
                                 api_entities,

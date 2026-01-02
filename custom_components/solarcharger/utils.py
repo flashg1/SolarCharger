@@ -202,7 +202,7 @@ def remove_callback_subscription(
     if unsubscribe is not None:
         unsubscribe()
         unsub_callbacks.pop(callback_key)
-        _LOGGER.debug("%s: Removed callback subscription: %s", caller, callback_key)
+        _LOGGER.warning("%s: Removed callback subscription: %s", caller, callback_key)
     else:
         _LOGGER.debug(
             "%s: Callback subscription not exist for removal: %s",

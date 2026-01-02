@@ -25,6 +25,7 @@ from homeassistant.helpers.event import (
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
 from ..const import (  # noqa: TID252
+    CALLBACK_ALLOCATE_POWER,
     CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
     CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
     CALLBACK_NEXT_CHARGE_TIME_UPDATE,
@@ -32,7 +33,7 @@ from ..const import (  # noqa: TID252
     CALLBACK_SUN_ELEVATION_UPDATE,
     CALLBACK_SUNRISE_START_CHARGE,
     CALLBACK_SUNSET_DAILY_MAINTENANCE,
-    CONTROL_CHARGER_ALLOCATED_POWER,
+    NUMBER_CHARGER_ALLOCATED_POWER,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     HA_SUN_ENTITY,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
@@ -106,6 +107,14 @@ class Tracker(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
+    def save_callback(self, callback_key: str, subscription: CALLBACK_TYPE) -> None:
+        """Save callback."""
+
+        save_callback_subscription(
+            self._caller, self._unsub_callbacks, callback_key, subscription
+        )
+
+    # ----------------------------------------------------------------------------
     def remove_callback(self, callback_key: str) -> None:
         """Remove callback."""
 
@@ -113,33 +122,6 @@ class Tracker(ScOptionState):
 
     # ----------------------------------------------------------------------------
     # Trackers
-    # ----------------------------------------------------------------------------
-    # See sun.sun entity.  Updates are at specific intervals.
-    # Hard to calculate sun elevation offset time.
-    # So just compare state change with configured elevation to trigger start of charge.
-    def track_sun_elevation(self, action: STATE_CHANGE_CALLBACK) -> None:
-        """Track sun elevation events."""
-
-        _LOGGER.info(
-            "%s: Tracking sun elevation: %s",
-            self._caller,
-            HA_SUN_ENTITY,
-        )
-
-        #     self._async_handle_sun_elevation_update,
-        subscription = async_track_state_change_event(
-            self._hass,
-            HA_SUN_ENTITY,
-            action,
-        )
-
-        save_callback_subscription(
-            self._caller,
-            self._unsub_callbacks,
-            CALLBACK_SUN_ELEVATION_UPDATE,
-            subscription,
-        )
-
     # ----------------------------------------------------------------------------
     def track_charger_plugged_in_sensor(self, action: STATE_CHANGE_CALLBACK) -> None:
         """Track charger plug in event."""
@@ -160,18 +142,60 @@ class Tracker(ScOptionState):
             action,
         )
 
-        save_callback_subscription(
-            self._caller, self._unsub_callbacks, CALLBACK_PLUG_IN_CHARGER, subscription
+        self.save_callback(CALLBACK_PLUG_IN_CHARGER, subscription)
+
+    # ----------------------------------------------------------------------------
+    def untrack_charger_plugged_in_sensor(self) -> None:
+        """Unsubscribe charger plug in event."""
+
+        self.remove_callback(CALLBACK_PLUG_IN_CHARGER)
+
+    # ----------------------------------------------------------------------------
+    # See sun.sun entity.  Updates are at specific intervals.
+    # Hard to calculate sun elevation offset time.
+    # So just compare state change with configured elevation to trigger start of charge.
+    def track_sun_elevation(self, action: STATE_CHANGE_CALLBACK) -> None:
+        """Track sun elevation events."""
+
+        _LOGGER.info(
+            "%s: Tracking sun elevation: %s",
+            self._caller,
+            HA_SUN_ENTITY,
         )
+
+        #     self._async_handle_sun_elevation_update,
+        subscription = async_track_state_change_event(
+            self._hass,
+            HA_SUN_ENTITY,
+            action,
+        )
+
+        self.save_callback(CALLBACK_SUN_ELEVATION_UPDATE, subscription)
+
+    # ----------------------------------------------------------------------------
+    def untrack_sun_elevation(self) -> None:
+        """Unsubscribe sun elevation events."""
+
+        self.remove_callback(CALLBACK_SUN_ELEVATION_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def unschedule_next_charge_time(self) -> None:
+        """Unschedule next charge time."""
+
+        self.remove_callback(CALLBACK_NEXT_CHARGE_TIME_TRIGGER)
 
     # ----------------------------------------------------------------------------
     def schedule_next_charge_time(
-        self, new_starttime: datetime, action: DELAY_CALLBACK
+        self, new_starttime: datetime | None, action: DELAY_CALLBACK
     ) -> None:
         """Set up the next charge time trigger. new_starttime must be in local time."""
 
         local_time = self.get_local_datetime()
-        if new_starttime > local_time:
+
+        if new_starttime is None or new_starttime < local_time:
+            # Remove old callback if exist
+            self.unschedule_next_charge_time()
+        else:
             # Start charger at new_starttime
             delay: timedelta = new_starttime - local_time
             _LOGGER.info(
@@ -187,18 +211,7 @@ class Tracker(ScOptionState):
                 action,
             )
 
-            save_callback_subscription(
-                self._caller,
-                self._unsub_callbacks,
-                CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
-                subscription,
-            )
-        else:
-            remove_callback_subscription(
-                self._caller,
-                self._unsub_callbacks,
-                CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
-            )
+            self.save_callback(CALLBACK_NEXT_CHARGE_TIME_TRIGGER, subscription)
 
     # ----------------------------------------------------------------------------
     def track_next_charge_time_trigger(
@@ -219,21 +232,20 @@ class Tracker(ScOptionState):
             action,
         )
 
-        save_callback_subscription(
-            self._caller,
-            self._unsub_callbacks,
-            CALLBACK_NEXT_CHARGE_TIME_UPDATE,
-            subscription,
-        )
+        self.save_callback(CALLBACK_NEXT_CHARGE_TIME_UPDATE, subscription)
 
     # ----------------------------------------------------------------------------
-    def track_allocated_power_update(
-        self, callback_key: str, action: STATE_CHANGE_CALLBACK
-    ) -> None:
+    def untrack_next_charge_time_trigger(self) -> None:
+        """Unsubscribe next charge time trigger events."""
+
+        self.remove_callback(CALLBACK_NEXT_CHARGE_TIME_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def track_allocated_power_update(self, action: STATE_CHANGE_CALLBACK) -> None:
         """Track allocated power update events."""
 
         allocated_power_entity = self.option_get_id_or_abort(
-            CONTROL_CHARGER_ALLOCATED_POWER
+            NUMBER_CHARGER_ALLOCATED_POWER
         )
         _LOGGER.info(
             "%s: Tracking allocated power update: %s",
@@ -253,9 +265,13 @@ class Tracker(ScOptionState):
             action,
         )
 
-        save_callback_subscription(
-            self._caller, self._unsub_callbacks, callback_key, subscription
-        )
+        self.save_callback(CALLBACK_ALLOCATE_POWER, subscription)
+
+    # ----------------------------------------------------------------------------
+    def untrack_allocated_power_update(self) -> None:
+        """Unsubscribe allocated power update events."""
+
+        self.remove_callback(CALLBACK_ALLOCATE_POWER)
 
     # ----------------------------------------------------------------------------
     # Sunrise/sunset trigger code

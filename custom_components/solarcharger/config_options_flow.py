@@ -40,7 +40,7 @@ from .config_utils import (
 )
 from .const import (
     # CONF_WAIT_NET_POWER_UPDATE,
-    CONTROL_CHARGER_ALLOCATED_POWER,
+    NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGE_ENDTIME_FRIDAY,
     OPTION_CHARGE_ENDTIME_MONDAY,
     OPTION_CHARGE_ENDTIME_SATURDAY,
@@ -441,10 +441,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 BUTTON_ENTITY_SELECTOR,
             ),
             self._optional(
-                subentry, CONTROL_CHARGER_ALLOCATED_POWER, use_default
+                subentry, NUMBER_CHARGER_ALLOCATED_POWER, use_default
             ): entity_selector(
                 api_entities,
-                CONTROL_CHARGER_ALLOCATED_POWER,
+                NUMBER_CHARGER_ALLOCATED_POWER,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
             ),
@@ -458,11 +458,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     ) -> dict[str, Any]:
         """Validate the input data for the options flow."""
 
-        return reset_api_entities(
-            self.config_entry,
-            config_name,
-            data,
-        )
+        return reset_api_entities(self.config_entry, config_name, data)
 
     # ----------------------------------------------------------------------------
     async def async_step_config_device(
