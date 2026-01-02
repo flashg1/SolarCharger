@@ -129,7 +129,7 @@ class ChargeController(ScOptionState):
             SWITCH, subentry.unique_id, SWITCH_SUN_TRIGGER
         )
 
-        self._history_date = datetime(2025, 1, 1, 0, 0, 0)
+        self._history_date = datetime(2026, 1, 1, 0, 0, 0)
         self._tracker: Tracker = Tracker(hass, entry, subentry, caller)
 
         self._session_triggered_by_timer = False
