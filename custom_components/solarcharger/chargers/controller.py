@@ -1054,9 +1054,9 @@ class ChargeController(ScOptionState):
     ) -> None:
         """Schedule next charge session."""
 
-        await self._async_clear_next_charge_time()
-
         if self._is_schedule_charge():
+            await self._async_clear_next_charge_time()
+
             battery_soc = chargeable.get_state_of_charge()
             if battery_soc is None:
                 _LOGGER.info(

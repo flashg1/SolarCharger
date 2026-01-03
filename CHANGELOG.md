@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2beta10 2026-01-03
+- Do not reset next charge time if charge schedule is disabled.
+
 ## v0.2beta9 2026-01-03
 - Number slow update by polling fixed by update_ha_state() when setting number.
 - Changed SWITCH_SCHEDULE_CHARGE class from SolarChargerSwitchEntity to SolarChargerSwitchAction.
