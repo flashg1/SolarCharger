@@ -3,7 +3,6 @@
 from enum import Enum
 from typing import Any
 
-from homeassistant.components.command_line import BINARY_SENSOR_DEFAULT_NAME
 from homeassistant.const import Platform, __version__ as HA_VERSION
 
 MANUFACTURER = "FlashG"
