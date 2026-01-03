@@ -33,10 +33,10 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 ## Features
 
 -   Charge from excess solar adjusting car charging current according to feedback loop value "Main Power Net".  The "Main Power Net" sensor expresses negative value in Watts for available power for charging car, or positive value for consumed power.
--   Support multi-day solar charging using sun elevation triggers to start and stop. (In progress)
+-   Support multi-day solar charging using sun elevation triggers to start and stop.
 -   Compatible with off-peak night time charging.
--   Configurable 7 days charge limit schedule.  Default is to use existing charge limit already set in car. (TODO)
--   Support just-in-time schedule charging to required charge limit using solar and grid if charge completion time is set for the day. (TODO)
+-   Configurable 7 days charge limit schedule.  Default is to use existing charge limit already set in car.
+-   Support just-in-time schedule charging to required charge limit using solar and grid if charge completion time is set for the day.
 -   Automatically charge more today if today has no charge completion time and next 3 days have higher charge limit. (TODO)
 -   Automatically adjust to the highest charge limit set within a rainy forecast period.  The highest charge limit is selected from the 7 days charge limit settings that are within the forecast period taking into account the charge limit on bad weather setting.  The objective is to charge more before a rainy period.  Default disabled. (TODO)
 -   Might be possible to prolong car battery life by setting daily charge limit to 60%, and only charge more before a rainy period by enabling option to adjust daily car charge limit based on weather. (TODO)
@@ -45,7 +45,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 -   Support charging multiple cars at the same time based on power allocation weighting for each car.
 -   Support skew to shift the power export/import curve left or right to achieve your minimal power import. (TODO)
 -   Configurable return codes for comparison with connect trigger states, connected states and charging states returned by your EV or charger specific API. These states are used to determine the stages of the charging process. (TODO)
--   Use EV specific API to control a EV for charging, and/or use OCPP to control an OCPP compliant charger to charge a EV. Only tested with [OCPP simulator](https://github.com/lewei50/iammeter-simulator) and Tesla car. OCPP and Tesla Fleet API support in beta testing phase. (In progress)
+-   Use EV specific API to control a EV for charging, and/or use OCPP to control an OCPP compliant charger to charge a EV. Only tested with [OCPP simulator](https://github.com/lewei50/iammeter-simulator) and Tesla car. OCPP and Tesla Fleet API support in beta testing phase.
 
 
 **💡 Tip:** Please :star: this project if you find it useful, and may be also buy me a coffee!
