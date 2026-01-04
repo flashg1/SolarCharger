@@ -2,7 +2,7 @@
 
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import json
 import logging
 from typing import Any
@@ -53,6 +53,13 @@ class ScheduleData:
     session_starttime: datetime = datetime.min
     charge_limit: float = -1
     charge_endtime = datetime.min
+
+    battery_soc: float | None = None
+
+    # Requires battery_soc to calculate
+    need_charge_duration: timedelta = timedelta.min
+    propose_charge_starttime: datetime = datetime.min
+    is_immediate_start: bool = False
 
 
 # ----------------------------------------------------------------------------
@@ -483,7 +490,5 @@ class ScOptionState(ScConfigState):
                 ),
             ),
         ]
-
-        _LOGGER.debug("Weekly schedule: %s", weekly_schedule)
 
         return weekly_schedule

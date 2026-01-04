@@ -464,6 +464,101 @@ class ChargeController(ScOptionState):
 
         return triggered_by_timer
 
+    # # ----------------------------------------------------------------------------
+    # # use_charge_schedule and has_charge_endtime are always set and correct.
+    # # If use_charge_schedule is true, all other parameters are set.
+    # # If use_charge_schedule is false, only has_charge_endtime is set. All others are not set.
+    # #
+    # # Timer-triggered automation usually need to run at night to meet charge limit at charge end time.
+    # # Timer-triggered automation will try to reach charge limit at charge end time using solar and/or grid.
+    # # For charge limit with charge end time, today = 00:00 to sunset, tomorrow = sunset to 00:00.
+    # # For charge limit without charge end time, today = 00:00 to 23:59.  Reaching charge limit is best effort only and depends on solar.
+    # def _get_schedule_data(
+    #     self, triggered_by_timer: bool, chargeable: Chargeable
+    # ) -> ScheduleData:
+    #     """Calculate charge schedule data for today or tomorrow if session is started by timer."""
+
+    #     sd = ScheduleData(weekly_schedule=[])
+    #     # Ensure time is in local timezone
+    #     now_time = self.get_local_datetime()
+    #     sd.session_starttime = now_time
+
+    #     if self._is_schedule_charge():
+    #         sd.use_charge_schedule = True
+    #         sd.weekly_schedule = self.get_weekly_schedule()
+
+    #         # 0 = Monday, 6 = Sunday
+    #         today_index = now_time.weekday()
+    #         sd.day_index = today_index
+    #         sd.charge_limit = sd.weekly_schedule[today_index].charge_limit
+    #         today_endtime = sd.weekly_schedule[today_index].charge_end_time
+
+    #         if today_endtime != time.min:
+    #             sd.has_charge_endtime = True
+    #             sd.charge_endtime = self.combine_local_date_time(
+    #                 now_time.date(), today_endtime
+    #             )
+
+    #         # Required if session is started by next_charge_time trigger or to calc next trigger
+    #         if triggered_by_timer:
+    #             battery_soc = chargeable.get_state_of_charge()
+    #             if battery_soc is not None:
+    #                 if (
+    #                     sd.has_charge_endtime
+    #                     and sd.charge_endtime > now_time
+    #                     and battery_soc < sd.charge_limit
+    #                 ):
+    #                     # Use today's goal
+    #                     pass
+    #                 else:
+    #                     tomorrow_index = (today_index + 1) % 7
+    #                     tomorrow_endtime = sd.weekly_schedule[
+    #                         tomorrow_index
+    #                     ].charge_end_time
+    #                     if tomorrow_endtime != time.min:
+    #                         # Use tomorrow's goal
+    #                         sd.has_charge_endtime = True
+    #                         sd.day_index = tomorrow_index
+    #                         sd.charge_limit = sd.weekly_schedule[
+    #                             tomorrow_index
+    #                         ].charge_limit
+    #                         sd.charge_endtime = self.combine_local_date_time(
+    #                             now_time.date() + timedelta(days=1),
+    #                             tomorrow_endtime,
+    #                         )
+
+    #     _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
+    #     return sd
+
+    # ----------------------------------------------------------------------------
+    def _calc_propose_charge_starttime(self, chargeable: Chargeable, sd: ScheduleData):
+        """Calculate charge start time."""
+
+        if sd.has_charge_endtime:
+            sd.battery_soc = chargeable.get_state_of_charge()
+            if sd.battery_soc is None:
+                _LOGGER.info(
+                    "%s: Unable to get battery SOC, cannot schedule next charge session",
+                    self._caller,
+                )
+                return
+
+            if sd.battery_soc >= sd.charge_limit:
+                _LOGGER.info(
+                    "%s: Battery SOC %.1f %% is at or above tomorrow's charge limit %.1f %%, no need to schedule next charge session",
+                    self._caller,
+                    sd.battery_soc,
+                    sd.charge_limit,
+                )
+                return
+
+            sd.need_charge_duration = self._calculate_need_charge_duration(
+                sd.battery_soc, sd.charge_limit
+            )
+            sd.propose_charge_starttime = sd.charge_endtime - sd.need_charge_duration
+            if sd.propose_charge_starttime <= sd.session_starttime:
+                sd.is_immediate_start = True
+
     # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.
     # If use_charge_schedule is true, all other parameters are set.
@@ -473,9 +568,7 @@ class ChargeController(ScOptionState):
     # Timer-triggered automation will try to reach charge limit at charge end time using solar and/or grid.
     # For charge limit with charge end time, today = 00:00 to sunset, tomorrow = sunset to 00:00.
     # For charge limit without charge end time, today = 00:00 to 23:59.  Reaching charge limit is best effort only and depends on solar.
-    def _get_schedule_data(
-        self, triggered_by_timer: bool, chargeable: Chargeable
-    ) -> ScheduleData:
+    def _get_schedule_data(self, chargeable: Chargeable) -> ScheduleData:
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
 
         sd = ScheduleData(weekly_schedule=[])
@@ -493,39 +586,32 @@ class ChargeController(ScOptionState):
             sd.charge_limit = sd.weekly_schedule[today_index].charge_limit
             today_endtime = sd.weekly_schedule[today_index].charge_end_time
 
+            # Get today's schedule
             if today_endtime != time.min:
-                sd.has_charge_endtime = True
                 sd.charge_endtime = self.combine_local_date_time(
                     now_time.date(), today_endtime
                 )
+                if sd.charge_endtime > now_time:
+                    sd.has_charge_endtime = True
 
-            # Required if session is started by next_charge_time trigger or to calc next trigger
-            if triggered_by_timer:
-                battery_soc = chargeable.get_state_of_charge()
-                if battery_soc is not None:
-                    if (
-                        sd.has_charge_endtime
-                        and sd.charge_endtime > now_time
-                        and battery_soc < sd.charge_limit
-                    ):
-                        # Use today's goal
-                        pass
-                    else:
-                        tomorrow_index = (today_index + 1) % 7
-                        tomorrow_endtime = sd.weekly_schedule[
-                            tomorrow_index
-                        ].charge_end_time
-                        if tomorrow_endtime != time.min:
-                            # Use tomorrow's goal
-                            sd.has_charge_endtime = True
-                            sd.day_index = tomorrow_index
-                            sd.charge_limit = sd.weekly_schedule[
-                                tomorrow_index
-                            ].charge_limit
-                            sd.charge_endtime = self.combine_local_date_time(
-                                now_time.date() + timedelta(days=1),
-                                tomorrow_endtime,
-                            )
+            # If today has no schedule or passed schedule, and it is between end elevation and mid-night, then get tomorrow's schedule.
+            if not sd.has_charge_endtime and (
+                self._is_sun_between_end_elevation_trigger_and_sunset()
+                or self.is_time_between_sunset_and_midnight()
+            ):
+                tomorrow_index = (today_index + 1) % 7
+                tomorrow_endtime = sd.weekly_schedule[tomorrow_index].charge_end_time
+                if tomorrow_endtime != time.min:
+                    # Use tomorrow's goal
+                    sd.has_charge_endtime = True
+                    sd.day_index = tomorrow_index
+                    sd.charge_limit = sd.weekly_schedule[tomorrow_index].charge_limit
+                    sd.charge_endtime = self.combine_local_date_time(
+                        now_time.date() + timedelta(days=1),
+                        tomorrow_endtime,
+                    )
+
+            self._calc_propose_charge_starttime(chargeable, sd)
 
         _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
         return sd
@@ -562,13 +648,25 @@ class ChargeController(ScOptionState):
     async def _async_init_device(self, chargeable: Chargeable) -> None:
         """Init charge device."""
 
+        #####################################
+        # Set up instance variables
+        #####################################
+        # Must run this first thing to estimate if session started by timer
+        self._session_triggered_by_timer = self._is_session_triggered_by_timer()
+
         sun_state = self.get_sun_state_or_abort()
         sun_elevation: float = get_sun_elevation(self._caller, sun_state)
         _LOGGER.warning("%s: Started at sun_elevation=%s", self._caller, sun_elevation)
 
         await self._async_wakeup_device(chargeable)
         await self._async_update_ha(chargeable)
+
         self._check_is_at_location(chargeable)
+
+        #####################################
+        # Set immediate goal
+        #####################################
+        self._goal = self._get_schedule_data(chargeable)
 
     # ----------------------------------------------------------------------------
     async def _async_init_charge_limit(
@@ -629,7 +727,7 @@ class ChargeController(ScOptionState):
         return is_below_limit
 
     # ----------------------------------------------------------------------------
-    def _is_sun_above_start_end_elevations(self) -> tuple[bool, float]:
+    def _is_sun_above_start_end_elevation_triggers(self) -> tuple[bool, float]:
         sun_above_start_end_elevations = False
 
         sun_state: State = self.get_sun_state_or_abort()
@@ -652,6 +750,47 @@ class ChargeController(ScOptionState):
             sun_above_start_end_elevations = True
 
         return (sun_above_start_end_elevations, sun_elevation)
+
+    # ----------------------------------------------------------------------------
+    # Edge cases: Around midnight.
+    # _is_sun_below_end_elevation_and_decending() cannot be exactly midnight.
+    # If cutoff is just before midnight, before cutoff is ok, after cutoff it won't get tomorrow goal.
+    # If cutoff is just after midnight, then ...
+    # Midnight time is used to determine whether it is today or tomorrow.
+    def _is_sun_below_end_elevation_trigger_and_decending(self) -> bool:
+        """Roughly between end elevation trigger and midnight."""
+
+        sun_state: State = self.get_sun_state_or_abort()
+        sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
+            OPTION_SUNSET_ELEVATION_END_TRIGGER
+        )
+        sun_elevation: float = get_sun_attribute_or_abort(
+            self._caller, sun_state, "elevation"
+        )
+        sun_is_rising: bool = get_sun_attribute_or_abort(
+            self._caller, sun_state, "rising"
+        )
+
+        return sun_elevation < sunset_elevation_end_trigger and not sun_is_rising
+
+    # ----------------------------------------------------------------------------
+    def _is_sun_between_end_elevation_trigger_and_sunset(self) -> bool:
+        sun_state: State = self.get_sun_state_or_abort()
+        sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
+            OPTION_SUNSET_ELEVATION_END_TRIGGER
+        )
+        sun_elevation: float = get_sun_attribute_or_abort(
+            self._caller, sun_state, "elevation"
+        )
+        sun_is_rising: bool = get_sun_attribute_or_abort(
+            self._caller, sun_state, "rising"
+        )
+
+        return (
+            sun_elevation >= 0
+            and sun_elevation <= sunset_elevation_end_trigger
+            and not sun_is_rising
+        )
 
     # ----------------------------------------------------------------------------
     def _is_use_secondary_power_source(self) -> bool:
@@ -920,7 +1059,7 @@ class ChargeController(ScOptionState):
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
         is_charging = charger.is_charging()
         (is_sun_above_start_end_elevations, elevation) = (
-            self._is_sun_above_start_end_elevations()
+            self._is_sun_above_start_end_elevation_triggers()
         )
         is_use_secondary_power_source = self._is_use_secondary_power_source()
         now_time = self.get_local_datetime()
@@ -936,6 +1075,7 @@ class ChargeController(ScOptionState):
                 or (
                     self._goal.has_charge_endtime
                     and self._goal.charge_endtime > now_time
+                    and self._goal.is_immediate_start
                 )
             )
         )
@@ -1048,123 +1188,189 @@ class ChargeController(ScOptionState):
 
         await self._async_set_next_charge_time(self._history_date)
 
+    # # ----------------------------------------------------------------------------
+    # async def _async_schedule_next_charge_session(
+    #     self, charger: Charger, chargeable: Chargeable
+    # ) -> None:
+    #     """Schedule next charge session."""
+
+    #     if self._is_schedule_charge():
+    #         await self._async_clear_next_charge_time()
+
+    #         battery_soc = chargeable.get_state_of_charge()
+    #         if battery_soc is None:
+    #             _LOGGER.info(
+    #                 "%s: Unable to get battery SOC, cannot schedule next charge session",
+    #                 self._caller,
+    #             )
+    #             return
+    #             # For testing only
+    #             # battery_soc = 0.0
+
+    #         weekly_schedule = self.get_weekly_schedule()
+
+    #         # Ensure time is in local timezone
+    #         now_time = self.get_local_datetime()
+    #         today_index = now_time.weekday()
+    #         tomorrow_index = (today_index + 1) % 7
+    #         tomorrow_charge_limit = weekly_schedule[tomorrow_index].charge_limit
+    #         charge_end_time = weekly_schedule[tomorrow_index].charge_end_time
+
+    #         if charge_end_time != time.min:
+    #             tomorrow_charge_endtime = self.combine_local_date_time(
+    #                 now_time.date() + timedelta(days=1), charge_end_time
+    #             )
+
+    #             if battery_soc >= tomorrow_charge_limit:
+    #                 _LOGGER.info(
+    #                     "%s: Battery SOC %.1f %% is at or above tomorrow's charge limit %.1f %%, no need to schedule next charge session",
+    #                     self._caller,
+    #                     battery_soc,
+    #                     tomorrow_charge_limit,
+    #                 )
+    #                 return
+
+    #             sun_state = self.get_sun_state_or_abort()
+    #             sec_per_degree_sunrise: float = get_sec_per_degree_sun_elevation(
+    #                 self._caller, sun_state
+    #             )
+    #             elevation_start_trigger = self.option_get_entity_number_or_abort(
+    #                 OPTION_SUNRISE_ELEVATION_START_TRIGGER
+    #             )
+    #             sunrise_offset = timedelta(
+    #                 seconds=(
+    #                     elevation_start_trigger
+    #                     + CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE
+    #                 )
+    #                 * sec_per_degree_sunrise
+    #             )
+    #             next_sunrise = get_next_sunrise_time(self._caller, sun_state)
+
+    #             tomorrow_charge_starttime = (
+    #                 self.combine_local_date_time(
+    #                     now_time.date() + timedelta(days=1),
+    #                     next_sunrise.time(),
+    #                 )
+    #                 + sunrise_offset
+    #             )
+    #             tomorrow_available_charge_duration = (
+    #                 tomorrow_charge_endtime - tomorrow_charge_starttime
+    #             )
+
+    #             tomorrow_need_charge_duration = self._calculate_need_charge_duration(
+    #                 battery_soc, tomorrow_charge_limit
+    #             )
+
+    #             _LOGGER.warning(
+    #                 "%s: tomorrow_charge_endtime=%s, "
+    #                 "sec_per_degree_sunrise=%.2f sec, "
+    #                 "elevation_start_trigger=%.2f, "
+    #                 "sunrise_offset=%s, "
+    #                 "next_sunrise=%s, "
+    #                 "tomorrow_charge_starttime=%s, "
+    #                 "tomorrow_available_charge_duration=%s, "
+    #                 "tomorrow_need_charge_duration=%s, ",
+    #                 self._caller,
+    #                 tomorrow_charge_endtime,
+    #                 sec_per_degree_sunrise,
+    #                 elevation_start_trigger,
+    #                 sunrise_offset,
+    #                 next_sunrise,
+    #                 tomorrow_charge_starttime,
+    #                 tomorrow_available_charge_duration,
+    #                 tomorrow_need_charge_duration,
+    #             )
+
+    #             # Check if need to start earlier than tomorrow sunrise
+    #             if tomorrow_need_charge_duration > tomorrow_available_charge_duration:
+    #                 tomorrow_propose_charge_starttime = (
+    #                     tomorrow_charge_endtime - tomorrow_need_charge_duration
+    #                 )
+
+    #                 if tomorrow_propose_charge_starttime <= now_time:
+    #                     # Need to start ASAP
+    #                     tomorrow_new_charge_starttime = now_time + timedelta(minutes=2)
+    #                 else:
+    #                     # Can start later at proposed time
+    #                     tomorrow_new_charge_starttime = (
+    #                         tomorrow_propose_charge_starttime
+    #                     )
+
+    #                 _LOGGER.warning(
+    #                     "%s: Setting next charge session start time: %s",
+    #                     self._caller,
+    #                     tomorrow_new_charge_starttime,
+    #                 )
+
+    #                 await self._async_set_next_charge_time(
+    #                     tomorrow_new_charge_starttime
+    #                 )
+
+    # ----------------------------------------------------------------------------
+    def _get_next_start_elevation_trigger_time(self) -> datetime:
+        """Get next start elevation trigger time."""
+
+        sun_state = self.get_sun_state_or_abort()
+        sec_per_degree_sunrise: float = get_sec_per_degree_sun_elevation(
+            self._caller, sun_state
+        )
+        elevation_start_trigger = self.option_get_entity_number_or_abort(
+            OPTION_SUNRISE_ELEVATION_START_TRIGGER
+        )
+        sunrise_offset = timedelta(
+            seconds=(
+                elevation_start_trigger + CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE
+            )
+            * sec_per_degree_sunrise
+        )
+
+        now_time = self.get_local_datetime()
+        next_sunrise = get_next_sunrise_time(self._caller, sun_state)
+
+        # Get today sunrise time
+        next_start_elevation_trigger_time = (
+            self.combine_local_date_time(
+                now_time.date(),
+                next_sunrise.time(),
+            )
+            + sunrise_offset
+        )
+
+        # Check if today start elevation trigger time has passed
+        if next_sunrise > next_start_elevation_trigger_time:
+            next_start_elevation_trigger_time = next_sunrise + sunrise_offset
+
+        return next_start_elevation_trigger_time
+
     # ----------------------------------------------------------------------------
     async def _async_schedule_next_charge_session(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Schedule next charge session."""
 
-        if self._is_schedule_charge():
+        next_goal = self._get_schedule_data(chargeable)
+        if next_goal.use_charge_schedule:
             await self._async_clear_next_charge_time()
 
-            battery_soc = chargeable.get_state_of_charge()
-            if battery_soc is None:
-                _LOGGER.info(
-                    "%s: Unable to get battery SOC, cannot schedule next charge session",
-                    self._caller,
-                )
-                return
-                # For testing only
-                # battery_soc = 0.0
-
-            weekly_schedule = self.get_weekly_schedule()
-
-            # Ensure time is in local timezone
-            now_time = self.get_local_datetime()
-            today_index = now_time.weekday()
-            tomorrow_index = (today_index + 1) % 7
-            tomorrow_charge_limit = weekly_schedule[tomorrow_index].charge_limit
-            charge_end_time = weekly_schedule[tomorrow_index].charge_end_time
-
-            if charge_end_time != time.min:
-                tomorrow_charge_endtime = self.combine_local_date_time(
-                    now_time.date() + timedelta(days=1), charge_end_time
-                )
-
-                if battery_soc >= tomorrow_charge_limit:
-                    _LOGGER.info(
-                        "%s: Battery SOC %.1f %% is at or above tomorrow's charge limit %.1f %%, no need to schedule next charge session",
-                        self._caller,
-                        battery_soc,
-                        tomorrow_charge_limit,
-                    )
-                    return
-
-                sun_state = self.get_sun_state_or_abort()
-                sec_per_degree_sunrise: float = get_sec_per_degree_sun_elevation(
-                    self._caller, sun_state
-                )
-                elevation_start_trigger = self.option_get_entity_number_or_abort(
-                    OPTION_SUNRISE_ELEVATION_START_TRIGGER
-                )
-                sunrise_offset = timedelta(
-                    seconds=(
-                        elevation_start_trigger
-                        + CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE
-                    )
-                    * sec_per_degree_sunrise
-                )
-                next_sunrise = get_next_sunrise_time(self._caller, sun_state)
-
-                tomorrow_charge_starttime = (
-                    self.combine_local_date_time(
-                        now_time.date() + timedelta(days=1),
-                        next_sunrise.time(),
-                    )
-                    + sunrise_offset
-                )
-                tomorrow_available_charge_duration = (
-                    tomorrow_charge_endtime - tomorrow_charge_starttime
-                )
-
-                tomorrow_need_charge_duration = self._calculate_need_charge_duration(
-                    battery_soc, tomorrow_charge_limit
-                )
-
-                _LOGGER.warning(
-                    "%s: tomorrow_charge_endtime=%s, "
-                    "sec_per_degree_sunrise=%.2f sec, "
-                    "elevation_start_trigger=%.2f, "
-                    "sunrise_offset=%s, "
-                    "next_sunrise=%s, "
-                    "tomorrow_charge_starttime=%s, "
-                    "tomorrow_available_charge_duration=%s, "
-                    "tomorrow_need_charge_duration=%s, ",
-                    self._caller,
-                    tomorrow_charge_endtime,
-                    sec_per_degree_sunrise,
-                    elevation_start_trigger,
-                    sunrise_offset,
-                    next_sunrise,
-                    tomorrow_charge_starttime,
-                    tomorrow_available_charge_duration,
-                    tomorrow_need_charge_duration,
-                )
-
-                # Check if need to start earlier than tomorrow sunrise
-                if tomorrow_need_charge_duration > tomorrow_available_charge_duration:
-                    tomorrow_propose_charge_starttime = (
-                        tomorrow_charge_endtime - tomorrow_need_charge_duration
-                    )
-
-                    if tomorrow_propose_charge_starttime <= now_time:
-                        # Need to start ASAP
-                        tomorrow_new_charge_starttime = now_time + timedelta(minutes=2)
+            if next_goal.has_charge_endtime:
+                if next_goal.propose_charge_starttime != datetime.min:
+                    if next_goal.is_immediate_start:
+                        now_time = self.get_local_datetime()
+                        next_starttime = now_time + timedelta(minutes=2)
                     else:
-                        # Can start later at proposed time
-                        tomorrow_new_charge_starttime = (
-                            tomorrow_propose_charge_starttime
+                        next_starttime = next_goal.propose_charge_starttime
+
+                    next_start_elevation_trigger_time = (
+                        self._get_next_start_elevation_trigger_time()
+                    )
+
+                    if next_starttime < next_start_elevation_trigger_time:
+                        _LOGGER.warning(
+                            "%s: Setting next charge session start time: %s",
+                            self._caller,
+                            next_starttime,
                         )
-
-                    _LOGGER.warning(
-                        "%s: Setting next charge session start time: %s",
-                        self._caller,
-                        tomorrow_new_charge_starttime,
-                    )
-
-                    await self._async_set_next_charge_time(
-                        tomorrow_new_charge_starttime
-                    )
+                        await self._async_set_next_charge_time(next_starttime)
 
     # ----------------------------------------------------------------------------
     async def _async_tidy_up_on_exit(
@@ -1191,15 +1397,6 @@ class ChargeController(ScOptionState):
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
         # chargeable: Chargeable | None = self.get_chargee
-
-        #####################################
-        # Set up instance variables
-        #####################################
-        # Must run this first thing to estimate if session started by timer
-        self._session_triggered_by_timer = self._is_session_triggered_by_timer()
-        self._goal = self._get_schedule_data(
-            self._session_triggered_by_timer, chargeable
-        )
 
         #####################################
         # Start charge session

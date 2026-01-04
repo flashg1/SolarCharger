@@ -382,7 +382,7 @@ class ScState:
         return next_sunrise > next_sunset
 
     # ----------------------------------------------------------------------------
-    def is_between_sunset_and_midnight(self) -> bool:
+    def is_time_between_sunset_and_midnight(self) -> bool:
         """Time between sunset and mid-night is considered to be tomorrow."""
 
         sun_state = self.get_sun_state_or_abort()
