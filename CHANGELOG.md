@@ -2,6 +2,7 @@
 
 ## v0.2beta11 2026-01-04
 - Fixed today's start time before sunrise not scheduled issue.
+- Increase today charge limit if today has no end time, and tomorrow has end time and bigger charge limit.
 
 ## v0.2beta10 2026-01-03
 - Do not reset next charge time if charge schedule is disabled.

@@ -582,11 +582,12 @@ class ChargeController(ScOptionState):
 
             # 0 = Monday, 6 = Sunday
             today_index = now_time.weekday()
+            today_charge_limit = sd.weekly_schedule[today_index].charge_limit
             sd.day_index = today_index
-            sd.charge_limit = sd.weekly_schedule[today_index].charge_limit
-            today_endtime = sd.weekly_schedule[today_index].charge_end_time
+            sd.charge_limit = today_charge_limit
 
             # Get today's schedule
+            today_endtime = sd.weekly_schedule[today_index].charge_end_time
             if today_endtime != time.min:
                 sd.charge_endtime = self.combine_local_date_time(
                     now_time.date(), today_endtime
@@ -594,22 +595,51 @@ class ChargeController(ScOptionState):
                 if sd.charge_endtime > now_time:
                     sd.has_charge_endtime = True
 
+            # # If today has no schedule or passed schedule, and it is between end elevation and mid-night, then get tomorrow's schedule.
+            # if not sd.has_charge_endtime and (
+            #     self._is_sun_between_end_elevation_trigger_and_sunset()
+            #     or self.is_time_between_sunset_and_midnight()
+            # ):
+            #     tomorrow_index = (today_index + 1) % 7
+            #     tomorrow_endtime = sd.weekly_schedule[tomorrow_index].charge_end_time
+            #     if tomorrow_endtime != time.min:
+            #         # Use tomorrow's goal
+            #         sd.has_charge_endtime = True
+            #         sd.day_index = tomorrow_index
+            #         sd.charge_limit = sd.weekly_schedule[tomorrow_index].charge_limit
+            #         sd.charge_endtime = self.combine_local_date_time(
+            #             now_time.date() + timedelta(days=1),
+            #             tomorrow_endtime,
+            #         )
+
             # If today has no schedule or passed schedule, and it is between end elevation and mid-night, then get tomorrow's schedule.
-            if not sd.has_charge_endtime and (
-                self._is_sun_between_end_elevation_trigger_and_sunset()
-                or self.is_time_between_sunset_and_midnight()
-            ):
+            if not sd.has_charge_endtime:
+                # Increase today charge limit if today has no end time, and tomorrow has end time and bigger charge limit.
                 tomorrow_index = (today_index + 1) % 7
+                tomorrow_charge_limit = sd.weekly_schedule[tomorrow_index].charge_limit
                 tomorrow_endtime = sd.weekly_schedule[tomorrow_index].charge_end_time
-                if tomorrow_endtime != time.min:
-                    # Use tomorrow's goal
-                    sd.has_charge_endtime = True
-                    sd.day_index = tomorrow_index
-                    sd.charge_limit = sd.weekly_schedule[tomorrow_index].charge_limit
-                    sd.charge_endtime = self.combine_local_date_time(
-                        now_time.date() + timedelta(days=1),
-                        tomorrow_endtime,
+                if (
+                    tomorrow_endtime != time.min
+                    and tomorrow_charge_limit > today_charge_limit
+                ):
+                    sd.charge_limit = round(
+                        (today_charge_limit + tomorrow_charge_limit) / 2
                     )
+
+                # Use tomorrow's charge limit if between end elevation trigger and midnight.
+                if (
+                    self._is_sun_between_end_elevation_trigger_and_sunset()
+                    or self.is_time_between_sunset_and_midnight()
+                ):
+                    if tomorrow_endtime != time.min:
+                        # Use tomorrow's goal
+                        sd.has_charge_endtime = True
+                        sd.day_index = tomorrow_index
+                        sd.charge_limit = tomorrow_charge_limit
+                        sd.charge_endtime = self.combine_local_date_time(
+                            now_time.date() + timedelta(days=1),
+                            tomorrow_endtime,
+                        )
 
             self._calc_propose_charge_starttime(chargeable, sd)
 
