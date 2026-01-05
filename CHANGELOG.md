@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.2beta12 2026-01-05
+- Only schedule next charge session if car is connected and at location.
 - _get_schedule_data() to check if session started by timer or to scheule next session.
 - Need to compare next_start_elevation_trigger_time with now_time.
 - Tested MQTT BLE plugin/unplug triggers. Plugin trigger needs external automation to ping car.
