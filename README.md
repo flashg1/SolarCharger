@@ -103,7 +103,7 @@ Device: Envoy [YourEnvoyId]
 -	Config the integration specifying the charger effective voltage, maximum current, maximum charge speed, ie.
 ```
 SolarCharger > Global defaults > Configuration > Effective voltage
-SolarCharger > Your local device > Configuration > Max current
+SolarCharger > Your local device > Configuration > Max current (if available)
 ```
 
 How to use
