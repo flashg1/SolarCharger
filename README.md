@@ -100,8 +100,11 @@ Device: Envoy [YourEnvoyId]
 
 - If using OCPP charger, configure your charger to point to your HA OCPP central server, eg. ws://homeassistant.local:9000
 
--	Config the integration specifying the charger effective voltage, maximum current, maximum charge speed, ie. SolarCharger > Global defaults / Local device > Configuration
-
+-	Config the integration specifying the charger effective voltage, maximum current, maximum charge speed, ie.
+```
+SolarCharger > Global defaults > Configuration > Effective voltage
+SolarCharger > Your local device > Configuration > Max current
+```
 
 How to use
 ==========

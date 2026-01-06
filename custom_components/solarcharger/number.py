@@ -124,7 +124,7 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: NumberEntityDescription,
-        default_val: float,
+        default_val: float | None,
     ) -> None:
         """Initialise number."""
         super().__init__(config_item, subentry, entity_type, desc)

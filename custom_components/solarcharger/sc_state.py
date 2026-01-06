@@ -6,7 +6,7 @@ import logging
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from homeassistant.const import ATTR_DEVICE_ID
+from homeassistant.const import ATTR_DEVICE_ID, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, ServiceResponse, State
 from homeassistant.util.dt import as_local, utcnow
 
@@ -159,11 +159,12 @@ class ScState:
         """Get float object."""
 
         state_str = self.get_state_string(entity_id)
-        if state_str is None:
+        if state_str is None or state_str in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             _LOGGER.warning(
-                "%s: Cannot get number for entity '%s'",
+                "%s: Cannot get number: entity='%s', value='%s'",
                 self._caller,
                 entity_id,
+                state_str,
             )
             return None
 

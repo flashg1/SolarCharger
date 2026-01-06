@@ -10,7 +10,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.2beta13"
+VERSION = "0.2beta14"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -139,7 +139,7 @@ OPTION_NAME = "option_name"
 #####################################
 # Charger general configs
 #####################################
-NUMBER_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # 230 Volts
+NUMBER_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # No defaults
 NUMBER_CHARGER_MAX_SPEED = "charger_max_speed"  # 6.1448 %/hr
 NUMBER_CHARGER_MIN_CURRENT = "charger_min_current"  # 1 Amps
 NUMBER_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"  # 0 Amps
@@ -216,7 +216,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Global defaults: Environment defaults
     #####################################
-    NUMBER_CHARGER_EFFECTIVE_VOLTAGE: 230,
+    NUMBER_CHARGER_EFFECTIVE_VOLTAGE: None,
     #####################################
     # Global defaults: Charge limit defaults
     #####################################
@@ -254,7 +254,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Local device optional defaults
     #####################################
-    OPTION_CHARGER_MAX_CURRENT: 15,
+    OPTION_CHARGER_MAX_CURRENT: None,
     OPTION_CHARGEE_CHARGE_LIMIT: 70,
     #####################################
     # Local device switch defaults

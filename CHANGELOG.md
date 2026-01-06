@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2beta14 2026-01-07
+- Removed defaults for charger effective voltage and max current, ie. must be set before use.
+
 ## v0.2beta13 2026-01-06
 - Removed charger_max_current and chargee_charge_limit from global default entities.
 - Set next session time on exit if sun start elevation trigger is off.

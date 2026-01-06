@@ -34,6 +34,8 @@ from .const import (
     OPTION_DELETE_ENTITY,
     OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_THIRDPARTY_DOMAIN,
+    NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    OPTION_CHARGER_MAX_CURRENT,
 )
 
 # ----------------------------------------------------------------------------
@@ -283,10 +285,15 @@ def get_device_config_default_value(subentry: ConfigSubentry, config_item: str) 
         if val is None:
             val = _get_device_global_default_value(config_item)
 
+    # Entities can have no default values, eg. charger effective voltage, charger max current.
     if val is None:
-        raise SystemError(
-            f"No default value found for config item '{config_item}' in subentry ID '{subentry.unique_id}'"
-        )
+        if config_item not in [
+            NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+            OPTION_CHARGER_MAX_CURRENT,
+        ]:
+            raise SystemError(
+                f"No default value found for config item '{config_item}' in subentry ID '{subentry.unique_id}'"
+            )
 
     return val
 
