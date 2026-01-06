@@ -13,14 +13,14 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     DOMAIN,
-    OPTION_CHARGE_ENDTIME_FRIDAY,
-    OPTION_CHARGE_ENDTIME_MONDAY,
-    OPTION_CHARGE_ENDTIME_SATURDAY,
-    OPTION_CHARGE_ENDTIME_SUNDAY,
-    OPTION_CHARGE_ENDTIME_THURSDAY,
-    OPTION_CHARGE_ENDTIME_TUESDAY,
-    OPTION_CHARGE_ENDTIME_WEDNESDAY,
     TIME,
+    TIME_CHARGE_ENDTIME_FRIDAY,
+    TIME_CHARGE_ENDTIME_MONDAY,
+    TIME_CHARGE_ENDTIME_SATURDAY,
+    TIME_CHARGE_ENDTIME_SUNDAY,
+    TIME_CHARGE_ENDTIME_THURSDAY,
+    TIME_CHARGE_ENDTIME_TUESDAY,
+    TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -105,58 +105,58 @@ CONFIG_TIME_LIST: tuple[
     # entity_category=EntityCategory.CONFIG
     #####################################
     (
-        OPTION_CHARGE_ENDTIME_MONDAY,
+        TIME_CHARGE_ENDTIME_MONDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
-            key=OPTION_CHARGE_ENDTIME_MONDAY,
+            key=TIME_CHARGE_ENDTIME_MONDAY,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
     (
-        OPTION_CHARGE_ENDTIME_TUESDAY,
+        TIME_CHARGE_ENDTIME_TUESDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
-            key=OPTION_CHARGE_ENDTIME_TUESDAY,
+            key=TIME_CHARGE_ENDTIME_TUESDAY,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
     (
-        OPTION_CHARGE_ENDTIME_WEDNESDAY,
+        TIME_CHARGE_ENDTIME_WEDNESDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
-            key=OPTION_CHARGE_ENDTIME_WEDNESDAY,
+            key=TIME_CHARGE_ENDTIME_WEDNESDAY,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
     (
-        OPTION_CHARGE_ENDTIME_THURSDAY,
+        TIME_CHARGE_ENDTIME_THURSDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
-            key=OPTION_CHARGE_ENDTIME_THURSDAY,
+            key=TIME_CHARGE_ENDTIME_THURSDAY,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
     (
-        OPTION_CHARGE_ENDTIME_FRIDAY,
+        TIME_CHARGE_ENDTIME_FRIDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
-            key=OPTION_CHARGE_ENDTIME_FRIDAY,
+            key=TIME_CHARGE_ENDTIME_FRIDAY,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
     (
-        OPTION_CHARGE_ENDTIME_SATURDAY,
+        TIME_CHARGE_ENDTIME_SATURDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
-            key=OPTION_CHARGE_ENDTIME_SATURDAY,
+            key=TIME_CHARGE_ENDTIME_SATURDAY,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
     (
-        OPTION_CHARGE_ENDTIME_SUNDAY,
+        TIME_CHARGE_ENDTIME_SUNDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         TimeEntityDescription(
-            key=OPTION_CHARGE_ENDTIME_SUNDAY,
+            key=TIME_CHARGE_ENDTIME_SUNDAY,
             entity_category=EntityCategory.CONFIG,
         ),
     ),

@@ -194,7 +194,7 @@ class SolarChargerSwitchChargeEntity(SolarChargerSwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         await super().async_turn_on(**kwargs)
-        await self._coordinator.switch_charge_update(
+        await self._coordinator.async_switch_charger(
             self._coordinator.charge_controls[self._subentry.subentry_id], True
         )
 
@@ -202,7 +202,7 @@ class SolarChargerSwitchChargeEntity(SolarChargerSwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
         await super().async_turn_off(**kwargs)
-        await self._coordinator.switch_charge_update(
+        await self._coordinator.async_switch_charger(
             self._coordinator.charge_controls[self._subentry.subentry_id], False
         )
 
@@ -240,7 +240,7 @@ async def async_setup_entry(
             SWITCH_START_CHARGE,
             SolarChargerSwitchChargeEntity,
             RESTORE_ON_START_FALSE,
-            coordinator.switch_charge_update,
+            coordinator.async_switch_charger,
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_START_CHARGE,
@@ -253,7 +253,7 @@ async def async_setup_entry(
             SWITCH_FAST_CHARGE_MODE,
             SolarChargerSwitchEntity,
             RESTORE_ON_START_TRUE,
-            coordinator.dummy_switch,
+            coordinator.async_switch_dummy,
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_FAST_CHARGE_MODE,

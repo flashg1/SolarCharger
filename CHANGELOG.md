@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2beta13 2026-01-06
+- Fixed issue with incorrect check for at home status when scheduling next session.
+- Updated config entity descriptions.
+- Refactored required local device config entities.
+
 ## v0.2beta12 2026-01-05
 - Only schedule next charge session if car is connected and at location.
 - _get_schedule_data() to check if session started by timer or to scheule next session.

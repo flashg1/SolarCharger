@@ -17,29 +17,28 @@ from homeassistant.helpers import device_registry as dr
 # from homeassistant.helpers.sun import get_astral_event_next
 from homeassistant.util.dt import as_local, utcnow
 
-from ..config_utils import get_saved_local_option_value_or_abort  # noqa: TID252
 from ..const import (  # noqa: TID252
     CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
+    NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    NUMBER_CHARGER_MAX_SPEED,
+    NUMBER_CHARGER_MIN_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
+    NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
+    NUMBER_WAIT_CHARGEE_UPDATE_HA,
+    NUMBER_WAIT_CHARGEE_WAKEUP,
+    NUMBER_WAIT_CHARGER_AMP_CHANGE,
+    NUMBER_WAIT_CHARGER_OFF,
+    NUMBER_WAIT_CHARGER_ON,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
-    OPTION_CHARGER_EFFECTIVE_VOLTAGE,
-    OPTION_CHARGER_MAX_SPEED,
-    OPTION_CHARGER_MIN_CURRENT,
-    OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-    OPTION_SUNRISE_ELEVATION_START_TRIGGER,
-    OPTION_SUNSET_ELEVATION_END_TRIGGER,
-    OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
-    OPTION_WAIT_CHARGEE_UPDATE_HA,
-    OPTION_WAIT_CHARGEE_WAKEUP,
-    OPTION_WAIT_CHARGER_AMP_CHANGE,
-    OPTION_WAIT_CHARGER_OFF,
-    OPTION_WAIT_CHARGER_ON,
     SWITCH,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
@@ -221,7 +220,7 @@ class ChargeController(ScOptionState):
                     STATE_UNAVAILABLE,
                 ) and old_sun_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
                     elevation_start_trigger = self.option_get_entity_number_or_abort(
-                        OPTION_SUNRISE_ELEVATION_START_TRIGGER
+                        NUMBER_SUNRISE_ELEVATION_START_TRIGGER
                     )
 
                     is_sun_rising: bool = get_is_sun_rising(self._caller, old_sun_state)
@@ -578,7 +577,7 @@ class ChargeController(ScOptionState):
 
         await chargeable.async_wake_up(val_dict)
         if val_dict.config_values[config_item].entity_id is not None:
-            await self._async_option_sleep(OPTION_WAIT_CHARGEE_WAKEUP)
+            await self._async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
 
     # ----------------------------------------------------------------------------
     async def _async_update_ha(self, chargeable: Chargeable) -> None:
@@ -587,10 +586,21 @@ class ChargeController(ScOptionState):
 
         await chargeable.async_update_ha(val_dict)
         if val_dict.config_values[config_item].entity_id is not None:
-            await self._async_option_sleep(OPTION_WAIT_CHARGEE_UPDATE_HA)
+            await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
     # ----------------------------------------------------------------------------
-    def _check_is_at_location(self, chargeable: Chargeable) -> None:
+    def _is_at_location(self, chargeable: Chargeable) -> bool:
+        config_item = OPTION_CHARGEE_LOCATION_SENSOR
+        val_dict = ConfigValueDict(config_item, {})
+
+        is_at_location = chargeable.is_at_location(val_dict)
+        if val_dict.config_values[config_item].entity_id is None:
+            is_at_location = True
+
+        return is_at_location
+
+    # ----------------------------------------------------------------------------
+    def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
         config_item = OPTION_CHARGEE_LOCATION_SENSOR
         val_dict = ConfigValueDict(config_item, {})
 
@@ -616,7 +626,7 @@ class ChargeController(ScOptionState):
         await self._async_wakeup_device(chargeable)
         await self._async_update_ha(chargeable)
 
-        self._check_is_at_location(chargeable)
+        self._check_if_at_location_or_abort(chargeable)
 
         #####################################
         # Set immediate goal
@@ -640,7 +650,7 @@ class ChargeController(ScOptionState):
                 self._goal.weekly_schedule[self._goal.day_index].charge_day,
             )
             await chargeable.async_set_charge_limit(self._goal.charge_limit)
-            await self._async_option_sleep(OPTION_WAIT_CHARGEE_LIMIT_CHANGE)
+            await self._async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
@@ -689,10 +699,10 @@ class ChargeController(ScOptionState):
 
         sun_state: State = self.get_sun_state_or_abort()
         sunrise_elevation_start_trigger: float = self.option_get_entity_number_or_abort(
-            OPTION_SUNRISE_ELEVATION_START_TRIGGER
+            NUMBER_SUNRISE_ELEVATION_START_TRIGGER
         )
         sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
-            OPTION_SUNSET_ELEVATION_END_TRIGGER
+            NUMBER_SUNSET_ELEVATION_END_TRIGGER
         )
         sun_elevation: float = get_sun_attribute_or_abort(
             self._caller, sun_state, "elevation"
@@ -719,7 +729,7 @@ class ChargeController(ScOptionState):
 
         sun_state: State = self.get_sun_state_or_abort()
         sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
-            OPTION_SUNSET_ELEVATION_END_TRIGGER
+            NUMBER_SUNSET_ELEVATION_END_TRIGGER
         )
         sun_elevation: float = get_sun_attribute_or_abort(
             self._caller, sun_state, "elevation"
@@ -736,7 +746,7 @@ class ChargeController(ScOptionState):
 
         sun_state: State = self.get_sun_state_or_abort()
         sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
-            OPTION_SUNSET_ELEVATION_END_TRIGGER
+            NUMBER_SUNSET_ELEVATION_END_TRIGGER
         )
         sun_elevation: float = get_sun_attribute_or_abort(
             self._caller, sun_state, "elevation"
@@ -794,7 +804,7 @@ class ChargeController(ScOptionState):
             )
 
             battery_max_charge_speed = self.option_get_entity_number_or_abort(
-                OPTION_CHARGER_MAX_SPEED
+                NUMBER_CHARGER_MAX_SPEED
             )
             # Duration in seconds to increase battery level by 1%
             one_percent_charge_duration = timedelta(
@@ -824,17 +834,17 @@ class ChargeController(ScOptionState):
         switched_on = charger.is_charger_switch_on()
         if not switched_on:
             await charger.async_turn_charger_switch_on()
-            await self._async_option_sleep(OPTION_WAIT_CHARGER_ON)
+            await self._async_option_sleep(NUMBER_WAIT_CHARGER_ON)
 
     # ----------------------------------------------------------------------------
     async def _async_turn_charger_switch_off(self, charger: Charger) -> None:
         await charger.async_turn_charger_switch_off()
-        await self._async_option_sleep(OPTION_WAIT_CHARGER_OFF)
+        await self._async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_current(self, charger: Charger, current: float) -> None:
         await charger.async_set_charge_current(current)
-        await self._async_option_sleep(OPTION_WAIT_CHARGER_AMP_CHANGE)
+        await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
     # ----------------------------------------------------------------------------
     def _check_current(self, max_current: float, current: float) -> float:
@@ -873,7 +883,7 @@ class ChargeController(ScOptionState):
         # Set minimum charge current
         #####################################
         config_min_current = self.option_get_entity_number_or_abort(
-            OPTION_CHARGER_MIN_CURRENT
+            NUMBER_CHARGER_MIN_CURRENT
         )
         config_min_current = self._check_current(
             charger_max_current, config_min_current
@@ -893,7 +903,7 @@ class ChargeController(ScOptionState):
         # Calculate new current from allocated power
         #####################################
         charger_effective_voltage = self.option_get_entity_number_or_abort(
-            OPTION_CHARGER_EFFECTIVE_VOLTAGE
+            NUMBER_CHARGER_EFFECTIVE_VOLTAGE
         )
         if charger_effective_voltage <= 0:
             raise ValueError(
@@ -916,7 +926,7 @@ class ChargeController(ScOptionState):
         propose_new_charge_current = max([charger_min_current, propose_charge_current])
 
         charger_min_workable_current = self.option_get_entity_number_or_abort(
-            OPTION_CHARGER_MIN_WORKABLE_CURRENT
+            NUMBER_CHARGER_MIN_WORKABLE_CURRENT
         )
         if propose_new_charge_current < charger_min_workable_current:
             new_charge_current = 0
@@ -1110,7 +1120,7 @@ class ChargeController(ScOptionState):
         """Calculate needed charge duration to reach charge limit."""
 
         battery_max_charge_speed = self.option_get_entity_number_or_abort(
-            OPTION_CHARGER_MAX_SPEED
+            NUMBER_CHARGER_MAX_SPEED
         )
         # Duration in seconds to increase battery level by 1%
         one_percent_charge_duration = 60 * 60 / battery_max_charge_speed
@@ -1167,7 +1177,7 @@ class ChargeController(ScOptionState):
             self._caller, sun_state
         )
         elevation_start_trigger = self.option_get_entity_number_or_abort(
-            OPTION_SUNRISE_ELEVATION_START_TRIGGER
+            NUMBER_SUNRISE_ELEVATION_START_TRIGGER
         )
         sunrise_offset = timedelta(
             seconds=(
@@ -1205,7 +1215,7 @@ class ChargeController(ScOptionState):
             await self._async_clear_next_charge_time()
 
             # Only schedule next charge session if car is connected and at location.
-            if charger.is_connected() and self._check_is_at_location(chargeable):
+            if charger.is_connected() and self._is_at_location(chargeable):
                 if next_goal.has_charge_endtime:
                     if next_goal.propose_charge_starttime != datetime.min:
                         if next_goal.is_immediate_start:

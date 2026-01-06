@@ -12,20 +12,20 @@ from homeassistant.core import HomeAssistant
 
 from .config_utils import get_saved_option_value
 from .const import (
-    OPTION_CHARGE_ENDTIME_FRIDAY,
-    OPTION_CHARGE_ENDTIME_MONDAY,
-    OPTION_CHARGE_ENDTIME_SATURDAY,
-    OPTION_CHARGE_ENDTIME_SUNDAY,
-    OPTION_CHARGE_ENDTIME_THURSDAY,
-    OPTION_CHARGE_ENDTIME_TUESDAY,
-    OPTION_CHARGE_ENDTIME_WEDNESDAY,
-    OPTION_CHARGE_LIMIT_FRIDAY,
-    OPTION_CHARGE_LIMIT_MONDAY,
-    OPTION_CHARGE_LIMIT_SATURDAY,
-    OPTION_CHARGE_LIMIT_SUNDAY,
-    OPTION_CHARGE_LIMIT_THURSDAY,
-    OPTION_CHARGE_LIMIT_TUESDAY,
-    OPTION_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_CHARGE_LIMIT_FRIDAY,
+    NUMBER_CHARGE_LIMIT_MONDAY,
+    NUMBER_CHARGE_LIMIT_SATURDAY,
+    NUMBER_CHARGE_LIMIT_SUNDAY,
+    NUMBER_CHARGE_LIMIT_THURSDAY,
+    NUMBER_CHARGE_LIMIT_TUESDAY,
+    NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    TIME_CHARGE_ENDTIME_FRIDAY,
+    TIME_CHARGE_ENDTIME_MONDAY,
+    TIME_CHARGE_ENDTIME_SATURDAY,
+    TIME_CHARGE_ENDTIME_SUNDAY,
+    TIME_CHARGE_ENDTIME_THURSDAY,
+    TIME_CHARGE_ENDTIME_TUESDAY,
+    TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
 from .model_config import ConfigValue, ConfigValueDict
 from .sc_config_state import ScConfigState
@@ -429,64 +429,64 @@ class ScOptionState(ScConfigState):
             ChargeSchedule(
                 charge_day="Monday",
                 charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_MONDAY
+                    NUMBER_CHARGE_LIMIT_MONDAY
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_MONDAY
+                    TIME_CHARGE_ENDTIME_MONDAY
                 ),
             ),
             ChargeSchedule(
                 charge_day="Tuesday",
                 charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_TUESDAY
+                    NUMBER_CHARGE_LIMIT_TUESDAY
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_TUESDAY
+                    TIME_CHARGE_ENDTIME_TUESDAY
                 ),
             ),
             ChargeSchedule(
                 charge_day="Wednesday",
                 charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_WEDNESDAY
+                    NUMBER_CHARGE_LIMIT_WEDNESDAY
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_WEDNESDAY
+                    TIME_CHARGE_ENDTIME_WEDNESDAY
                 ),
             ),
             ChargeSchedule(
                 charge_day="Thursday",
                 charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_THURSDAY
+                    NUMBER_CHARGE_LIMIT_THURSDAY
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_THURSDAY
+                    TIME_CHARGE_ENDTIME_THURSDAY
                 ),
             ),
             ChargeSchedule(
                 charge_day="Friday",
                 charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_FRIDAY
+                    NUMBER_CHARGE_LIMIT_FRIDAY
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_FRIDAY
+                    TIME_CHARGE_ENDTIME_FRIDAY
                 ),
             ),
             ChargeSchedule(
                 charge_day="Saturday",
                 charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_SATURDAY
+                    NUMBER_CHARGE_LIMIT_SATURDAY
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_SATURDAY
+                    TIME_CHARGE_ENDTIME_SATURDAY
                 ),
             ),
             ChargeSchedule(
                 charge_day="Sunday",
                 charge_limit=self.option_get_entity_number_or_abort(
-                    OPTION_CHARGE_LIMIT_SUNDAY
+                    NUMBER_CHARGE_LIMIT_SUNDAY
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    OPTION_CHARGE_ENDTIME_SUNDAY
+                    TIME_CHARGE_ENDTIME_SUNDAY
                 ),
             ),
         ]

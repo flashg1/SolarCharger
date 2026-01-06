@@ -117,7 +117,7 @@ async def async_setup_entry(
         (
             BUTTON_START_CHARGE,
             SolarChargerButtonActionEntity,
-            coordinator.async_start_charger,
+            coordinator.async_switch_charger_on,
             SolarChargerEntityType.LOCAL_HIDDEN,
             ButtonEntityDescription(
                 key=BUTTON_START_CHARGE,

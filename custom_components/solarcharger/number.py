@@ -26,31 +26,31 @@ from .config_utils import get_device_config_default_value
 from .const import (
     DOMAIN,
     NUMBER,
+    NUMBER_CHARGE_LIMIT_FRIDAY,
+    NUMBER_CHARGE_LIMIT_MONDAY,
+    NUMBER_CHARGE_LIMIT_SATURDAY,
+    NUMBER_CHARGE_LIMIT_SUNDAY,
+    NUMBER_CHARGE_LIMIT_THURSDAY,
+    NUMBER_CHARGE_LIMIT_TUESDAY,
+    NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
+    NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_ALLOCATED_POWER,
-    OPTION_CHARGE_LIMIT_FRIDAY,
-    OPTION_CHARGE_LIMIT_MONDAY,
-    OPTION_CHARGE_LIMIT_SATURDAY,
-    OPTION_CHARGE_LIMIT_SUNDAY,
-    OPTION_CHARGE_LIMIT_THURSDAY,
-    OPTION_CHARGE_LIMIT_TUESDAY,
-    OPTION_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    NUMBER_CHARGER_MAX_SPEED,
+    NUMBER_CHARGER_MIN_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
+    NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
+    NUMBER_WAIT_CHARGEE_UPDATE_HA,
+    NUMBER_WAIT_CHARGEE_WAKEUP,
+    NUMBER_WAIT_CHARGER_AMP_CHANGE,
+    NUMBER_WAIT_CHARGER_OFF,
+    NUMBER_WAIT_CHARGER_ON,
     OPTION_CHARGEE_CHARGE_LIMIT,
-    OPTION_CHARGEE_MAX_CHARGE_LIMIT,
-    OPTION_CHARGEE_MIN_CHARGE_LIMIT,
-    OPTION_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
-    OPTION_CHARGER_MAX_SPEED,
-    OPTION_CHARGER_MIN_CURRENT,
-    OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-    OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-    OPTION_SUNRISE_ELEVATION_START_TRIGGER,
-    OPTION_SUNSET_ELEVATION_END_TRIGGER,
-    OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
-    OPTION_WAIT_CHARGEE_UPDATE_HA,
-    OPTION_WAIT_CHARGEE_WAKEUP,
-    OPTION_WAIT_CHARGER_AMP_CHANGE,
-    OPTION_WAIT_CHARGER_OFF,
-    OPTION_WAIT_CHARGER_ON,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -159,26 +159,11 @@ CONFIG_NUMBER_LIST: tuple[
     tuple[str, SolarChargerEntityType, NumberEntityDescription], ...
 ] = (
     #####################################
-    # Control entities
-    # Must haves, ie. not hidden for all
-    # entity_category=None
-    #####################################
-    (
-        NUMBER_CHARGER_ALLOCATED_POWER,
-        SolarChargerEntityType.LOCAL_AND_GLOBAL,
-        NumberEntityDescription(
-            key=NUMBER_CHARGER_ALLOCATED_POWER,
-            device_class=NumberDeviceClass.POWER,
-            native_unit_of_measurement=UnitOfPower.WATT,
-            native_min_value=-23000.0,
-            native_max_value=+23000.0,
-        ),
-    ),
-    #####################################
-    # Config entities, or device entities
+    # Global defaults or local device entities
     # Hidden if not device entities, except for global defaults.
     # entity_category=EntityCategory.CONFIG
     #####################################
+    # Used as local device entity for OCPP, and global defaults for others.
     (
         OPTION_CHARGEE_CHARGE_LIMIT,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
@@ -190,6 +175,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_max_value=100.0,
         ),
     ),
+    # Used as local device entity for all except for OCPP.
     (
         OPTION_CHARGER_MAX_CURRENT,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
@@ -203,15 +189,99 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     #####################################
-    # Config entities
+    # Local device config or control entities
+    # Must haves, ie. not hidden for all
+    # entity_category=None
+    # entity_category=EntityCategory.CONFIG
+    #####################################
+    (
+        NUMBER_CHARGER_ALLOCATED_POWER,
+        SolarChargerEntityType.LOCAL_AND_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_ALLOCATED_POWER,
+            device_class=NumberDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            native_min_value=-23000.0,
+            native_max_value=+23000.0,
+        ),
+    ),
+    (
+        NUMBER_CHARGER_MAX_SPEED,
+        SolarChargerEntityType.LOCAL_DEFAULT,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_MAX_SPEED,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement="%/hr",
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        NUMBER_CHARGER_MIN_CURRENT,
+        SolarChargerEntityType.LOCAL_DEFAULT,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_MIN_CURRENT,
+            entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.CURRENT,
+            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+        SolarChargerEntityType.LOCAL_DEFAULT,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+            entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.CURRENT,
+            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    # Control entity
+    (
+        NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+        SolarChargerEntityType.LOCAL_DEFAULT,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+        SolarChargerEntityType.LOCAL_DEFAULT,
+        NumberEntityDescription(
+            key=NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
+        SolarChargerEntityType.LOCAL_DEFAULT,
+        NumberEntityDescription(
+            key=NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    #####################################
+    # Global default config entities
     # Hidden except for global defaults
     # entity_category=EntityCategory.CONFIG
     #####################################
     (
-        OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+        NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
+            key=NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
             # translation_key=OPTION_CHARGER_EFFECTIVE_VOLTAGE,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.VOLTAGE,
@@ -224,77 +294,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_CHARGER_MAX_SPEED,
+        NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGER_MAX_SPEED,
-            entity_category=EntityCategory.CONFIG,
-            native_unit_of_measurement="%/hr",
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGER_MIN_CURRENT,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_MIN_CURRENT,
-            entity_category=EntityCategory.CONFIG,
-            device_class=NumberDeviceClass.CURRENT,
-            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_MIN_WORKABLE_CURRENT,
-            entity_category=EntityCategory.CONFIG,
-            device_class=NumberDeviceClass.CURRENT,
-            native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        NumberEntityDescription(
-            key=OPTION_CHARGER_POWER_ALLOCATION_WEIGHT,
-            entity_category=EntityCategory.CONFIG,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGEE_MIN_CHARGE_LIMIT,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        NumberEntityDescription(
-            key=OPTION_CHARGEE_MIN_CHARGE_LIMIT,
-            entity_category=EntityCategory.CONFIG,
-            native_unit_of_measurement=PERCENTAGE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_CHARGEE_MAX_CHARGE_LIMIT,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        NumberEntityDescription(
-            key=OPTION_CHARGEE_MAX_CHARGE_LIMIT,
-            entity_category=EntityCategory.CONFIG,
-            native_unit_of_measurement=PERCENTAGE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        OPTION_SUNRISE_ELEVATION_START_TRIGGER,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        NumberEntityDescription(
-            key=OPTION_SUNRISE_ELEVATION_START_TRIGGER,
+            key=NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=DEGREE,
             native_min_value=-90.0,
@@ -302,33 +305,21 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_SUNSET_ELEVATION_END_TRIGGER,
+        NUMBER_SUNSET_ELEVATION_END_TRIGGER,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_SUNSET_ELEVATION_END_TRIGGER,
+            key=NUMBER_SUNSET_ELEVATION_END_TRIGGER,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=DEGREE,
             native_min_value=-90.0,
             native_max_value=+90.0,
         ),
     ),
-    # (
-    #     CONF_WAIT_NET_POWER_UPDATE,
-    #     SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-    #     NumberEntityDescription(
-    #         key=CONF_WAIT_NET_POWER_UPDATE,
-    #         entity_category=EntityCategory.CONFIG,
-    #         device_class=NumberDeviceClass.DURATION,
-    #         native_unit_of_measurement=UnitOfTime.SECONDS,
-    #         native_min_value=1.0,
-    #         native_max_value=600.0,
-    #     ),
-    # ),
     (
-        OPTION_WAIT_CHARGEE_WAKEUP,
+        NUMBER_WAIT_CHARGEE_WAKEUP,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_WAIT_CHARGEE_WAKEUP,
+            key=NUMBER_WAIT_CHARGEE_WAKEUP,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -337,10 +328,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_WAIT_CHARGEE_UPDATE_HA,
+        NUMBER_WAIT_CHARGEE_UPDATE_HA,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_WAIT_CHARGEE_UPDATE_HA,
+            key=NUMBER_WAIT_CHARGEE_UPDATE_HA,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -349,10 +340,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
+        NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_WAIT_CHARGEE_LIMIT_CHANGE,
+            key=NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -361,10 +352,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_WAIT_CHARGER_ON,
+        NUMBER_WAIT_CHARGER_ON,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_WAIT_CHARGER_ON,
+            key=NUMBER_WAIT_CHARGER_ON,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -373,10 +364,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_WAIT_CHARGER_OFF,
+        NUMBER_WAIT_CHARGER_OFF,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_WAIT_CHARGER_OFF,
+            key=NUMBER_WAIT_CHARGER_OFF,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -385,10 +376,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_WAIT_CHARGER_AMP_CHANGE,
+        NUMBER_WAIT_CHARGER_AMP_CHANGE,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_WAIT_CHARGER_AMP_CHANGE,
+            key=NUMBER_WAIT_CHARGER_AMP_CHANGE,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -397,11 +388,13 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     #####################################
+    # Charge limits and end times
+    #####################################
     (
-        OPTION_CHARGE_LIMIT_MONDAY,
+        NUMBER_CHARGE_LIMIT_MONDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGE_LIMIT_MONDAY,
+            key=NUMBER_CHARGE_LIMIT_MONDAY,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
@@ -409,10 +402,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_CHARGE_LIMIT_TUESDAY,
+        NUMBER_CHARGE_LIMIT_TUESDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGE_LIMIT_TUESDAY,
+            key=NUMBER_CHARGE_LIMIT_TUESDAY,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
@@ -420,10 +413,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_CHARGE_LIMIT_WEDNESDAY,
+        NUMBER_CHARGE_LIMIT_WEDNESDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGE_LIMIT_WEDNESDAY,
+            key=NUMBER_CHARGE_LIMIT_WEDNESDAY,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
@@ -431,10 +424,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_CHARGE_LIMIT_THURSDAY,
+        NUMBER_CHARGE_LIMIT_THURSDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGE_LIMIT_THURSDAY,
+            key=NUMBER_CHARGE_LIMIT_THURSDAY,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
@@ -442,10 +435,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_CHARGE_LIMIT_FRIDAY,
+        NUMBER_CHARGE_LIMIT_FRIDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGE_LIMIT_FRIDAY,
+            key=NUMBER_CHARGE_LIMIT_FRIDAY,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
@@ -453,10 +446,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_CHARGE_LIMIT_SATURDAY,
+        NUMBER_CHARGE_LIMIT_SATURDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGE_LIMIT_SATURDAY,
+            key=NUMBER_CHARGE_LIMIT_SATURDAY,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
@@ -464,10 +457,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        OPTION_CHARGE_LIMIT_SUNDAY,
+        NUMBER_CHARGE_LIMIT_SUNDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
         NumberEntityDescription(
-            key=OPTION_CHARGE_LIMIT_SUNDAY,
+            key=NUMBER_CHARGE_LIMIT_SUNDAY,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
