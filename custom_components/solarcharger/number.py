@@ -163,10 +163,10 @@ CONFIG_NUMBER_LIST: tuple[
     # Hidden if not device entities, except for global defaults.
     # entity_category=EntityCategory.CONFIG
     #####################################
-    # Used as local device entity for OCPP, and global defaults for others.
+    # Used as local device entity for OCPP only. Others come with own entity.
     (
         OPTION_CHARGEE_CHARGE_LIMIT,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.LOCAL_HIDDEN,
         NumberEntityDescription(
             key=OPTION_CHARGEE_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
@@ -175,10 +175,10 @@ CONFIG_NUMBER_LIST: tuple[
             native_max_value=100.0,
         ),
     ),
-    # Used as local device entity for all except for OCPP.
+    # Used as local device entity for all except for OCPP. OCPP comes with own entity.
     (
         OPTION_CHARGER_MAX_CURRENT,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.LOCAL_HIDDEN,
         NumberEntityDescription(
             key=OPTION_CHARGER_MAX_CURRENT,
             entity_category=EntityCategory.CONFIG,

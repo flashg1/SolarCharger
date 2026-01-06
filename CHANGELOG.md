@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.2beta13 2026-01-06
+- Removed charger_max_current and chargee_charge_limit from global default entities.
 - Set next session time on exit if sun start elevation trigger is off.
 - Fixed issue with incorrect check for at home status when scheduling next session.
 - Updated config entity descriptions.

@@ -212,36 +212,13 @@ DEFAULT_OFF = False
 RESTORE_ON_START_TRUE = True
 RESTORE_ON_START_FALSE = False
 
-OPTION_GLOBAL_DEFAULT_VALUES: dict[str, Any] = {
+OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
-    # General config defaults
+    # Global defaults: Environment defaults
     #####################################
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE: 230,
-    NUMBER_CHARGER_MAX_SPEED: 6.1448,
-    NUMBER_CHARGER_MIN_CURRENT: 1,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT: 0,
-    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: 1,
-    NUMBER_CHARGEE_MIN_CHARGE_LIMIT: 50,
-    NUMBER_CHARGEE_MAX_CHARGE_LIMIT: 100,
-    NUMBER_SUNRISE_ELEVATION_START_TRIGGER: 3,
-    NUMBER_SUNSET_ELEVATION_END_TRIGGER: 6,
-    NUMBER_WAIT_CHARGEE_WAKEUP: 40,
-    NUMBER_WAIT_CHARGEE_UPDATE_HA: 5,
-    NUMBER_WAIT_CHARGEE_LIMIT_CHANGE: 5,
-    NUMBER_WAIT_CHARGER_ON: 11,
-    NUMBER_WAIT_CHARGER_OFF: 5,
-    NUMBER_WAIT_CHARGER_AMP_CHANGE: 1,
     #####################################
-    # Internal control defaults
-    #####################################
-    NUMBER_CHARGER_ALLOCATED_POWER: 0,
-    #####################################
-    # Device control defaults
-    #####################################
-    OPTION_CHARGER_MAX_CURRENT: 15,
-    OPTION_CHARGEE_CHARGE_LIMIT: 70,
-    #####################################
-    # Schedule charge limit defaults
+    # Global defaults: Charge limit defaults
     #####################################
     NUMBER_CHARGE_LIMIT_MONDAY: 70,
     NUMBER_CHARGE_LIMIT_TUESDAY: 70,
@@ -251,10 +228,39 @@ OPTION_GLOBAL_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_CHARGE_LIMIT_SATURDAY: 80,
     NUMBER_CHARGE_LIMIT_SUNDAY: 80,
     #####################################
-    # Switch defaults
+    # Global defaults: Sun elevation triggers
+    #####################################
+    NUMBER_SUNRISE_ELEVATION_START_TRIGGER: 3,
+    NUMBER_SUNSET_ELEVATION_END_TRIGGER: 6,
+    #####################################
+    # Global defaults: Wait times
+    #####################################
+    NUMBER_WAIT_CHARGEE_WAKEUP: 40,
+    NUMBER_WAIT_CHARGEE_UPDATE_HA: 5,
+    NUMBER_WAIT_CHARGEE_LIMIT_CHANGE: 5,
+    NUMBER_WAIT_CHARGER_ON: 11,
+    NUMBER_WAIT_CHARGER_OFF: 5,
+    NUMBER_WAIT_CHARGER_AMP_CHANGE: 1,
+    #####################################
+    # Local device required defaults
+    #####################################
+    NUMBER_CHARGER_MAX_SPEED: 6.1448,
+    NUMBER_CHARGER_MIN_CURRENT: 1,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT: 0,
+    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: 1,
+    NUMBER_CHARGER_ALLOCATED_POWER: 0,
+    NUMBER_CHARGEE_MIN_CHARGE_LIMIT: 50,
+    NUMBER_CHARGEE_MAX_CHARGE_LIMIT: 100,
+    #####################################
+    # Local device optional defaults
+    #####################################
+    OPTION_CHARGER_MAX_CURRENT: 15,
+    OPTION_CHARGEE_CHARGE_LIMIT: 70,
+    #####################################
+    # Local device switch defaults
     #####################################
     SWITCH_START_CHARGE: DEFAULT_OFF,
-    SWITCH_FAST_CHARGE_MODE: DEFAULT_ON,
+    SWITCH_FAST_CHARGE_MODE: DEFAULT_OFF,
     SWITCH_SCHEDULE_CHARGE: DEFAULT_ON,
     SWITCH_PLUGIN_TRIGGER: DEFAULT_ON,
     SWITCH_SUN_TRIGGER: DEFAULT_ON,
@@ -270,7 +276,7 @@ TESLA_MQTTBLE_DEFAULT_VALUES: dict[str, Any] = {
 }
 
 CHARGE_API_DEFAULT_VALUES: dict[str, dict[str, Any | None]] = {
-    OPTION_GLOBAL_DEFAULTS_ID: OPTION_GLOBAL_DEFAULT_VALUES,
+    OPTION_GLOBAL_DEFAULTS_ID: OPTION_COMMON_DEFAULT_VALUES,
     CHARGER_DOMAIN_OCPP: OCPP_DEFAULT_VALUES,
     CHARGER_DOMAIN_TESLA_CUSTOM: {},
     CHARGER_DOMAIN_TESLA_MQTTBLE: TESLA_MQTTBLE_DEFAULT_VALUES,

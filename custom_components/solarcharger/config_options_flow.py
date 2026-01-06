@@ -347,6 +347,14 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_ENTITY_SELECTOR,
             ),
             self._optional(
+                subentry, NUMBER_CHARGER_ALLOCATED_POWER, use_default
+            ): entity_selector(
+                api_entities,
+                NUMBER_CHARGER_ALLOCATED_POWER,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+            ),
+            self._optional(
                 subentry, NUMBER_CHARGEE_MIN_CHARGE_LIMIT, use_default
             ): entity_selector(
                 api_entities,
@@ -492,14 +500,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGEE_UPDATE_HA_BUTTON,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
                 BUTTON_ENTITY_SELECTOR,
-            ),
-            self._optional(
-                subentry, NUMBER_CHARGER_ALLOCATED_POWER, use_default
-            ): entity_selector(
-                api_entities,
-                NUMBER_CHARGER_ALLOCATED_POWER,
-                NUMBER_ENTITY_SELECTOR_READ_ONLY,
-                NUMBER_ENTITY_SELECTOR,
             ),
         }
 
