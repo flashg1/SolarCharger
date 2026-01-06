@@ -1230,6 +1230,7 @@ class ChargeController(ScOptionState):
 
                         set_next_charge_time = (
                             next_starttime < next_start_elevation_trigger_time
+                            or not self._is_sun_trigger()
                         )
                         if set_next_charge_time:
                             await self._async_set_next_charge_time(next_starttime)

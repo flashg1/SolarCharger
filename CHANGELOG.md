@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.2beta13 2026-01-06
+- Set next session time on exit if sun start elevation trigger is off.
 - Fixed issue with incorrect check for at home status when scheduling next session.
 - Updated config entity descriptions.
 - Refactored required local device config entities.
