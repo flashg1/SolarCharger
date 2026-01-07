@@ -186,12 +186,24 @@ def entity_selector(
     config_item: str,
     read_only_selector: EntitySelector,
     default_selector: EntitySelector,
+    modifiable_if_local_config_entity: bool = False,
 ) -> EntitySelector:
-    """Entity selector is readonly if API entity is set, ie. user cannot change it."""
+    """Entity selector is readonly if API entity is a local device entity, ie. user cannot change it.
+
+    Local device entities are not modifiable. Local config entities are modifiable is modifiable_if_local=True.
+    eg. chargee_charge_limit is modifiable for OCPP because it is a local config entity.
+    """
 
     if api_entities:
-        if api_entities.get(config_item):
-            return read_only_selector
+        entity_id = api_entities.get(config_item)
+        if entity_id is not None:
+            if config_item in entity_id:
+                # Local config entity
+                if not modifiable_if_local_config_entity:
+                    return read_only_selector
+            else:
+                # Local device entity, ie. non-configurable.
+                return read_only_selector
 
     return default_selector
 

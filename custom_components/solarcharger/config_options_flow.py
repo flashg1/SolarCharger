@@ -319,16 +319,18 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): entity_selector(
                 api_entities,
                 NUMBER_CHARGER_MAX_SPEED,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                NUMBER_ENTITY_SELECTOR,
+                modifiable_if_local_config_entity=True,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_CURRENT, use_default
             ): entity_selector(
                 api_entities,
                 NUMBER_CHARGER_MIN_CURRENT,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                NUMBER_ENTITY_SELECTOR,
+                modifiable_if_local_config_entity=True,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_WORKABLE_CURRENT, use_default
@@ -468,6 +470,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGEE_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
+                modifiable_if_local_config_entity=True,
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_SENSOR, use_default
