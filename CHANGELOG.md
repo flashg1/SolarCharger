@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3beta2 2026-01-09
+- Updated doc.
+
 ## v0.3beta1 2026-01-08
 - Added feature to create user custom chargers and to define user control entities.
 

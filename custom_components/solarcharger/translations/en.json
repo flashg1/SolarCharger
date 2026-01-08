@@ -94,9 +94,9 @@
         "step": {
             "init": {
                 "title": "SolarCharger settings",
-                "description": "Device local settings, if defined, will always take precedence over global defaults.",
+                "description": "Device local entities, if defined, will always take precedence over global defaults.",
                 "data": {
-                    "select_global_or_local_settings": "Select global defaults or local device settings"
+                    "select_global_or_local_settings": "Select global defaults or device local settings"
                 }
             },
             "config_device": {
@@ -134,7 +134,7 @@
                     "charger_allocated_power": "Charger allocated power (W)",
                     "chargee_min_charge_limit": "Device min charge limit (%)",
                     "chargee_max_charge_limit": "Device max charge limit (%)",
-                    "charger_device_name": "Charger device name (single space to clear)",
+                    "charger_name": "Charger name (single space to clear)",
                     "charger_plugged_in_sensor": "Charger plugged-in sensor",
                     "charger_connect_trigger_list": "Charger connect trigger list",
                     "charger_connect_state_list": "Charger connect state list",
