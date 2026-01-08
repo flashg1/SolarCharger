@@ -20,13 +20,15 @@ from homeassistant.const import __version__ as ha_version
 from homeassistant.core import HomeAssistant, callback
 
 from .config_options_flow import ConfigOptionsFlowHandler
-from .config_subentry_flow import AddChargerSubEntryFlowHandler
+from .config_subentry_charger import AddChargerSubEntryFlowHandler
+from .config_subentry_custom import AddCustomSubEntryFlowHandler
 from .config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
 from .const import (
     CONF_NET_POWER,
     CONF_WAIT_NET_POWER_UPDATE,
     DOMAIN,
     SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_TYPE_CUSTOM,
 )
 from .exceptions.validation_exception import ValidationExceptionError
 
@@ -105,6 +107,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         """Return subentries supported by this integration."""
         return {
             SUBENTRY_TYPE_CHARGER: AddChargerSubEntryFlowHandler,
+            SUBENTRY_TYPE_CUSTOM: AddCustomSubEntryFlowHandler,
         }
 
     # ----------------------------------------------------------------------------

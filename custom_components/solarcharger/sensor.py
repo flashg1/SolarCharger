@@ -17,7 +17,7 @@ from .const import (
     SENSOR,
     SENSOR_LAST_CHECK,
     SENSOR_RUN_STATE,
-    SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_CHARGER_TYPES,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -130,7 +130,7 @@ async def async_setup_entry(
 
     for subentry in config_entry.subentries.values():
         # For charger subentries only
-        if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
             sensors: dict[str, SolarChargerSensorEntity] = {}
 
             for (

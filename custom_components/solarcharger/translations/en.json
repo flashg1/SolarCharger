@@ -50,17 +50,43 @@
                     "title": "Add charger device",
                     "description": "Select charger device to add.",
                     "data": {
-                        "thirdparty_device_id": "Detected charger devices"
+                        "charger_device_id": "Detected integrations"
                     },
                     "data_description": {
-                        "thirdparty_device_id": "Select charger device integration or custom integration to specify your own charger control entities."
+                        "charger_device_id": "Select from list of supported device integrations."
                     }
                 }
             },
             "entry_type": "Charger device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9  Please ensure charger voltage is set in \"Global defaults\", and max current in charger config if applicable."
+                "device_subentry_created": "Added charger device.\n\n\u23F9  Please ensure charger voltage is set in \"Global defaults\", and max current set in charger config if applicable."
+            }
+        },
+        "custom": {
+            "initiate_flow": {
+                "user": "Add custom device",
+                "reconfigure": "Reconfigure custom device"
+            },
+            "error": {
+                "unknown_error": "Unknown error"
+            },
+            "step": {
+                "user": {
+                    "title": "Add custom device",
+                    "description": "Custom charger name to create.",
+                    "data": {
+                        "charger_device_name": "Custom charger name"
+                    },
+                    "data_description": {
+                        "charger_device_name": "Create custom charger and to specify your own charger control entities."
+                    }
+                }
+            },
+            "entry_type": "Custom device",
+            "abort": {
+                "device_already_added": "Error: Device already added",
+                "device_subentry_created": "Added charger device.\n\n\u23F9  Please ensure charger voltage is set in \"Global defaults\", and max current set in charger config if applicable."
             }
         }
     },

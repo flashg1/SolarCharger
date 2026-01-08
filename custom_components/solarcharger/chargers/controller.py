@@ -177,6 +177,10 @@ class ChargeController(ScOptionState):
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
+    async def _async_turn_off_plugin_trigger(self) -> None:
+        await self.async_turn_switch_off(self._plugin_trigger_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
     def _is_sun_trigger(self) -> bool:
         state = self.get_string(self._sun_trigger_switch_entity_id)
         return state == STATE_ON
@@ -340,13 +344,16 @@ class ChargeController(ScOptionState):
             self._unschedule_next_charge_time()
 
     # ----------------------------------------------------------------------------
-    def _subscribe_charger_plugin_event(self) -> None:
+    def _subscribe_charger_plugin_event(self) -> bool:
         """Subscribe for charger plugin event."""
+        ok = True
 
         if not self._initialising:
-            self._tracker.track_charger_plugged_in_sensor(
+            ok = self._tracker.track_charger_plugged_in_sensor(
                 self.async_handle_plug_in_charger_event
             )
+
+        return ok
 
     # ----------------------------------------------------------------------------
     def _unsubscribe_charger_plugin_event(self) -> None:
@@ -361,7 +368,9 @@ class ChargeController(ScOptionState):
         _LOGGER.info("%s: Plugin trigger: %s", self._caller, turn_on)
 
         if turn_on:
-            self._subscribe_charger_plugin_event()
+            ok = self._subscribe_charger_plugin_event()
+            if not ok:
+                await self._async_turn_off_plugin_trigger()
         else:
             self._unsubscribe_charger_plugin_event()
 

@@ -8,6 +8,9 @@ from zoneinfo import ZoneInfo
 
 from homeassistant.const import ATTR_DEVICE_ID, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, ServiceResponse, State
+from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
+from homeassistant.helpers.entity_registry import RegistryEntry
 from homeassistant.util.dt import as_local, utcnow
 
 from .const import (
@@ -99,6 +102,28 @@ class ScState:
         # eg. time_str = '00:00:00'
         # return datetime.strptime(time_str, "%H:%M:%S").time()
         return time.fromisoformat(time_str)
+
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    def get_entity_entry(self, entity_id: str) -> RegistryEntry | None:
+        """Get entity entry from entity registry."""
+
+        entity_registry = er.async_get(self._hass)
+        return entity_registry.async_get(entity_id)
+
+    # ----------------------------------------------------------------------------
+    def get_device_entry(self, entity_id: str) -> DeviceEntry | None:
+        """Get DeviceEntry for entity from device registry."""
+        device_entry: DeviceEntry | None = None
+
+        entity_entry = self.get_entity_entry(entity_id)
+        if entity_entry:
+            device_id = entity_entry.device_id
+            if device_id:
+                device_registry: DeviceRegistry = dr.async_get(self._hass)
+                device_entry = device_registry.async_get(device_id)
+
+        return device_entry
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------

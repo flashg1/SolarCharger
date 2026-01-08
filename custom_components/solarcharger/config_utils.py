@@ -30,12 +30,12 @@ from .const import (
     CHARGE_API_ENTITIES,
     CONFIG_NAME_MARKER,
     DEVICE_NAME_MARKER,
-    OPTION_CHARGER_DEVICE_NAME,
-    OPTION_DELETE_ENTITY,
-    OPTION_GLOBAL_DEFAULTS_ID,
-    SUBENTRY_THIRDPARTY_DOMAIN,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
+    OPTION_CHARGER_NAME,
+    OPTION_DELETE_ENTITY,
+    OPTION_GLOBAL_DEFAULTS_ID,
+    SUBENTRY_CHARGER_DEVICE_DOMAIN,
 )
 
 # ----------------------------------------------------------------------------
@@ -222,7 +222,7 @@ def get_device_domain(subentry: ConfigSubentry) -> str | None:
     if subentry.unique_id == OPTION_GLOBAL_DEFAULTS_ID:
         device_domain = None
     else:
-        device_domain = subentry.data.get(SUBENTRY_THIRDPARTY_DOMAIN)
+        device_domain = subentry.data.get(SUBENTRY_CHARGER_DEVICE_DOMAIN)
         if device_domain is None:
             raise SystemError(
                 f"Subentry {subentry.subentry_id}: Failed to get device domain"
@@ -504,10 +504,10 @@ def reset_api_entities(
                 #####################################################################
                 # OPTION_CHARGER_DEVICE_NAME and others are always present if restore from saved options is enabled
                 #####################################################################
-                if OPTION_CHARGER_DEVICE_NAME in data:
-                    device_name = data.get(OPTION_CHARGER_DEVICE_NAME, "")
+                if OPTION_CHARGER_NAME in data:
+                    device_name = data.get(OPTION_CHARGER_NAME, "")
                     device_name = slugify(device_name.strip())
-                    data[OPTION_CHARGER_DEVICE_NAME] = device_name
+                    data[OPTION_CHARGER_NAME] = device_name
 
                     api_entities = get_device_api_entities(subentry)
                     if api_entities:

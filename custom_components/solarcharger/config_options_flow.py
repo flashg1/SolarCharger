@@ -72,9 +72,9 @@ from .const import (
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
-    OPTION_CHARGER_DEVICE_NAME,
     OPTION_CHARGER_GET_CHARGE_CURRENT,
     OPTION_CHARGER_MAX_CURRENT,
+    OPTION_CHARGER_NAME,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
@@ -83,7 +83,7 @@ from .const import (
     OPTION_ID,
     OPTION_NAME,
     OPTION_SELECT_SETTINGS,
-    SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_CHARGER_TYPES,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
     TIME_CHARGE_ENDTIME_SATURDAY,
@@ -375,11 +375,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             #####################################
             # Local device entities
             #####################################
-            self._optional(
-                subentry, OPTION_CHARGER_DEVICE_NAME, use_default
-            ): entity_selector(
+            self._optional(subentry, OPTION_CHARGER_NAME, use_default): entity_selector(
                 None,
-                OPTION_CHARGER_DEVICE_NAME,
+                OPTION_CHARGER_NAME,
                 TEXT_SELECTOR_READ_ONLY,
                 TEXT_SELECTOR,
             ),
@@ -438,6 +436,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGER_MAX_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
+                modifiable_if_local_config_entity=True,
             ),
             self._optional(
                 subentry, OPTION_CHARGER_GET_CHARGE_CURRENT, use_default
@@ -620,7 +619,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
         device_list = [OPTION_GLOBAL_DEFAULTS_ID]
         for subentry in self.config_entry.subentries.values():
-            if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+            if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
                 if subentry.unique_id:
                     device_list.append(subentry.unique_id)
 

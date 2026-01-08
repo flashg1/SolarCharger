@@ -18,10 +18,10 @@ from .const import (
     DOMAIN,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
-    SUBENTRY_THIRDPARTY_DEVICE_ID,
-    SUBENTRY_THIRDPARTY_DEVICE_NAME,
-    SUBENTRY_THIRDPARTY_DOMAIN,
-    SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_CHARGER_DEVICE_DOMAIN,
+    SUBENTRY_CHARGER_DEVICE_ID,
+    SUBENTRY_CHARGER_DEVICE_NAME,
+    SUBENTRY_CHARGER_TYPES,
     SUBENTRY_TYPE_DEFAULTS,
 )
 from .coordinator import SolarChargerCoordinator
@@ -67,9 +67,9 @@ async def async_create_global_defaults_subentry(
                 unique_id=OPTION_GLOBAL_DEFAULTS_ID,
                 data=MappingProxyType(  # make data immutable
                     {
-                        SUBENTRY_THIRDPARTY_DOMAIN: "N/A",  # Integration domain
-                        SUBENTRY_THIRDPARTY_DEVICE_NAME: "N/A",  # Integration-specific device name
-                        SUBENTRY_THIRDPARTY_DEVICE_ID: "N/A",  # Integration-specific device ID
+                        SUBENTRY_CHARGER_DEVICE_DOMAIN: "N/A",  # Integration domain
+                        SUBENTRY_CHARGER_DEVICE_NAME: "N/A",  # Integration-specific device name
+                        SUBENTRY_CHARGER_DEVICE_ID: "N/A",  # Integration-specific device ID
                     }
                 ),
             ),
@@ -94,7 +94,7 @@ async def async_init_charger_subentry(
     """Initialize a charger for a given subentry."""
 
     # Initialize charger
-    charger_device_id: str | None = subentry.data.get(SUBENTRY_THIRDPARTY_DEVICE_ID)
+    charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE_ID)
     if not charger_device_id or not subentry.unique_id:
         _LOGGER.error(
             "No charger device ID found in subentry data: %s: %s",
@@ -137,7 +137,7 @@ async def async_init_global_defaults_subentry(
     """Initialize global defaults subentry."""
 
     # Initialize charger
-    charger_device_id: str | None = subentry.data.get(SUBENTRY_THIRDPARTY_DEVICE_ID)
+    charger_device_id: str | None = subentry.data.get(SUBENTRY_CHARGER_DEVICE_ID)
     if not charger_device_id or not subentry.unique_id:
         _LOGGER.error(
             "No global defaults ID found in subentry data: %s: %s",
@@ -179,7 +179,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     global_defaults_subentry = None
     charge_controls: dict[str, ChargeControl] = {}
     for subentry in entry.subentries.values():
-        if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
             # Initialize charger
             await async_init_charger_subentry(
                 hass,

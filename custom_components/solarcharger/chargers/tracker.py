@@ -5,6 +5,8 @@ from datetime import date, datetime, time, timedelta
 import logging
 from typing import Any
 
+from hassil import check_required_context
+
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import (
     CALLBACK_TYPE,
@@ -123,26 +125,41 @@ class Tracker(ScOptionState):
     # ----------------------------------------------------------------------------
     # Trackers
     # ----------------------------------------------------------------------------
-    def track_charger_plugged_in_sensor(self, action: STATE_CHANGE_CALLBACK) -> None:
+    def track_charger_plugged_in_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
         """Track charger plug in event."""
+        ok: bool = False
 
-        charger_plugged_in_sensor_entity = self.option_get_id_or_abort(
+        charger_plugged_in_sensor_entity = self.option_get_id(
             OPTION_CHARGER_PLUGGED_IN_SENSOR
         )
-        _LOGGER.info(
-            "%s: Tracking charger plugged-in sensor: %s",
-            self._caller,
-            charger_plugged_in_sensor_entity,
-        )
 
-        #     self._async_handle_plug_in_charger_event,
-        subscription = async_track_state_change_event(
-            self._hass,
-            charger_plugged_in_sensor_entity,
-            action,
-        )
+        if charger_plugged_in_sensor_entity:
+            entity_entry = self.get_entity_entry(charger_plugged_in_sensor_entity)
 
-        self.save_callback(CALLBACK_PLUG_IN_CHARGER, subscription)
+            if entity_entry:
+                _LOGGER.info(
+                    "%s: Tracking charger plugged-in sensor: %s",
+                    self._caller,
+                    charger_plugged_in_sensor_entity,
+                )
+
+                #     self._async_handle_plug_in_charger_event,
+                subscription = async_track_state_change_event(
+                    self._hass,
+                    charger_plugged_in_sensor_entity,
+                    action,
+                )
+
+                self.save_callback(CALLBACK_PLUG_IN_CHARGER, subscription)
+                ok = True
+            else:
+                _LOGGER.error(
+                    "%s: Invalid plug-in sensor: %s",
+                    self._caller,
+                    charger_plugged_in_sensor_entity,
+                )
+
+        return ok
 
     # ----------------------------------------------------------------------------
     def untrack_charger_plugged_in_sensor(self) -> None:

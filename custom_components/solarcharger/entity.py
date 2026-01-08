@@ -14,7 +14,7 @@ from .const import (
     DOMAIN,
     ICON,
     MANUFACTURER,
-    SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_CHARGER_TYPES,
     VERSION,
 )
 
@@ -64,7 +64,7 @@ def is_entity_enabled(
     enabled: bool = True
 
     if entity_type == SolarChargerEntityType.HIDDEN_DEFAULT or (
-        subentry.subentry_type == SUBENTRY_TYPE_CHARGER
+        subentry.subentry_type in SUBENTRY_CHARGER_TYPES
         and entity_type
         in (
             SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
@@ -83,7 +83,7 @@ def is_create_entity(
     """Check if entity is enabled."""
     is_create: bool = True
 
-    if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+    if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
         if entity_type == SolarChargerEntityType.GLOBAL_DEFAULT:
             is_create = False
     else:

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3beta1 2026-01-08
+- Added feature to create user custom chargers and to define user control entities.
+
 ## v0.2beta15 2026-01-08
 - Added reminder to set charger voltage and max current after adding charger.
 - Changed schedule charge default to off.

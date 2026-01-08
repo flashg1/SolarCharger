@@ -1,4 +1,4 @@
-"""Config flow for the solarcharger integration."""
+"""Config subentry flow to create charger using supported integrations."""
 
 from __future__ import annotations
 
@@ -40,10 +40,10 @@ from .const import (
     CHARGER_DOMAIN_TESLA_FLEET,
     CHARGER_DOMAIN_TESLA_MQTTBLE,
     CHARGER_DOMAIN_TESLA_TESSIE,
-    OPTION_CHARGER_DEVICE_NAME,
-    SUBENTRY_THIRDPARTY_DEVICE_ID,
-    SUBENTRY_THIRDPARTY_DEVICE_NAME,
-    SUBENTRY_THIRDPARTY_DOMAIN,
+    OPTION_CHARGER_NAME,
+    SUBENTRY_CHARGER_DEVICE_DOMAIN,
+    SUBENTRY_CHARGER_DEVICE_ID,
+    SUBENTRY_CHARGER_DEVICE_NAME,
     SUBENTRY_TYPE_CHARGER,
     SUPPORTED_CHARGER_DOMAIN_LIST,
 )
@@ -67,7 +67,7 @@ _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
 
 STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
     {
-        vol.Required(SUBENTRY_THIRDPARTY_DEVICE_ID): DeviceSelector(
+        vol.Required(SUBENTRY_CHARGER_DEVICE_ID): DeviceSelector(
             DeviceSelectorConfig(
                 multiple=False,
                 filter=_charger_integration_filter_list,
@@ -83,7 +83,7 @@ def validate_charger_selection(
     _hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
     """Validate user input for charger selection step."""
-    if not data.get(SUBENTRY_THIRDPARTY_DEVICE_ID):
+    if not data.get(SUBENTRY_CHARGER_DEVICE_ID):
         raise ValidationExceptionError("base", "select_charger_error")  # noqa: EM101
 
     return data
@@ -139,7 +139,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         # )
 
         data: dict[str, Any] = {
-            OPTION_CHARGER_DEVICE_NAME: device_name,
+            OPTION_CHARGER_NAME: device_name,
         }
         reset_api_entities(config_entry, subentry_unique_id, data)
 
@@ -173,11 +173,11 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
 
                 # Get charger device subentry
                 thirdparty_charger_id: str | None = input_data.get(
-                    SUBENTRY_THIRDPARTY_DEVICE_ID
+                    SUBENTRY_CHARGER_DEVICE_ID
                 )
                 if not thirdparty_charger_id:
                     raise ValueError(
-                        f"Subentry {SUBENTRY_THIRDPARTY_DEVICE_ID} not defined"
+                        f"Subentry {SUBENTRY_CHARGER_DEVICE_ID} not defined"
                     )
                 registry: DeviceRegistry = dr.async_get(self.hass)
                 thirdparty_charger: DeviceEntry | None = registry.async_get(
@@ -253,9 +253,9 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                         unique_id=thirdparty_config_name,
                         data=MappingProxyType(  # make data immutable
                             {
-                                SUBENTRY_THIRDPARTY_DOMAIN: thirdparty_config_entry.domain,  # Integration domain
-                                SUBENTRY_THIRDPARTY_DEVICE_NAME: thirdparty_charger.name,  # Integration-specific device name
-                                SUBENTRY_THIRDPARTY_DEVICE_ID: thirdparty_charger_id,  # Integration-specific device ID
+                                SUBENTRY_CHARGER_DEVICE_DOMAIN: thirdparty_config_entry.domain,  # Integration domain
+                                SUBENTRY_CHARGER_DEVICE_NAME: thirdparty_charger.name,  # Integration-specific device name
+                                SUBENTRY_CHARGER_DEVICE_ID: thirdparty_charger_id,  # Integration-specific device ID
                             }
                         ),
                     ),

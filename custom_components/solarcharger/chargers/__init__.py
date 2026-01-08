@@ -14,6 +14,7 @@ from .tesla_custom_charger import TeslaCustomCharger
 from .tesla_fleet_charger import TeslaFleetCharger
 from .tesla_mqttble_charger import TeslaMqttBleCharger
 from .tesla_tessie_charger import TeslaTessieCharger
+from .user_custom_charger import UserCustomCharger
 
 if TYPE_CHECKING:
     from homeassistant.helpers.device_registry import DeviceEntry
@@ -43,6 +44,7 @@ async def charger_factory(
         TeslaMqttBleCharger,
         TeslaFleetCharger,
         TeslaTessieCharger,
+        UserCustomCharger,
     ]:
         if charger_cls.is_charger_device(device):
             return charger_cls(hass, entry, subentry, device)

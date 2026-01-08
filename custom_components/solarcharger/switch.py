@@ -16,7 +16,7 @@ from .const import (
     DOMAIN,
     RESTORE_ON_START_FALSE,
     RESTORE_ON_START_TRUE,
-    SUBENTRY_TYPE_CHARGER,
+    SUBENTRY_CHARGER_TYPES,
     SWITCH,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
@@ -296,7 +296,7 @@ async def async_setup_entry(
 
     for subentry in config_entry.subentries.values():
         # For charger subentries only
-        if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:
+        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
             switches: dict[str, SolarChargerSwitchEntity] = {}
 
             for (
