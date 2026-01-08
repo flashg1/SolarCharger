@@ -10,7 +10,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.2beta14"
+VERSION = "0.2beta15"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -261,7 +261,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     SWITCH_START_CHARGE: DEFAULT_OFF,
     SWITCH_FAST_CHARGE_MODE: DEFAULT_OFF,
-    SWITCH_SCHEDULE_CHARGE: DEFAULT_ON,
+    SWITCH_SCHEDULE_CHARGE: DEFAULT_OFF,
     SWITCH_PLUGIN_TRIGGER: DEFAULT_ON,
     SWITCH_SUN_TRIGGER: DEFAULT_ON,
 }

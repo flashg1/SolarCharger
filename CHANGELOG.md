@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2beta15 2026-01-08
+- Added reminder to set charger voltage and max current after adding charger.
+- Changed schedule charge default to off.
+
 ## v0.2beta14 2026-01-07
 - Make chargee_charge_limit modifiable if it is a local config entity (local device entities are not modifiable).
 - Removed defaults for charger effective voltage and max current, ie. must be set before use.
