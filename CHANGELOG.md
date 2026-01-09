@@ -1,6 +1,8 @@
 # Changelog
 
 ## v0.3beta2 2026-01-09
+- Added OPTION_CHARGEE_CHARGE_LIMIT local config entity for user custom charger.
+- _is_connected() and _is_at_location() will always return true if sensors are not defined.
 - Restored call to _async_update_ha() after setting new current. Update rate dependent on main_power_net update rate.
 - Turning on force HA update switch will override the in-built update HA button.
 - Added optional switch to force third party integration to update charging status in HA instead of using the third party integration in-built update HA button, ie. possibly removes dependency on third party integration update rate.

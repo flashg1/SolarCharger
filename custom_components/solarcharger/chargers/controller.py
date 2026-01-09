@@ -40,6 +40,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
     OPTION_CHARGER_CHARGING_SENSOR,
+    OPTION_CHARGER_PLUGGED_IN_SENSOR,
     SWITCH,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_FORCE_HA_UPDATE,
@@ -289,7 +290,7 @@ class ChargeController(ScOptionState):
                     and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
                     and new_state.state != old_state.state
                 ):
-                    if self._charger.is_connected():
+                    if self._is_connected(self._charger):
                         self._turn_on_charger_switch()
 
     # ----------------------------------------------------------------------------
@@ -623,6 +624,8 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_at_location(self, chargeable: Chargeable) -> bool:
+        """Is chargeable device at charger location? Always return true if sensor not defined."""
+
         config_item = OPTION_CHARGEE_LOCATION_SENSOR
         val_dict = ConfigValueDict(config_item, {})
 
@@ -633,14 +636,23 @@ class ChargeController(ScOptionState):
         return is_at_location
 
     # ----------------------------------------------------------------------------
-    def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
-        config_item = OPTION_CHARGEE_LOCATION_SENSOR
+    def _is_connected(self, charger: Charger) -> bool:
+        """Is charger connected to chargeable device? Always return true if sensor not defined."""
+
+        config_item = OPTION_CHARGER_PLUGGED_IN_SENSOR
         val_dict = ConfigValueDict(config_item, {})
 
-        is_at_location = chargeable.is_at_location(val_dict)
-        if val_dict.config_values[config_item].entity_id is not None:
-            if not is_at_location:
-                raise RuntimeError(f"{self._caller}: Device not at charger location")
+        is_connected = charger.is_connected(val_dict)
+        if val_dict.config_values[config_item].entity_id is None:
+            is_connected = True
+
+        return is_connected
+
+    # ----------------------------------------------------------------------------
+    def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
+        is_at_location = self._is_at_location(chargeable)
+        if not is_at_location:
+            raise RuntimeError(f"{self._caller}: Device not at charger location")
 
     # ----------------------------------------------------------------------------
     async def _async_init_device(self, chargeable: Chargeable) -> None:
@@ -691,7 +703,7 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_below_charge_limit(self, chargeable: Chargeable) -> bool:
-        """Is device SOC below charge limit?"""
+        """Is device SOC below charge limit? Always return true in case of error."""
         is_below_limit = True
 
         try:
@@ -1069,7 +1081,7 @@ class ChargeController(ScOptionState):
         """Check if to continue charging."""
 
         is_abort_charge = self._is_abort_charge()
-        is_connected = charger.is_connected()
+        is_connected = self._is_connected(charger)
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
         is_charging = charger.is_charging()
         (is_sun_above_start_end_elevations, elevation) = (
@@ -1123,7 +1135,7 @@ class ChargeController(ScOptionState):
             "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
             self._caller,
             msg,
-            charger.is_connected(),
+            self._is_connected(charger),
             charger.is_charger_switch_on(),
             charger.is_charging(),
         )
@@ -1268,7 +1280,7 @@ class ChargeController(ScOptionState):
             await self._async_clear_next_charge_time()
 
             # Only schedule next charge session if car is connected and at location.
-            if charger.is_connected() and self._is_at_location(chargeable):
+            if self._is_connected(charger) and self._is_at_location(chargeable):
                 if next_goal.has_charge_endtime:
                     if next_goal.propose_charge_starttime != datetime.min:
                         if next_goal.is_immediate_start:
