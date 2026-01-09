@@ -387,6 +387,12 @@ class ScState:
         await self.async_ha_entity_call("switch", "turn_off", entity_id)
 
     # ----------------------------------------------------------------------------
+    async def async_force_ha_update_entity(self, entity_id: str) -> None:
+        """Force HA to get latest update for entity."""
+
+        await self.async_ha_entity_call("homeassistant", "update_entity", entity_id)
+
+    # ----------------------------------------------------------------------------
     # Utils
     # ----------------------------------------------------------------------------
     def get_sun_state_or_abort(self) -> State:

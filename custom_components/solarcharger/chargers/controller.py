@@ -39,8 +39,10 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
+    OPTION_CHARGER_CHARGING_SENSOR,
     SWITCH,
     SWITCH_FAST_CHARGE_MODE,
+    SWITCH_FORCE_HA_UPDATE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_START_CHARGE,
@@ -118,6 +120,9 @@ class ChargeController(ScOptionState):
         self._fast_charge_mode_switch_entity_id = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_FAST_CHARGE_MODE
         )
+        self._force_ha_update_switch_entity_id = compose_entity_id(
+            SWITCH, subentry.unique_id, SWITCH_FORCE_HA_UPDATE
+        )
         self._schedule_charge_switch_entity_id = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_SCHEDULE_CHARGE
         )
@@ -164,6 +169,11 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     def _is_fast_charge_mode(self) -> bool:
         state = self.get_string(self._fast_charge_mode_switch_entity_id)
+        return state == STATE_ON
+
+    # ----------------------------------------------------------------------------
+    def _is_force_ha_update(self) -> bool:
+        state = self.get_string(self._force_ha_update_switch_entity_id)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
@@ -589,13 +599,27 @@ class ChargeController(ScOptionState):
             await self._async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
 
     # ----------------------------------------------------------------------------
-    async def _async_update_ha(self, chargeable: Chargeable) -> None:
-        config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
-        val_dict = ConfigValueDict(config_item, {})
+    async def _async_force_ha_update_charging_status(self) -> None:
+        """Force HA to update charging status."""
 
-        await chargeable.async_update_ha(val_dict)
-        if val_dict.config_values[config_item].entity_id is not None:
+        charging_sensor = self.option_get_id(OPTION_CHARGER_CHARGING_SENSOR)
+        if charging_sensor:
+            await self.async_force_ha_update_entity(charging_sensor)
             await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+
+    # ----------------------------------------------------------------------------
+    async def _async_update_ha(self, chargeable: Chargeable) -> None:
+        """Get third party integration to update HA with latest data."""
+
+        if self._is_force_ha_update():
+            await self._async_force_ha_update_charging_status()
+        else:
+            config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
+            val_dict = ConfigValueDict(config_item, {})
+
+            await chargeable.async_update_ha(val_dict)
+            if val_dict.config_values[config_item].entity_id is not None:
+                await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
     # ----------------------------------------------------------------------------
     def _is_at_location(self, chargeable: Chargeable) -> bool:
@@ -1089,6 +1113,20 @@ class ChargeController(ScOptionState):
         return continue_charge
 
     # ----------------------------------------------------------------------------
+    def _debug_charging_status(self, charger: Charger, msg: str) -> None:
+        """Generate debug message only if required."""
+
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(
+                "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
+                self._caller,
+                msg,
+                charger.is_connected(),
+                charger.is_charger_switch_on(),
+                charger.is_charging(),
+            )
+
+    # ----------------------------------------------------------------------------
     async def _async_charge_device(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
@@ -1102,8 +1140,11 @@ class ChargeController(ScOptionState):
                     await self._async_set_charge_current(
                         charger, INITIAL_CHARGE_CURRENT
                     )
-                    await self._async_update_ha(chargeable)
                     self._subscribe_allocated_power_update()
+
+                self._debug_charging_status(charger, "Before update")
+                await self._async_update_ha(chargeable)
+                self._debug_charging_status(charger, "After update")
 
             except TimeoutError:
                 _LOGGER.warning(

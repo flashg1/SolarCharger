@@ -495,6 +495,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
                 BUTTON_ENTITY_SELECTOR,
             ),
+            # Turning on force HA update switch will override the in-built update HA button.
             self._optional(
                 subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON, use_default
             ): entity_selector(

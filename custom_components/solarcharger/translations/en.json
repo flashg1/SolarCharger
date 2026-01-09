@@ -190,6 +190,9 @@
             "fast_charge_mode": {
                 "name": "Fast charge mode"
             },
+            "force_ha_update": {
+                "name": "Force HA update"
+            },
             "schedule_charge": {
                 "name": "Schedule charge"
             },

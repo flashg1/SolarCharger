@@ -8,6 +8,7 @@ from homeassistant.components.switch import SwitchEntity, SwitchEntityDescriptio
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.const import STATE_ON
 from homeassistant.core import State
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
@@ -19,6 +20,7 @@ from .const import (
     SUBENTRY_CHARGER_TYPES,
     SWITCH,
     SWITCH_FAST_CHARGE_MODE,
+    SWITCH_FORCE_HA_UPDATE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_START_CHARGE,
@@ -257,6 +259,17 @@ async def async_setup_entry(
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_FAST_CHARGE_MODE,
+            ),
+        ),
+        (
+            SWITCH_FORCE_HA_UPDATE,
+            SolarChargerSwitchEntity,
+            RESTORE_ON_START_TRUE,
+            coordinator.async_switch_dummy,
+            SolarChargerEntityType.LOCAL_DEFAULT,
+            SwitchEntityDescription(
+                key=SWITCH_FORCE_HA_UPDATE,
+                entity_category=EntityCategory.CONFIG,
             ),
         ),
         #####################################
