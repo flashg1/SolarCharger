@@ -1008,6 +1008,8 @@ class ChargeController(ScOptionState):
             self.emit_solarcharger_event(
                 self._device.id, EVENT_ACTION_NEW_CHARGE_CURRENT, new_charge_current
             )
+
+            # This is required because there is no _async_update_ha() in main loop.
             await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------
@@ -1113,18 +1115,18 @@ class ChargeController(ScOptionState):
         return continue_charge
 
     # ----------------------------------------------------------------------------
-    def _debug_charging_status(self, charger: Charger, msg: str) -> None:
+    def _log_charging_status(self, charger: Charger, msg: str) -> None:
         """Generate debug message only if required."""
 
-        if _LOGGER.isEnabledFor(logging.DEBUG):
-            _LOGGER.debug(
-                "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
-                self._caller,
-                msg,
-                charger.is_connected(),
-                charger.is_charger_switch_on(),
-                charger.is_charging(),
-            )
+        # if _LOGGER.isEnabledFor(logging.DEBUG):
+        _LOGGER.warning(
+            "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
+            self._caller,
+            msg,
+            charger.is_connected(),
+            charger.is_charger_switch_on(),
+            charger.is_charging(),
+        )
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -1142,9 +1144,10 @@ class ChargeController(ScOptionState):
                     )
                     self._subscribe_allocated_power_update()
 
-                self._debug_charging_status(charger, "Before update")
-                await self._async_update_ha(chargeable)
-                self._debug_charging_status(charger, "After update")
+                    # Update status after turning on power
+                    self._log_charging_status(charger, "Before update")
+                    await self._async_update_ha(chargeable)
+                    self._log_charging_status(charger, "After update")
 
             except TimeoutError:
                 _LOGGER.warning(
@@ -1297,6 +1300,8 @@ class ChargeController(ScOptionState):
     async def _async_tidy_up_on_exit(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
+        """Tidy up on exit."""
+
         await self._async_update_ha(chargeable)
 
         switched_on = charger.is_charger_switch_on()

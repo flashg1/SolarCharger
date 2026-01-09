@@ -1,8 +1,9 @@
 # Changelog
 
 ## v0.3beta2 2026-01-09
+- Restored call to _async_update_ha() after setting new current. Update rate dependent on main_power_net update rate.
 - Turning on force HA update switch will override the in-built update HA button.
-- Added optional switch to force third party integration to update charging status in HA every 60 seconds instead of using the third party integration in-built update HA button, ie. possibly removes dependency on third party integration update rate.
+- Added optional switch to force third party integration to update charging status in HA instead of using the third party integration in-built update HA button, ie. possibly removes dependency on third party integration update rate.
 - Updated doc.
 
 ## v0.3beta1 2026-01-08
