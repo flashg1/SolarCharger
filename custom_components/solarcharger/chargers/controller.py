@@ -21,6 +21,7 @@ from ..const import (  # noqa: TID252
     CALIBRATE_MAX_SOC,
     CALIBRATE_SOC_INCREASE,
     CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
+    CONF_WAIT_NET_POWER_UPDATE,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
     DOMAIN,
@@ -75,7 +76,7 @@ _LOGGER = logging.getLogger(__name__)
 
 INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
 MIN_TIME_BETWEEN_UPDATE = 10  # Minimum seconds between charger current updates
-ENVIRONMENT_CHECK_INTERVAL = 60  # Seconds to sleep between environment checks
+# ENVIRONMENT_CHECK_INTERVAL = 60  # Seconds to sleep between environment checks
 
 
 # ----------------------------------------------------------------------------
@@ -797,6 +798,9 @@ class ChargeController(ScOptionState):
             )
             await self._async_set_charge_limit(chargeable, self._goal.charge_limit)
 
+        # Set charge limit first before starting calibration, if required.
+        await self._async_set_charge_limit_if_calibration(chargeable)
+
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
         return False
@@ -1133,8 +1137,10 @@ class ChargeController(ScOptionState):
             await self._async_set_charge_current(charger, new_charge_current)
             self._charge_current_updatetime = utcnow().timestamp()
 
-        # This is required because there is no _async_update_ha() in main loop.
-        await self._async_update_ha(chargeable)
+        # No need to update status here because it is now done at the main loop.
+        # Power update here is not garanteed because HA will not send the same value
+        # if the seccond value is same as first.
+        # await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------
     # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
@@ -1245,14 +1251,15 @@ class ChargeController(ScOptionState):
     def _log_charging_status(self, charger: Charger, msg: str) -> None:
         """Generate debug message only if required."""
 
-        _LOGGER.warning(
-            "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
-            self._caller,
-            msg,
-            self._is_connected(charger),
-            charger.is_charger_switch_on(),
-            charger.is_charging(),
-        )
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(
+                "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
+                self._caller,
+                msg,
+                self._is_connected(charger),
+                charger.is_charger_switch_on(),
+                charger.is_charging(),
+            )
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit_if_calibration(
@@ -1305,8 +1312,9 @@ class ChargeController(ScOptionState):
     ) -> None:
         loop_count = 0
 
-        # Set charge limit first before starting charge, if required.
-        await self._async_set_charge_limit_if_calibration(chargeable)
+        wait_net_power_update = self.config_get_number_or_abort(
+            CONF_WAIT_NET_POWER_UPDATE
+        )
 
         while self._is_continue_charge(charger, chargeable, loop_count):
             try:
@@ -1318,10 +1326,14 @@ class ChargeController(ScOptionState):
                     )
                     self._subscribe_allocated_power_update()
 
-                    # Update status after turning on power
-                    self._log_charging_status(charger, "Before update")
-                    await self._async_update_ha(chargeable)
-                    self._log_charging_status(charger, "After update")
+                self._log_charging_status(charger, "Before update")
+
+                # Update status after turning on power, or at every interval.
+                # This is either required here or after setting current.
+                # It is better here since it is garanteed periodic.
+                await self._async_update_ha(chargeable)
+
+                self._log_charging_status(charger, "After update")
 
                 # Check if calibration is required during charge
                 await self._async_check_if_calibration(charger, chargeable)
@@ -1338,7 +1350,7 @@ class ChargeController(ScOptionState):
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
             # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
-            await asyncio.sleep(ENVIRONMENT_CHECK_INTERVAL)
+            await asyncio.sleep(wait_net_power_update)
             loop_count = loop_count + 1
 
         self._unsubscribe_allocated_power_update()
@@ -1514,7 +1526,6 @@ class ChargeController(ScOptionState):
         # except EntityExceptionError as e:
         except Exception as e:
             _LOGGER.error("%s: Abort charge: %s", self._caller, e)
-            await self._async_turn_off_calibrate_max_charge_speed_switch()
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge(

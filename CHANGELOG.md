@@ -1,6 +1,8 @@
 # Changelog
 
 ## v0.3beta3 2026-01-10
+- Changed main while loop delay to be same as power allocation update cycle.
+- Moved third party integration update polling from power allocation update cycle to main while loop.
 - Added switch to calibrate battery charge speed required for charge scheduling calculation.
 
 ## v0.3beta2 2026-01-09

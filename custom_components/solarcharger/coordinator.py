@@ -303,8 +303,6 @@ class SolarChargerCoordinator(ScOptionState):
         wait_net_power_update = self.config_get_number_or_abort(
             CONF_WAIT_NET_POWER_UPDATE
         )
-        if wait_net_power_update is None:
-            raise ValueError(f"Cannot get {CONF_WAIT_NET_POWER_UPDATE} from config")
 
         self._unsub.append(
             async_track_time_interval(
