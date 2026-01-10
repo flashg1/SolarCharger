@@ -528,7 +528,7 @@ class SolarChargerCoordinator(ScOptionState):
         #     await self.turn_off_charging()
 
     # ----------------------------------------------------------------------------
-    async def async_switch_dummy(self, control: ChargeControl, turn_on: bool):
+    async def async_switch_dummy(self, control: ChargeControl, turn_on: bool) -> None:
         """Dummy switch."""
 
     # ----------------------------------------------------------------------------
@@ -651,6 +651,15 @@ class SolarChargerCoordinator(ScOptionState):
 
         if control.controller is not None:
             await control.controller.async_switch_sun_elevation_trigger(turn_on)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_calibrate_max_charge_speed(
+        self, control: ChargeControl, turn_on: bool
+    ) -> None:
+        """Calibrate max charge speed switch."""
+
+        if control.controller is not None:
+            await control.controller.async_switch_calibrate_max_charge_speed(turn_on)
 
     # ----------------------------------------------------------------------------
     async def async_reset_charge_limit_default(self, control: ChargeControl) -> None:

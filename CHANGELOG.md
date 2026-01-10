@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3beta3 2026-01-10
+- Added switch to calibrate battery charge speed required for charge scheduling calculation.
+
 ## v0.3beta2 2026-01-09
 - Added OPTION_CHARGEE_CHARGE_LIMIT local config entity for user custom charger.
 - _is_connected() and _is_at_location() will always return true if sensors are not defined.

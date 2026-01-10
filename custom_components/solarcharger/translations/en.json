@@ -201,6 +201,9 @@
             },
             "sun_trigger": {
                 "name": "Sun trigger"
+            },
+            "calibrate_max_charge_speed": {
+                "name": "Calibrate max charge speed"
             }
         },
         "number": {

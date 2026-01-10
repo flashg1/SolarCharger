@@ -10,7 +10,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.3beta2"
+VERSION = "0.3beta3"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -70,13 +70,16 @@ SUPPORTED_CHARGER_DOMAIN_LIST: list[str] = [
 SENSOR_LAST_CHECK = "last_check"
 SENSOR_RUN_STATE = "run_state"
 
-# Switches
-SWITCH_START_CHARGE = "charge"
+# Boolean switches
 SWITCH_FAST_CHARGE_MODE = "fast_charge_mode"
 SWITCH_FORCE_HA_UPDATE = "force_ha_update"
+
+# Action switches
+SWITCH_START_CHARGE = "charge"
 SWITCH_SCHEDULE_CHARGE = "schedule_charge"
 SWITCH_PLUGIN_TRIGGER = "plugin_trigger"
 SWITCH_SUN_TRIGGER = "sun_trigger"
+SWITCH_CALIBRATE_MAX_CHARGE_SPEED = "calibrate_max_charge_speed"
 
 # Buttons
 BUTTON_START_CHARGE = "start_charge"
@@ -87,6 +90,10 @@ DATETIME_NEXT_CHARGE_TIME = "next_charge_time"
 
 # Number triggers
 NUMBER_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
+
+# Calibrate max charge speed configs
+CALIBRATE_MAX_SOC = 91
+CALIBRATE_SOC_INCREASE = 4
 
 
 #######################################################
@@ -270,6 +277,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     SWITCH_SCHEDULE_CHARGE: DEFAULT_OFF,
     SWITCH_PLUGIN_TRIGGER: DEFAULT_ON,
     SWITCH_SUN_TRIGGER: DEFAULT_ON,
+    SWITCH_CALIBRATE_MAX_CHARGE_SPEED: DEFAULT_OFF,
 }
 
 OCPP_DEFAULT_VALUES: dict[str, Any] = {
@@ -575,6 +583,7 @@ CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
 CALLBACK_ALLOCATE_POWER = "callback_allocate_power"
 CALLBACK_NEXT_CHARGE_TIME_UPDATE = "callback_next_charge_time_update"
 CALLBACK_NEXT_CHARGE_TIME_TRIGGER = "callback_next_charge_time_trigger"
+CALLBACK_SOC_UPDATE = "callback_soc_update"
 
 
 #######################################################

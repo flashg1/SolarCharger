@@ -19,6 +19,7 @@ from .const import (
     RESTORE_ON_START_TRUE,
     SUBENTRY_CHARGER_TYPES,
     SWITCH,
+    SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_FORCE_HA_UPDATE,
     SWITCH_PLUGIN_TRIGGER,
@@ -303,6 +304,17 @@ async def async_setup_entry(
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_SUN_TRIGGER,
+            ),
+        ),
+        (
+            SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
+            SolarChargerSwitchActionEntity,
+            RESTORE_ON_START_FALSE,
+            coordinator.async_switch_calibrate_max_charge_speed,
+            SolarChargerEntityType.LOCAL_DEFAULT,
+            SwitchEntityDescription(
+                key=SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
+                entity_category=EntityCategory.CONFIG,
             ),
         ),
     )

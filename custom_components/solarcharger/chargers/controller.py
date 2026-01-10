@@ -18,6 +18,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.util.dt import as_local, utcnow
 
 from ..const import (  # noqa: TID252
+    CALIBRATE_MAX_SOC,
+    CALIBRATE_SOC_INCREASE,
     CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
@@ -42,6 +44,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     SWITCH,
+    SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_FORCE_HA_UPDATE,
     SWITCH_PLUGIN_TRIGGER,
@@ -50,8 +53,9 @@ from ..const import (  # noqa: TID252
     SWITCH_SUN_TRIGGER,
 )
 from ..entity import compose_entity_id  # noqa: TID252
+from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
-from ..sc_option_state import ScheduleData, ScOptionState  # noqa: TID252
+from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge  # noqa: TID252
 from ..utils import (  # noqa: TID252
     get_is_sun_rising,
     get_next_sunrise_time,
@@ -112,33 +116,42 @@ class ChargeController(ScOptionState):
         # not defined in config_options_flow _charger_control_entities_schema().
         # These entities are also defined in config options, but not created until
         # after first initialisation (see above).
-        self._next_charge_time_trigger_entity_id = compose_entity_id(
+        self._next_charge_time_trigger = compose_entity_id(
             DATETIME, subentry.unique_id, DATETIME_NEXT_CHARGE_TIME
         )
-        self._charger_switch_entity_id = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_START_CHARGE
-        )
-        self._fast_charge_mode_switch_entity_id = compose_entity_id(
+
+        self._fast_charge_mode_switch = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_FAST_CHARGE_MODE
         )
-        self._force_ha_update_switch_entity_id = compose_entity_id(
+        self._force_ha_update_switch = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_FORCE_HA_UPDATE
         )
-        self._schedule_charge_switch_entity_id = compose_entity_id(
+
+        self._charger_switch = compose_entity_id(
+            SWITCH, subentry.unique_id, SWITCH_START_CHARGE
+        )
+        self._schedule_charge_switch = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_SCHEDULE_CHARGE
         )
-        self._plugin_trigger_switch_entity_id = compose_entity_id(
+        self._plugin_trigger_switch = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_PLUGIN_TRIGGER
         )
-        self._sun_trigger_switch_entity_id = compose_entity_id(
+        self._sun_trigger_switch = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_SUN_TRIGGER
+        )
+        self._calibrate_max_charge_speed_switch = compose_entity_id(
+            SWITCH, subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
         )
 
         self._history_date = datetime(2026, 1, 1, 0, 0, 0)
         self._tracker: Tracker = Tracker(hass, entry, subentry, caller)
 
         self._session_triggered_by_timer = False
-        self._goal: ScheduleData = ScheduleData([])
+        self._goal: ScheduleData
+
+        self._started_calibrate_max_charge_speed = False
+        self._soc_updates: list[StateOfCharge] = []
+        self._calibrate_max_charge_limit: float
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -169,31 +182,40 @@ class ChargeController(ScOptionState):
     # Charger utils
     # ----------------------------------------------------------------------------
     def _is_fast_charge_mode(self) -> bool:
-        state = self.get_string(self._fast_charge_mode_switch_entity_id)
+        state = self.get_string(self._fast_charge_mode_switch)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
     def _is_force_ha_update(self) -> bool:
-        state = self.get_string(self._force_ha_update_switch_entity_id)
+        state = self.get_string(self._force_ha_update_switch)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
+    def _is_calibrate_max_charge_speed(self) -> bool:
+        state = self.get_string(self._calibrate_max_charge_speed_switch)
+        return state == STATE_ON
+
+    # ----------------------------------------------------------------------------
+    async def _async_turn_off_calibrate_max_charge_speed_switch(self) -> None:
+        await self.async_turn_switch_off(self._calibrate_max_charge_speed_switch)
+
+    # ----------------------------------------------------------------------------
     def _is_schedule_charge(self) -> bool:
-        state = self.get_string(self._schedule_charge_switch_entity_id)
+        state = self.get_string(self._schedule_charge_switch)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
     def _is_plugin_trigger(self) -> bool:
-        state = self.get_string(self._plugin_trigger_switch_entity_id)
+        state = self.get_string(self._plugin_trigger_switch)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
     async def _async_turn_off_plugin_trigger(self) -> None:
-        await self.async_turn_switch_off(self._plugin_trigger_switch_entity_id)
+        await self.async_turn_switch_off(self._plugin_trigger_switch)
 
     # ----------------------------------------------------------------------------
     def _is_sun_trigger(self) -> bool:
-        state = self.get_string(self._sun_trigger_switch_entity_id)
+        state = self.get_string(self._sun_trigger_switch)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
@@ -202,9 +224,7 @@ class ChargeController(ScOptionState):
 
         # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
         # self._hass.loop.create_task(self.async_start_charge())
-        self._hass.loop.create_task(
-            self.async_turn_switch_on(self._charger_switch_entity_id)
-        )
+        self._hass.loop.create_task(self.async_turn_switch_on(self._charger_switch))
 
     # ----------------------------------------------------------------------------
     # Called by next charge time trigger only
@@ -212,7 +232,7 @@ class ChargeController(ScOptionState):
         """Start charger from coroutine callback."""
 
         # async_call_later do support coroutine callback, so can call directly.
-        await self.async_turn_switch_on(self._charger_switch_entity_id)
+        await self.async_turn_switch_on(self._charger_switch)
 
     # ----------------------------------------------------------------------------
     # Tracker callbacks
@@ -260,7 +280,7 @@ class ChargeController(ScOptionState):
                         and elevation_start_trigger <= new_elevation
                     ):
                         # Start charger
-                        await self.async_turn_switch_on(self._charger_switch_entity_id)
+                        await self.async_turn_switch_on(self._charger_switch)
 
     # ----------------------------------------------------------------------------
     async def async_handle_plug_in_charger_event(
@@ -294,6 +314,50 @@ class ChargeController(ScOptionState):
                         self._turn_on_charger_switch()
 
     # ----------------------------------------------------------------------------
+    async def async_handle_soc_update(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Fetch and process state change event."""
+        data = event.data
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
+
+        self._tracker.log_state_change(event)
+
+        if new_state is not None and old_state is not None:
+            if new_state.state not in (
+                STATE_UNKNOWN,
+                STATE_UNAVAILABLE,
+            ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                try:
+                    soc = float(new_state.state)
+                    update_time = new_state.last_updated
+                    self._soc_updates.append(StateOfCharge(soc, update_time))
+                    if soc >= self._calibrate_max_charge_limit:
+                        soc_diff = soc - self._soc_updates[0].state_of_charge
+                        time_diff = update_time - self._soc_updates[0].update_time
+                        hour_diff = time_diff.total_seconds() / 3600.0
+                        max_charge_speed = soc_diff / hour_diff
+                        _LOGGER.info(
+                            "%s: max_charge_speed=%s %/hr, %s",
+                            self._caller,
+                            max_charge_speed,
+                            self._soc_updates,
+                        )
+                        await self.async_option_set_entity_number(
+                            NUMBER_CHARGER_MAX_SPEED, max_charge_speed
+                        )
+                        await self._async_turn_off_calibrate_max_charge_speed_switch()
+
+                except (ValueError, TypeError) as e:
+                    _LOGGER.error(
+                        "%s: Failed to parse SOC state '%s': %s",
+                        self._caller,
+                        new_state.state,
+                        e,
+                    )
+
+    # ----------------------------------------------------------------------------
     async def async_handle_next_charge_time_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
@@ -320,96 +384,65 @@ class ChargeController(ScOptionState):
         """Subscribe for next charge time update. This is always on."""
 
         self._tracker.track_next_charge_time_trigger(
-            self._next_charge_time_trigger_entity_id,
+            self._next_charge_time_trigger,
             self.async_handle_next_charge_time_update,
         )
-
-    # ----------------------------------------------------------------------------
-    def _init_next_charge_time(self) -> None:
-        """Init next charge time if time is in future."""
-
-        if not self._initialising:
-            # Trigger is lost on restart, so reschedule if applicable.
-            next_charge_time = self.get_datetime(
-                self._next_charge_time_trigger_entity_id
-            )
-            self._tracker.schedule_next_charge_time(
-                next_charge_time, self._async_turn_on_charger_switch
-            )
-
-    # ----------------------------------------------------------------------------
-    def _unschedule_next_charge_time(self) -> None:
-        """Unschedule next charge time."""
-
-        if not self._initialising:
-            self._tracker.unschedule_next_charge_time()
 
     # ----------------------------------------------------------------------------
     async def async_switch_schedule_charge(self, turn_on: bool) -> None:
         """Schedule charge switch."""
         _LOGGER.info("%s: Schedule charge: %s", self._caller, turn_on)
 
-        if turn_on:
-            self._init_next_charge_time()
-        else:
-            self._unschedule_next_charge_time()
-
-    # ----------------------------------------------------------------------------
-    def _subscribe_charger_plugin_event(self) -> bool:
-        """Subscribe for charger plugin event."""
-        ok = True
-
         if not self._initialising:
-            ok = self._tracker.track_charger_plugged_in_sensor(
-                self.async_handle_plug_in_charger_event
-            )
-
-        return ok
-
-    # ----------------------------------------------------------------------------
-    def _unsubscribe_charger_plugin_event(self) -> None:
-        """Unsubscribe charger plugin event."""
-
-        if not self._initialising:
-            self._tracker.untrack_charger_plugged_in_sensor()
+            if turn_on:
+                # Trigger is lost on restart, so reschedule if applicable.
+                next_charge_time = self.get_datetime(self._next_charge_time_trigger)
+                self._tracker.schedule_next_charge_time(
+                    next_charge_time, self._async_turn_on_charger_switch
+                )
+            else:
+                self._tracker.unschedule_next_charge_time()
 
     # ----------------------------------------------------------------------------
     async def async_switch_plugin_trigger(self, turn_on: bool) -> None:
         """Plugin trigger switch."""
         _LOGGER.info("%s: Plugin trigger: %s", self._caller, turn_on)
 
-        if turn_on:
-            ok = self._subscribe_charger_plugin_event()
-            if not ok:
-                await self._async_turn_off_plugin_trigger()
-        else:
-            self._unsubscribe_charger_plugin_event()
-
-    # ----------------------------------------------------------------------------
-    def _subscribe_sun_elevation_update(self) -> None:
-        """Subscribe for sun elevation update."""
-
-        # self._set_up_sun_triggers()
-        # self._track_sunrise_elevation_trigger()
         if not self._initialising:
-            self._tracker.track_sun_elevation(self.async_handle_sun_elevation_update)
-
-    # ----------------------------------------------------------------------------
-    def _unsubscribe_sun_elevation_update(self) -> None:
-        """Unsubscribe sun elevation update."""
-
-        if not self._initialising:
-            self._tracker.untrack_sun_elevation()
+            if turn_on:
+                ok = self._tracker.track_charger_plugged_in_sensor(
+                    self.async_handle_plug_in_charger_event
+                )
+                if not ok:
+                    await self._async_turn_off_plugin_trigger()
+            else:
+                self._tracker.untrack_charger_plugged_in_sensor()
 
     # ----------------------------------------------------------------------------
     async def async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
         """Sun elevation trigger switch."""
         _LOGGER.info("%s: Sun elevation trigger: %s", self._caller, turn_on)
 
-        if turn_on:
-            self._subscribe_sun_elevation_update()
-        else:
-            self._unsubscribe_sun_elevation_update()
+        if not self._initialising:
+            if turn_on:
+                self._tracker.track_sun_elevation(
+                    self.async_handle_sun_elevation_update
+                )
+            else:
+                self._tracker.untrack_sun_elevation()
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
+        """Calibrate max charge speed switch."""
+        _LOGGER.info("%s: Calibrate max charge speed: %s", self._caller, turn_on)
+
+        if not self._initialising:
+            if turn_on:
+                if self._charge_task is None or self._charge_task.done():
+                    self._turn_on_charger_switch()
+            else:
+                self._tracker.untrack_soc_sensor()
+                self._started_calibrate_max_charge_speed = False
 
     # ----------------------------------------------------------------------------
     def _subscribe_allocated_power_update(self) -> None:
@@ -463,7 +496,7 @@ class ChargeController(ScOptionState):
         time_diff = timedelta(seconds=0)
 
         charge_start_time = self.get_local_datetime()
-        next_charge_time = self.get_datetime(self._next_charge_time_trigger_entity_id)
+        next_charge_time = self.get_datetime(self._next_charge_time_trigger)
         if next_charge_time is not None:
             if charge_start_time > next_charge_time:
                 time_diff = charge_start_time - next_charge_time
@@ -512,6 +545,24 @@ class ChargeController(ScOptionState):
                 sd.is_immediate_start = True
 
     # ----------------------------------------------------------------------------
+    def _get_soc_for_max_charge_speed_calibration(
+        self, chargeable: Chargeable
+    ) -> float:
+        """Check and get SOC required for max charge speed calibration."""
+
+        battery_soc = chargeable.get_state_of_charge()
+        if battery_soc is None:
+            raise EntityExceptionError(
+                f"{self._caller}: Cannot calibrate max charge speed due to missing SOC sensor"
+            )
+        if battery_soc > CALIBRATE_MAX_SOC:
+            raise EntityExceptionError(
+                f"{self._caller}: Cannot calibrate max charge speed due to SOC > {CALIBRATE_MAX_SOC} %"
+            )
+
+        return battery_soc
+
+    # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.
     # If use_charge_schedule is true, all other parameters are set.
     # If use_charge_schedule is false, only has_charge_endtime is set. All others are not set.
@@ -530,7 +581,15 @@ class ChargeController(ScOptionState):
         now_time = self.get_local_datetime()
         sd.session_starttime = now_time
 
-        if self._is_schedule_charge():
+        # Calibrate max charge speed
+        if self._is_calibrate_max_charge_speed():
+            sd.use_charge_schedule = True
+            sd.battery_soc = self._get_soc_for_max_charge_speed_calibration(chargeable)
+            sd.charge_limit = sd.battery_soc + CALIBRATE_SOC_INCREASE
+            self._calibrate_max_charge_limit = sd.charge_limit
+
+        # Normal schedule
+        elif self._is_schedule_charge():
             sd.use_charge_schedule = True
             sd.weekly_schedule = self.get_weekly_schedule()
 
@@ -681,6 +740,15 @@ class ChargeController(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
+    async def _async_set_charge_limit(
+        self, chargeable: Chargeable, charge_limit: float
+    ) -> None:
+        """Set charge limit."""
+
+        await chargeable.async_set_charge_limit(charge_limit)
+        await self._async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
+
+    # ----------------------------------------------------------------------------
     async def _async_init_charge_limit(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
@@ -694,8 +762,7 @@ class ChargeController(ScOptionState):
                 # now_time.strftime("%A"),
                 self._goal.weekly_schedule[self._goal.day_index].charge_day,
             )
-            await chargeable.async_set_charge_limit(self._goal.charge_limit)
-            await self._async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
+            await self._async_set_charge_limit(chargeable, self._goal.charge_limit)
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
@@ -901,14 +968,22 @@ class ChargeController(ScOptionState):
         return current
 
     # ----------------------------------------------------------------------------
+    def _get_charger_max_current(self, charger) -> float:
+        """Get charger max current."""
+
+        charger_max_current = charger.get_max_charge_current()
+        if charger_max_current is None or charger_max_current <= 0:
+            raise ValueError(f"{self._caller}: Failed to get charger max current")
+
+        return charger_max_current
+
+    # ----------------------------------------------------------------------------
     def _calc_current_change(
         self, charger: Charger, chargeable: Chargeable, allocated_power: float
     ) -> tuple[float, float]:
         """Calculate new charge current based on allocated power."""
 
-        charger_max_current = charger.get_max_charge_current()
-        if charger_max_current is None or charger_max_current <= 0:
-            raise ValueError(f"{self._caller}: Failed to get charger max current")
+        charger_max_current = self._get_charger_max_current(charger)
 
         battery_charge_current = charger.get_charge_current()
         if battery_charge_current is None:
@@ -920,7 +995,7 @@ class ChargeController(ScOptionState):
         #####################################
         # Charge at max current if fast charge
         #####################################
-        if self._is_fast_charge_mode():
+        if self._is_fast_charge_mode() or self._is_calibrate_max_charge_speed():
             new_charge_current = charger_max_current
             return (new_charge_current, old_charge_current)
 
@@ -1088,6 +1163,7 @@ class ChargeController(ScOptionState):
             self._is_sun_above_start_end_elevation_triggers()
         )
         is_use_secondary_power_source = self._is_use_secondary_power_source()
+        is_calibrate_max_charge_speed = self._is_calibrate_max_charge_speed()
         now_time = self.get_local_datetime()
 
         continue_charge = (
@@ -1098,6 +1174,7 @@ class ChargeController(ScOptionState):
             and (
                 is_sun_above_start_end_elevations
                 or is_use_secondary_power_source
+                or is_calibrate_max_charge_speed
                 or (
                     self._goal.has_charge_endtime
                     and self._goal.charge_endtime > now_time
@@ -1111,7 +1188,7 @@ class ChargeController(ScOptionState):
                 "%s: Stopping charge: is_abort_charge=%s, is_connected=%s, "
                 "is_below_charge_limit=%s, loop_count=%s, is_charging=%s, "
                 "is_sun_above_start_end_elevations=%s, elevation=%s, is_use_secondary_power_source=%s, "
-                "has_charge_endtime=%s",
+                "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s",
                 self._caller,
                 is_abort_charge,
                 is_connected,
@@ -1121,6 +1198,7 @@ class ChargeController(ScOptionState):
                 is_sun_above_start_end_elevations,
                 elevation,
                 is_use_secondary_power_source,
+                is_calibrate_max_charge_speed,
                 self._goal.has_charge_endtime,
             )
 
@@ -1130,7 +1208,6 @@ class ChargeController(ScOptionState):
     def _log_charging_status(self, charger: Charger, msg: str) -> None:
         """Generate debug message only if required."""
 
-        # if _LOGGER.isEnabledFor(logging.DEBUG):
         _LOGGER.warning(
             "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
             self._caller,
@@ -1139,6 +1216,36 @@ class ChargeController(ScOptionState):
             charger.is_charger_switch_on(),
             charger.is_charging(),
         )
+
+    # ----------------------------------------------------------------------------
+    async def _async_check_tasks(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        if self._is_calibrate_max_charge_speed():
+            if not self._started_calibrate_max_charge_speed:
+                try:
+                    battery_soc = self._get_soc_for_max_charge_speed_calibration(
+                        chargeable
+                    )
+                    self._calibrate_max_charge_limit = (
+                        battery_soc + CALIBRATE_SOC_INCREASE
+                    )
+                    self._soc_updates = []
+                    charge_limit = chargeable.get_charge_limit()
+                    if charge_limit and charge_limit < self._calibrate_max_charge_limit:
+                        await self._async_set_charge_limit(
+                            chargeable, self._calibrate_max_charge_limit
+                        )
+                    charger_max_current = self._get_charger_max_current(charger)
+                    await self._async_set_charge_current(charger, charger_max_current)
+                    self._tracker.track_soc_sensor(self.async_handle_soc_update)
+                    self._started_calibrate_max_charge_speed = True
+
+                except EntityExceptionError as e:
+                    _LOGGER.error(
+                        "%s: Abort calibrate max charge speed: %s", self._caller, e
+                    )
+                    await self._async_turn_off_calibrate_max_charge_speed_switch()
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -1160,6 +1267,8 @@ class ChargeController(ScOptionState):
                     self._log_charging_status(charger, "Before update")
                     await self._async_update_ha(chargeable)
                     self._log_charging_status(charger, "After update")
+
+                await self._async_check_tasks(charger, chargeable)
 
             except TimeoutError:
                 _LOGGER.warning(
@@ -1222,7 +1331,7 @@ class ChargeController(ScOptionState):
 
         # Note: Cannot set next_charge_time = datetime.min
         await self.async_set_datetime(
-            self._next_charge_time_trigger_entity_id,
+            self._next_charge_time_trigger,
             next_charge_time,
         )
 
@@ -1339,10 +1448,15 @@ class ChargeController(ScOptionState):
         #####################################
         # Start charge session
         #####################################
-        await self._async_init_device(chargeable)
-        await self._async_init_charge_limit(charger, chargeable)
-        await self._async_charge_device(charger, chargeable)
-        await self._async_tidy_up_on_exit(charger, chargeable)
+        try:
+            await self._async_init_device(chargeable)
+            await self._async_init_charge_limit(charger, chargeable)
+            await self._async_charge_device(charger, chargeable)
+            await self._async_tidy_up_on_exit(charger, chargeable)
+
+        except EntityExceptionError as e:
+            _LOGGER.error("%s: Abort charge: %s", self._caller, e)
+            await self._async_turn_off_calibrate_max_charge_speed_switch()
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge(

@@ -62,6 +62,14 @@ class ScheduleData:
     is_immediate_start: bool = False
 
 
+@dataclass
+class StateOfCharge:
+    """State of charge data."""
+
+    state_of_charge: float
+    update_time: datetime
+
+
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
