@@ -988,7 +988,12 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_current(self, charger: Charger, current: float) -> None:
+        """Set charge current."""
+
         await charger.async_set_charge_current(current)
+        self.emit_solarcharger_event(
+            self._device.id, EVENT_ACTION_NEW_CHARGE_CURRENT, current
+        )
         await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
     # ----------------------------------------------------------------------------
@@ -1127,9 +1132,6 @@ class ChargeController(ScOptionState):
             )
             await self._async_set_charge_current(charger, new_charge_current)
             self._charge_current_updatetime = utcnow().timestamp()
-            self.emit_solarcharger_event(
-                self._device.id, EVENT_ACTION_NEW_CHARGE_CURRENT, new_charge_current
-            )
 
         # This is required because there is no _async_update_ha() in main loop.
         await self._async_update_ha(chargeable)
@@ -1488,6 +1490,7 @@ class ChargeController(ScOptionState):
         sun_elevation: float = get_sun_elevation(self._caller, sun_state)
         _LOGGER.warning("%s: Stopped at sun_elevation=%s", self._caller, sun_elevation)
 
+        await self._async_turn_off_calibrate_max_charge_speed_switch()
         await self._async_schedule_next_charge_session(charger, chargeable)
 
     # ----------------------------------------------------------------------------
