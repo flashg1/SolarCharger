@@ -470,8 +470,11 @@ class ChargeController(ScOptionState):
                     self._turn_charger_switch(True)
             else:
                 self._tracker.untrack_soc_sensor()
+
+                # Will get error message if charger switch already turned off by user.
                 if self._is_charge_started_by_calibration_switch:
                     self._turn_charger_switch(False)
+
                 self._is_charge_started_by_calibration_switch = False
                 self._started_calibrate_max_charge_speed = False
 
