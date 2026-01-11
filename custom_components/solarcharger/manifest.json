@@ -3,9 +3,11 @@
   "name": "SolarCharger",
   "after_dependencies": [
     "button",
+    "datetime",
     "number",
     "sensor",
-    "switch"
+    "switch",
+    "time"
   ],
   "codeowners": [
     "@flashg1"
@@ -13,9 +15,9 @@
   "config_flow": true,
   "documentation": "https://github.com/flashg1/solarcharger",
   "integration_type": "device",
-  "iot_class": "local_polling",
+  "iot_class": "local_push",
   "issue_tracker": "https://github.com/flashg1/solarcharger/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.3beta3"
+  "version": "0.3beta4"
 }

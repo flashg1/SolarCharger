@@ -133,8 +133,6 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         self._attr_mode = NumberMode.BOX
 
         self._attr_has_entity_name = True
-        # Must set _attr_should_poll=True (default) for HA to register value changes
-        # self._attr_should_poll = False
 
         if self.value is None:
             self._attr_native_value = default_val
@@ -203,6 +201,8 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfPower.WATT,
             native_min_value=-23000.0,
             native_max_value=+23000.0,
+            # Always force update when setting value even if value is same.
+            force_update=True,
         ),
     ),
     (

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3beta4 2026-01-11
+- Set all SolarCharger entities to push-pull only.
+- Force update is enabled for allocated power so update is send even if new value is same as old.
+
 ## v0.3beta3 2026-01-10
 - Only accept new SOC state change when old and new states are different.
 - SOC can be incorrect by 6% (approx. 1 hour) if required to charge to 100%.

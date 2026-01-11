@@ -117,7 +117,13 @@ class SolarChargerEntity(Entity):
         self._attr_translation_key = config_item
         self._subentry = subentry
         self._entity_type = entity_type
-        # self._attr_should_poll = False
+
+        # Set all SolarCharger entities to push-pull only.
+        # Use either poll or push, but not both at the same time. Otherwise will get
+        # twice the updates, once from polling and once from push!
+        # Also update by polling only can be delayed by few seconds.
+        self._attr_should_poll = False
+
         # self._attr_has_entity_name = True
         # self._attr_unique_id = entity_full_name
         # self._attr_name = self.type.capitalize()

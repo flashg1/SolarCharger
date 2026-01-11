@@ -303,6 +303,7 @@ class SolarChargerCoordinator(ScOptionState):
         wait_net_power_update = self.config_get_number_or_abort(
             CONF_WAIT_NET_POWER_UPDATE
         )
+        _LOGGER.info("wait_net_power_update=%s", wait_net_power_update)
 
         self._unsub.append(
             async_track_time_interval(
@@ -311,8 +312,6 @@ class SolarChargerCoordinator(ScOptionState):
                 timedelta(seconds=wait_net_power_update),
             )
         )
-
-        # TODO: Subscribe to sun elevation triggers for each charger.
 
         self._unsub.append(self._entry.add_update_listener(self._handle_options_update))
 

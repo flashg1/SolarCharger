@@ -344,7 +344,8 @@ class ChargeController(ScOptionState):
             if (
                 new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
                 and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-                # Sometimes new state was updated with much later time, so try compare old and new states.
+                # Sometimes new state was updated with much later time, indicating a possible refresh
+                # caused by initial subscription. So compare old and new states and ignore if same.
                 and new_state.state != old_state.state
             ):
                 try:
@@ -1138,7 +1139,7 @@ class ChargeController(ScOptionState):
         new_charge_current, old_charge_current = self._calc_current_change(
             charger, chargeable, allocated_power
         )
-        if new_charge_current != old_charge_current:
+        if round(new_charge_current) != round(old_charge_current):
             _LOGGER.info(
                 "%s: Update current from %s to %s",
                 self._caller,
@@ -1537,6 +1538,7 @@ class ChargeController(ScOptionState):
         # except EntityExceptionError as e:
         except Exception as e:
             _LOGGER.error("%s: Abort charge: %s", self._caller, e)
+            await self._async_tidy_up_on_exit(charger, chargeable)
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge(
