@@ -696,27 +696,33 @@ class ChargeController(ScOptionState):
             await self._async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
 
     # ----------------------------------------------------------------------------
-    async def _async_force_ha_update_charging_status(self) -> None:
+    async def _async_force_ha_update_charging_status(
+        self, wait_after_update: bool
+    ) -> None:
         """Force HA to update charging status."""
 
         charging_sensor = self.option_get_id(OPTION_CHARGER_CHARGING_SENSOR)
         if charging_sensor:
             await self.async_force_ha_update_entity(charging_sensor)
-            await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+            if wait_after_update:
+                await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
     # ----------------------------------------------------------------------------
-    async def _async_update_ha(self, chargeable: Chargeable) -> None:
+    async def _async_update_ha(
+        self, chargeable: Chargeable, wait_after_update: bool = True
+    ) -> None:
         """Get third party integration to update HA with latest data."""
 
         if self._is_force_ha_update():
-            await self._async_force_ha_update_charging_status()
+            await self._async_force_ha_update_charging_status(wait_after_update)
         else:
             config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
             val_dict = ConfigValueDict(config_item, {})
 
             await chargeable.async_update_ha(val_dict)
             if val_dict.config_values[config_item].entity_id is not None:
-                await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+                if wait_after_update:
+                    await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
     # ----------------------------------------------------------------------------
     def _is_at_location(self, chargeable: Chargeable) -> bool:
@@ -955,12 +961,12 @@ class ChargeController(ScOptionState):
                 battery_soc, charge_limit
             )
 
-            battery_max_charge_speed = self.option_get_entity_number_or_abort(
+            charger_max_charge_speed = self.option_get_entity_number_or_abort(
                 NUMBER_CHARGER_MAX_SPEED
             )
             # Duration in seconds to increase battery level by 1%
             one_percent_charge_duration = timedelta(
-                seconds=60 * 60 / battery_max_charge_speed
+                seconds=60 * 60 / charger_max_charge_speed
             )
 
             # Maximise minimum charge current if charge end time is set and it is night time or
@@ -1254,15 +1260,14 @@ class ChargeController(ScOptionState):
     def _log_charging_status(self, charger: Charger, msg: str) -> None:
         """Generate debug message only if required."""
 
-        if _LOGGER.isEnabledFor(logging.DEBUG):
-            _LOGGER.debug(
-                "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
-                self._caller,
-                msg,
-                self._is_connected(charger),
-                charger.is_charger_switch_on(),
-                charger.is_charging(),
-            )
+        _LOGGER.warning(
+            "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
+            self._caller,
+            msg,
+            self._is_connected(charger),
+            charger.is_charger_switch_on(),
+            charger.is_charging(),
+        )
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit_if_calibration(
@@ -1329,14 +1334,15 @@ class ChargeController(ScOptionState):
                     )
                     self._subscribe_allocated_power_update()
 
-                self._log_charging_status(charger, "Before update")
+                    self._log_charging_status(charger, "Before update")
+                    await self._async_update_ha(chargeable)
+                    self._log_charging_status(charger, "After update")
 
                 # Update status after turning on power, or at every interval.
                 # This is either required here or after setting current.
                 # It is better here since it is garanteed periodic.
-                await self._async_update_ha(chargeable)
-
-                self._log_charging_status(charger, "After update")
+                # Do not wait here. Depends on the main loop to wait.
+                await self._async_update_ha(chargeable, wait_after_update=False)
 
                 # Check if calibration is required during charge
                 await self._async_check_if_calibration(charger, chargeable)
@@ -1364,16 +1370,16 @@ class ChargeController(ScOptionState):
     ) -> timedelta:
         """Calculate needed charge duration to reach charge limit."""
 
-        battery_max_charge_speed = self.option_get_entity_number_or_abort(
+        charger_max_charge_speed = self.option_get_entity_number_or_abort(
             NUMBER_CHARGER_MAX_SPEED
         )
         # Duration in seconds to increase battery level by 1%
-        one_percent_charge_duration = 60 * 60 / battery_max_charge_speed
+        one_percent_charge_duration = 60 * 60 / charger_max_charge_speed
 
-        # Give extra 1 hour if required to charge to 100%
+        # SOC can be incorrect by 6% (approx. 1 hour) if required to charge to 100%
         extra_seconds = 0
         if charge_limit >= 100:
-            extra_seconds = 60 * 60
+            extra_seconds = 6 * one_percent_charge_duration
 
         # Sometimes charge can decrease by 1% during charging at the beginning, so add extra onePercentChargeDuration for good measure.
         need_charge_seconds = (
@@ -1385,12 +1391,12 @@ class ChargeController(ScOptionState):
         _LOGGER.info(
             "%s: charge_limit=%.1f %%, "
             "battery_soc=%.1f %%, "
-            "battery_max_charge_speed=%.1f %%/hr, "
+            "charger_max_charge_speed=%.1f %%/hr, "
             "one_percent_charge_duration=%.2f sec, ",
             self._caller,
             charge_limit,
             battery_soc,
-            battery_max_charge_speed,
+            charger_max_charge_speed,
             one_percent_charge_duration,
         )
 

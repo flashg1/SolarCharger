@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.3beta3 2026-01-10
+- SOC can be incorrect by 6% (approx. 1 hour) if required to charge to 100%.
 - Changed main while loop delay to be same as power allocation update cycle.
 - Moved third party integration update polling from power allocation update cycle to main while loop.
 - Added switch to calibrate battery charge speed required for charge scheduling calculation.
