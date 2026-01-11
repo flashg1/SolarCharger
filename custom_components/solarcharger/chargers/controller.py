@@ -341,17 +341,19 @@ class ChargeController(ScOptionState):
         self._tracker.log_state_change(event)
 
         if new_state is not None and old_state is not None:
-            if new_state.state not in (
-                STATE_UNKNOWN,
-                STATE_UNAVAILABLE,
-            ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            if (
+                new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                # Sometimes new state was updated with much later time, so try compare old and new states.
+                and new_state.state != old_state.state
+            ):
                 try:
                     soc = float(new_state.state)
                     update_time = as_local(new_state.last_updated)
                     self._soc_updates.append(StateOfCharge(soc, update_time))
                     max_charge_speed = 0.0
 
-                    _LOGGER.info(
+                    _LOGGER.warning(
                         "%s: soc=%s %%, update_time=%s",
                         self._caller,
                         soc,
@@ -362,7 +364,7 @@ class ChargeController(ScOptionState):
                         time_diff = update_time - self._soc_updates[0].update_time
                         hour_diff = time_diff.total_seconds() / 3600.0
                         max_charge_speed = soc_diff / hour_diff
-                        _LOGGER.info(
+                        _LOGGER.warning(
                             "%s: max_charge_speed=%s %%/hr, %s",
                             self._caller,
                             max_charge_speed,
