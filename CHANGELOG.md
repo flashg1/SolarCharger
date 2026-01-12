@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.3beta5 2026-01-12
+- Tidied coordinator.
 - Minimal control entities.
 
 ## v0.3beta4 2026-01-11

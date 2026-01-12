@@ -10,14 +10,7 @@ import logging
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.core import (
-    CALLBACK_TYPE,
-    Event,
-    EventStateChangedData,
-    HomeAssistant,
-    State,
-    callback,
-)
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import (
     async_call_at,
@@ -32,9 +25,6 @@ from homeassistant.helpers.event import (
 
 from .config_utils import get_device_config_default_value
 from .const import (
-    CALLBACK_PLUG_IN_CHARGER,
-    CALLBACK_SUNRISE_START_CHARGE,
-    CALLBACK_SUNSET_DAILY_MAINTENANCE,
     CONF_NET_POWER,
     CONF_WAIT_NET_POWER_UPDATE,
     COORDINATOR_STATE_CHARGING,
@@ -48,8 +38,6 @@ from .const import (
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
-    NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
     SENSOR_RUN_STATE,
@@ -65,23 +53,11 @@ from .const import (
 from .helpers.general import async_set_allocated_power
 from .model_control import ChargeControl
 from .sc_option_state import ScOptionState
-from .utils import (
-    get_sec_per_degree_sun_elevation,
-    get_sun_attribute_or_abort,
-    get_sun_attribute_time,
-    log_is_event_loop,
-    remove_all_callback_subscriptions,
-    remove_callback_subscription,
-    save_callback_subscription,
-)
+from .utils import log_is_event_loop
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
-
-# Number of seconds between each charger update. This setting
-# makes sure that the charger is not updated too frequently and
-# allows a change of the charger's limit to actually take affect
-MIN_CHARGER_UPDATE_DELAY: int = 30
-
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -102,17 +78,8 @@ class SolarChargerCoordinator(ScOptionState):
         global_defaults_subentry: ConfigSubentry,
     ):
         """Initialize the coordinator."""
-        # self._hass: HomeAssistant = hass
-        # self._entry: ConfigEntry = config_entry
-        # self.global_defaults_subentry: ConfigSubentry = global_defaults_subentry
-        self.listeners = []
         self.charge_controls: dict[str, ChargeControl] = {}
-
         self._unsub: list[CALLBACK_TYPE] = []
-        # self._sensors: list[SensorEntity] = []
-        # self._buttons: list[ButtonEntity] = []
-        # self._switches: list[SwitchEntity] = []
-        # self._numbers: list[NumberEntity] = []
 
         ScOptionState.__init__(
             self,
@@ -121,12 +88,6 @@ class SolarChargerCoordinator(ScOptionState):
             global_defaults_subentry,
             caller="SolarChargerCoordinator",
         )
-
-        # self.entity_id_net_power: str | None = get_parameter(
-        #     self.config_entry, CONF_NET_POWER
-        # )
-
-        self.entity_id_net_power: str | None = self.config_get_id(CONF_NET_POWER)
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -164,125 +125,43 @@ class SolarChargerCoordinator(ScOptionState):
         return control.switch_charge
 
     # ----------------------------------------------------------------------------
-    async def _handle_options_update(
+    async def _async_handle_options_update(
         self,
         hass: HomeAssistant,
         entry: ConfigEntry,
     ) -> None:
         """Handle options update by reloading the config entry."""
+
         await hass.config_entries.async_reload(entry.entry_id)
-
-    # # ----------------------------------------------------------------------------
-    # # Sunrise/sunset trigger code
-    # # ----------------------------------------------------------------------------
-    # def _start_charge_on_sunrise(self, control: ChargeControl) -> None:
-    #     # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
-    #     self._hass.loop.create_task(self.async_start_charge())
-
-    # # ----------------------------------------------------------------------------
-    # def _setup_next_sunrise_trigger(self, control: ChargeControl) -> None:
-    #     """Recalculate and setup next morning's sunrise trigger."""
-
-    #     sun_state = self.get_sun_state_or_abort()
-    #     sec_per_degree = get_sec_per_degree_sun_elevation(self._caller, sun_state)
-    #     elevation_start_trigger = self.option_get_entity_number_or_abort(
-    #         OPTION_SUNRISE_ELEVATION_START_TRIGGER
-    #     )
-    #     offset = timedelta(seconds=sec_per_degree * elevation_start_trigger)
-    #     subscription = async_track_sunrise(
-    #         self._hass, self._start_charge_on_sunrise, offset
-    #     )
-    #     save_callback_subscription(
-    #         self._caller,
-    #         control.unsub_callbacks,
-    #         CALLBACK_SUNRISE_START_CHARGE,
-    #         subscription,
-    #     )
-
-    # # ----------------------------------------------------------------------------
-    # def _setup_daily_maintenance_at_sunset(self, control: ChargeControl) -> None:
-    #     """Every day, set up next sunrise trigger at sunset."""
-    #     # offset=timedelta(minutes=2)
-    #     subscription = async_track_sunset(self._hass, self._setup_next_sunrise_trigger)
-    #     save_callback_subscription(
-    #         self._caller,
-    #         control.unsub_callbacks,
-    #         CALLBACK_SUNSET_DAILY_MAINTENANCE,
-    #         subscription,
-    #     )
-
-    # # ----------------------------------------------------------------------------
-    # def _set_up_sun_triggers(self, control: ChargeControl) -> None:
-    #     # Set up sunset daily maintenance
-    #     self._setup_daily_maintenance_at_sunset(control)
-
-    #     # Manually set up sunrise trigger if sun has already set when starting SolarCharger.
-    #     sun_state: State = self.get_sun_state_or_abort()
-    #     _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
-
-    #     next_setting_utc = get_sun_attribute_time(
-    #         self._caller, sun_state, "next_setting"
-    #     )
-    #     next_rising_utc = get_sun_attribute_time(self._caller, sun_state, "next_rising")
-    #     if next_setting_utc.timestamp() > next_rising_utc.timestamp():
-    #         # Missed sunset, so need to manually set sunrise trigger.
-    #         self._setup_next_sunrise_trigger(control)
-
-    # # ----------------------------------------------------------------------------
-    # # Monitored entities
-    # # ----------------------------------------------------------------------------
-    # async def _async_handle_plug_in_charger_event(
-    #     self, event: Event[EventStateChangedData]
-    # ) -> None:
-    #     """Fetch and process state change event."""
-    #     data = event.data
-    #     entity_id = data["entity_id"]
-    #     old_state: State | None = data["old_state"]
-    #     new_state: State | None = data["new_state"]
-
-    #     _LOGGER.debug(
-    #         "%s: entity_id=%s, old_state=%s, new_state=%s",
-    #         self._caller,
-    #         entity_id,
-    #         old_state,
-    #         new_state,
-    #     )
-
-    #     # Not sure why on startup, getting a lot of updates here with old_state=None causing crash.
-    #     if new_state is not None:
-    #         if old_state is not None:
-    #             if new_state.state == old_state.state:
-    #                 return
-    #             # Only process updates with both old and new states
-    #             if self._charger.is_connected():
-    #                 await self.async_start_charge()
-
-    # # ----------------------------------------------------------------------------
-    # def _track_plug_in_charger(self, control: ChargeControl) -> None:
-    #     charger_plug_in_entity_id = self.option_get_id_or_abort(
-    #         OPTION_CHARGER_PLUGGED_IN_SENSOR
-    #     )
-
-    #     subscription = async_track_state_change_event(
-    #         self._hass,
-    #         charger_plug_in_entity_id,
-    #         self._async_handle_plug_in_charger_event,
-    #     )
-
-    #     save_callback_subscription(
-    #         self._caller,
-    #         control.unsub_callbacks,
-    #         CALLBACK_PLUG_IN_CHARGER,
-    #         subscription,
-    #     )
-
-    # # ----------------------------------------------------------------------------
-    # def _setup_triggers(self, control: ChargeControl) -> None:
-    #     self._set_up_sun_triggers(control)
-    #     self._track_plug_in_charger(control)
 
     # ----------------------------------------------------------------------------
     # Setup
+    # ----------------------------------------------------------------------------
+    def _track_config_options_update(self) -> None:
+        """Track options update."""
+
+        subscription = self._entry.add_update_listener(
+            self._async_handle_options_update
+        )
+        self._unsub.append(subscription)
+
+    # ----------------------------------------------------------------------------
+    def _track_net_power_update(self) -> None:
+        """Track net power update."""
+
+        wait_net_power_update = self.config_get_number_or_abort(
+            CONF_WAIT_NET_POWER_UPDATE
+        )
+        _LOGGER.info("wait_net_power_update=%s", wait_net_power_update)
+
+        subscription = async_track_time_interval(
+            self._hass,
+            self._async_execute_update_cycle,
+            timedelta(seconds=wait_net_power_update),
+        )
+
+        self._unsub.append(subscription)
+
     # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the coordinator and its managed components."""
@@ -292,44 +171,18 @@ class SolarChargerCoordinator(ScOptionState):
             if control.controller is not None:
                 # Only setup real chargers with controller
                 await control.controller.async_setup()
-                # self._setup_triggers(control)
 
         # Global default entities MUST be created first before running the coordinator.setup().
         # Otherwise cannot get entity config values here.
-        # wait_net_power_update = self.option_get_entity_number_or_abort(
-        #     CONF_WAIT_NET_POWER_UPDATE
-        # )
-
-        wait_net_power_update = self.config_get_number_or_abort(
-            CONF_WAIT_NET_POWER_UPDATE
-        )
-        _LOGGER.info("wait_net_power_update=%s", wait_net_power_update)
-
-        self._unsub.append(
-            async_track_time_interval(
-                self._hass,
-                self._async_execute_update_cycle,
-                timedelta(seconds=wait_net_power_update),
-            )
-        )
-
-        self._unsub.append(self._entry.add_update_listener(self._handle_options_update))
-
-        # Use for Home Assistant 2024.6 or newer
-        # if self.entity_id_net_power:
-        #     self._unsub.append(
-        #         async_track_state_change_event(
-        #             self.hass,
-        #             [self.entity_id_net_power],
-        #             self.update_sensors_new,
-        #         )
-        #     )
+        self._track_net_power_update()
+        self._track_config_options_update()
 
     # ----------------------------------------------------------------------------
     # Unload
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Unload the coordinator and its managed components."""
+
         for control in self.charge_controls.values():
             if control.controller is not None:
                 await control.controller.async_unload()
@@ -339,7 +192,7 @@ class SolarChargerCoordinator(ScOptionState):
         self._unsub.clear()
 
     # ----------------------------------------------------------------------------
-    # Others
+    # Periodic functions
     # ----------------------------------------------------------------------------
     def _get_net_power(self) -> float | None:
         """Get household net power."""
@@ -420,110 +273,21 @@ class SolarChargerCoordinator(ScOptionState):
         # local_timezone=ZoneInfo(hass.config.time_zone)
         self._last_check_timestamp = datetime.now().astimezone()
 
-        # #####################################
-        # # Check sun rise trigger
-        # #####################################
-        # self._check_sun_trigger()
-
         #####################################
         # Power allocation
         #####################################
         await self._async_allocate_net_power()
 
-        # self._async_update_sensors()
-        # self._async_update_numbers()
-        # self._async_update_switches()
-
-        # Run the actual charger update
+        # TODO: Should remove last check sensor and following code since not used.
+        # Update last check sensor
         for control in self.charge_controls.values():
             if control.sensors:
                 control.sensors[SENSOR_LAST_CHECK].set_state(
                     datetime.now().astimezone()
                 )
 
-        # if control.controller:
-        #     control.sensor_last_check_timestamp = datetime.now().astimezone()
-        #     if control.is_running:
-        #         self.async_start_charger(control)
-        #         # self._update_charger_if_needed(control, net_current)
-        #     elif not control.is_running:
-        #         self.async_stop_charger(control)
-
     # ----------------------------------------------------------------------------
-    async def update_sensors_new(
-        self,
-        # event: Event,  # Event[EventStateChangedData]
-        event: Event[EventStateChangedData],
-        configuration_updated: bool = False,
-    ):  # pylint: disable=unused-argument
-        """Sensors have been updated. EventStateChangedData is supported from Home Assistant 2024.5.5."""
-
-        # Allowed from HA 2024.4
-        entity_id = event.data["entity_id"]
-        old_state = event.data["old_state"]
-        new_state = event.data["new_state"]
-
-        await self.update_sensors(
-            entity_id=entity_id,
-            old_state=old_state,
-            new_state=new_state,
-            configuration_updated=configuration_updated,
-            default_charging_current_updated=False,
-        )
-
-    # ----------------------------------------------------------------------------
-    async def update_sensors(
-        self,
-        entity_id: str | None = None,
-        old_state: State | None = None,
-        new_state: State | None = None,
-        configuration_updated: bool = False,
-        default_charging_current_updated: bool = False,
-    ):  # pylint: disable=unused-argument
-        """Sensors have been updated."""
-
-        _LOGGER.debug("SolarChargerCoordinator.update_sensors()")
-        _LOGGER.debug("entity_id = %s", entity_id)
-        # _LOGGER.debug("old_state = %s", old_state)
-        _LOGGER.debug("new_state = %s", new_state)
-
-        # # Update schedule and reset keep_on if EV SOC Target is updated
-        # if self.ev_target_soc_entity_id and (entity_id == self.ev_target_soc_entity_id):
-        #     configuration_updated = True
-        #     self.switch_keep_on_completion_time = None
-
-        # if len(self.ev_target_soc_entity_id) > 0:
-        #     ev_target_soc_state = self.hass.states.get(self.ev_target_soc_entity_id)
-        #     if Validator.is_soc_state(ev_target_soc_state):
-        #         self.ev_target_soc_valid = True
-        #         self.sensor.ev_target_soc = ev_target_soc_state.state
-        #         self.ev_target_soc = float(ev_target_soc_state.state)
-
-        # time_now_local = dt.now()
-
-        await self.update_state()
-
-    # ----------------------------------------------------------------------------
-    async def update_state(self, date_time: datetime | None = None):  # pylint: disable=unused-argument
-        """Update the charging status."""
-        _LOGGER.debug("SolarChargerCoordinator.update_state()")
-
-        # _LOGGER.debug("turn_on_charging = %s", turn_on_charging)
-        # _LOGGER.debug("current_value = %s", current_value)
-        # if turn_on_charging and not current_value:
-        #     # Turn on charging
-        #     self.auto_charging_state = STATE_ON
-        #     self.ev_soc_before_last_charging = self.ev_soc
-        #     if self.scheduler.get_charging_is_planned():
-        #         self.switch_keep_on_completion_time = (
-        #             self.scheduler.get_charging_stop_time()
-        #         )
-        #     await self.turn_on_charging()
-        # if not turn_on_charging and current_value:
-        #     # Turn off charging
-        #     self.auto_charging_state = STATE_OFF
-        #     await self.turn_off_charging()
-
+    # Coordinator functions
     # ----------------------------------------------------------------------------
     async def async_switch_dummy(self, control: ChargeControl, turn_on: bool) -> None:
         """Dummy switch."""
@@ -742,60 +506,3 @@ class SolarChargerCoordinator(ScOptionState):
                 await control.times[TIME_CHARGE_ENDTIME_SUNDAY].async_set_value(
                     time.min
                 )
-
-    # ----------------------------------------------------------------------------
-    # def _update_charger_if_needed(
-    #     self, control: ChargeControl, net_current: float
-    # ) -> None:
-    #     """Update the charger if needed based on net current."""
-
-    #     if not control.switch_charge:
-    #         _LOGGER.debug("Charger %s is not running", control.device_name)
-    #         return
-
-    #     now = int(time())
-    #     if (
-    #         control.last_charger_target_update is None
-    #         or (now - control.last_charger_target_update[1]) >= MIN_CHARGER_UPDATE_DELAY
-    #     ):
-    #         self._update_charger_current(control, net_current)
-    #     else:
-    #         _LOGGER.debug(
-    #             "Skipping %s charger update because last update was %s seconds ago",
-    #             control.device_name,
-    #             now - control.last_charger_target_update[1],
-    #         )
-
-    # ----------------------------------------------------------------------------
-    # def _update_charger_current(
-    #     self, control: ChargeControl, net_current: float
-    # ) -> None:
-    #     """Update the charger current based on net current."""
-    #     now_current = control.charger.get_charge_current()
-    #     max_current = control.charger.get_max_charge_current()
-    #     new_current = 0.0
-    #     if now_current is None or max_current is None:
-    #         _LOGGER.warning(
-    #             "Invalid current: now_current=%d, max current=%d",
-    #             now_current,
-    #             max_current,
-    #         )
-    #         return
-
-    #     new_current = now_current - net_current
-    #     if new_current >= max_current:
-    #         new_current = max_current
-    #     elif new_current < 0:
-    #         new_current = 0.0
-    #     _LOGGER.debug("New charger settings: %s", new_current)
-    #     control.last_charger_target_update = (
-    #         new_current,
-    #         int(time()),
-    #     )
-    #     self._emit_charger_event(EVENT_ACTION_NEW_CHARGER_LIMITS, new_current)
-    #     self.hass.async_create_task(control.charger.set_charge_current(new_current))
-
-    # ----------------------------------------------------------------------------
-    async def init_sensors(self, control: ChargeControl) -> None:
-        """Init sensors."""
-        return
