@@ -21,7 +21,7 @@ from .const import (
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_FAST_CHARGE_MODE,
-    SWITCH_FORCE_HA_UPDATE,
+    SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_START_CHARGE,
@@ -267,13 +267,13 @@ async def async_setup_entry(
             ),
         ),
         (
-            SWITCH_FORCE_HA_UPDATE,
+            SWITCH_POLL_CHARGER_UPDATE,
             SolarChargerSwitchEntity,
             RESTORE_ON_START_TRUE,
             coordinator.async_switch_dummy,
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
-                key=SWITCH_FORCE_HA_UPDATE,
+                key=SWITCH_POLL_CHARGER_UPDATE,
                 entity_category=EntityCategory.CONFIG,
             ),
         ),
@@ -288,6 +288,7 @@ async def async_setup_entry(
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_SCHEDULE_CHARGE,
+                entity_category=EntityCategory.CONFIG,
             ),
         ),
         (
@@ -298,6 +299,7 @@ async def async_setup_entry(
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_PLUGIN_TRIGGER,
+                entity_category=EntityCategory.CONFIG,
             ),
         ),
         (
@@ -308,6 +310,7 @@ async def async_setup_entry(
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
                 key=SWITCH_SUN_TRIGGER,
+                entity_category=EntityCategory.CONFIG,
             ),
         ),
         (

@@ -10,7 +10,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.3beta4"
+VERSION = "0.3beta5"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -71,10 +71,12 @@ SENSOR_LAST_CHECK = "last_check"
 SENSOR_RUN_STATE = "run_state"
 
 # Boolean switches
+# Charge at max current
 SWITCH_FAST_CHARGE_MODE = "fast_charge_mode"
-SWITCH_FORCE_HA_UPDATE = "force_ha_update"
+SWITCH_POLL_CHARGER_UPDATE = "poll_charger_update"
 
 # Action switches
+# Switch on to start charging, and switch off to stop charging.
 SWITCH_START_CHARGE = "charge"
 SWITCH_SCHEDULE_CHARGE = "schedule_charge"
 SWITCH_PLUGIN_TRIGGER = "plugin_trigger"
@@ -86,9 +88,11 @@ BUTTON_START_CHARGE = "start_charge"
 BUTTON_RESET_CHARGE_LIMIT_AND_TIME = "reset_charge_limit_and_time"
 
 # Datetime triggers
+# Schedule time for next charge session
 DATETIME_NEXT_CHARGE_TIME = "next_charge_time"
 
 # Number triggers
+# Allocated power = Net power * (Allocation weight / Total weight)
 NUMBER_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
 
 # Calibrate max charge speed configs
@@ -273,7 +277,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     SWITCH_START_CHARGE: DEFAULT_OFF,
     SWITCH_FAST_CHARGE_MODE: DEFAULT_OFF,
-    SWITCH_FORCE_HA_UPDATE: DEFAULT_OFF,
+    SWITCH_POLL_CHARGER_UPDATE: DEFAULT_OFF,
     SWITCH_SCHEDULE_CHARGE: DEFAULT_OFF,
     SWITCH_PLUGIN_TRIGGER: DEFAULT_ON,
     SWITCH_SUN_TRIGGER: DEFAULT_ON,

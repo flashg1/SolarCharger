@@ -253,7 +253,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     ) -> None:
         """Set charger charge current in AMPS."""
         await self.async_option_set_entity_integer(
-            OPTION_CHARGER_GET_CHARGE_CURRENT, int(charge_current), val_dict=val_dict
+            OPTION_CHARGER_GET_CHARGE_CURRENT, round(charge_current), val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------

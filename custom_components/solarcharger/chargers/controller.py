@@ -48,8 +48,8 @@ from ..const import (  # noqa: TID252
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_FAST_CHARGE_MODE,
-    SWITCH_FORCE_HA_UPDATE,
     SWITCH_PLUGIN_TRIGGER,
+    SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_START_CHARGE,
     SWITCH_SUN_TRIGGER,
@@ -125,8 +125,8 @@ class ChargeController(ScOptionState):
         self._fast_charge_mode_switch = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_FAST_CHARGE_MODE
         )
-        self._force_ha_update_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_FORCE_HA_UPDATE
+        self._poll_charger_update_switch = compose_entity_id(
+            SWITCH, subentry.unique_id, SWITCH_POLL_CHARGER_UPDATE
         )
 
         self._charger_switch = compose_entity_id(
@@ -189,8 +189,8 @@ class ChargeController(ScOptionState):
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
-    def _is_force_ha_update(self) -> bool:
-        state = self.get_string(self._force_ha_update_switch)
+    def _is_poll_charger_update(self) -> bool:
+        state = self.get_string(self._poll_charger_update_switch)
         return state == STATE_ON
 
     # ----------------------------------------------------------------------------
@@ -699,14 +699,14 @@ class ChargeController(ScOptionState):
             await self._async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
 
     # ----------------------------------------------------------------------------
-    async def _async_force_ha_update_charging_status(
+    async def _async_poll_charger_charging_status(
         self, wait_after_update: bool
     ) -> None:
-        """Force HA to update charging status."""
+        """Poll charger for charging status."""
 
         charging_sensor = self.option_get_id(OPTION_CHARGER_CHARGING_SENSOR)
         if charging_sensor:
-            await self.async_force_ha_update_entity(charging_sensor)
+            await self.async_poll_entity_id(charging_sensor)
             if wait_after_update:
                 await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
@@ -716,8 +716,8 @@ class ChargeController(ScOptionState):
     ) -> None:
         """Get third party integration to update HA with latest data."""
 
-        if self._is_force_ha_update():
-            await self._async_force_ha_update_charging_status(wait_after_update)
+        if self._is_poll_charger_update():
+            await self._async_poll_charger_charging_status(wait_after_update)
         else:
             config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
             val_dict = ConfigValueDict(config_item, {})
@@ -1139,7 +1139,7 @@ class ChargeController(ScOptionState):
         new_charge_current, old_charge_current = self._calc_current_change(
             charger, chargeable, allocated_power
         )
-        if round(new_charge_current) != round(old_charge_current):
+        if new_charge_current != old_charge_current:
             _LOGGER.info(
                 "%s: Update current from %s to %s",
                 self._caller,

@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3beta5 2026-01-12
+- Minimal control entities.
+
 ## v0.3beta4 2026-01-11
 - Set all SolarCharger entities to push-pull only.
 - Force update is enabled for allocated power so update is send even if new value is same as old.

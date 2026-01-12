@@ -5,8 +5,6 @@ from datetime import date, datetime, time, timedelta
 import logging
 from typing import Any
 
-from hassil import check_required_context
-
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import (
     CALLBACK_TYPE,
