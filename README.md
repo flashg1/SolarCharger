@@ -110,7 +110,7 @@ How to use
 ==========
 
 -	Set your car charge limit.
--	Connect charger to car.  Normal charging at constant current should begin immediately if schedule charging is disabled.  After a little while, the integration will take over and manage the charging current during daylight hours.  Please see [wiki](https://github.com/flashg1/evSolarCharger/wiki/User-guide#automation-cannot-be-triggered) if automation cannot be triggered.
+-	Connect charger to car.  Normal charging at constant current should begin immediately if schedule charging is disabled.  After a little while, the integration will take over and manage the charging current during daylight hours.  Please see [wiki](https://github.com/flashg1/SolarCharger/wiki/User-guide#automation-cannot-be-triggered) if automation cannot be triggered.
 -	There are 2 options on how to charge the car (see below).
 -	The integration will stop if charger is turned off manually or automatically by car when reaching charge limit.
 -	To abort charging, toggle off the "Charge" switch.
@@ -125,4 +125,4 @@ Option 2
 --------
 To charge from secondary power source and solar, toggle on "Fast charge" mode.  Also need to toggle on "Fast charge" mode if charging at night.
 
-Please also check out the [wiki](https://github.com/flashg1/evSolarCharger/wiki) pages.
+Please also check out the [wiki](https://github.com/flashg1/SolarCharger/wiki) pages.
