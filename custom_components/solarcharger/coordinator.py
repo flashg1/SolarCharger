@@ -5,23 +5,12 @@ from datetime import datetime, time, timedelta
 import inspect
 import logging
 
-# from time import time
-# from functools import cached_property
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.event import (
-    async_call_at,
-    async_call_later,
-    async_track_state_change,
-    async_track_state_change_event,
-    async_track_sunrise,
-    async_track_sunset,
-    async_track_time_change,
-    async_track_time_interval,
-)
+from homeassistant.helpers.event import async_track_time_interval
 
 from .config_utils import get_device_config_default_value
 from .const import (

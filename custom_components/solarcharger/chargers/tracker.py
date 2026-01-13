@@ -15,26 +15,26 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.event import (
-    async_call_later,
-    async_track_state_change_event,
-    async_track_sunrise,
-    async_track_sunset,
-)
+
+# async_call_at,
+# async_call_later,
+# async_track_state_change,
+# async_track_state_change_event,
+# async_track_sunrise,
+# async_track_sunset,
+# async_track_time_change,
+# async_track_time_interval,
+from homeassistant.helpers.event import async_call_later, async_track_state_change_event
 
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
-    CALLBACK_CHANGE_SUNRISE_ELEVATION_TRIGGER,
     CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
     CALLBACK_NEXT_CHARGE_TIME_UPDATE,
     CALLBACK_PLUG_IN_CHARGER,
     CALLBACK_SOC_UPDATE,
     CALLBACK_SUN_ELEVATION_UPDATE,
-    CALLBACK_SUNRISE_START_CHARGE,
-    CALLBACK_SUNSET_DAILY_MAINTENANCE,
-    EVENT_ACTION_NEW_CHARGE_CURRENT,
     HA_SUN_ENTITY,
     NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_SOC_SENSOR,
