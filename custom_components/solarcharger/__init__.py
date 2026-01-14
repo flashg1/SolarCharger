@@ -6,7 +6,6 @@ from types import MappingProxyType
 from typing import cast
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
@@ -18,6 +17,7 @@ from .const import (
     DOMAIN,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
+    PLATFORMS,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -30,15 +30,6 @@ from .model_control import ChargeControl
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
-
-_PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
-    Platform.BUTTON,
-    Platform.SWITCH,
-    Platform.NUMBER,
-    Platform.TIME,
-    Platform.DATETIME,
-]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -114,7 +105,6 @@ async def async_init_charger_subentry(
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
-        # unsub_callbacks={},
         controller=controller,
     )
 
@@ -150,7 +140,6 @@ async def async_init_global_defaults_subentry(
     charge_controls[subentry.subentry_id] = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
-        # unsub_callbacks={},
         controller=None,
     )
 
@@ -217,7 +206,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #####################################
     # Create entites for each platform with dependency on coordinator
     #####################################
-    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Must wait for entities to be created, otherwise will fail after adding Tesla or OCPP charger, eg.
     # ValueError: tesla_custom_tesla23m3: charger_plugged_in_sensor: Failed to get entity ID
@@ -247,7 +236,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_unload()  # Call coordinator's own unload method
 
     # Unload platforms
-    unloaded = await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unloaded and coordinator:  # Ensure coordinator was found before trying to pop
         hass.data[DOMAIN].pop(entry.entry_id, None)

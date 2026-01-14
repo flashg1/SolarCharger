@@ -41,7 +41,22 @@ DATETIME = Platform.DATETIME
 BINARY_SENSOR = Platform.BINARY_SENSOR
 DEVICE_TRACKER = Platform.DEVICE_TRACKER
 SELECT = Platform.SELECT
-PLATFORMS = [BUTTON, NUMBER, SELECT, SENSOR, SWITCH, TIME, DATETIME]
+INPUT_TIME = "input_datetime"
+
+# Platforms used by SolarCharger
+PLATFORMS: list[Platform | str] = [
+    Platform.BUTTON,
+    Platform.DATETIME,
+    Platform.NUMBER,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.TIME,
+    # Cannot get input_datetime to work. Not sure how to create helper entities.
+    # input_datetime is not under entity_platform.
+    # May be under entity_component?
+    # INPUT_TIME,
+]
+
 PLATFORM_OCPP = "ocpp"
 PLATFORM_USER_CUSTOM = "user_custom"
 
@@ -98,6 +113,7 @@ NUMBER_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
 # Calibrate max charge speed configs
 CALIBRATE_MAX_SOC = 91
 CALIBRATE_SOC_INCREASE = 4
+TIME_DEFAULT_STR = "00:00:00"
 
 
 #######################################################

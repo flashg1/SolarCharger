@@ -1,21 +1,30 @@
 """SolarCharger time platform."""
 
-from datetime import time
+from datetime import datetime, time
 import logging
 
 from homeassistant import config_entries, core
-
-# from homeassistant.components.input_datetime import InputDatetime
-from homeassistant.components.time import TimeEntity, TimeEntityDescription
+from homeassistant.components.input_datetime import (
+    CONF_HAS_DATE,
+    CONF_HAS_TIME,
+    CONF_INITIAL,
+    InputDatetime,
+)
 from homeassistant.config_entries import ConfigSubentry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.const import (
+    ATTR_DATE,
+    ATTR_EDITABLE,
+    ATTR_TIME,
+    CONF_ICON,
+    CONF_ID,
+    CONF_NAME,
+)
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     DOMAIN,
-    TIME,
+    INPUT_TIME,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
     TIME_CHARGE_ENDTIME_SATURDAY,
@@ -23,9 +32,16 @@ from .const import (
     TIME_CHARGE_ENDTIME_THURSDAY,
     TIME_CHARGE_ENDTIME_TUESDAY,
     TIME_CHARGE_ENDTIME_WEDNESDAY,
+    TIME_DEFAULT_STR,
 )
 from .coordinator import SolarChargerCoordinator
-from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .entity import (
+    SolarChargerEntity,
+    SolarChargerEntityType,
+    compose_entity_id,
+    compose_entity_unique_id,
+    is_create_entity,
+)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -34,41 +50,43 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerTimeEntity(SolarChargerEntity, TimeEntity, RestoreEntity):
-    """SolarCharger time entity."""
+# class SolarChargerInputTimeEntity(SolarChargerInputDatetimeEntity):
+class SolarChargerInputTimeEntity(SolarChargerEntity, InputDatetime):
+    """SolarCharger input datetime entity class. Could not get this to work."""
 
     def __init__(
         self,
         config_item: str,
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
-        desc: TimeEntityDescription,
+        conf_type: ConfigType,
     ) -> None:
-        """Initialize the time."""
+        """Initialize the datetime."""
+
+        # Unique id of the entity.
+        # conf_type[CONF_ID] = compose_entity_unique_id(INPUT_TIME, subentry, config_item)
+        # Entity id
+        conf_type[CONF_ID] = compose_entity_id(
+            INPUT_TIME, subentry.unique_id, config_item
+        )
+        InputDatetime.__init__(self, conf_type)
+        self.editable = True
+
         SolarChargerEntity.__init__(self, config_item, subentry, entity_type)
-        self.set_entity_id(TIME, config_item)
-        self.set_entity_unique_id(TIME, config_item)
-        self.entity_description = desc
+
+        self.set_entity_id(INPUT_TIME, config_item)
+        self.set_entity_unique_id(INPUT_TIME, config_item)
 
     # ----------------------------------------------------------------------------
-    async def async_set_value(self, value: time) -> None:
+    async def async_set_value(self, value: datetime) -> None:
         """Set new value."""
         self._attr_native_value = value
         self.update_ha_state()
 
-    # ----------------------------------------------------------------------------
-    async def async_added_to_hass(self) -> None:
-        """Restore last state."""
-        await super().async_added_to_hass()
-        if (
-            last_state := await self.async_get_last_state()
-        ) is not None and last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-            await self.async_set_value(time.fromisoformat(last_state.state))
-
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerTimeConfigEntity(SolarChargerTimeEntity):
+class SolarChargerInputTimeConfigEntity(SolarChargerInputTimeEntity):
     """SolarCharger configurable time entity."""
 
     def __init__(
@@ -76,43 +94,24 @@ class SolarChargerTimeConfigEntity(SolarChargerTimeEntity):
         config_item: str,
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
-        desc: TimeEntityDescription,
+        conf_type: ConfigType,
         default_val: time = time.min,
     ) -> None:
         """Initialise datetime."""
-        super().__init__(config_item, subentry, entity_type, desc)
+        super().__init__(config_item, subentry, entity_type, conf_type)
 
         self._attr_has_entity_name = True
         self._attr_native_value = default_val
 
     # ----------------------------------------------------------------------------
-    async def async_set_value(self, value: time) -> None:
+    async def async_set_value(self, value: datetime) -> None:
         """Set new value."""
         await super().async_set_value(value)
 
 
-# When tried to restore state from script, eg.
-
-# sequence:
-#   - action: scene.apply
-#     metadata: {}
-#     data:
-#       entities:
-#         time.solarcharger_global_defaults_charge_endtime_monday: "13:01:02"
-#         number.solarcharger_global_defaults_charge_limit_monday: "72"
-# alias: testscript01
-# description: ""
-
-# 2026-01-13 05:24:58.826 INFO (MainThread) [homeassistant.components.script.testscript01] testscript01: Running script sequence
-# 2026-01-13 05:24:58.826 INFO (MainThread) [homeassistant.components.script.testscript01] testscript01: Executing step call service
-# 2026-01-13 05:24:58.837 WARNING (MainThread) [homeassistant.helpers.state] Integration time does not support reproduce state
-# https://developers.home-assistant.io/docs/core/platform/reproduce_state/
-
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-CONFIG_TIME_LIST: tuple[
-    tuple[str, SolarChargerEntityType, TimeEntityDescription], ...
-] = (
+CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     #####################################
     # Control entities
     # Must haves, ie. not hidden for all
@@ -126,58 +125,72 @@ CONFIG_TIME_LIST: tuple[
     (
         TIME_CHARGE_ENDTIME_MONDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        TimeEntityDescription(
-            key=TIME_CHARGE_ENDTIME_MONDAY,
-            entity_category=EntityCategory.CONFIG,
-        ),
+        {
+            CONF_NAME: TIME_CHARGE_ENDTIME_MONDAY,
+            CONF_HAS_DATE: False,
+            CONF_HAS_TIME: True,
+            CONF_INITIAL: TIME_DEFAULT_STR,
+        },
     ),
     (
         TIME_CHARGE_ENDTIME_TUESDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        TimeEntityDescription(
-            key=TIME_CHARGE_ENDTIME_TUESDAY,
-            entity_category=EntityCategory.CONFIG,
-        ),
+        {
+            CONF_NAME: TIME_CHARGE_ENDTIME_TUESDAY,
+            CONF_HAS_DATE: False,
+            CONF_HAS_TIME: True,
+            CONF_INITIAL: TIME_DEFAULT_STR,
+        },
     ),
     (
         TIME_CHARGE_ENDTIME_WEDNESDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        TimeEntityDescription(
-            key=TIME_CHARGE_ENDTIME_WEDNESDAY,
-            entity_category=EntityCategory.CONFIG,
-        ),
+        {
+            CONF_NAME: TIME_CHARGE_ENDTIME_WEDNESDAY,
+            CONF_HAS_DATE: False,
+            CONF_HAS_TIME: True,
+            CONF_INITIAL: TIME_DEFAULT_STR,
+        },
     ),
     (
         TIME_CHARGE_ENDTIME_THURSDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        TimeEntityDescription(
-            key=TIME_CHARGE_ENDTIME_THURSDAY,
-            entity_category=EntityCategory.CONFIG,
-        ),
+        {
+            CONF_NAME: TIME_CHARGE_ENDTIME_THURSDAY,
+            CONF_HAS_DATE: False,
+            CONF_HAS_TIME: True,
+            CONF_INITIAL: TIME_DEFAULT_STR,
+        },
     ),
     (
         TIME_CHARGE_ENDTIME_FRIDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        TimeEntityDescription(
-            key=TIME_CHARGE_ENDTIME_FRIDAY,
-            entity_category=EntityCategory.CONFIG,
-        ),
+        {
+            CONF_NAME: TIME_CHARGE_ENDTIME_FRIDAY,
+            CONF_HAS_DATE: False,
+            CONF_HAS_TIME: True,
+            CONF_INITIAL: TIME_DEFAULT_STR,
+        },
     ),
     (
         TIME_CHARGE_ENDTIME_SATURDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        TimeEntityDescription(
-            key=TIME_CHARGE_ENDTIME_SATURDAY,
-            entity_category=EntityCategory.CONFIG,
-        ),
+        {
+            CONF_NAME: TIME_CHARGE_ENDTIME_SATURDAY,
+            CONF_HAS_DATE: False,
+            CONF_HAS_TIME: True,
+            CONF_INITIAL: TIME_DEFAULT_STR,
+        },
     ),
     (
         TIME_CHARGE_ENDTIME_SUNDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-        TimeEntityDescription(
-            key=TIME_CHARGE_ENDTIME_SUNDAY,
-            entity_category=EntityCategory.CONFIG,
-        ),
+        {
+            CONF_NAME: TIME_CHARGE_ENDTIME_SUNDAY,
+            CONF_HAS_DATE: False,
+            CONF_HAS_TIME: True,
+            CONF_INITIAL: TIME_DEFAULT_STR,
+        },
     ),
     #####################################
     # Diagnostic entities
@@ -187,6 +200,10 @@ CONFIG_TIME_LIST: tuple[
 
 
 # ----------------------------------------------------------------------------
+# input_datetime only has async_setup(hass: HomeAssistant, config: ConfigType),
+# not async_setup_entry().  ConfigType has complete list of entities to create.
+
+
 async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
@@ -195,19 +212,21 @@ async def async_setup_entry(
     """Set up times based on config entry."""
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
+    _LOGGER.warning("Creating input_datetime entities")
+
     for subentry in config_entry.subentries.values():
         # For both global default and charger subentries
-        times: dict[str, SolarChargerTimeConfigEntity] = {}
-        for config_item, entity_type, entity_description in CONFIG_TIME_LIST:
+        input_times: dict[str, SolarChargerInputTimeConfigEntity] = {}
+        for config_item, entity_type, conf_type in CONFIG_TIME_LIST:
             if is_create_entity(subentry, entity_type):
-                times[config_item] = SolarChargerTimeConfigEntity(
-                    config_item, subentry, entity_type, entity_description
+                input_times[config_item] = SolarChargerInputTimeConfigEntity(
+                    config_item, subentry, entity_type, conf_type
                 )
 
-        if len(times) > 0:
-            coordinator.charge_controls[subentry.subentry_id].times = times
+        if len(input_times) > 0:
+            coordinator.charge_controls[subentry.subentry_id].input_times = input_times
             async_add_entities(
-                times.values(),
+                input_times.values(),
                 update_before_add=False,
                 config_subentry_id=subentry.subentry_id,
             )
