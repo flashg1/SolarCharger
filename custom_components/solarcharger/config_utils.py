@@ -30,6 +30,7 @@ from .const import (
     CHARGE_API_ENTITIES,
     CONFIG_NAME_MARKER,
     DEVICE_NAME_MARKER,
+    NON_ENTITY_CONFIGS,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_NAME,
@@ -70,6 +71,33 @@ TARGET_TEMPERATURE_FEATURE_SELECTOR = SelectSelector(
         mode=SelectSelectorMode.DROPDOWN,
         translation_key="target_temperature_feature",
     )
+)
+
+#####################################
+# Number selectors
+#####################################
+PERCENT_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        mode=NumberSelectorMode.BOX, min=0, max=100, unit_of_measurement="%"
+    )
+)
+ELECTRIC_CURRENT_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        mode=NumberSelectorMode.BOX, min=0, max=100, unit_of_measurement="A"
+    )
+)
+WAIT_TIME_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        mode=NumberSelectorMode.BOX, min=1, max=600, unit_of_measurement="sec"
+    )
+)
+SUN_ELEVATION_SELECTOR = NumberSelector(
+    NumberSelectorConfig(
+        mode=NumberSelectorMode.BOX, min=-90, max=+90, unit_of_measurement="degree"
+    )
+)
+ALLOCATION_WEIGHT_SELECTOR = NumberSelector(
+    NumberSelectorConfig(mode=NumberSelectorMode.BOX, min=1, max=100)
 )
 
 #####################################
@@ -156,32 +184,10 @@ TIME_ENTITY_SELECTOR = EntitySelector(
     )
 )
 
-#####################################
-# Number selectors
-#####################################
-ELECTRIC_CURRENT_SELECTOR = NumberSelector(
-    NumberSelectorConfig(
-        mode=NumberSelectorMode.BOX, min=0, max=100, unit_of_measurement="A"
-    )
-)
-WAIT_TIME_SELECTOR = NumberSelector(
-    NumberSelectorConfig(
-        mode=NumberSelectorMode.BOX, min=1, max=600, unit_of_measurement="sec"
-    )
-)
-SUN_ELEVATION_SELECTOR = NumberSelector(
-    NumberSelectorConfig(
-        mode=NumberSelectorMode.BOX, min=-90, max=+90, unit_of_measurement="degree"
-    )
-)
-ALLOCATION_WEIGHT_SELECTOR = NumberSelector(
-    NumberSelectorConfig(mode=NumberSelectorMode.BOX, min=1, max=100)
-)
-
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-def entity_selector(
+def choose_selector(
     api_entities: dict[str, str | None] | None,
     config_item: str,
     read_only_selector: EntitySelector,
@@ -453,6 +459,10 @@ def get_saved_option_value(
         if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
             saved_global_val = get_saved_global_option_value(config_entry, config_item)
             final_val = saved_global_val
+
+    # If config is not an entity, then try to get default value.
+    if use_default and final_val is None and config_item in NON_ENTITY_CONFIGS:
+        final_val = get_device_config_default_value(subentry, config_item)
 
     _LOGGER.debug(
         "%s: %s: final=%s, local=%s, global=%s",

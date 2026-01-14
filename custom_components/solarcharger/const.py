@@ -219,6 +219,14 @@ OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 #####################################
 # Charge schedule entities
 #####################################
+DEFAULT_CHARGE_LIMIT_MONDAY = "default_charge_limit_monday"
+DEFAULT_CHARGE_LIMIT_TUESDAY = "default_charge_limit_tuesday"
+DEFAULT_CHARGE_LIMIT_WEDNESDAY = "default_charge_limit_wednesday"
+DEFAULT_CHARGE_LIMIT_THURSDAY = "default_charge_limit_thursday"
+DEFAULT_CHARGE_LIMIT_FRIDAY = "default_charge_limit_friday"
+DEFAULT_CHARGE_LIMIT_SATURDAY = "default_charge_limit_saturday"
+DEFAULT_CHARGE_LIMIT_SUNDAY = "default_charge_limit_sunday"
+
 NUMBER_CHARGE_LIMIT_MONDAY = "charge_limit_monday"
 NUMBER_CHARGE_LIMIT_TUESDAY = "charge_limit_tuesday"
 NUMBER_CHARGE_LIMIT_WEDNESDAY = "charge_limit_wednesday"
@@ -234,6 +242,43 @@ TIME_CHARGE_ENDTIME_THURSDAY = "charge_endtime_thursday"
 TIME_CHARGE_ENDTIME_FRIDAY = "charge_endtime_friday"
 TIME_CHARGE_ENDTIME_SATURDAY = "charge_endtime_saturday"
 TIME_CHARGE_ENDTIME_SUNDAY = "charge_endtime_sunday"
+
+#######################################################
+# Non-entity configs
+#######################################################
+# Non-entity configs with actual values.
+NON_ENTITY_CONFIGS: list[str] = [
+    OPTION_CHARGER_NAME,
+    DEFAULT_CHARGE_LIMIT_MONDAY,
+    DEFAULT_CHARGE_LIMIT_TUESDAY,
+    DEFAULT_CHARGE_LIMIT_WEDNESDAY,
+    DEFAULT_CHARGE_LIMIT_THURSDAY,
+    DEFAULT_CHARGE_LIMIT_FRIDAY,
+    DEFAULT_CHARGE_LIMIT_SATURDAY,
+    DEFAULT_CHARGE_LIMIT_SUNDAY,
+]
+
+# The keys are non-entity configs with actual values.
+# The mappings are the entities to take the values.
+DEFAULT_CHARGE_LIMIT_MAP: dict[str, str] = {
+    DEFAULT_CHARGE_LIMIT_MONDAY: NUMBER_CHARGE_LIMIT_MONDAY,
+    DEFAULT_CHARGE_LIMIT_TUESDAY: NUMBER_CHARGE_LIMIT_TUESDAY,
+    DEFAULT_CHARGE_LIMIT_WEDNESDAY: NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    DEFAULT_CHARGE_LIMIT_THURSDAY: NUMBER_CHARGE_LIMIT_THURSDAY,
+    DEFAULT_CHARGE_LIMIT_FRIDAY: NUMBER_CHARGE_LIMIT_FRIDAY,
+    DEFAULT_CHARGE_LIMIT_SATURDAY: NUMBER_CHARGE_LIMIT_SATURDAY,
+    DEFAULT_CHARGE_LIMIT_SUNDAY: NUMBER_CHARGE_LIMIT_SUNDAY,
+}
+
+WEEKLY_CHARGE_ENDTIMES: list[str] = [
+    TIME_CHARGE_ENDTIME_MONDAY,
+    TIME_CHARGE_ENDTIME_TUESDAY,
+    TIME_CHARGE_ENDTIME_WEDNESDAY,
+    TIME_CHARGE_ENDTIME_THURSDAY,
+    TIME_CHARGE_ENDTIME_FRIDAY,
+    TIME_CHARGE_ENDTIME_SATURDAY,
+    TIME_CHARGE_ENDTIME_SUNDAY,
+]
 
 #######################################################
 # Default values
@@ -252,6 +297,13 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Global defaults: Charge limit defaults
     #####################################
+    DEFAULT_CHARGE_LIMIT_MONDAY: 70,
+    DEFAULT_CHARGE_LIMIT_TUESDAY: 70,
+    DEFAULT_CHARGE_LIMIT_WEDNESDAY: 70,
+    DEFAULT_CHARGE_LIMIT_THURSDAY: 70,
+    DEFAULT_CHARGE_LIMIT_FRIDAY: 80,
+    DEFAULT_CHARGE_LIMIT_SATURDAY: 80,
+    DEFAULT_CHARGE_LIMIT_SUNDAY: 80,
     NUMBER_CHARGE_LIMIT_MONDAY: 70,
     NUMBER_CHARGE_LIMIT_TUESDAY: 70,
     NUMBER_CHARGE_LIMIT_WEDNESDAY: 70,

@@ -12,32 +12,20 @@ from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
 
-from .config_utils import get_device_config_default_value
+from .config_utils import get_saved_option_value
 from .const import (
     CONF_NET_POWER,
     CONF_WAIT_NET_POWER_UPDATE,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
+    DEFAULT_CHARGE_LIMIT_MAP,
     DOMAIN,
-    NUMBER_CHARGE_LIMIT_FRIDAY,
-    NUMBER_CHARGE_LIMIT_MONDAY,
-    NUMBER_CHARGE_LIMIT_SATURDAY,
-    NUMBER_CHARGE_LIMIT_SUNDAY,
-    NUMBER_CHARGE_LIMIT_THURSDAY,
-    NUMBER_CHARGE_LIMIT_TUESDAY,
-    NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
     SENSOR_RUN_STATE,
     SWITCH_START_CHARGE,
-    TIME_CHARGE_ENDTIME_FRIDAY,
-    TIME_CHARGE_ENDTIME_MONDAY,
-    TIME_CHARGE_ENDTIME_SATURDAY,
-    TIME_CHARGE_ENDTIME_SUNDAY,
-    TIME_CHARGE_ENDTIME_THURSDAY,
-    TIME_CHARGE_ENDTIME_TUESDAY,
-    TIME_CHARGE_ENDTIME_WEDNESDAY,
+    WEEKLY_CHARGE_ENDTIMES,
 )
 from .helpers.general import async_set_allocated_power
 from .model_control import ChargeControl
@@ -426,72 +414,23 @@ class SolarChargerCoordinator(ScOptionState):
                     control.config_name,
                 )
 
-                default_val = get_device_config_default_value(
-                    subentry, NUMBER_CHARGE_LIMIT_MONDAY
-                )
-                await control.numbers[
-                    NUMBER_CHARGE_LIMIT_MONDAY
-                ].async_set_native_value(default_val)
-                await control.times[TIME_CHARGE_ENDTIME_MONDAY].async_set_value(
-                    time.min
-                )
+                # Set charge limits
+                for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
+                    default_val = get_saved_option_value(
+                        self._entry, subentry, day_limit_default, True
+                    )
+                    if default_val is not None:
+                        day_limit = DEFAULT_CHARGE_LIMIT_MAP[day_limit_default]
+                        await control.numbers[day_limit].async_set_native_value(
+                            default_val
+                        )
+                    else:
+                        _LOGGER.error(
+                            "%s: No default value for %s",
+                            self._caller,
+                            day_limit_default,
+                        )
 
-                default_val = get_device_config_default_value(
-                    subentry, NUMBER_CHARGE_LIMIT_TUESDAY
-                )
-                await control.numbers[
-                    NUMBER_CHARGE_LIMIT_TUESDAY
-                ].async_set_native_value(default_val)
-                await control.times[TIME_CHARGE_ENDTIME_TUESDAY].async_set_value(
-                    time.min
-                )
-
-                default_val = get_device_config_default_value(
-                    subentry, NUMBER_CHARGE_LIMIT_WEDNESDAY
-                )
-                await control.numbers[
-                    NUMBER_CHARGE_LIMIT_WEDNESDAY
-                ].async_set_native_value(default_val)
-                await control.times[TIME_CHARGE_ENDTIME_WEDNESDAY].async_set_value(
-                    time.min
-                )
-
-                default_val = get_device_config_default_value(
-                    subentry, NUMBER_CHARGE_LIMIT_THURSDAY
-                )
-                await control.numbers[
-                    NUMBER_CHARGE_LIMIT_THURSDAY
-                ].async_set_native_value(default_val)
-                await control.times[TIME_CHARGE_ENDTIME_THURSDAY].async_set_value(
-                    time.min
-                )
-
-                default_val = get_device_config_default_value(
-                    subentry, NUMBER_CHARGE_LIMIT_FRIDAY
-                )
-                await control.numbers[
-                    NUMBER_CHARGE_LIMIT_FRIDAY
-                ].async_set_native_value(default_val)
-                await control.times[TIME_CHARGE_ENDTIME_FRIDAY].async_set_value(
-                    time.min
-                )
-
-                default_val = get_device_config_default_value(
-                    subentry, NUMBER_CHARGE_LIMIT_SATURDAY
-                )
-                await control.numbers[
-                    NUMBER_CHARGE_LIMIT_SATURDAY
-                ].async_set_native_value(default_val)
-                await control.times[TIME_CHARGE_ENDTIME_SATURDAY].async_set_value(
-                    time.min
-                )
-
-                default_val = get_device_config_default_value(
-                    subentry, NUMBER_CHARGE_LIMIT_SUNDAY
-                )
-                await control.numbers[
-                    NUMBER_CHARGE_LIMIT_SUNDAY
-                ].async_set_native_value(default_val)
-                await control.times[TIME_CHARGE_ENDTIME_SUNDAY].async_set_value(
-                    time.min
-                )
+                # Set charge end times
+                for day_endtime in WEEKLY_CHARGE_ENDTIMES:
+                    await control.times[day_endtime].async_set_value(time.min)

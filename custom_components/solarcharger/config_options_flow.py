@@ -25,6 +25,7 @@ from .config_utils import (
     LOCATION_ENTITY_SELECTOR_READ_ONLY,
     NUMBER_ENTITY_SELECTOR,
     NUMBER_ENTITY_SELECTOR_READ_ONLY,
+    PERCENT_SELECTOR,
     SENSOR_ENTITY_SELECTOR,
     SENSOR_ENTITY_SELECTOR_READ_ONLY,
     SWITCH_ENTITY_SELECTOR,
@@ -32,13 +33,20 @@ from .config_utils import (
     TEXT_SELECTOR,
     TEXT_SELECTOR_READ_ONLY,
     TIME_ENTITY_SELECTOR,
-    entity_selector,
+    choose_selector,
     get_device_api_entities,
     get_saved_option_value,
     get_subentry_id,
     reset_api_entities,
 )
 from .const import (
+    DEFAULT_CHARGE_LIMIT_FRIDAY,
+    DEFAULT_CHARGE_LIMIT_MONDAY,
+    DEFAULT_CHARGE_LIMIT_SATURDAY,
+    DEFAULT_CHARGE_LIMIT_SUNDAY,
+    DEFAULT_CHARGE_LIMIT_THURSDAY,
+    DEFAULT_CHARGE_LIMIT_TUESDAY,
+    DEFAULT_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -194,7 +202,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
 
     # ----------------------------------------------------------------------------
     # Matches with const.py OPTION_GLOBAL_DEFAULT_ENTITIES
-    def _charger_general_options_schema(
+    def _charger_environment_schema(
         self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:
         """Charger general options."""
@@ -206,66 +214,72 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, NUMBER_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, OPTION_CHARGER_MAX_SPEED, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, OPTION_CHARGER_MIN_CURRENT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, OPTION_CHARGER_MIN_WORKABLE_CURRENT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, OPTION_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, OPTION_CHARGEE_MIN_CHARGE_LIMIT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, OPTION_CHARGEE_MAX_CHARGE_LIMIT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
             #####################################
             # Charge scheduling
             #####################################
+            # Charge limit defaults
+            self._optional(
+                subentry, DEFAULT_CHARGE_LIMIT_MONDAY, use_default
+            ): PERCENT_SELECTOR,
+            self._optional(
+                subentry, DEFAULT_CHARGE_LIMIT_TUESDAY, use_default
+            ): PERCENT_SELECTOR,
+            self._optional(
+                subentry, DEFAULT_CHARGE_LIMIT_WEDNESDAY, use_default
+            ): PERCENT_SELECTOR,
+            self._optional(
+                subentry, DEFAULT_CHARGE_LIMIT_THURSDAY, use_default
+            ): PERCENT_SELECTOR,
+            self._optional(
+                subentry, DEFAULT_CHARGE_LIMIT_FRIDAY, use_default
+            ): PERCENT_SELECTOR,
+            self._optional(
+                subentry, DEFAULT_CHARGE_LIMIT_SATURDAY, use_default
+            ): PERCENT_SELECTOR,
+            self._optional(
+                subentry, DEFAULT_CHARGE_LIMIT_SUNDAY, use_default
+            ): PERCENT_SELECTOR,
+            # Charge limits
             self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_MONDAY, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, TIME_CHARGE_ENDTIME_MONDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_TUESDAY, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_TUESDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
             self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_WEDNESDAY, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, TIME_CHARGE_ENDTIME_WEDNESDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_THURSDAY, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_THURSDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
             self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_FRIDAY, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, TIME_CHARGE_ENDTIME_FRIDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_SATURDAY, use_default
             ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, TIME_CHARGE_ENDTIME_SATURDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_SUNDAY, use_default
             ): NUMBER_ENTITY_SELECTOR,
+            # Charge end times
+            self._optional(
+                subentry, TIME_CHARGE_ENDTIME_MONDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, TIME_CHARGE_ENDTIME_TUESDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, TIME_CHARGE_ENDTIME_WEDNESDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, TIME_CHARGE_ENDTIME_THURSDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, TIME_CHARGE_ENDTIME_FRIDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
+            self._optional(
+                subentry, TIME_CHARGE_ENDTIME_SATURDAY, use_default
+            ): TIME_ENTITY_SELECTOR,
             self._optional(
                 subentry, TIME_CHARGE_ENDTIME_SUNDAY, use_default
             ): TIME_ENTITY_SELECTOR,
@@ -304,7 +318,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     # ----------------------------------------------------------------------------
     # TODO: Create dynamic list base on sensor, number, etc., otherwise it is text selector.
 
-    def _charger_control_entities_schema(
+    def _charger_device_control_schema(
         self, subentry: ConfigSubentry, use_default: bool
     ) -> dict[Any, Any]:
         """Charger control entities."""
@@ -316,7 +330,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             #####################################
             self._optional(
                 subentry, NUMBER_CHARGER_MAX_SPEED, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 NUMBER_CHARGER_MAX_SPEED,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -325,7 +339,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_CURRENT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 NUMBER_CHARGER_MIN_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -334,7 +348,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_WORKABLE_CURRENT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -342,7 +356,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -350,7 +364,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_ALLOCATED_POWER, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 NUMBER_CHARGER_ALLOCATED_POWER,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -358,7 +372,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, NUMBER_CHARGEE_MIN_CHARGE_LIMIT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -366,7 +380,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, NUMBER_CHARGEE_MAX_CHARGE_LIMIT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -375,7 +389,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             #####################################
             # Local device entities
             #####################################
-            self._optional(subentry, OPTION_CHARGER_NAME, use_default): entity_selector(
+            self._optional(subentry, OPTION_CHARGER_NAME, use_default): choose_selector(
                 None,
                 OPTION_CHARGER_NAME,
                 TEXT_SELECTOR_READ_ONLY,
@@ -383,7 +397,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_PLUGGED_IN_SENSOR,
                 SENSOR_ENTITY_SELECTOR_READ_ONLY,
@@ -391,7 +405,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_CONNECT_TRIGGER_LIST,
                 TEXT_SELECTOR_READ_ONLY,
@@ -399,7 +413,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_STATE_LIST, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_CONNECT_STATE_LIST,
                 TEXT_SELECTOR_READ_ONLY,
@@ -407,7 +421,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_ON_OFF_SWITCH, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_ON_OFF_SWITCH,
                 SWITCH_ENTITY_SELECTOR_READ_ONLY,
@@ -415,7 +429,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_SENSOR, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_CHARGING_SENSOR,
                 SENSOR_ENTITY_SELECTOR_READ_ONLY,
@@ -423,7 +437,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_STATE_LIST, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_CHARGING_STATE_LIST,
                 TEXT_SELECTOR_READ_ONLY,
@@ -431,7 +445,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_MAX_CURRENT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_MAX_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -440,7 +454,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_GET_CHARGE_CURRENT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_GET_CHARGE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -448,7 +462,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGER_SET_CHARGE_CURRENT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGER_SET_CHARGE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -456,7 +470,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_SOC_SENSOR, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGEE_SOC_SENSOR,
                 SENSOR_ENTITY_SELECTOR_READ_ONLY,
@@ -464,7 +478,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_CHARGE_LIMIT, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGEE_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
@@ -473,7 +487,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_SENSOR, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGEE_LOCATION_SENSOR,
                 LOCATION_ENTITY_SELECTOR_READ_ONLY,
@@ -481,7 +495,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_STATE_LIST, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGEE_LOCATION_STATE_LIST,
                 TEXT_SELECTOR_READ_ONLY,
@@ -489,7 +503,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_WAKE_UP_BUTTON, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGEE_WAKE_UP_BUTTON,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
@@ -498,7 +512,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             # Turning on force HA update switch will override the in-built update HA button.
             self._optional(
                 subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON, use_default
-            ): entity_selector(
+            ): choose_selector(
                 api_entities,
                 OPTION_CHARGEE_UPDATE_HA_BUTTON,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
@@ -572,15 +586,15 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             )
 
         if subentry.unique_id == OPTION_GLOBAL_DEFAULTS_ID:
-            general_schema = self._charger_general_options_schema(
+            general_schema = self._charger_environment_schema(
                 subentry, use_default=True
             )
             combine_schema = {**general_schema}
         else:
-            general_schema = self._charger_general_options_schema(
+            general_schema = self._charger_environment_schema(
                 subentry, use_default=False
             )
-            entities_schema = self._charger_control_entities_schema(
+            entities_schema = self._charger_device_control_schema(
                 subentry, use_default=True
             )
             # combine_schema = {
