@@ -7,7 +7,7 @@
 [commits-shield]: https://img.shields.io/github/commit-activity/y/flashg1/SolarCharger.svg
 [commits]: https://github.com/flashg1/SolarCharger/commits/main
 [license-shield]: https://img.shields.io/github/license/flashg1/SolarCharger.svg
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2026.svg
 [releases-shield]: https://img.shields.io/github/release/flashg1/SolarCharger.svg
 [releases]: https://github.com/flashg1/SolarCharger/releases/latest
 [hacs-badge]: https://img.shields.io/badge/HACS-Default-41BDF5.svg
@@ -123,6 +123,6 @@ To charge from excess solar, just plug in the charger.  The initial charge curre
 
 Option 2
 --------
-To charge from secondary power source and solar, toggle on "Fast charge" mode.  Also need to toggle on "Fast charge" mode if charging at night.
+To charge at full speed from secondary power source and solar, toggle on "Fast charge mode".
 
 Please also check out the [wiki](https://github.com/flashg1/SolarCharger/wiki) pages.
