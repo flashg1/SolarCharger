@@ -40,6 +40,9 @@ from .const import (
     CHARGER_DOMAIN_TESLA_FLEET,
     CHARGER_DOMAIN_TESLA_MQTTBLE,
     CHARGER_DOMAIN_TESLA_TESSIE,
+    ERROR_DEVICE_ALREADY_ADDED,
+    ERROR_SELECT_CHARGER,
+    ERROR_SUBENTRY_CREATED,
     OPTION_CHARGER_NAME,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
@@ -84,7 +87,7 @@ def validate_charger_selection(
 ) -> dict[str, Any]:
     """Validate user input for charger selection step."""
     if not data.get(SUBENTRY_CHARGER_DEVICE_ID):
-        raise ValidationExceptionError("base", "select_charger_error")  # noqa: EM101
+        raise ValidationExceptionError("base", ERROR_SELECT_CHARGER)  # noqa: EM101
 
     return data
 
@@ -232,7 +235,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # Check if subentry with this unique_id already exists
                 subentry_id = get_subentry_id(config_entry, thirdparty_config_name)
                 if subentry_id is not None:
-                    return self.async_abort(reason="device_already_added")
+                    return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
 
                 # Create new subentry
                 if (
@@ -276,7 +279,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
 
                 # Must return with SubentryFlowResult as stipulated in the return type
                 return self.async_abort(
-                    reason="device_subentry_created",
+                    reason=ERROR_SUBENTRY_CREATED,
                     description_placeholders={
                         "subentry": thirdparty_config_name,
                         "subentry_count": f"{len(config_entry.subentries)}",

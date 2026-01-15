@@ -4,6 +4,7 @@ from asyncio import Task
 from datetime import datetime, time, timedelta
 import inspect
 import logging
+from typing import Any
 
 from propcache.api import cached_property
 
@@ -12,7 +13,7 @@ from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
 
-from .config_utils import get_saved_option_value
+from .config_utils import get_saved_option_value, get_subentry_id
 from .const import (
     CONF_NET_POWER,
     CONF_WAIT_NET_POWER_UPDATE,
@@ -20,6 +21,9 @@ from .const import (
     COORDINATOR_STATE_STOPPED,
     DEFAULT_CHARGE_LIMIT_MAP,
     DOMAIN,
+    ERROR_DEFAULT_CHARGE_LIMIT,
+    NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
+    NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
@@ -167,6 +171,59 @@ class SolarChargerCoordinator(ScOptionState):
         for unsub_method in self._unsub:
             unsub_method()
         self._unsub.clear()
+
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    def validate_default_charge_limits(
+        self, subentry: ConfigSubentry, data: dict[str, Any]
+    ) -> bool:
+        """Validate default charge limits."""
+        ok = True
+
+        min_charge_limit = self.option_get_entity_number_or_abort(
+            NUMBER_CHARGEE_MIN_CHARGE_LIMIT, subentry
+        )
+        max_charge_limit = self.option_get_entity_number_or_abort(
+            NUMBER_CHARGEE_MAX_CHARGE_LIMIT, subentry
+        )
+
+        # Check default charge limits
+        for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
+            default_val = data.get(day_limit_default)
+            if default_val is None:
+                continue
+
+            if not (min_charge_limit <= default_val <= max_charge_limit):
+                _LOGGER.error(
+                    "%s: Invalid default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
+                    self._caller,
+                    default_val,
+                    day_limit_default,
+                    min_charge_limit,
+                    max_charge_limit,
+                )
+                ok = False
+                break
+
+                # Do no raise exception inside the coordinator as it breaks the coordinator loop.
+                # Raise exception at source of call instead.
+                # raise ValidationExceptionError("base", "invalid_default_charge_limit")
+
+        return ok
+
+    # ----------------------------------------------------------------------------
+    def validate_config_options(self, config_name: str, data: dict[str, Any]) -> str:
+        """Validate configuration options."""
+        error_code = ""
+
+        subentry_id = get_subentry_id(self._entry, config_name)
+        if subentry_id:
+            subentry = self._entry.subentries.get(subentry_id)
+            if subentry:
+                if not self.validate_default_charge_limits(subentry, data):
+                    error_code = ERROR_DEFAULT_CHARGE_LIMIT
+
+        return error_code
 
     # ----------------------------------------------------------------------------
     # Periodic functions
@@ -414,21 +471,35 @@ class SolarChargerCoordinator(ScOptionState):
                     control.config_name,
                 )
 
+                min_charge_limit = self.option_get_entity_number_or_abort(
+                    NUMBER_CHARGEE_MIN_CHARGE_LIMIT
+                )
+                max_charge_limit = self.option_get_entity_number_or_abort(
+                    NUMBER_CHARGEE_MAX_CHARGE_LIMIT
+                )
+
                 # Set charge limits
                 for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
                     default_val = get_saved_option_value(
                         self._entry, subentry, day_limit_default, True
                     )
-                    if default_val is not None:
-                        day_limit = DEFAULT_CHARGE_LIMIT_MAP[day_limit_default]
+
+                    day_limit = DEFAULT_CHARGE_LIMIT_MAP[day_limit_default]
+                    if (
+                        default_val is not None
+                        and min_charge_limit <= default_val <= max_charge_limit
+                    ):
                         await control.numbers[day_limit].async_set_native_value(
                             default_val
                         )
                     else:
                         _LOGGER.error(
-                            "%s: No default value for %s",
+                            "%s: Cannot set default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
                             self._caller,
-                            day_limit_default,
+                            default_val,
+                            day_limit,
+                            min_charge_limit,
+                            max_charge_limit,
                         )
 
                 # Set charge end times

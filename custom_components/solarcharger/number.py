@@ -250,28 +250,6 @@ CONFIG_NUMBER_LIST: tuple[
             native_max_value=100.0,
         ),
     ),
-    (
-        NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-        SolarChargerEntityType.LOCAL_DEFAULT,
-        NumberEntityDescription(
-            key=NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-            entity_category=EntityCategory.CONFIG,
-            native_unit_of_measurement=PERCENTAGE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
-    (
-        NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
-        SolarChargerEntityType.LOCAL_DEFAULT,
-        NumberEntityDescription(
-            key=NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
-            entity_category=EntityCategory.CONFIG,
-            native_unit_of_measurement=PERCENTAGE,
-            native_min_value=0.0,
-            native_max_value=100.0,
-        ),
-    ),
     #####################################
     # Global default config entities
     # Hidden except for global defaults
@@ -388,8 +366,30 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     #####################################
-    # Charge limits and end times
+    # Charge limits
     #####################################
+    (
+        NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
+    (
+        NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
+        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0.0,
+            native_max_value=100.0,
+        ),
+    ),
     (
         NUMBER_CHARGE_LIMIT_MONDAY,
         SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,

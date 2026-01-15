@@ -47,6 +47,11 @@ from .const import (
     DEFAULT_CHARGE_LIMIT_THURSDAY,
     DEFAULT_CHARGE_LIMIT_TUESDAY,
     DEFAULT_CHARGE_LIMIT_WEDNESDAY,
+    DOMAIN,
+    ERROR_EMPTY_CHARGER_LIST,
+    ERROR_NUMBER_FORMAT,
+    ERROR_SUBENTRY_ID_NOT_FOUND,
+    ERROR_SUBENTRY_NOT_FOUND,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -100,6 +105,7 @@ from .const import (
     TIME_CHARGE_ENDTIME_TUESDAY,
     TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
+from .coordinator import SolarChargerCoordinator
 from .exceptions.validation_exception import ValidationExceptionError
 
 # if TYPE_CHECKING:
@@ -123,23 +129,6 @@ _LOGGER = logging.getLogger(__name__)
 #         }
 #     ),
 # )
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-# async def validate_init_input(
-#     _hass: HomeAssistant,
-#     data: dict[str, Any],
-# ) -> dict[str, Any]:
-#     """Validate the input data for the options flow."""
-#     return data
-
-
-# ----------------------------------------------------------------------------
-# def get_config_item_name(device_name, config_item) -> str:
-#     """Get unique config parameter name."""
-#     # return f"{device_name}-{config_item}"
-#     return config_item
 
 
 # ----------------------------------------------------------------------------
@@ -217,6 +206,13 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             #####################################
             # Charge scheduling
             #####################################
+            # Max/min charge limits
+            self._optional(
+                subentry, NUMBER_CHARGEE_MIN_CHARGE_LIMIT, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry, NUMBER_CHARGEE_MAX_CHARGE_LIMIT, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             # Charge limit defaults
             self._optional(
                 subentry, DEFAULT_CHARGE_LIMIT_MONDAY, use_default
@@ -370,22 +366,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
             ),
-            self._optional(
-                subentry, NUMBER_CHARGEE_MIN_CHARGE_LIMIT, use_default
-            ): choose_selector(
-                api_entities,
-                NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-                NUMBER_ENTITY_SELECTOR_READ_ONLY,
-                NUMBER_ENTITY_SELECTOR,
-            ),
-            self._optional(
-                subentry, NUMBER_CHARGEE_MAX_CHARGE_LIMIT, use_default
-            ): choose_selector(
-                api_entities,
-                NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
-                NUMBER_ENTITY_SELECTOR_READ_ONLY,
-                NUMBER_ENTITY_SELECTOR,
-            ),
             #####################################
             # Local device entities
             #####################################
@@ -521,14 +501,25 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         }
 
     # ----------------------------------------------------------------------------
-    async def validate_init_input(
+    async def process_config_options(
         self,
         config_name: str,
         data: dict[str, Any],
     ) -> dict[str, Any]:
         """Validate the input data for the options flow."""
 
-        return reset_api_entities(self.config_entry, config_name, data)
+        processed_data = reset_api_entities(self.config_entry, config_name, data)
+        coordinator: SolarChargerCoordinator = self.hass.data[DOMAIN][
+            self.config_entry.entry_id
+        ]
+
+        # Raise exception here to abort the options flow instead of inside the coordinator.
+        # Raising exception in the coordinator will break the coordinator loop and exception is not caught here!
+        error_code = coordinator.validate_config_options(config_name, processed_data)
+        if error_code:
+            raise ValidationExceptionError("base", error_code)
+
+        return processed_data
 
     # ----------------------------------------------------------------------------
     async def async_step_config_device(
@@ -546,24 +537,30 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         config_name = self._config_name
         subentry_id = get_subentry_id(self.config_entry, config_name)
         if not subentry_id:
-            errors["subentry_id_not_found"] = f"Subentry ID not found for {config_name}"
+            errors[ERROR_SUBENTRY_ID_NOT_FOUND] = (
+                f"Subentry ID not found for {config_name}"
+            )
             return self.async_abort(
-                reason="subentry_id_not_found",
+                reason=ERROR_SUBENTRY_ID_NOT_FOUND,
             )
 
         # Process options
         if user_input is not None:
             if config_name:
-                # validate input
                 try:
-                    # input_data = await validate_init_input(
-                    #     self.hass, config_name, user_input
-                    # )
-                    input_data = await self.validate_init_input(config_name, user_input)
+                    input_data = await self.process_config_options(
+                        config_name, user_input
+                    )
                 except ValidationExceptionError as ex:
                     errors[ex.base] = ex.key
+                    return self.async_abort(
+                        reason=ex.key,
+                    )
                 except ValueError:
-                    errors["base"] = "invalid_number_format"
+                    errors["base"] = ERROR_NUMBER_FORMAT
+                    return self.async_abort(
+                        reason=ERROR_NUMBER_FORMAT,
+                    )
 
                 if not errors and input_data is not None:
                     device_options = options_config.get(config_name)
@@ -580,9 +577,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         # Prompt user for options
         subentry = self.config_entry.subentries.get(subentry_id)
         if not subentry:
-            errors["subentry_not_found"] = f"Subentry not found for {config_name}"
+            errors[ERROR_SUBENTRY_NOT_FOUND] = f"Subentry not found for {config_name}"
             return self.async_abort(
-                reason="subentry_not_found",
+                reason=ERROR_SUBENTRY_NOT_FOUND,
             )
 
         if subentry.unique_id == OPTION_GLOBAL_DEFAULTS_ID:
@@ -627,9 +624,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             return await self.async_step_config_device(None)
 
         if not self.config_entry.subentries:
-            errors["empty_charger_device_list"] = "Use + sign to add charger devices."
+            errors[ERROR_EMPTY_CHARGER_LIST] = "Use + sign to add charger devices."
             return self.async_abort(
-                reason="empty_charger_device_list",
+                reason=ERROR_EMPTY_CHARGER_LIST,
             )
 
         device_list = [OPTION_GLOBAL_DEFAULTS_ID]

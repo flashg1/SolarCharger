@@ -165,6 +165,7 @@
             "invalid_number_format": "Numbers must not contain alphanumeric characters"
         },
         "abort": {
+            "invalid_default_charge_limit": "Default charge limit must be within configured min and max charge limits",
             "empty_charger_device_list": "No charger device to configure. Add charger device before setting options for device."
         }
     },

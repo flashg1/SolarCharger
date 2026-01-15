@@ -27,6 +27,7 @@ from .const import (
     CONF_NET_POWER,
     CONF_WAIT_NET_POWER_UPDATE,
     DOMAIN,
+    ERROR_SINGLE_INSTANCE_ALLOWED,
     SUBENTRY_TYPE_CHARGER,
     SUBENTRY_TYPE_CUSTOM,
 )
@@ -131,7 +132,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         config_entries: list[ConfigEntry] = self._async_current_entries()
         if config_entries:
             if len(config_entries) >= 1:
-                return self.async_abort(reason="single_instance_allowed")
+                return self.async_abort(reason=ERROR_SINGLE_INSTANCE_ALLOWED)
 
         return self.async_show_form(
             step_id="user", data_schema=STEP_SOURCE_POWER_SCHEMA, errors=errors

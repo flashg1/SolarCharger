@@ -500,7 +500,7 @@ def reset_api_entities(
     config_name: str,  # Same as subentry unique_id
     data: dict[str, Any],
 ) -> dict[str, Any]:
-    """Reset entity names using new device name."""
+    """Reset entity names using new device name and config name substitutions. Delete marked entities."""
 
     if config_name != OPTION_GLOBAL_DEFAULTS_ID:
         # Delete marked entities

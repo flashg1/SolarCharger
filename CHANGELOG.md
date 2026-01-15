@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3beta7 2026-01-15
+- Tidied up error code.
+- Validate default charge limit change before saving option.
+- Moved min/max charge limit configs back to Global defaults.
+
 ## v0.3beta6 2026-01-13
 - Added option to set charge limit defaults in settings.
 - Changed iot_class back to local_polling as it best describes SolarCharger communication with devices.

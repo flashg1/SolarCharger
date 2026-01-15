@@ -24,6 +24,9 @@ from .config_options_flow import reset_api_entities
 from .config_utils import TEXT_SELECTOR, get_subentry_id
 from .const import (
     DOMAIN,
+    ERROR_DEVICE_ALREADY_ADDED,
+    ERROR_SELECT_CHARGER,
+    ERROR_SUBENTRY_CREATED,
     NUMBER,
     NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGER_NAME,
@@ -54,7 +57,7 @@ def validate_charger_selection(
 ) -> dict[str, Any]:
     """Validate user input for charger selection step."""
     if not data.get(SUBENTRY_CHARGER_DEVICE_NAME):
-        raise ValidationExceptionError("base", "select_charger_error")  # noqa: EM101
+        raise ValidationExceptionError("base", ERROR_SELECT_CHARGER)  # noqa: EM101
 
     return data
 
@@ -168,7 +171,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                 # Check if subentry with this unique_id already exists
                 subentry_id = get_subentry_id(config_entry, custom_charger_config_name)
                 if subentry_id is not None:
-                    return self.async_abort(reason="device_already_added")
+                    return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
 
                 # Create new subentry
                 self.hass.config_entries.async_add_subentry(
@@ -202,7 +205,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
 
                 # Must return with SubentryFlowResult as stipulated in the return type
                 return self.async_abort(
-                    reason="device_subentry_created",
+                    reason=ERROR_SUBENTRY_CREATED,
                     description_placeholders={
                         "subentry": custom_charger_config_name,
                         "subentry_count": f"{len(config_entry.subentries)}",
