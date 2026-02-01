@@ -1,9 +1,8 @@
 # <img src="https://brands.home-assistant.io/solarcharger/dark_icon.png" alt="SolarCharger" width="50" style="vertical-align:Left;" /> Solar charger custom integration for Home Assistant
 
-[![Stable][releases-shield]][releases] [![HACS Badge][hacs-badge]][hacs-link] ![Project Maintenance][maintenance-shield] [![GitHub Activity][commits-shield]][commits] [![License][license-shield]](LICENSE)
+[![Stable][releases-shield]][releases] [![HACS Badge][hacs-badge]][hacs-link] ![Project Maintenance][maintenance-shield] [![GitHub Activity][commits-shield]][commits] [![License][license-shield]](LICENSE) [![Downloads][total-downloads]][solarcharger-link] [![Downloads][latest-downloads]][solarcharger-link]
 
-<!-- ![Downloads][downloads]  -->
-
+[solarcharger-link]: https://github.com/flashg1/SolarCharger
 [commits-shield]: https://img.shields.io/github/commit-activity/y/flashg1/SolarCharger.svg
 [commits]: https://github.com/flashg1/SolarCharger/commits/main
 [license-shield]: https://img.shields.io/github/license/flashg1/SolarCharger.svg
@@ -11,7 +10,8 @@
 [releases-shield]: https://img.shields.io/github/release/flashg1/SolarCharger.svg
 [releases]: https://github.com/flashg1/SolarCharger/releases/latest
 [hacs-badge]: https://img.shields.io/badge/HACS-Default-41BDF5.svg
-[downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total
+[total-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total
+[latest-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/latest/total
 [hacs-link]: https://hacs.xyz/
 
 

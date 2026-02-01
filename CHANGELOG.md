@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.7 2026-02-02
+- First stable release.
+
 ## v0.3beta7 2026-01-15
 - Tidied up error code.
 - Validate default charge limit change before saving option.
