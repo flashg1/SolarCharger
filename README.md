@@ -1,6 +1,6 @@
 # <img src="https://brands.home-assistant.io/solarcharger/dark_icon.png" alt="SolarCharger" width="50" style="vertical-align:Left;" /> Solar charger custom integration for Home Assistant
 
-[![Stable][releases-shield]][releases] [![HACS Badge][hacs-badge]][hacs-link] ![Project Maintenance][maintenance-shield] [![GitHub Activity][commits-shield]][commits] [![License][license-shield]](LICENSE) [![Downloads][total-downloads]][solarcharger-link] [![Downloads][latest-downloads]][solarcharger-link]
+[![Stable][releases-shield]][releases] [![HACS Badge][hacs-badge]][hacs-link] ![Project Maintenance][maintenance-shield] [![GitHub Activity][commits-shield]][commits] [![License][license-shield]](LICENSE) [![Downloads (all releases)][total-downloads]][solarcharger-link] [![Downloads (latest release)][latest-downloads]][solarcharger-link]
 
 [solarcharger-link]: https://github.com/flashg1/SolarCharger
 [commits-shield]: https://img.shields.io/github/commit-activity/y/flashg1/SolarCharger.svg
