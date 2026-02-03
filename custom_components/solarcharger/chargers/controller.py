@@ -161,7 +161,8 @@ class ChargeController(ScOptionState):
         self._tracker: Tracker = Tracker(hass, entry, subentry, caller)
 
         self._session_triggered_by_timer = False
-        self._goal: ScheduleData
+        self._starting_goal: ScheduleData
+        self._running_goal: ScheduleData
 
         self._is_charge_started_by_calibration_switch = False
         self._started_calibrate_max_charge_speed = False
@@ -656,7 +657,7 @@ class ChargeController(ScOptionState):
     # For charge limit with charge end time, today = 00:00 to sunset, tomorrow = sunset to 00:00.
     # For charge limit without charge end time, today = 00:00 to 23:59.  Reaching charge limit is best effort only and depends on solar.
     def _get_schedule_data(
-        self, chargeable: Chargeable, include_tomorrow: bool
+        self, chargeable: Chargeable, include_tomorrow: bool, log_it: bool = False
     ) -> ScheduleData:
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
 
@@ -720,7 +721,9 @@ class ChargeController(ScOptionState):
             # Calculate charge start time required to reach charge limit at charge end time.
             self._calc_charge_starttime(sd)
 
-        _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
+        if log_it:
+            _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
+
         return sd
 
     # ----------------------------------------------------------------------------
@@ -815,8 +818,8 @@ class ChargeController(ScOptionState):
         #####################################
         # Set immediate goal
         #####################################
-        self._goal = self._get_schedule_data(
-            chargeable, self._session_triggered_by_timer
+        self._starting_goal = self._get_schedule_data(
+            chargeable, self._session_triggered_by_timer, log_it=True
         )
 
     # ----------------------------------------------------------------------------
@@ -830,22 +833,19 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def _async_init_charge_limit(
-        self, charger: Charger, chargeable: Chargeable
+        self, chargeable: Chargeable, goal: ScheduleData
     ) -> None:
         """Initialize charge limit if charge schedule is enabled, otherwise use existing charge limit."""
 
-        if self._goal.use_charge_schedule:
+        if goal.use_charge_schedule:
             _LOGGER.info(
                 "%s: Setting charge limit to %.1f %% for %s",
                 self._caller,
-                self._goal.charge_limit,
+                goal.charge_limit,
                 # now_time.strftime("%A"),
-                self._goal.weekly_schedule[self._goal.day_index].charge_day,
+                goal.weekly_schedule[goal.day_index].charge_day,
             )
-            await self._async_set_charge_limit(chargeable, self._goal.charge_limit)
-
-        # Set charge limit first before starting calibration, if required.
-        await self._async_set_charge_limit_if_calibration(chargeable)
+            await self._async_set_charge_limit(chargeable, goal.charge_limit)
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
@@ -972,19 +972,19 @@ class ChargeController(ScOptionState):
         return self._is_fast_charge_mode()
 
     # ----------------------------------------------------------------------------
-    def _is_not_enough_time(
+    def _is_not_enough_time_to_complete_charge(
         self,
         chargeable: Chargeable,
         old_charge_current: float,
         charger_max_current: float,
-        sd: ScheduleData,
+        goal: ScheduleData,
     ) -> bool:
         """Is there not enough time to complete charging before scheduled end time?"""
         is_not_enough_time = False
 
-        if sd.has_charge_endtime:
+        if goal.has_charge_endtime:
             now_time = self.get_local_datetime()
-            available_charge_duration = sd.charge_endtime - now_time
+            available_charge_duration = goal.charge_endtime - now_time
 
             battery_soc = chargeable.get_state_of_charge()
             if battery_soc is None:
@@ -1067,7 +1067,11 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _calc_current_change(
-        self, charger: Charger, chargeable: Chargeable, allocated_power: float
+        self,
+        charger: Charger,
+        chargeable: Chargeable,
+        allocated_power: float,
+        goal: ScheduleData,
     ) -> tuple[float, float]:
         """Calculate new charge current based on allocated power."""
 
@@ -1098,12 +1102,12 @@ class ChargeController(ScOptionState):
         )
 
         charger_min_current = config_min_current
-        if self._goal.use_charge_schedule:
-            if self._is_not_enough_time(
+        if goal.use_charge_schedule:
+            if self._is_not_enough_time_to_complete_charge(
                 chargeable,
                 old_charge_current,
                 charger_max_current,
-                self._goal,
+                goal,
             ):
                 charger_min_current = charger_max_current
 
@@ -1171,7 +1175,7 @@ class ChargeController(ScOptionState):
         """Adjust charge current."""
 
         new_charge_current, old_charge_current = self._calc_current_change(
-            charger, chargeable, allocated_power
+            charger, chargeable, allocated_power, self._running_goal
         )
         if new_charge_current != old_charge_current:
             _LOGGER.info(
@@ -1185,7 +1189,7 @@ class ChargeController(ScOptionState):
 
         # No need to update status here because it is now done at the main loop.
         # Power update here is not garanteed because HA will not send the same value
-        # if the seccond value is same as first.
+        # if the second value is same as first.
         # await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------
@@ -1241,6 +1245,7 @@ class ChargeController(ScOptionState):
         charger: Charger,
         chargeable: Chargeable,
         loop_count: int,
+        goal: ScheduleData,
     ) -> bool:
         """Check if to continue charging."""
 
@@ -1265,9 +1270,9 @@ class ChargeController(ScOptionState):
                 or is_use_secondary_power_source
                 or is_calibrate_max_charge_speed
                 or (
-                    self._goal.has_charge_endtime
-                    and self._goal.charge_endtime > now_time
-                    and self._goal.is_immediate_start
+                    goal.has_charge_endtime
+                    and goal.charge_endtime > now_time
+                    and goal.is_immediate_start
                 )
             )
         )
@@ -1288,7 +1293,7 @@ class ChargeController(ScOptionState):
                 elevation,
                 is_use_secondary_power_source,
                 is_calibrate_max_charge_speed,
-                self._goal.has_charge_endtime,
+                goal.has_charge_endtime,
             )
 
         return continue_charge
@@ -1361,8 +1366,33 @@ class ChargeController(ScOptionState):
             CONF_WAIT_NET_POWER_UPDATE
         )
 
-        while self._is_continue_charge(charger, chargeable, loop_count):
+        while self._is_continue_charge(
+            charger,
+            chargeable,
+            loop_count,
+            goal := self._get_schedule_data(
+                chargeable, self._session_triggered_by_timer
+            ),
+        ):
             try:
+                # Check schedule change and update charge limit if required
+                self._running_goal = goal
+                if self._running_goal.use_charge_schedule:
+                    charge_limit = chargeable.get_charge_limit()
+                    if charge_limit != self._running_goal.charge_limit:
+                        _LOGGER.warning(
+                            "%s: ScheduleData=%s", self._caller, self._running_goal
+                        )
+                        _LOGGER.info(
+                            "%s: Charge limit changed from %.1f %% to %.1f %%",
+                            self._caller,
+                            charge_limit,
+                            self._running_goal.charge_limit,
+                        )
+                        await self._async_init_charge_limit(
+                            chargeable, self._running_goal
+                        )
+
                 # Turn on charger if looping for the first time
                 if loop_count == 0:
                     await self._async_turn_charger_switch_on(charger)
@@ -1498,7 +1528,9 @@ class ChargeController(ScOptionState):
     ) -> None:
         """Schedule next charge session."""
 
-        next_goal = self._get_schedule_data(chargeable, include_tomorrow=True)
+        next_goal = self._get_schedule_data(
+            chargeable, include_tomorrow=True, log_it=True
+        )
         if next_goal.use_charge_schedule:
             await self._async_clear_next_charge_time()
 
@@ -1565,8 +1597,13 @@ class ChargeController(ScOptionState):
         #####################################
         try:
             await self._async_init_device(chargeable)
-            await self._async_init_charge_limit(charger, chargeable)
+
+            await self._async_init_charge_limit(chargeable, self._starting_goal)
+            # Set charge limit first before starting calibration, if required.
+            await self._async_set_charge_limit_if_calibration(chargeable)
+
             await self._async_charge_device(charger, chargeable)
+
             await self._async_tidy_up_on_exit(charger, chargeable)
 
         # except EntityExceptionError as e:

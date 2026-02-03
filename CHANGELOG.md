@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.8-beta2 2026-02-03
+- Support for charge limit and end time changes while charging.
+
 ## v0.3.8-beta1 2026-02-02
 - Added option to look ahead to reduce charge limit difference between days.
 
