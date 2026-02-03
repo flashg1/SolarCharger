@@ -23,6 +23,7 @@ from .const import (
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
+    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_START_CHARGE,
     SWITCH_SUN_TRIGGER,
@@ -257,6 +258,17 @@ async def async_setup_entry(
         # Boolean switches
         #####################################
         (
+            SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
+            SolarChargerSwitchEntity,
+            RESTORE_ON_START_TRUE,
+            coordinator.async_switch_dummy,
+            SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+            SwitchEntityDescription(
+                key=SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
+                entity_category=EntityCategory.CONFIG,
+            ),
+        ),
+        (
             SWITCH_FAST_CHARGE_MODE,
             SolarChargerSwitchEntity,
             RESTORE_ON_START_TRUE,
@@ -327,34 +339,33 @@ async def async_setup_entry(
     )
 
     for subentry in config_entry.subentries.values():
-        # For charger subentries only
-        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
-            switches: dict[str, SolarChargerSwitchEntity] = {}
+        # For global defaults and charger subentries
+        switches: dict[str, SolarChargerSwitchEntity] = {}
 
-            for (
-                config_item,
-                cls,
-                is_restore_state,
-                action,
-                entity_type,
-                entity_description,
-            ) in CONFIG_SWITCH_LIST:
-                if is_create_entity(subentry, entity_type):
-                    switches[config_item] = cls(
-                        config_item,
-                        subentry,
-                        entity_type,
-                        entity_description,
-                        coordinator,
-                        get_device_config_default_value(subentry, config_item),
-                        is_restore_state,
-                        action,
-                    )
-
-            if len(switches) > 0:
-                coordinator.charge_controls[subentry.subentry_id].switches = switches
-                async_add_entities(
-                    switches.values(),
-                    update_before_add=False,
-                    config_subentry_id=subentry.subentry_id,
+        for (
+            config_item,
+            cls,
+            is_restore_state,
+            action,
+            entity_type,
+            entity_description,
+        ) in CONFIG_SWITCH_LIST:
+            if is_create_entity(subentry, entity_type):
+                switches[config_item] = cls(
+                    config_item,
+                    subentry,
+                    entity_type,
+                    entity_description,
+                    coordinator,
+                    get_device_config_default_value(subentry, config_item),
+                    is_restore_state,
+                    action,
                 )
+
+        if len(switches) > 0:
+            coordinator.charge_controls[subentry.subentry_id].switches = switches
+            async_add_entities(
+                switches.values(),
+                update_before_add=False,
+                config_subentry_id=subentry.subentry_id,
+            )

@@ -111,6 +111,7 @@
                     "default_charge_limit_friday": "Friday charge limit default",
                     "default_charge_limit_saturday": "Saturday charge limit default",
                     "default_charge_limit_sunday": "Sunday charge limit default",
+                    "reduce_charge_limit_difference": "Reduce charge limit difference",
                     "charge_limit_monday": "Monday charge limit (%)",
                     "charge_limit_tuesday": "Tuesday charge limit (%)",
                     "charge_limit_wednesday": "Wednesday charge limit (%)",
@@ -203,6 +204,9 @@
             },
             "schedule_charge": {
                 "name": "Schedule charge"
+            },
+            "reduce_charge_limit_difference": {
+                "name": "Reduce charge limit difference"
             },
             "plugin_trigger": {
                 "name": "Plugin trigger"

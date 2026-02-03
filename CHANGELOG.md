@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.8 2026-02-02
+- Added option to look ahead to reduce charge limit difference between days.
+
 ## v0.3.7 2026-02-02
 - First stable release.
 

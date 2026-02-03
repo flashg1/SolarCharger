@@ -50,6 +50,7 @@ from ..const import (  # noqa: TID252
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
+    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_START_CHARGE,
     SWITCH_SUN_TRIGGER,
@@ -57,7 +58,12 @@ from ..const import (  # noqa: TID252
 from ..entity import compose_entity_id  # noqa: TID252
 from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
-from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge  # noqa: TID252
+from ..sc_option_state import (  # noqa: TID252
+    ChargeSchedule,
+    ScheduleData,
+    ScOptionState,
+    StateOfCharge,
+)
 from ..utils import (  # noqa: TID252
     get_is_sun_rising,
     get_next_sunrise_time,
@@ -76,7 +82,13 @@ _LOGGER = logging.getLogger(__name__)
 
 INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
 MIN_TIME_BETWEEN_UPDATE = 10  # Minimum seconds between charger current updates
-# ENVIRONMENT_CHECK_INTERVAL = 60  # Seconds to sleep between environment checks
+
+# Look ahead charge limit list including today.
+# Use MAX_CHARGE_LIMIT_DIFF to calculate charge limit for all days except one day before maximum charge limit day.
+# The day before maximum charge limit day will use MIN_CHARGE_LIMIT_DIFF to minimise charge limit difference for the next day.
+MIN_CHARGE_LIMIT_DIFF = 5
+MAX_CHARGE_LIMIT_DIFF = 10
+LOOK_AHEAD_CHARGE_LIMIT_DAYS = 4
 
 
 # ----------------------------------------------------------------------------
@@ -182,21 +194,30 @@ class ChargeController(ScOptionState):
         return None
 
     # ----------------------------------------------------------------------------
-    # Charger utils
+    # Global defaults
+    # ----------------------------------------------------------------------------
+    def _is_reduce_charge_limit_difference_between_days(self) -> bool:
+        return self.option_get_entity_boolean_or_abort(
+            SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE
+        )
+
+    # ----------------------------------------------------------------------------
+    def _get_min_charge_limit(self) -> float:
+        return self.option_get_entity_number_or_abort(NUMBER_CHARGEE_MIN_CHARGE_LIMIT)
+
+    # ----------------------------------------------------------------------------
+    # Local device control entities
     # ----------------------------------------------------------------------------
     def _is_fast_charge_mode(self) -> bool:
-        state = self.get_string(self._fast_charge_mode_switch)
-        return state == STATE_ON
+        return self.get_boolean_or_abort(self._fast_charge_mode_switch)
 
     # ----------------------------------------------------------------------------
     def _is_poll_charger_update(self) -> bool:
-        state = self.get_string(self._poll_charger_update_switch)
-        return state == STATE_ON
+        return self.get_boolean_or_abort(self._poll_charger_update_switch)
 
     # ----------------------------------------------------------------------------
     def _is_calibrate_max_charge_speed(self) -> bool:
-        state = self.get_string(self._calibrate_max_charge_speed_switch)
-        return state == STATE_ON
+        return self.get_boolean_or_abort(self._calibrate_max_charge_speed_switch)
 
     # ----------------------------------------------------------------------------
     async def _async_turn_off_calibrate_max_charge_speed_switch(self) -> None:
@@ -207,13 +228,11 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_schedule_charge(self) -> bool:
-        state = self.get_string(self._schedule_charge_switch)
-        return state == STATE_ON
+        return self.get_boolean_or_abort(self._schedule_charge_switch)
 
     # ----------------------------------------------------------------------------
     def _is_plugin_trigger(self) -> bool:
-        state = self.get_string(self._plugin_trigger_switch)
-        return state == STATE_ON
+        return self.get_boolean_or_abort(self._plugin_trigger_switch)
 
     # ----------------------------------------------------------------------------
     async def _async_turn_off_plugin_trigger(self) -> None:
@@ -221,12 +240,7 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_sun_trigger(self) -> bool:
-        state = self.get_string(self._sun_trigger_switch)
-        return state == STATE_ON
-
-    # ----------------------------------------------------------------------------
-    def _get_min_charge_limit(self) -> float:
-        return self.option_get_entity_number_or_abort(NUMBER_CHARGEE_MIN_CHARGE_LIMIT)
+        return self.get_boolean_or_abort(self._sun_trigger_switch)
 
     # ----------------------------------------------------------------------------
     def _turn_charger_switch(self, turn_on: bool) -> None:
@@ -554,8 +568,8 @@ class ChargeController(ScOptionState):
         return triggered_by_timer
 
     # ----------------------------------------------------------------------------
-    def _calc_propose_charge_starttime(self, chargeable: Chargeable, sd: ScheduleData):
-        """Calculate charge start time."""
+    def _calc_charge_starttime(self, sd: ScheduleData) -> None:
+        """Calculate charge start time required to reach charge limit at charge end time."""
 
         if sd.has_charge_endtime:
             if sd.battery_soc is None:
@@ -600,6 +614,39 @@ class ChargeController(ScOptionState):
         return battery_soc
 
     # ----------------------------------------------------------------------------
+    def _look_ahead_to_reduce_charge_limit_difference(self, sd: ScheduleData) -> None:
+        """Look ahead to reduce charge limit difference between days."""
+
+        # Automatically charge more today if today has no charge end time and next 3 days have much higher charge limit.
+        if not sd.has_charge_endtime:
+            look_ahead_schedule: list[ChargeSchedule] = []
+            today_index = sd.day_index
+
+            for i in range(0, LOOK_AHEAD_CHARGE_LIMIT_DAYS, 1):
+                day_index = (today_index + i) % 7
+                look_ahead_schedule.append(sd.weekly_schedule[day_index])
+
+            # Find first occurance of maximum charge limit
+            look_ahead_max_charge_limit = -1
+            look_ahead_max_charge_limit_index = -1
+            for i in range(len(look_ahead_schedule)):
+                if look_ahead_schedule[i].charge_limit > look_ahead_max_charge_limit:
+                    look_ahead_max_charge_limit = look_ahead_schedule[i].charge_limit
+                    look_ahead_max_charge_limit_index = i
+
+            if look_ahead_max_charge_limit_index == 1:
+                look_ahead_charge_limit = (
+                    look_ahead_max_charge_limit - MIN_CHARGE_LIMIT_DIFF
+                )
+            else:
+                look_ahead_charge_limit = look_ahead_max_charge_limit - (
+                    look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
+                )
+
+            if look_ahead_charge_limit > sd.charge_limit:
+                sd.charge_limit = look_ahead_charge_limit
+
+    # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.
     # If use_charge_schedule is true, all other parameters are set.
     # If use_charge_schedule is false, only has_charge_endtime is set. All others are not set.
@@ -617,16 +664,6 @@ class ChargeController(ScOptionState):
         # Ensure time is in local timezone
         now_time = self.get_local_datetime()
         sd.session_starttime = now_time
-
-        # Calibrate max charge speed
-        # if self._is_calibrate_max_charge_speed():
-        #     sd.use_charge_schedule = True
-        #     sd.battery_soc = self._get_soc_for_max_charge_speed_calibration(chargeable)
-        #     sd.charge_limit = sd.battery_soc + CALIBRATE_SOC_INCREASE
-        #     self._calibrate_max_charge_limit = sd.charge_limit
-        #     min_charge_limit = self._get_min_charge_limit()
-        #     if sd.charge_limit < min_charge_limit:
-        #         sd.use_charge_schedule = False
 
         # Normal schedule
         if self._is_schedule_charge():
@@ -650,19 +687,11 @@ class ChargeController(ScOptionState):
 
             sd.battery_soc = chargeable.get_state_of_charge()
 
-            # If today has no schedule or passed schedule, and it is between end elevation and mid-night, then get tomorrow's schedule.
+            # If today has no schedule or passed schedule, or if include_tomorrow, then get tomorrow's schedule.
             if not sd.has_charge_endtime:
                 tomorrow_index = (today_index + 1) % 7
                 tomorrow_charge_limit = sd.weekly_schedule[tomorrow_index].charge_limit
                 tomorrow_endtime = sd.weekly_schedule[tomorrow_index].charge_end_time
-                # Increase today charge limit if today has no end time, and tomorrow has end time and bigger charge limit.
-                # if (
-                #     tomorrow_endtime != time.min
-                #     and tomorrow_charge_limit > today_charge_limit
-                # ):
-                #     sd.charge_limit = round(
-                #         (today_charge_limit + tomorrow_charge_limit) / 2
-                #     )
 
                 # _get_schedule_data() behaves differently when called for normal session, timer session and ending session.
                 # Normal session: Started by anything except timer, so include_tomorrow=False.
@@ -684,7 +713,12 @@ class ChargeController(ScOptionState):
                             tomorrow_endtime,
                         )
 
-            self._calc_propose_charge_starttime(chargeable, sd)
+            # Look ahead to reduce charge limit difference between days.
+            if self._is_reduce_charge_limit_difference_between_days():
+                self._look_ahead_to_reduce_charge_limit_difference(sd)
+
+            # Calculate charge start time required to reach charge limit at charge end time.
+            self._calc_charge_starttime(sd)
 
         _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
         return sd

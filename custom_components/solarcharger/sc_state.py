@@ -6,7 +6,12 @@ import logging
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from homeassistant.const import ATTR_DEVICE_ID, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import (
+    ATTR_DEVICE_ID,
+    STATE_ON,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import HomeAssistant, ServiceResponse, State
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
@@ -21,6 +26,7 @@ from .const import (
     NUMBER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
+from .exceptions.entity_exception import EntityExceptionError
 from .utils import get_next_sunrise_time, get_next_sunset_time
 
 # ----------------------------------------------------------------------------
@@ -243,7 +249,19 @@ class ScState:
             )
             return None
 
-        return state_str == "on" or state_str is True
+        return state_str == STATE_ON
+
+    # ----------------------------------------------------------------------------
+    def get_boolean_or_abort(self, entity_id: str) -> bool:
+        """Get boolean object."""
+
+        state_str = self.get_boolean(entity_id)
+        if state_str is None:
+            raise EntityExceptionError(
+                f"{self._caller}: Cannot get boolean for entity '{entity_id}'"
+            )
+
+        return state_str
 
     # ----------------------------------------------------------------------------
     def get_datetime(self, entity_id: str) -> datetime | None:

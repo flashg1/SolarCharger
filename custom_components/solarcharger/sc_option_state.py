@@ -288,6 +288,24 @@ class ScOptionState(ScConfigState):
         return entity_val
 
     # ----------------------------------------------------------------------------
+    def option_get_entity_boolean_or_abort(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry | None = None,
+        val_dict: ConfigValueDict | None = None,
+    ) -> bool:
+        """Get entity ID from saved options, then get value for entity."""
+
+        subentry = self._get_subentry(subentry)
+        entity_val = self.option_get_entity_boolean(config_item, subentry, val_dict)
+        if entity_val is None:
+            raise ValueError(
+                f"{subentry.unique_id}: {config_item}: Failed to get entity boolean value"
+            )
+
+        return entity_val
+
+    # ----------------------------------------------------------------------------
     def option_get_entity_time(
         self,
         config_item: str,

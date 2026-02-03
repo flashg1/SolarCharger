@@ -97,6 +97,7 @@ from .const import (
     OPTION_NAME,
     OPTION_SELECT_SETTINGS,
     SUBENTRY_CHARGER_TYPES,
+    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
     TIME_CHARGE_ENDTIME_SATURDAY,
@@ -235,6 +236,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, DEFAULT_CHARGE_LIMIT_SUNDAY, use_default
             ): PERCENT_SELECTOR,
+            # Reduce charge limit between days
+            self._optional(
+                subentry, SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE, use_default
+            ): SWITCH_ENTITY_SELECTOR,
             # Charge limits
             self._optional(
                 subentry, NUMBER_CHARGE_LIMIT_MONDAY, use_default
