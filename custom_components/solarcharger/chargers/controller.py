@@ -266,6 +266,18 @@ class ChargeController(ScOptionState):
         await self.async_turn_switch_on(self._charger_switch)
 
     # ----------------------------------------------------------------------------
+    def _get_charge_limit_or_abort(self, chargeable: Chargeable) -> float:
+        """Get charge limit from chargeable device or abort."""
+
+        charge_limit = chargeable.get_charge_limit()
+        if charge_limit is None:
+            raise EntityExceptionError(
+                f"{self._caller}: Cannot get charge limit from chargeable device"
+            )
+
+        return charge_limit
+
+    # ----------------------------------------------------------------------------
     # Tracker callbacks
     # ----------------------------------------------------------------------------
     async def async_handle_sun_elevation_update(
@@ -569,32 +581,67 @@ class ChargeController(ScOptionState):
         return triggered_by_timer
 
     # ----------------------------------------------------------------------------
-    def _calc_charge_starttime(self, sd: ScheduleData) -> None:
+    def _calc_charge_starttime(self, goal: ScheduleData) -> None:
         """Calculate charge start time required to reach charge limit at charge end time."""
 
-        if sd.has_charge_endtime:
-            if sd.battery_soc is None:
+        if goal.has_charge_endtime:
+            if goal.battery_soc is None:
                 _LOGGER.info(
                     "%s: Unable to get battery SOC, cannot schedule next charge session",
                     self._caller,
                 )
                 return
 
-            if sd.battery_soc >= sd.charge_limit:
+            if goal.battery_soc >= goal.new_charge_limit:
                 _LOGGER.info(
-                    "%s: Battery SOC %.1f %% is at or above tomorrow's charge limit %.1f %%, no need to schedule next charge session",
+                    "%s: Battery SOC %.1f %% is at or above charge limit %.1f %%, no need to schedule next charge session",
                     self._caller,
-                    sd.battery_soc,
-                    sd.charge_limit,
+                    goal.battery_soc,
+                    goal.new_charge_limit,
                 )
                 return
 
-            sd.need_charge_duration = self._calculate_need_charge_duration(
-                sd.battery_soc, sd.charge_limit
+            goal.need_charge_duration = self._calculate_need_charge_duration(
+                goal.battery_soc, goal.new_charge_limit
             )
-            sd.propose_charge_starttime = sd.charge_endtime - sd.need_charge_duration
-            if sd.propose_charge_starttime <= sd.session_starttime:
-                sd.is_immediate_start = True
+            goal.propose_charge_starttime = (
+                goal.charge_endtime - goal.need_charge_duration
+            )
+            if goal.propose_charge_starttime <= goal.session_starttime:
+                goal.is_immediate_start = True
+
+    # ----------------------------------------------------------------------------
+    def _look_ahead_to_reduce_charge_limit_difference(self, goal: ScheduleData) -> None:
+        """Look ahead to reduce charge limit difference between days."""
+
+        # Automatically charge more today if today has no charge end time and next 3 days have much higher charge limit.
+        if not goal.has_charge_endtime:
+            look_ahead_schedule: list[ChargeSchedule] = []
+            today_index = goal.day_index
+
+            for i in range(0, LOOK_AHEAD_CHARGE_LIMIT_DAYS, 1):
+                day_index = (today_index + i) % 7
+                look_ahead_schedule.append(goal.weekly_schedule[day_index])
+
+            # Find first occurance of maximum charge limit
+            look_ahead_max_charge_limit = -1
+            look_ahead_max_charge_limit_index = -1
+            for i in range(len(look_ahead_schedule)):
+                if look_ahead_schedule[i].charge_limit > look_ahead_max_charge_limit:
+                    look_ahead_max_charge_limit = look_ahead_schedule[i].charge_limit
+                    look_ahead_max_charge_limit_index = i
+
+            if look_ahead_max_charge_limit_index == 1:
+                look_ahead_charge_limit = (
+                    look_ahead_max_charge_limit - MIN_CHARGE_LIMIT_DIFF
+                )
+            else:
+                look_ahead_charge_limit = look_ahead_max_charge_limit - (
+                    look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
+                )
+
+            if look_ahead_charge_limit > goal.new_charge_limit:
+                goal.new_charge_limit = look_ahead_charge_limit
 
     # ----------------------------------------------------------------------------
     def _get_soc_for_max_charge_speed_calibration(
@@ -615,37 +662,24 @@ class ChargeController(ScOptionState):
         return battery_soc
 
     # ----------------------------------------------------------------------------
-    def _look_ahead_to_reduce_charge_limit_difference(self, sd: ScheduleData) -> None:
-        """Look ahead to reduce charge limit difference between days."""
+    def _set_charge_limit_goal_if_calibration(
+        self, chargeable: Chargeable, goal: ScheduleData
+    ) -> None:
+        """Set new charge limit for calibration if required."""
 
-        # Automatically charge more today if today has no charge end time and next 3 days have much higher charge limit.
-        if not sd.has_charge_endtime:
-            look_ahead_schedule: list[ChargeSchedule] = []
-            today_index = sd.day_index
+        if self._is_calibrate_max_charge_speed():
+            # Save calibration charge limit only once at start of calibration.
+            if not self._started_calibrate_max_charge_speed:
+                battery_soc = self._get_soc_for_max_charge_speed_calibration(chargeable)
+                self._calibrate_max_charge_limit = battery_soc + CALIBRATE_SOC_INCREASE
 
-            for i in range(0, LOOK_AHEAD_CHARGE_LIMIT_DAYS, 1):
-                day_index = (today_index + i) % 7
-                look_ahead_schedule.append(sd.weekly_schedule[day_index])
-
-            # Find first occurance of maximum charge limit
-            look_ahead_max_charge_limit = -1
-            look_ahead_max_charge_limit_index = -1
-            for i in range(len(look_ahead_schedule)):
-                if look_ahead_schedule[i].charge_limit > look_ahead_max_charge_limit:
-                    look_ahead_max_charge_limit = look_ahead_schedule[i].charge_limit
-                    look_ahead_max_charge_limit_index = i
-
-            if look_ahead_max_charge_limit_index == 1:
-                look_ahead_charge_limit = (
-                    look_ahead_max_charge_limit - MIN_CHARGE_LIMIT_DIFF
-                )
-            else:
-                look_ahead_charge_limit = look_ahead_max_charge_limit - (
-                    look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
-                )
-
-            if look_ahead_charge_limit > sd.charge_limit:
-                sd.charge_limit = look_ahead_charge_limit
+            # Set new charge limit if required
+            min_charge_limit = self._get_min_charge_limit()
+            if (
+                goal.new_charge_limit < self._calibrate_max_charge_limit
+                and self._calibrate_max_charge_limit >= min_charge_limit
+            ):
+                goal.new_charge_limit = self._calibrate_max_charge_limit
 
     # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.
@@ -661,38 +695,42 @@ class ChargeController(ScOptionState):
     ) -> ScheduleData:
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
 
-        sd = ScheduleData(weekly_schedule=[])
+        goal = ScheduleData(weekly_schedule=[])
         # Ensure time is in local timezone
         now_time = self.get_local_datetime()
-        sd.session_starttime = now_time
+        goal.session_starttime = now_time
+        goal.old_charge_limit = self._get_charge_limit_or_abort(chargeable)
+        goal.new_charge_limit = goal.old_charge_limit
 
         # Normal schedule
         if self._is_schedule_charge():
-            sd.use_charge_schedule = True
-            sd.weekly_schedule = self.get_weekly_schedule()
+            goal.use_charge_schedule = True
+            goal.weekly_schedule = self.get_weekly_schedule()
 
             # 0 = Monday, 6 = Sunday
             today_index = now_time.weekday()
-            today_charge_limit = sd.weekly_schedule[today_index].charge_limit
-            sd.day_index = today_index
-            sd.charge_limit = today_charge_limit
+            today_charge_limit = goal.weekly_schedule[today_index].charge_limit
+            goal.day_index = today_index
+            goal.new_charge_limit = today_charge_limit
 
             # Get today's schedule
-            today_endtime = sd.weekly_schedule[today_index].charge_end_time
+            today_endtime = goal.weekly_schedule[today_index].charge_end_time
             if today_endtime != time.min:
-                sd.charge_endtime = self.combine_local_date_time(
+                goal.charge_endtime = self.combine_local_date_time(
                     now_time.date(), today_endtime
                 )
-                if sd.charge_endtime > now_time:
-                    sd.has_charge_endtime = True
+                if goal.charge_endtime > now_time:
+                    goal.has_charge_endtime = True
 
-            sd.battery_soc = chargeable.get_state_of_charge()
+            goal.battery_soc = chargeable.get_state_of_charge()
 
             # If today has no schedule or passed schedule, or if include_tomorrow, then get tomorrow's schedule.
-            if not sd.has_charge_endtime:
+            if not goal.has_charge_endtime:
                 tomorrow_index = (today_index + 1) % 7
-                tomorrow_charge_limit = sd.weekly_schedule[tomorrow_index].charge_limit
-                tomorrow_endtime = sd.weekly_schedule[tomorrow_index].charge_end_time
+                tomorrow_charge_limit = goal.weekly_schedule[
+                    tomorrow_index
+                ].charge_limit
+                tomorrow_endtime = goal.weekly_schedule[tomorrow_index].charge_end_time
 
                 # _get_schedule_data() behaves differently when called for normal session, timer session and ending session.
                 # Normal session: Started by anything except timer, so include_tomorrow=False.
@@ -706,25 +744,28 @@ class ChargeController(ScOptionState):
                 ):
                     if tomorrow_endtime != time.min:
                         # Use tomorrow's goal
-                        sd.has_charge_endtime = True
-                        sd.day_index = tomorrow_index
-                        sd.charge_limit = tomorrow_charge_limit
-                        sd.charge_endtime = self.combine_local_date_time(
+                        goal.has_charge_endtime = True
+                        goal.day_index = tomorrow_index
+                        goal.new_charge_limit = tomorrow_charge_limit
+                        goal.charge_endtime = self.combine_local_date_time(
                             now_time.date() + timedelta(days=1),
                             tomorrow_endtime,
                         )
 
             # Look ahead to reduce charge limit difference between days.
             if self._is_reduce_charge_limit_difference_between_days():
-                self._look_ahead_to_reduce_charge_limit_difference(sd)
+                self._look_ahead_to_reduce_charge_limit_difference(goal)
 
-            # Calculate charge start time required to reach charge limit at charge end time.
-            self._calc_charge_starttime(sd)
+        # Modify goal charge limit if required calibration.
+        self._set_charge_limit_goal_if_calibration(chargeable, goal)
+
+        # Calculate charge start time required to reach charge limit at charge end time.
+        self._calc_charge_starttime(goal)
 
         if log_it:
-            _LOGGER.warning("%s: ScheduleData=%s", self._caller, sd)
+            _LOGGER.warning("%s: ScheduleData=%s", self._caller, goal)
 
-        return sd
+        return goal
 
     # ----------------------------------------------------------------------------
     async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
@@ -834,18 +875,21 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     async def _async_init_charge_limit(
         self, chargeable: Chargeable, goal: ScheduleData
-    ) -> None:
-        """Initialize charge limit if charge schedule is enabled, otherwise use existing charge limit."""
+    ) -> bool:
+        """Set new charge limit if changed, otherwise use existing charge limit."""
 
-        if goal.use_charge_schedule:
+        if charge_limit_changed := (goal.old_charge_limit != goal.new_charge_limit):
             _LOGGER.info(
-                "%s: Setting charge limit to %.1f %% for %s",
+                "%s: Changing charge limit from %.1f %% to %.1f %% for %s",
                 self._caller,
-                goal.charge_limit,
+                goal.old_charge_limit,
+                goal.new_charge_limit,
                 # now_time.strftime("%A"),
                 goal.weekly_schedule[goal.day_index].charge_day,
             )
-            await self._async_set_charge_limit(chargeable, goal.charge_limit)
+            await self._async_set_charge_limit(chargeable, goal.new_charge_limit)
+
+        return charge_limit_changed
 
     # ----------------------------------------------------------------------------
     def _is_abort_charge(self) -> bool:
@@ -1312,36 +1356,14 @@ class ChargeController(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
-    async def _async_set_charge_limit_if_calibration(
-        self, chargeable: Chargeable
-    ) -> None:
-        """Init charge limit before starting calibration."""
-
-        if self._is_calibrate_max_charge_speed():
-            battery_soc = self._get_soc_for_max_charge_speed_calibration(chargeable)
-            self._calibrate_max_charge_limit = battery_soc + CALIBRATE_SOC_INCREASE
-
-            # Set charge limit if required
-            charge_limit = chargeable.get_charge_limit()
-            min_charge_limit = self._get_min_charge_limit()
-            if (
-                charge_limit
-                and charge_limit < self._calibrate_max_charge_limit
-                and self._calibrate_max_charge_limit >= min_charge_limit
-            ):
-                await self._async_set_charge_limit(
-                    chargeable, self._calibrate_max_charge_limit
-                )
-
-    # ----------------------------------------------------------------------------
     async def _async_check_if_calibration(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
+        """Check if calibration is required during charge."""
+
         if self._is_calibrate_max_charge_speed():
             if not self._started_calibrate_max_charge_speed:
                 try:
-                    await self._async_set_charge_limit_if_calibration(chargeable)
-
                     charger_max_current = self._get_charger_max_current(charger)
                     await self._async_set_charge_current(charger, charger_max_current)
 
@@ -1377,21 +1399,10 @@ class ChargeController(ScOptionState):
             try:
                 # Check schedule change and update charge limit if required
                 self._running_goal = goal
-                if self._running_goal.use_charge_schedule:
-                    charge_limit = chargeable.get_charge_limit()
-                    if charge_limit != self._running_goal.charge_limit:
-                        _LOGGER.warning(
-                            "%s: ScheduleData=%s", self._caller, self._running_goal
-                        )
-                        _LOGGER.info(
-                            "%s: Charge limit changed from %.1f %% to %.1f %%",
-                            self._caller,
-                            charge_limit,
-                            self._running_goal.charge_limit,
-                        )
-                        await self._async_init_charge_limit(
-                            chargeable, self._running_goal
-                        )
+                if await self._async_init_charge_limit(chargeable, self._running_goal):
+                    _LOGGER.warning(
+                        "%s: ScheduleData=%s", self._caller, self._running_goal
+                    )
 
                 # Turn on charger if looping for the first time
                 if loop_count == 0:
@@ -1597,13 +1608,8 @@ class ChargeController(ScOptionState):
         #####################################
         try:
             await self._async_init_device(chargeable)
-
             await self._async_init_charge_limit(chargeable, self._starting_goal)
-            # Set charge limit first before starting calibration, if required.
-            await self._async_set_charge_limit_if_calibration(chargeable)
-
             await self._async_charge_device(charger, chargeable)
-
             await self._async_tidy_up_on_exit(charger, chargeable)
 
         # except EntityExceptionError as e:

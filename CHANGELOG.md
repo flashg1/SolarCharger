@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.8-beta3 2026-02-03
+- Refactored setting charge limit.
+
 ## v0.3.8-beta2 2026-02-03
 - Support for charge limit and end time changes while charging.
 

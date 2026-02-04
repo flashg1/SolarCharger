@@ -51,7 +51,12 @@ class ScheduleData:
     has_charge_endtime: bool = False
     day_index: int = -1
     session_starttime: datetime = datetime.min
-    charge_limit: float = -1
+
+    # Current device charge limit
+    old_charge_limit: float = -1
+    # New charge limit or from schedule
+    new_charge_limit: float = -1
+
     charge_endtime = datetime.min
 
     battery_soc: float | None = None
