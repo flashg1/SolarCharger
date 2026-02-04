@@ -1309,6 +1309,13 @@ class ChargeController(ScOptionState):
         is_use_secondary_power_source = self._is_use_secondary_power_source()
         is_calibrate_max_charge_speed = self._is_calibrate_max_charge_speed()
 
+        # Add 30 minutes grace period to avoid time drift stopping charge
+        # and scheduling next session immediately.
+        current_time_with_grace = goal.data_timestamp + timedelta(minutes=30)
+        is_immediate_start_with_grace = (
+            goal.propose_charge_starttime <= current_time_with_grace
+        )
+
         continue_charge = (
             is_connected
             and (is_below_charge_limit or is_calibrate_max_charge_speed)
@@ -1317,7 +1324,7 @@ class ChargeController(ScOptionState):
                 is_sun_above_start_end_elevations
                 or is_use_secondary_power_source
                 or is_calibrate_max_charge_speed
-                or (goal.has_charge_endtime and goal.is_immediate_start)
+                or (goal.has_charge_endtime and is_immediate_start_with_grace)
             )
         )
 
@@ -1326,7 +1333,8 @@ class ChargeController(ScOptionState):
                 "%s: Stopping charge: is_connected=%s, "
                 "is_below_charge_limit=%s, loop_count=%s, is_charging=%s, "
                 "is_sun_above_start_end_elevations=%s, elevation=%s, is_use_secondary_power_source=%s, "
-                "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s, is_immediate_start=%s",
+                "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s, is_immediate_start=%s, "
+                "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s",
                 self._caller,
                 is_connected,
                 is_below_charge_limit,
@@ -1338,6 +1346,9 @@ class ChargeController(ScOptionState):
                 is_calibrate_max_charge_speed,
                 goal.has_charge_endtime,
                 goal.is_immediate_start,
+                goal.propose_charge_starttime,
+                current_time_with_grace,
+                is_immediate_start_with_grace,
             )
 
         return continue_charge
