@@ -601,12 +601,16 @@ class ChargeController(ScOptionState):
                 )
                 return
 
+            # Must check propose_charge_starttime before use due to return above, otherwise will get following exception when comparing times:
+            # tesla_custom_tesla23m3: Abort charge: can't compare offset-naive and offset-aware datetimes
             goal.need_charge_duration = self._calculate_need_charge_duration(
                 goal.battery_soc, goal.new_charge_limit
             )
+
             goal.propose_charge_starttime = (
                 goal.charge_endtime - goal.need_charge_duration
             )
+
             if goal.propose_charge_starttime <= goal.data_timestamp:
                 goal.is_immediate_start = True
 
@@ -1312,7 +1316,7 @@ class ChargeController(ScOptionState):
         # Add 30 minutes grace period to avoid time drift stopping charge
         # and scheduling next session immediately.
         current_time_with_grace = goal.data_timestamp + timedelta(minutes=30)
-        if goal.has_charge_endtime:
+        if goal.has_charge_endtime and goal.propose_charge_starttime != datetime.min:
             is_immediate_start_with_grace = (
                 goal.propose_charge_starttime <= current_time_with_grace
             )

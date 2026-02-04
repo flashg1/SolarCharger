@@ -66,7 +66,11 @@ class ScheduleData:
 
     # Requires battery_soc to calculate
     need_charge_duration: timedelta = timedelta.min
+
+    # Must check has_charge_endtime and propose_charge_starttime before use.
     propose_charge_starttime: datetime = datetime.min
+
+    # Is charge to start immediately?
     is_immediate_start: bool = False
 
 
