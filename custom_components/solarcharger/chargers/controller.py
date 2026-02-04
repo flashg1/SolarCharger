@@ -1312,9 +1312,12 @@ class ChargeController(ScOptionState):
         # Add 30 minutes grace period to avoid time drift stopping charge
         # and scheduling next session immediately.
         current_time_with_grace = goal.data_timestamp + timedelta(minutes=30)
-        is_immediate_start_with_grace = (
-            goal.propose_charge_starttime <= current_time_with_grace
-        )
+        if goal.has_charge_endtime:
+            is_immediate_start_with_grace = (
+                goal.propose_charge_starttime <= current_time_with_grace
+            )
+        else:
+            is_immediate_start_with_grace = False
 
         continue_charge = (
             is_connected
