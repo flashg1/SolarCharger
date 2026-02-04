@@ -50,10 +50,13 @@ class ScheduleData:
     use_charge_schedule: bool = False
     has_charge_endtime: bool = False
     day_index: int = -1
-    session_starttime: datetime = datetime.min
+
+    # Timestamp of current data
+    data_timestamp: datetime = datetime.min
 
     # Current device charge limit
     old_charge_limit: float = -1
+
     # New charge limit or from schedule
     new_charge_limit: float = -1
 

@@ -607,7 +607,7 @@ class ChargeController(ScOptionState):
             goal.propose_charge_starttime = (
                 goal.charge_endtime - goal.need_charge_duration
             )
-            if goal.propose_charge_starttime <= goal.session_starttime:
+            if goal.propose_charge_starttime <= goal.data_timestamp:
                 goal.is_immediate_start = True
 
     # ----------------------------------------------------------------------------
@@ -662,24 +662,35 @@ class ChargeController(ScOptionState):
         return battery_soc
 
     # ----------------------------------------------------------------------------
-    def _set_charge_limit_goal_if_calibration(
+    async def _async_set_charge_limit_goal_if_calibration(
         self, chargeable: Chargeable, goal: ScheduleData
     ) -> None:
         """Set new charge limit for calibration if required."""
 
         if self._is_calibrate_max_charge_speed():
-            # Save calibration charge limit only once at start of calibration.
-            if not self._started_calibrate_max_charge_speed:
-                battery_soc = self._get_soc_for_max_charge_speed_calibration(chargeable)
-                self._calibrate_max_charge_limit = battery_soc + CALIBRATE_SOC_INCREASE
+            try:
+                # Save calibration charge limit only once at start of calibration.
+                if not self._started_calibrate_max_charge_speed:
+                    battery_soc = self._get_soc_for_max_charge_speed_calibration(
+                        chargeable
+                    )
+                    self._calibrate_max_charge_limit = (
+                        battery_soc + CALIBRATE_SOC_INCREASE
+                    )
 
-            # Set new charge limit if required
-            min_charge_limit = self._get_min_charge_limit()
-            if (
-                goal.new_charge_limit < self._calibrate_max_charge_limit
-                and self._calibrate_max_charge_limit >= min_charge_limit
-            ):
-                goal.new_charge_limit = self._calibrate_max_charge_limit
+                # Set new charge limit if required
+                min_charge_limit = self._get_min_charge_limit()
+                if (
+                    goal.new_charge_limit < self._calibrate_max_charge_limit
+                    and self._calibrate_max_charge_limit >= min_charge_limit
+                ):
+                    goal.new_charge_limit = self._calibrate_max_charge_limit
+
+            except EntityExceptionError as e:
+                _LOGGER.error(
+                    "%s: Abort calibrate max charge speed: %s", self._caller, e
+                )
+                await self._async_turn_off_calibrate_max_charge_speed_switch()
 
     # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.
@@ -690,7 +701,7 @@ class ChargeController(ScOptionState):
     # Timer-triggered automation will try to reach charge limit at charge end time using solar and/or grid.
     # For charge limit with charge end time, today = 00:00 to sunset, tomorrow = sunset to 00:00.
     # For charge limit without charge end time, today = 00:00 to 23:59.  Reaching charge limit is best effort only and depends on solar.
-    def _get_schedule_data(
+    async def _async_get_schedule_data(
         self, chargeable: Chargeable, include_tomorrow: bool, log_it: bool = False
     ) -> ScheduleData:
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
@@ -698,7 +709,7 @@ class ChargeController(ScOptionState):
         goal = ScheduleData(weekly_schedule=[])
         # Ensure time is in local timezone
         now_time = self.get_local_datetime()
-        goal.session_starttime = now_time
+        goal.data_timestamp = now_time
         goal.old_charge_limit = self._get_charge_limit_or_abort(chargeable)
         goal.new_charge_limit = goal.old_charge_limit
 
@@ -757,7 +768,7 @@ class ChargeController(ScOptionState):
                 self._look_ahead_to_reduce_charge_limit_difference(goal)
 
         # Modify goal charge limit if required calibration.
-        self._set_charge_limit_goal_if_calibration(chargeable, goal)
+        await self._async_set_charge_limit_goal_if_calibration(chargeable, goal)
 
         # Calculate charge start time required to reach charge limit at charge end time.
         self._calc_charge_starttime(goal)
@@ -857,9 +868,9 @@ class ChargeController(ScOptionState):
         self._check_if_at_location_or_abort(chargeable)
 
         #####################################
-        # Set immediate goal
+        # Set starting goal
         #####################################
-        self._starting_goal = self._get_schedule_data(
+        self._starting_goal = await self._async_get_schedule_data(
             chargeable, self._session_triggered_by_timer, log_it=True
         )
 
@@ -890,10 +901,6 @@ class ChargeController(ScOptionState):
             await self._async_set_charge_limit(chargeable, goal.new_charge_limit)
 
         return charge_limit_changed
-
-    # ----------------------------------------------------------------------------
-    def _is_abort_charge(self) -> bool:
-        return False
 
     # ----------------------------------------------------------------------------
     def _is_below_charge_limit(self, chargeable: Chargeable) -> bool:
@@ -1293,7 +1300,6 @@ class ChargeController(ScOptionState):
     ) -> bool:
         """Check if to continue charging."""
 
-        is_abort_charge = self._is_abort_charge()
         is_connected = self._is_connected(charger)
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
         is_charging = charger.is_charging()
@@ -1302,33 +1308,26 @@ class ChargeController(ScOptionState):
         )
         is_use_secondary_power_source = self._is_use_secondary_power_source()
         is_calibrate_max_charge_speed = self._is_calibrate_max_charge_speed()
-        now_time = self.get_local_datetime()
 
         continue_charge = (
-            not is_abort_charge
-            and is_connected
+            is_connected
             and (is_below_charge_limit or is_calibrate_max_charge_speed)
             and (loop_count == 0 or is_charging)
             and (
                 is_sun_above_start_end_elevations
                 or is_use_secondary_power_source
                 or is_calibrate_max_charge_speed
-                or (
-                    goal.has_charge_endtime
-                    and goal.charge_endtime > now_time
-                    and goal.is_immediate_start
-                )
+                or (goal.has_charge_endtime and goal.is_immediate_start)
             )
         )
 
         if not continue_charge:
             _LOGGER.warning(
-                "%s: Stopping charge: is_abort_charge=%s, is_connected=%s, "
+                "%s: Stopping charge: is_connected=%s, "
                 "is_below_charge_limit=%s, loop_count=%s, is_charging=%s, "
                 "is_sun_above_start_end_elevations=%s, elevation=%s, is_use_secondary_power_source=%s, "
-                "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s",
+                "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s, is_immediate_start=%s",
                 self._caller,
-                is_abort_charge,
                 is_connected,
                 is_below_charge_limit,
                 loop_count,
@@ -1338,6 +1337,7 @@ class ChargeController(ScOptionState):
                 is_use_secondary_power_source,
                 is_calibrate_max_charge_speed,
                 goal.has_charge_endtime,
+                goal.is_immediate_start,
             )
 
         return continue_charge
@@ -1363,20 +1363,12 @@ class ChargeController(ScOptionState):
 
         if self._is_calibrate_max_charge_speed():
             if not self._started_calibrate_max_charge_speed:
-                try:
+                # Track SOC
+                self._soc_updates = []
+                if self._tracker.track_soc_sensor(self.async_handle_soc_update):
                     charger_max_current = self._get_charger_max_current(charger)
                     await self._async_set_charge_current(charger, charger_max_current)
-
-                    # Track SOC
-                    self._soc_updates = []
-                    self._tracker.track_soc_sensor(self.async_handle_soc_update)
                     self._started_calibrate_max_charge_speed = True
-
-                except EntityExceptionError as e:
-                    _LOGGER.error(
-                        "%s: Abort calibrate max charge speed: %s", self._caller, e
-                    )
-                    await self._async_turn_off_calibrate_max_charge_speed_switch()
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -1392,7 +1384,7 @@ class ChargeController(ScOptionState):
             charger,
             chargeable,
             loop_count,
-            goal := self._get_schedule_data(
+            goal := await self._async_get_schedule_data(
                 chargeable, self._session_triggered_by_timer
             ),
         ):
@@ -1416,14 +1408,14 @@ class ChargeController(ScOptionState):
                     await self._async_update_ha(chargeable)
                     self._log_charging_status(charger, "After update")
 
+                # Check if calibration is required during charge
+                await self._async_check_if_calibration(charger, chargeable)
+
                 # Update status after turning on power, or at every interval.
                 # This is either required here or after setting current.
                 # It is better here since it is garanteed periodic.
                 # Do not wait here. Depends on the main loop to wait.
                 await self._async_update_ha(chargeable, wait_after_update=False)
-
-                # Check if calibration is required during charge
-                await self._async_check_if_calibration(charger, chargeable)
 
             except TimeoutError:
                 _LOGGER.warning(
@@ -1539,7 +1531,7 @@ class ChargeController(ScOptionState):
     ) -> None:
         """Schedule next charge session."""
 
-        next_goal = self._get_schedule_data(
+        next_goal = await self._async_get_schedule_data(
             chargeable, include_tomorrow=True, log_it=True
         )
         if next_goal.use_charge_schedule:
@@ -1612,7 +1604,6 @@ class ChargeController(ScOptionState):
             await self._async_charge_device(charger, chargeable)
             await self._async_tidy_up_on_exit(charger, chargeable)
 
-        # except EntityExceptionError as e:
         except Exception as e:
             _LOGGER.error("%s: Abort charge: %s", self._caller, e)
             await self._async_tidy_up_on_exit(charger, chargeable)
