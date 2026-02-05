@@ -936,10 +936,12 @@ class ChargeController(ScOptionState):
                         charge_limit,
                         self._caller,
                     )
-        except TimeoutError:
-            _LOGGER.warning("Timeout while communicating with charger %s", self._caller)
+        except TimeoutError as e:
+            _LOGGER.warning(
+                "%s: Timeout getting SOC or charge limit: %s", self._caller, e
+            )
         except Exception as e:
-            _LOGGER.error("Error in charging task for charger %s: %s", self._caller, e)
+            _LOGGER.exception("%s: Error getting SOC or charge limit", self._caller)
 
         return is_below_limit
 
@@ -1435,14 +1437,10 @@ class ChargeController(ScOptionState):
                 # Do not wait here. Depends on the main loop to wait.
                 await self._async_update_ha(chargeable, wait_after_update=False)
 
-            except TimeoutError:
-                _LOGGER.warning(
-                    "Timeout while communicating with charger %s", self._caller
-                )
+            except TimeoutError as e:
+                _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
             except Exception as e:
-                _LOGGER.error(
-                    "Error in charge task for charger %s: %s", self._caller, e
-                )
+                _LOGGER.exception("%s: Error charging device", self._caller)
 
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
@@ -1623,8 +1621,27 @@ class ChargeController(ScOptionState):
             await self._async_tidy_up_on_exit(charger, chargeable)
 
         except Exception as e:
-            _LOGGER.error("%s: Abort charge: %s", self._caller, e)
+            _LOGGER.exception("%s: Abort charge", self._caller)
             await self._async_tidy_up_on_exit(charger, chargeable)
+
+            # To show exception location, eg.
+            # 2026-02-05 04:27:43.054 ERROR (MainThread) [custom_components.solarcharger.chargers.controller] ocpp_charger: Abort charge
+            # Traceback (most recent call last):
+            #   File "/workspaces/core/config/custom_components/solarcharger/chargers/controller.py", line 1623, in _async_start_charge_task
+            #     await self._async_charge_device(charger, chargeable)
+            #   File "/workspaces/core/config/custom_components/solarcharger/chargers/controller.py", line 1402, in _async_charge_device
+            #     while self._is_continue_charge(
+            #           ~~~~~~~~~~~~~~~~~~~~~~~~^
+            #         charger,
+            #         ^^^^^^^^
+            #     ...<4 lines>...
+            #         ),
+            #         ^^
+            #     ):
+            #     ^
+            #   File "/workspaces/core/config/custom_components/solarcharger/chargers/controller.py", line 1322, in _is_continue_charge
+            #     goal.propose_charge_starttime <= current_time_with_grace
+            # TypeError: can't compare offset-naive and offset-aware datetimes
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge(
