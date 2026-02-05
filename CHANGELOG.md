@@ -1,8 +1,14 @@
 # Changelog
 
-## v0.3.8-beta3 2026-02-03
+## v0.3.8 2026-02-05
+- Added option to look ahead to reduce charge limit difference between days.
+- Support for charge limit and end time changes while charging.
 - Refactored setting charge limit.
 - Provide code location causing exception.
+
+## v0.3.8-beta3 2026-02-03
+- Provide code location causing exception.
+- Refactored setting charge limit.
 
 ## v0.3.8-beta2 2026-02-03
 - Support for charge limit and end time changes while charging.
