@@ -248,6 +248,7 @@ async def async_setup_entry(
             SWITCH_START_CHARGE,
             SolarChargerSwitchChargeEntity,
             RESTORE_ON_START_FALSE,
+            # RESTORE_ON_START_TRUE,
             coordinator.async_switch_charger,
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
