@@ -2,6 +2,7 @@
 
 import asyncio
 from asyncio import Task, timeout
+from collections.abc import Callable, Coroutine
 from datetime import date, datetime, time, timedelta
 import inspect
 import logging
@@ -10,9 +11,10 @@ from typing import Any
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, State
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.typing import NoEventData
 
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
@@ -84,6 +86,9 @@ from .tracker import Tracker
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
+
+type SWITCH_ACTION = Callable[[bool], Coroutine[Any, Any, None]]
+
 
 INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
 MIN_TIME_BETWEEN_UPDATE = 10  # Minimum seconds between charger current updates
@@ -231,10 +236,6 @@ class ChargeController(ScOptionState):
         return self.get_boolean_or_abort(self._poll_charger_update_switch)
 
     # ----------------------------------------------------------------------------
-    def _is_calibrate_max_charge_speed(self) -> bool:
-        return self.get_boolean_or_abort(self._calibrate_max_charge_speed_switch)
-
-    # ----------------------------------------------------------------------------
     async def _async_turn_off_calibrate_max_charge_speed_switch(self) -> None:
         """Turn off switch if on."""
 
@@ -260,6 +261,17 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     def _is_charge_switch_on(self) -> bool:
         return self.get_boolean_or_abort(self._charge_switch)
+
+    # ----------------------------------------------------------------------------
+    def _is_calibrate_max_charge_speed(self) -> bool:
+        return self.get_boolean_or_abort(self._calibrate_max_charge_speed_switch)
+
+    # ----------------------------------------------------------------------------
+    async def _async_switch_task(self, action: SWITCH_ACTION, turn_on: bool):
+        """Start another task to action a switch state when not initialising. The switch must be in the correct state when starting task."""
+
+        if not self._initialising:
+            self._hass.loop.create_task(action(turn_on))
 
     # ----------------------------------------------------------------------------
     def _turn_charger_switch(self, turn_on: bool) -> None:
@@ -504,25 +516,32 @@ class ChargeController(ScOptionState):
                 self._tracker.untrack_sun_elevation()
 
     # ----------------------------------------------------------------------------
-    async def async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
+    async def _async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
         """Calibrate max charge speed switch."""
         _LOGGER.info("%s: Calibrate max charge speed: %s", self._caller, turn_on)
 
-        if not self._initialising:
-            if turn_on:
-                if self._charge_task is None or self._charge_task.done():
-                    self._started_calibrate_max_charge_speed = False
-                    self._is_charge_started_by_calibration_switch = True
-                    self._turn_charger_switch(True)
-            else:
-                self._tracker.untrack_soc_sensor()
-
-                # Will get error message if charger switch already turned off by user.
-                if self._is_charge_started_by_calibration_switch:
-                    self._turn_charger_switch(False)
-
-                self._is_charge_started_by_calibration_switch = False
+        if turn_on:
+            if self._charge_task is None or self._charge_task.done():
                 self._started_calibrate_max_charge_speed = False
+                self._is_charge_started_by_calibration_switch = True
+                self._turn_charger_switch(True)
+        else:
+            self._tracker.untrack_soc_sensor()
+
+            # Will get error message if charger switch already turned off by user.
+            if self._is_charge_started_by_calibration_switch:
+                self._turn_charger_switch(False)
+
+            self._is_charge_started_by_calibration_switch = False
+            self._started_calibrate_max_charge_speed = False
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
+        """Calibrate max charge speed switch."""
+
+        await self._async_switch_task(
+            self._async_switch_calibrate_max_charge_speed, turn_on
+        )
 
     # ----------------------------------------------------------------------------
     def _subscribe_allocated_power_update(self) -> None:
@@ -541,13 +560,12 @@ class ChargeController(ScOptionState):
             self._tracker.untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------
-    # ----------------------------------------------------------------------------
-    async def async_setup(self) -> None:
-        """Async setup of the ChargeController."""
-        await self._charger.async_setup()
-        await self._tracker.async_setup()
+    async def _async_init_controller_config(self, event: Event[NoEventData]) -> None:
+        """Initialize controller config.
 
-        self._initialising = False
+        The charge task can hold up HA on restart, so must run charge task after HA has started.
+        Other switches are ok, but best to also run after HA has started to ensure the entities are available.
+        """
 
         # Track next charge time trigger
         self._subscribe_next_charge_time_update()
@@ -560,7 +578,25 @@ class ChargeController(ScOptionState):
         await self.async_switch_sun_elevation_trigger(self._is_sun_trigger())
 
         # Resume charging if it was charging before HA restart
-        await self.async_switch_charger(self._is_charge_switch_on())
+        await self.async_switch_charge(self._is_charge_switch_on())
+        await asyncio.sleep(3)
+
+        # Resume charging if it was charging before HA restart
+        await self.async_switch_calibrate_max_charge_speed(
+            self._is_calibrate_max_charge_speed()
+        )
+
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    async def async_setup(self) -> None:
+        """Async setup of the ChargeController."""
+
+        await self._charger.async_setup()
+        await self._tracker.async_setup()
+
+        self._initialising = False
+
+        self._tracker.track_ha_started(self._async_init_controller_config)
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
@@ -1684,7 +1720,7 @@ class ChargeController(ScOptionState):
             _LOGGER.warning("Task %s already running", self._charge_task.get_name())
             return self._charge_task
 
-        _LOGGER.info("Starting charge task for charger %s", self._caller)
+        _LOGGER.info("%s: Starting charge task", self._caller)
         self._charge_task = self._hass.async_create_task(
             self._async_start_charge(self._charger, self._chargeable),
             f"{self._caller} charge",
@@ -1710,7 +1746,7 @@ class ChargeController(ScOptionState):
                     await self._async_tidy_up_on_exit(charger, chargeable)
                 except Exception as e:
                     _LOGGER.error(
-                        "Error stopping charge task for charger %s: %s",
+                        "%s: Error stopping charge task: %s",
                         self._caller,
                         e,
                     )
@@ -1741,7 +1777,7 @@ class ChargeController(ScOptionState):
                         )
                         return self._end_charge_task
 
-                _LOGGER.info("Ending charge task for charger %s", self._caller)
+                _LOGGER.info("%s: Ending charge task", self._caller)
                 self._end_charge_task = self._hass.async_create_task(
                     self._async_stop_charge(self._charger, self._chargeable),
                     f"{self._caller} end charge",
@@ -1750,7 +1786,7 @@ class ChargeController(ScOptionState):
 
             _LOGGER.info("Task %s already completed", self._charge_task.get_name())
         else:
-            _LOGGER.info("No running charge task to stop for charger %s", self._caller)
+            _LOGGER.info("%s: No running charge task to stop", self._caller)
         return None
 
     # ----------------------------------------------------------------------------
@@ -1825,32 +1861,26 @@ class ChargeController(ScOptionState):
                     control.end_charge_task = self.stop_charge()
 
     # ----------------------------------------------------------------------------
-    async def async_switch_charger1(self, turn_on: bool):
+    async def _async_switch_charge(self, turn_on: bool):
         """Called by switch entity to start or stop charge."""
 
-        _LOGGER.debug("%s: start charge: %s", self._control.config_name, turn_on)
+        _LOGGER.debug("%s: Switch charge on: %s", self._control.config_name, turn_on)
 
-        if not self._initialising:
-            if turn_on:
-                if self._control.switch_charge:
-                    _LOGGER.error(
-                        "Charger %s already running", self._control.config_name
-                    )
-                else:
-                    self._control.switch_charge = True
-                    await self.async_start_charger(self._control)
+        if turn_on:
+            if self._control.switch_charge:
+                _LOGGER.error("%s: Charger already running", self._control.config_name)
             else:
-                if self._control.switch_charge:
-                    self._control.switch_charge = False
-                    await self.async_stop_charger(self._control)
-                else:
-                    _LOGGER.error(
-                        "Charger %s already stopped", self._control.config_name
-                    )
+                self._control.switch_charge = True
+                await self.async_start_charger(self._control)
+        else:
+            if self._control.switch_charge:
+                self._control.switch_charge = False
+                await self.async_stop_charger(self._control)
+            else:
+                _LOGGER.error("%s: Charger already stopped", self._control.config_name)
 
     # ----------------------------------------------------------------------------
-    async def async_switch_charger(self, turn_on: bool):
+    async def async_switch_charge(self, turn_on: bool):
         """Called by switch entity to start or stop charge."""
 
-        if not self._initialising:
-            self._hass.loop.create_task(self.async_switch_charger1(turn_on))
+        await self._async_switch_task(self._async_switch_charge, turn_on)

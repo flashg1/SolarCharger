@@ -332,7 +332,8 @@ async def async_setup_entry(
         (
             SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
             SolarChargerSwitchActionEntity,
-            RESTORE_ON_START_FALSE,
+            # RESTORE_ON_START_FALSE,
+            RESTORE_ON_START_TRUE,
             coordinator.async_switch_calibrate_max_charge_speed,
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(

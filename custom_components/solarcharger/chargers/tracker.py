@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -25,11 +26,14 @@ from homeassistant.helpers import device_registry as dr
 # async_track_time_change,
 # async_track_time_interval,
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
+from homeassistant.helpers.typing import NoEventData
+from homeassistant.util.event_type import EventType
 
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
+    CALLBACK_HA_STARTED,
     CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
     CALLBACK_NEXT_CHARGE_TIME_UPDATE,
     CALLBACK_PLUG_IN_CHARGER,
@@ -54,6 +58,8 @@ _LOGGER = logging.getLogger(__name__)
 type STATE_CHANGE_CALLBACK = Callable[
     [Event[EventStateChangedData]], Coroutine[Any, Any, None]
 ]
+
+type EVENT_CALLBACK = Callable[[Event[NoEventData]], Coroutine[Any, Any, None]]
 
 type DELAY_CALLBACK = Callable[[datetime], Coroutine[Any, Any, None]]
 
@@ -169,6 +175,21 @@ class Tracker(ScOptionState):
         return self._track_entity_state(entity_id, callback_id, action)
 
     # ----------------------------------------------------------------------------
+    def _track_event_once(
+        self,
+        event_type: EventType[NoEventData],
+        callback_id: str,
+        action: EVENT_CALLBACK,
+    ) -> None:
+        """Track event once."""
+
+        _LOGGER.info(
+            "%s: %s: Track event once: %s", self._caller, callback_id, event_type
+        )
+        subscription = self._hass.bus.async_listen_once(event_type, action)
+        self.save_callback(callback_id, subscription)
+
+    # ----------------------------------------------------------------------------
     # Sensors that might not exist, so check return code.
     # ----------------------------------------------------------------------------
     def track_charger_plugged_in_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
@@ -195,6 +216,12 @@ class Tracker(ScOptionState):
         """Unsubscribe SOC update events."""
 
         self.remove_callback(CALLBACK_SOC_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def track_ha_started(self, action: EVENT_CALLBACK) -> None:
+        """Track HA started event."""
+
+        self._track_event_once(EVENT_HOMEASSISTANT_STARTED, CALLBACK_HA_STARTED, action)
 
     # ----------------------------------------------------------------------------
     # Sensors that are created by default

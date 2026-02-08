@@ -665,6 +665,7 @@ CALLBACK_ALLOCATE_POWER = "callback_allocate_power"
 CALLBACK_NEXT_CHARGE_TIME_UPDATE = "callback_next_charge_time_update"
 CALLBACK_NEXT_CHARGE_TIME_TRIGGER = "callback_next_charge_time_trigger"
 CALLBACK_SOC_UPDATE = "callback_soc_update"
+CALLBACK_HA_STARTED = "callback_ha_started"
 
 
 #######################################################

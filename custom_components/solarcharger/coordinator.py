@@ -333,7 +333,7 @@ class SolarChargerCoordinator(ScOptionState):
         """Schedule charge switch."""
 
         if control.controller is not None:
-            await control.controller.async_switch_charger(turn_on)
+            await control.controller.async_switch_charge(turn_on)
 
     # ----------------------------------------------------------------------------
     async def async_switch_schedule_charge(

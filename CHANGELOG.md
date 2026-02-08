@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.3.9 2026-02-08
+- Resume charge after HA restart.
 - Refactored charger controller.
 - Removed redundant start charge button.
 

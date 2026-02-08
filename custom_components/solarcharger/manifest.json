@@ -7,7 +7,12 @@
     "number",
     "sensor",
     "switch",
-    "time"
+    "time",
+    "ocpp",
+    "tesla_custom",
+    "mqtt",
+    "tesla",
+    "tessie"
   ],
   "codeowners": [
     "@flashg1"

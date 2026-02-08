@@ -96,14 +96,14 @@ async def async_init_charger_subentry(
         return
 
     # Initialize ChargeController
-    control = ChargeControl(
+    charge_control = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
     )
     charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
     chargeable: Chargeable = cast(Chargeable, charger)
-    controller: ChargeController = ChargeController(
-        hass, entry, subentry, control, charger, chargeable
+    controller = ChargeController(
+        hass, entry, subentry, charge_control, charger, chargeable
     )
 
     # Store in charge_controllers dictionary
@@ -143,16 +143,11 @@ async def async_init_global_defaults_subentry(
         return
 
     # Initialize ChargeController
-    control = ChargeControl(
+    charge_control = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
     )
-    # charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
-    # charger: Charger = DummyCharger()
-    # chargeable: Chargeable = cast(Chargeable, charger)
-    controller: ChargeController = ChargeController(
-        hass, entry, subentry, control, None, None
-    )
+    controller = ChargeController(hass, entry, subentry, charge_control, None, None)
 
     # Store in charge_controllers dictionary
     device_controls[subentry.subentry_id] = DeviceControl(
