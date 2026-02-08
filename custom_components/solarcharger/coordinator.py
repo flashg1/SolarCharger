@@ -364,7 +364,7 @@ class SolarChargerCoordinator(ScOptionState):
                 if control.switches:
                     control.switch_charge = False
                     control.switches[SWITCH_START_CHARGE].turn_off()
-                    control.switches[SWITCH_START_CHARGE].update_ha_state()
+                    # control.switches[SWITCH_START_CHARGE].update_ha_state()
 
                 if control.sensors:
                     control.sensors[SENSOR_RUN_STATE].set_state(
@@ -413,12 +413,6 @@ class SolarChargerCoordinator(ScOptionState):
                 await self.async_stop_charger(control)
             else:
                 _LOGGER.error("Charger %s already stopped", control.config_name)
-
-    # ----------------------------------------------------------------------------
-    async def async_switch_charger_on(self, control: ChargeControl):
-        """Called by button entity to switch on charger."""
-
-        await self.async_switch_charger(control, True)
 
     # ----------------------------------------------------------------------------
     async def async_switch_schedule_charge(

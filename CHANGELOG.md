@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.9 2026-02-08
+- Removed redundant start charge button.
+
 ## v0.3.8.1 2026-02-07
 - Updated doc for wait_net_power_update.
 

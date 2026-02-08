@@ -10,7 +10,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.3.8.1"
+VERSION = "0.3.9"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -114,7 +114,6 @@ SWITCH_SUN_TRIGGER = "sun_trigger"
 SWITCH_CALIBRATE_MAX_CHARGE_SPEED = "calibrate_max_charge_speed"
 
 # Buttons
-BUTTON_START_CHARGE = "start_charge"
 BUTTON_RESET_CHARGE_LIMIT_AND_TIME = "reset_charge_limit_and_time"
 
 # Datetime triggers

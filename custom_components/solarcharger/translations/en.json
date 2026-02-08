@@ -185,9 +185,6 @@
             }
         },
         "button": {
-            "start_charge": {
-                "name": "Start charge"
-            },
             "reset_charge_limit_and_time": {
                 "name": "Reset charge limit and time"
             }
