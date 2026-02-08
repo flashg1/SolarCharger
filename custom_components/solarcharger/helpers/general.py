@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant.core import State
 
 from ..const import NUMBER_CHARGER_ALLOCATED_POWER  # noqa: TID252
-from ..model_control import ChargeControl  # noqa: TID252
+from ..model_charge_control import ChargeControl  # noqa: TID252
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

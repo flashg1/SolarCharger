@@ -205,7 +205,9 @@ async def async_setup_entry(
                 )
 
         if len(times) > 0:
-            coordinator.charge_controls[subentry.subentry_id].times = times
+            coordinator.device_controls[
+                subentry.subentry_id
+            ].controller.charge_control.times = times
             async_add_entities(
                 times.values(),
                 update_before_add=False,

@@ -25,7 +25,8 @@ from .const import (
     SUBENTRY_TYPE_DEFAULTS,
 )
 from .coordinator import SolarChargerCoordinator
-from .model_control import ChargeControl
+from .model_charge_control import ChargeControl
+from .model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -80,7 +81,7 @@ async def async_init_charger_subentry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     subentry: ConfigSubentry,
-    charge_controls: dict[str, ChargeControl],
+    device_controls: dict[str, DeviceControl],
 ):
     """Initialize a charger for a given subentry."""
 
@@ -93,16 +94,20 @@ async def async_init_charger_subentry(
             subentry.subentry_id,
         )
         return
-    charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
-    chargeable: Chargeable = cast(Chargeable, charger)
 
     # Initialize ChargeController
+    control = ChargeControl(
+        subentry_id=subentry.subentry_id,
+        config_name=subentry.unique_id,
+    )
+    charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
+    chargeable: Chargeable = cast(Chargeable, charger)
     controller: ChargeController = ChargeController(
-        hass, entry, subentry, charger, chargeable
+        hass, entry, subentry, control, charger, chargeable
     )
 
-    # Store in charge_controls dictionary
-    charge_controls[subentry.subentry_id] = ChargeControl(
+    # Store in charge_controllers dictionary
+    device_controls[subentry.subentry_id] = DeviceControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
         controller=controller,
@@ -120,9 +125,10 @@ async def async_init_charger_subentry(
 
 # ----------------------------------------------------------------------------
 async def async_init_global_defaults_subentry(
+    hass: HomeAssistant,
     entry: ConfigEntry,
     subentry: ConfigSubentry,
-    charge_controls: dict[str, ChargeControl],
+    device_controls: dict[str, DeviceControl],
 ):
     """Initialize global defaults subentry."""
 
@@ -136,11 +142,23 @@ async def async_init_global_defaults_subentry(
         )
         return
 
-    # Store in charge_controls dictionary
-    charge_controls[subentry.subentry_id] = ChargeControl(
+    # Initialize ChargeController
+    control = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
-        controller=None,
+    )
+    # charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
+    # charger: Charger = DummyCharger()
+    # chargeable: Chargeable = cast(Chargeable, charger)
+    controller: ChargeController = ChargeController(
+        hass, entry, subentry, control, None, None
+    )
+
+    # Store in charge_controllers dictionary
+    device_controls[subentry.subentry_id] = DeviceControl(
+        subentry_id=subentry.subentry_id,
+        config_name=subentry.unique_id,
+        controller=controller,
     )
 
     _LOGGER.info(
@@ -166,7 +184,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Initialise all subentries
     #####################################
     global_defaults_subentry = None
-    charge_controls: dict[str, ChargeControl] = {}
+    device_controls: dict[str, DeviceControl] = {}
+    # charge_controllers: dict[str, ChargeController] = {}
     for subentry in entry.subentries.values():
         if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
             # Initialize charger
@@ -174,15 +193,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 hass,
                 entry,
                 subentry,
-                charge_controls,
+                device_controls,
             )
         elif subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
             # Initialize global defaults
             global_defaults_subentry = subentry
             await async_init_global_defaults_subentry(
+                hass,
                 entry,
                 subentry,
-                charge_controls,
+                device_controls,
             )
 
     # There are no subentries on first start
@@ -197,7 +217,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry=entry,
         global_defaults_subentry=global_defaults_subentry,
     )
-    coordinator.charge_controls = charge_controls
+    coordinator.device_controls = device_controls
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     # Registers update listener to update config entry when options are updated.

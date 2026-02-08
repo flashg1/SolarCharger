@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import BUTTON, BUTTON_RESET_CHARGE_LIMIT_AND_TIME, DOMAIN, ICON_START
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
-from .model_control import ChargeControl
+from .model_charge_control import ChargeControl
 
 # type BUTTON_ACTION_TYPE = Callable[[ChargeControl], Coroutine[Any, Any, None] | None]
 # type BUTTON_ACTION_TYPE = (
@@ -78,7 +78,9 @@ class SolarChargerButtonActionEntity(SolarChargerButtonEntity):
         #     self._coordinator.charge_controls[self._subentry.subentry_id]
         # )
         await self._action(
-            self._coordinator.charge_controls[self._subentry.subentry_id]
+            self._coordinator.device_controls[
+                self._subentry.subentry_id
+            ].controller.charge_control
         )
 
 
@@ -142,7 +144,9 @@ async def async_setup_entry(
                 )
 
         if len(buttons) > 0:
-            coordinator.charge_controls[subentry.subentry_id].buttons = buttons
+            coordinator.device_controls[
+                subentry.subentry_id
+            ].controller.charge_control.buttons = buttons
             async_add_entities(
                 buttons.values(),
                 update_before_add=False,

@@ -5,6 +5,7 @@ from asyncio import Task, timeout
 from datetime import date, datetime, time, timedelta
 import inspect
 import logging
+from typing import Any
 
 from propcache.api import cached_property
 
@@ -22,6 +23,8 @@ from ..const import (  # noqa: TID252
     CALIBRATE_SOC_INCREASE,
     CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
     CONF_WAIT_NET_POWER_UPDATE,
+    COORDINATOR_STATE_CHARGING,
+    COORDINATOR_STATE_STOPPED,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
     DOMAIN,
@@ -45,18 +48,20 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGEE_WAKE_UP_BUTTON,
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    SENSOR_RUN_STATE,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
+    SWITCH_CHARGE,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
-    SWITCH_START_CHARGE,
     SWITCH_SUN_TRIGGER,
 )
 from ..entity import compose_entity_id  # noqa: TID252
 from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
+from ..model_charge_control import ChargeControl  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import (  # noqa: TID252
     ChargeSchedule,
@@ -101,8 +106,11 @@ class ChargeController(ScOptionState):
         hass: HomeAssistant,
         entry: ConfigEntry,
         subentry: ConfigSubentry,
-        charger: Charger,
-        chargeable: Chargeable,
+        control: ChargeControl,
+        charger: Any,
+        chargeable: Any,
+        # charger: Charger,
+        # chargeable: Chargeable,
     ) -> None:
         """Initialize the Charge instance."""
 
@@ -120,6 +128,7 @@ class ChargeController(ScOptionState):
         # sync with the switches.
         self._initialising = True
 
+        self._control = control
         self._charger = charger
         self._chargeable = chargeable
         self._charge_task: Task | None = None
@@ -141,8 +150,8 @@ class ChargeController(ScOptionState):
             SWITCH, subentry.unique_id, SWITCH_POLL_CHARGER_UPDATE
         )
 
-        self._charger_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_START_CHARGE
+        self._charge_switch = compose_entity_id(
+            SWITCH, subentry.unique_id, SWITCH_CHARGE
         )
         self._schedule_charge_switch = compose_entity_id(
             SWITCH, subentry.unique_id, SWITCH_SCHEDULE_CHARGE
@@ -194,6 +203,11 @@ class ChargeController(ScOptionState):
             return self._charger  # type: ignore[return-value]
         return None
 
+    @property
+    def charge_control(self) -> ChargeControl:
+        """Return the charge control object if applicable."""
+        return self._control
+
     # ----------------------------------------------------------------------------
     # Global defaults
     # ----------------------------------------------------------------------------
@@ -244,6 +258,10 @@ class ChargeController(ScOptionState):
         return self.get_boolean_or_abort(self._sun_trigger_switch)
 
     # ----------------------------------------------------------------------------
+    def _is_charge_switch_on(self) -> bool:
+        return self.get_boolean_or_abort(self._charge_switch)
+
+    # ----------------------------------------------------------------------------
     def _turn_charger_switch(self, turn_on: bool) -> None:
         """Create a task to turn on the charger switch."""
 
@@ -251,11 +269,9 @@ class ChargeController(ScOptionState):
         # self._hass.loop.create_task(self.async_start_charge())
 
         if turn_on:
-            self._hass.loop.create_task(self.async_turn_switch_on(self._charger_switch))
+            self._hass.loop.create_task(self.async_turn_switch_on(self._charge_switch))
         else:
-            self._hass.loop.create_task(
-                self.async_turn_switch_off(self._charger_switch)
-            )
+            self._hass.loop.create_task(self.async_turn_switch_off(self._charge_switch))
 
     # ----------------------------------------------------------------------------
     # Called by next charge time trigger only
@@ -263,7 +279,7 @@ class ChargeController(ScOptionState):
         """Start charger from coroutine callback."""
 
         # async_call_later do support coroutine callback, so can call directly.
-        await self.async_turn_switch_on(self._charger_switch)
+        await self.async_turn_switch_on(self._charge_switch)
 
     # ----------------------------------------------------------------------------
     def _get_charge_limit_or_abort(self, chargeable: Chargeable) -> float:
@@ -323,7 +339,7 @@ class ChargeController(ScOptionState):
                         and elevation_start_trigger <= new_elevation
                     ):
                         # Start charger
-                        await self.async_turn_switch_on(self._charger_switch)
+                        await self.async_turn_switch_on(self._charge_switch)
 
     # ----------------------------------------------------------------------------
     async def async_handle_plug_in_charger_event(
@@ -542,6 +558,9 @@ class ChargeController(ScOptionState):
 
         # Track sun elevation
         await self.async_switch_sun_elevation_trigger(self._is_sun_trigger())
+
+        # Resume charging if it was charging before HA restart
+        await self.async_switch_charger(self._is_charge_switch_on())
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
@@ -1733,3 +1752,105 @@ class ChargeController(ScOptionState):
         else:
             _LOGGER.info("No running charge task to stop for charger %s", self._caller)
         return None
+
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    async def async_start_charger(self, control: ChargeControl) -> None:
+        """Start the charger."""
+        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+
+        if control:
+            if control.charge_task:
+                if not control.charge_task.done():
+                    _LOGGER.debug(
+                        "Task %s already running", control.charge_task.get_name()
+                    )
+                    return
+
+            #####################################
+            # Callback on task end
+            # Cannot be async due to following error.
+            # TypeError: coroutines cannot be used with call_soon()
+            #####################################
+            def _callback_on_charge_end(task: Task) -> None:
+                """Turn off switch on task exit."""
+                log_is_event_loop(
+                    _LOGGER, self.__class__.__name__, inspect.currentframe()
+                )
+                if task.cancelled():
+                    _LOGGER.warning("Task %s was cancelled", task.get_name())
+                elif task.exception():
+                    _LOGGER.error(
+                        "Task %s failed: %s", task.get_name(), task.exception()
+                    )
+                else:
+                    _LOGGER.info("Task %s completed", task.get_name())
+
+                control.instance_count = 0
+                # await async_set_allocated_power(control, 0)
+
+                if control.switches:
+                    control.switch_charge = False
+                    control.switches[SWITCH_CHARGE].turn_off()
+                    # control.switches[SWITCH_START_CHARGE].update_ha_state()
+
+                if control.sensors:
+                    control.sensors[SENSOR_RUN_STATE].set_state(
+                        COORDINATOR_STATE_STOPPED
+                    )
+
+            if control.sensors:
+                control.sensors[SENSOR_RUN_STATE].set_state(COORDINATOR_STATE_CHARGING)
+            control.charge_task = await self.async_start_charge()
+            control.instance_count = 1
+            control.charge_task.add_done_callback(_callback_on_charge_end)
+
+    # ----------------------------------------------------------------------------
+    async def async_stop_charger(self, control: ChargeControl) -> None:
+        """Stop the charger."""
+        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+
+        if control:
+            if control.charge_task:
+                if not control.charge_task.done():
+                    if control.end_charge_task:
+                        if not control.end_charge_task.done():
+                            _LOGGER.debug(
+                                "Task %s already running",
+                                control.end_charge_task.get_name(),
+                            )
+                            return
+
+                    control.end_charge_task = self.stop_charge()
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_charger1(self, turn_on: bool):
+        """Called by switch entity to start or stop charge."""
+
+        _LOGGER.debug("%s: start charge: %s", self._control.config_name, turn_on)
+
+        if not self._initialising:
+            if turn_on:
+                if self._control.switch_charge:
+                    _LOGGER.error(
+                        "Charger %s already running", self._control.config_name
+                    )
+                else:
+                    self._control.switch_charge = True
+                    await self.async_start_charger(self._control)
+            else:
+                if self._control.switch_charge:
+                    self._control.switch_charge = False
+                    await self.async_stop_charger(self._control)
+                else:
+                    _LOGGER.error(
+                        "Charger %s already stopped", self._control.config_name
+                    )
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_charger(self, turn_on: bool):
+        """Called by switch entity to start or stop charge."""
+
+        if not self._initialising:
+            self._hass.loop.create_task(self.async_switch_charger1(turn_on))

@@ -148,7 +148,9 @@ async def async_setup_entry(
                     )
 
             if len(sensors) > 0:
-                coordinator.charge_controls[subentry.subentry_id].sensors = sensors
+                coordinator.device_controls[
+                    subentry.subentry_id
+                ].controller.charge_control.sensors = sensors
                 async_add_entities(
                     sensors.values(),
                     update_before_add=False,

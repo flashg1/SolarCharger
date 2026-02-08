@@ -17,21 +17,20 @@ from .const import (
     DOMAIN,
     RESTORE_ON_START_FALSE,
     RESTORE_ON_START_TRUE,
-    SUBENTRY_CHARGER_TYPES,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
+    SWITCH_CHARGE,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
-    SWITCH_START_CHARGE,
     SWITCH_SUN_TRIGGER,
 )
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
-from .model_control import ChargeControl
+from .model_device_control import DeviceControl
 
-type SWITCH_ACTION_TYPE = Callable[[ChargeControl, bool], Coroutine[Any, Any, None]]
+type SWITCH_ACTION_TYPE = Callable[[DeviceControl, bool], Coroutine[Any, Any, None]]
 
 if TYPE_CHECKING:
     from .coordinator import SolarChargerCoordinator
@@ -145,7 +144,8 @@ class SolarChargerSwitchActionEntity(SolarChargerSwitchEntity):
         if not self.is_on:
             await super().async_turn_on(**kwargs)
             await self._action(
-                self._coordinator.charge_controls[self._subentry.subentry_id], True
+                self._coordinator.device_controls[self._subentry.subentry_id],
+                True,
             )
 
     # ----------------------------------------------------------------------------
@@ -155,7 +155,8 @@ class SolarChargerSwitchActionEntity(SolarChargerSwitchEntity):
         if self.is_on:
             await super().async_turn_off(**kwargs)
             await self._action(
-                self._coordinator.charge_controls[self._subentry.subentry_id], False
+                self._coordinator.device_controls[self._subentry.subentry_id],
+                False,
             )
 
 
@@ -194,16 +195,17 @@ class SolarChargerSwitchChargeEntity(SolarChargerSwitchEntity):
             self._attr_is_on = False
             self.update_ha_state()
 
-        self._coordinator.charge_controls[
+        self._coordinator.device_controls[
             self._subentry.subentry_id
-        ].switch_charge = self.is_on
+        ].controller.charge_control.switch_charge = self.is_on
 
     # ----------------------------------------------------------------------------
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         await super().async_turn_on(**kwargs)
         await self._coordinator.async_switch_charger(
-            self._coordinator.charge_controls[self._subentry.subentry_id], True
+            self._coordinator.device_controls[self._subentry.subentry_id],
+            True,
         )
 
     # ----------------------------------------------------------------------------
@@ -211,7 +213,8 @@ class SolarChargerSwitchChargeEntity(SolarChargerSwitchEntity):
         """Turn the entity off."""
         await super().async_turn_off(**kwargs)
         await self._coordinator.async_switch_charger(
-            self._coordinator.charge_controls[self._subentry.subentry_id], False
+            self._coordinator.device_controls[self._subentry.subentry_id],
+            False,
         )
 
 
@@ -245,14 +248,14 @@ async def async_setup_entry(
         # Control switches - calls coordinator to perform action
         #####################################
         (
-            SWITCH_START_CHARGE,
+            SWITCH_CHARGE,
             SolarChargerSwitchChargeEntity,
-            RESTORE_ON_START_FALSE,
-            # RESTORE_ON_START_TRUE,
+            # RESTORE_ON_START_FALSE,
+            RESTORE_ON_START_TRUE,
             coordinator.async_switch_charger,
             SolarChargerEntityType.LOCAL_DEFAULT,
             SwitchEntityDescription(
-                key=SWITCH_START_CHARGE,
+                key=SWITCH_CHARGE,
             ),
         ),
         #####################################
@@ -364,7 +367,9 @@ async def async_setup_entry(
                 )
 
         if len(switches) > 0:
-            coordinator.charge_controls[subentry.subentry_id].switches = switches
+            coordinator.device_controls[
+                subentry.subentry_id
+            ].controller.charge_control.switches = switches
             async_add_entities(
                 switches.values(),
                 update_before_add=False,

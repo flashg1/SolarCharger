@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from .chargers.controller import ChargeController
+# from .chargers.controller import ChargeController
 
 #######################################################
 # Problem: Circular imports
@@ -46,7 +46,7 @@ class ChargeControl:
     # Callbacks
     # unsub_callbacks: dict[str, CALLBACK_TYPE]
 
-    controller: ChargeController | None = None
+    # controller: ChargeController | None = None
 
     charge_task: Task | None = None
     instance_count: int = 0

@@ -1,6 +1,5 @@
 """Solar charger coordinator."""
 
-from asyncio import Task
 from datetime import datetime, time, timedelta
 import inspect
 import logging
@@ -27,12 +26,11 @@ from .const import (
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
-    SENSOR_RUN_STATE,
-    SWITCH_START_CHARGE,
     WEEKLY_CHARGE_ENDTIMES,
 )
 from .helpers.general import async_set_allocated_power
-from .model_control import ChargeControl
+from .model_charge_control import ChargeControl
+from .model_device_control import DeviceControl
 from .sc_option_state import ScOptionState
 from .utils import log_is_event_loop
 
@@ -59,7 +57,7 @@ class SolarChargerCoordinator(ScOptionState):
         global_defaults_subentry: ConfigSubentry,
     ):
         """Initialize the coordinator."""
-        self.charge_controls: dict[str, ChargeControl] = {}
+        self.device_controls: dict[str, DeviceControl] = {}
         self._unsub: list[CALLBACK_TYPE] = []
 
         ScOptionState.__init__(
@@ -148,8 +146,8 @@ class SolarChargerCoordinator(ScOptionState):
         """Set up the coordinator and its managed components."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
-        for control in self.charge_controls.values():
-            if control.controller is not None:
+        for control in self.device_controls.values():
+            if control.config_name != OPTION_GLOBAL_DEFAULTS_ID:
                 # Only setup real chargers with controller
                 await control.controller.async_setup()
 
@@ -164,8 +162,8 @@ class SolarChargerCoordinator(ScOptionState):
     async def async_unload(self) -> None:
         """Unload the coordinator and its managed components."""
 
-        for control in self.charge_controls.values():
-            if control.controller is not None:
+        for control in self.device_controls.values():
+            if control.config_name != OPTION_GLOBAL_DEFAULTS_ID:
                 await control.controller.async_unload()
 
         for unsub_method in self._unsub:
@@ -240,7 +238,7 @@ class SolarChargerCoordinator(ScOptionState):
     def _get_total_allocation_pool(self) -> dict[str, float]:
         allocation_pool: dict[str, float] = {}
 
-        for control in self.charge_controls.values():
+        for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
 
@@ -254,7 +252,7 @@ class SolarChargerCoordinator(ScOptionState):
                         f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {subentry.unique_id}"
                     )
                 allocation_pool[control.subentry_id] = (
-                    allocation_weight * control.instance_count
+                    allocation_weight * control.controller.charge_control.instance_count
                 )
             else:
                 # TODO: Need to remove stale control
@@ -275,15 +273,19 @@ class SolarChargerCoordinator(ScOptionState):
             total_weight = total_weight + weight
 
         if total_weight > 0:
-            for control in self.charge_controls.values():
+            for control in self.device_controls.values():
                 # Information only. Global default variable shows net power available for allocation.
                 if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
-                    await async_set_allocated_power(control, net_power)
+                    await async_set_allocated_power(
+                        control.controller.charge_control, net_power
+                    )
                     continue
 
                 allocation_weight = pool[control.subentry_id]
                 allocated_power = net_power * allocation_weight / total_weight
-                await async_set_allocated_power(control, allocated_power)
+                await async_set_allocated_power(
+                    control.controller.charge_control, allocated_power
+                )
 
                 _LOGGER.debug(
                     "%s: total_weight=%s, allocation_weight=%s, allocated_power=%s",
@@ -314,109 +316,28 @@ class SolarChargerCoordinator(ScOptionState):
 
         # TODO: Should remove last check sensor and following code since not used.
         # Update last check sensor
-        for control in self.charge_controls.values():
-            if control.sensors:
-                control.sensors[SENSOR_LAST_CHECK].set_state(
+        for control in self.device_controls.values():
+            if control.controller.charge_control.sensors:
+                control.controller.charge_control.sensors[SENSOR_LAST_CHECK].set_state(
                     datetime.now().astimezone()
                 )
 
     # ----------------------------------------------------------------------------
     # Coordinator functions
     # ----------------------------------------------------------------------------
-    async def async_switch_dummy(self, control: ChargeControl, turn_on: bool) -> None:
+    async def async_switch_dummy(self, control: DeviceControl, turn_on: bool) -> None:
         """Dummy switch."""
 
     # ----------------------------------------------------------------------------
-    async def async_start_charger(self, control: ChargeControl) -> None:
-        """Start the charger."""
-        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+    async def async_switch_charger(self, control: DeviceControl, turn_on: bool) -> None:
+        """Schedule charge switch."""
 
-        if control and control.controller:
-            if control.charge_task:
-                if not control.charge_task.done():
-                    _LOGGER.debug(
-                        "Task %s already running", control.charge_task.get_name()
-                    )
-                    return
-
-            #####################################
-            # Callback on task end
-            # Cannot be async due to following error.
-            # TypeError: coroutines cannot be used with call_soon()
-            #####################################
-            def _callback_on_charge_end(task: Task) -> None:
-                """Turn off switch on task exit."""
-                log_is_event_loop(
-                    _LOGGER, self.__class__.__name__, inspect.currentframe()
-                )
-                if task.cancelled():
-                    _LOGGER.warning("Task %s was cancelled", task.get_name())
-                elif task.exception():
-                    _LOGGER.error(
-                        "Task %s failed: %s", task.get_name(), task.exception()
-                    )
-                else:
-                    _LOGGER.info("Task %s completed", task.get_name())
-
-                control.instance_count = 0
-                # await async_set_allocated_power(control, 0)
-
-                if control.switches:
-                    control.switch_charge = False
-                    control.switches[SWITCH_START_CHARGE].turn_off()
-                    # control.switches[SWITCH_START_CHARGE].update_ha_state()
-
-                if control.sensors:
-                    control.sensors[SENSOR_RUN_STATE].set_state(
-                        COORDINATOR_STATE_STOPPED
-                    )
-
-            if control.sensors:
-                control.sensors[SENSOR_RUN_STATE].set_state(COORDINATOR_STATE_CHARGING)
-            control.charge_task = await control.controller.async_start_charge()
-            control.instance_count = 1
-            control.charge_task.add_done_callback(_callback_on_charge_end)
-
-    # ----------------------------------------------------------------------------
-    async def async_stop_charger(self, control: ChargeControl) -> None:
-        """Stop the charger."""
-        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
-
-        if control and control.controller:
-            if control.charge_task:
-                if not control.charge_task.done():
-                    if control.end_charge_task:
-                        if not control.end_charge_task.done():
-                            _LOGGER.debug(
-                                "Task %s already running",
-                                control.end_charge_task.get_name(),
-                            )
-                            return
-
-                    control.end_charge_task = control.controller.stop_charge()
-
-    # ----------------------------------------------------------------------------
-    async def async_switch_charger(self, control: ChargeControl, start_charge: bool):
-        """Called by switch entity to start or stop charge."""
-
-        _LOGGER.debug("Charger %s start charge: %s", control.config_name, start_charge)
-
-        if start_charge:
-            if control.switch_charge:
-                _LOGGER.error("Charger %s already running", control.config_name)
-            else:
-                control.switch_charge = True
-                await self.async_start_charger(control)
-        else:
-            if control.switch_charge:
-                control.switch_charge = False
-                await self.async_stop_charger(control)
-            else:
-                _LOGGER.error("Charger %s already stopped", control.config_name)
+        if control.controller is not None:
+            await control.controller.async_switch_charger(turn_on)
 
     # ----------------------------------------------------------------------------
     async def async_switch_schedule_charge(
-        self, control: ChargeControl, turn_on: bool
+        self, control: DeviceControl, turn_on: bool
     ) -> None:
         """Schedule charge switch."""
 
@@ -425,7 +346,7 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def async_switch_plugin_trigger(
-        self, control: ChargeControl, turn_on: bool
+        self, control: DeviceControl, turn_on: bool
     ) -> None:
         """Plugin trigger switch."""
 
@@ -434,7 +355,7 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def async_switch_sun_elevation_trigger(
-        self, control: ChargeControl, turn_on: bool
+        self, control: DeviceControl, turn_on: bool
     ) -> None:
         """Sun elevation trigger switch."""
 
@@ -443,7 +364,7 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def async_switch_calibrate_max_charge_speed(
-        self, control: ChargeControl, turn_on: bool
+        self, control: DeviceControl, turn_on: bool
     ) -> None:
         """Calibrate max charge speed switch."""
 
@@ -451,7 +372,7 @@ class SolarChargerCoordinator(ScOptionState):
             await control.controller.async_switch_calibrate_max_charge_speed(turn_on)
 
     # ----------------------------------------------------------------------------
-    async def async_reset_charge_limit_default(self, control: ChargeControl) -> None:
+    async def async_reset_charge_limit_default(self, control: DeviceControl) -> None:
         """Reset charge limit defaults."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
@@ -459,7 +380,11 @@ class SolarChargerCoordinator(ScOptionState):
         # Global defaults subentry has no controller.
         if control:
             subentry = self._entry.subentries.get(control.subentry_id)
-            if control.numbers and control.times and subentry:
+            if (
+                control.controller.charge_control.numbers
+                and control.controller.charge_control.times
+                and subentry
+            ):
                 _LOGGER.info(
                     "%s: Resetting charge limit and charge end time defaults",
                     control.config_name,
@@ -483,9 +408,9 @@ class SolarChargerCoordinator(ScOptionState):
                         default_val is not None
                         and min_charge_limit <= default_val <= max_charge_limit
                     ):
-                        await control.numbers[day_limit].async_set_native_value(
-                            default_val
-                        )
+                        await control.controller.charge_control.numbers[
+                            day_limit
+                        ].async_set_native_value(default_val)
                     else:
                         _LOGGER.error(
                             "%s: Cannot set default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
@@ -498,4 +423,6 @@ class SolarChargerCoordinator(ScOptionState):
 
                 # Set charge end times
                 for day_endtime in WEEKLY_CHARGE_ENDTIMES:
-                    await control.times[day_endtime].async_set_value(time.min)
+                    await control.controller.charge_control.times[
+                        day_endtime
+                    ].async_set_value(time.min)
