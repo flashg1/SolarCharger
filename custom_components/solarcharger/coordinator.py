@@ -104,6 +104,9 @@ class SolarChargerCoordinator(ScOptionState):
         return control.switch_charge
 
     # ----------------------------------------------------------------------------
+    # For some reason, this function has been called twice irrespective of the number of chargers defined.
+    # Not sure why?
+    # eg. try changing the wait_net_power_update.
     async def _async_handle_options_update(
         self,
         hass: HomeAssistant,
@@ -111,7 +114,20 @@ class SolarChargerCoordinator(ScOptionState):
     ) -> None:
         """Handle options update by reloading the config entry."""
 
-        await hass.config_entries.async_reload(entry.entry_id)
+        # From AI: Why reload the whole config entry instead of just updating the
+        # coordinator or impacted subentries?
+        #
+        # Answer: Reloading the whole config entry ensures that all changes are
+        # applied correctly and consistently across the entire integration. Options
+        # can impact multiple subentries and components, and reloading the whole
+        # config entry ensures that all components are updated with the new options
+        # without having to track which specific components are impacted by which
+        # options. Additionally, reloading the whole config entry is not expensive
+        # since it only reloads the coordinator and chargers but not the entities,
+        # so it provides a good balance between simplicity and performance.
+
+        # await hass.config_entries.async_reload(entry.entry_id)
+        hass.config_entries.async_schedule_reload(entry.entry_id)
 
     # ----------------------------------------------------------------------------
     # Setup
@@ -329,7 +345,7 @@ class SolarChargerCoordinator(ScOptionState):
         """Dummy switch."""
 
     # ----------------------------------------------------------------------------
-    async def async_switch_charger(self, control: DeviceControl, turn_on: bool) -> None:
+    async def async_switch_charge(self, control: DeviceControl, turn_on: bool) -> None:
         """Schedule charge switch."""
 
         if control.controller is not None:

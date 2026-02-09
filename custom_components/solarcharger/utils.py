@@ -249,6 +249,7 @@ def remove_all_callback_subscriptions(
     """Remove all callback subscriptions."""
 
     for callback_key, unsubscribe in list(unsub_callbacks.items()):
+        _LOGGER.warning("%s: Unsubscribe callback: %s", caller, callback_key)
         try:
             unsubscribe()
         except Exception:

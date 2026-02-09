@@ -566,10 +566,10 @@ class ChargeController(ScOptionState):
             self._tracker.untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------
-    async def _async_init_controller_config(
+    async def _async_activate_controller_switches(
         self, event: Event[NoEventData] | None
     ) -> None:
-        """Initialize controller config.
+        """Activate controller switches once after HA has initialised.
 
         The charge task can hold up HA on restart, so must run charge task after HA has started.
         Other switches are ok, but best to also run after HA has started to ensure the entities are available.
@@ -612,21 +612,27 @@ class ChargeController(ScOptionState):
     async def async_setup(self) -> None:
         """Async setup of the ChargeController."""
 
+        # Load charger and tracker.
         await self._charger.async_setup()
         await self._tracker.async_setup()
 
         self._tracker.on_ha_stop(self._async_abort_solar_charger)
 
         if self._hass.state == CoreState.running:
-            await self._async_init_controller_config(None)
+            await self._async_activate_controller_switches(None)
         else:
-            self._tracker.on_ha_started(self._async_init_controller_config)
+            self._tracker.on_ha_started(self._async_activate_controller_switches)
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Async unload of the ChargeController."""
-        await self._tracker.async_unload()
+
+        # Abort charge task if running.
+        await self._async_abort_solar_charger(None)
+
+        # Unload charger and tracker.
         await self._charger.async_unload()
+        await self._tracker.async_unload()
 
     # ----------------------------------------------------------------------------
     # Charger code

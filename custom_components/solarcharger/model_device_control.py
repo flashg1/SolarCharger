@@ -9,7 +9,7 @@ from .chargers.controller import ChargeController
 # ----------------------------------------------------------------------------
 @dataclass
 class DeviceControl:
-    """Data structure for charger data."""
+    """Data structure for charge controller."""
 
     subentry_id: str
     config_name: str

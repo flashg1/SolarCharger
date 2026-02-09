@@ -161,64 +161,6 @@ class SolarChargerSwitchActionEntity(SolarChargerSwitchEntity):
 
 
 # ----------------------------------------------------------------------------
-# Do not restore switch setting on reboot, otherwise can hold up startup until charging is completed.
-# ----------------------------------------------------------------------------
-class SolarChargerSwitchChargeEntity(SolarChargerSwitchEntity):
-    """Representation of a SolarCharger start switch."""
-
-    # _entity_key = ENTITY_KEY_CHARGE_SWITCH
-
-    def __init__(
-        self,
-        config_item: str,
-        subentry: ConfigSubentry,
-        entity_type: SolarChargerEntityType,
-        desc: SwitchEntityDescription,
-        coordinator: "SolarChargerCoordinator",
-        default_val: bool,
-        is_restore_state: bool,
-        action: SWITCH_ACTION_TYPE,
-    ) -> None:
-        """Initialize the switch."""
-        super().__init__(
-            config_item,
-            subentry,
-            entity_type,
-            desc,
-            coordinator,
-            default_val,
-            is_restore_state,
-            action,
-        )
-
-        if self.is_on is None:
-            self._attr_is_on = False
-            self.update_ha_state()
-
-        self._coordinator.device_controls[
-            self._subentry.subentry_id
-        ].controller.charge_control.switch_charge = self.is_on
-
-    # ----------------------------------------------------------------------------
-    async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn the entity on."""
-        await super().async_turn_on(**kwargs)
-        await self._coordinator.async_switch_charger(
-            self._coordinator.device_controls[self._subentry.subentry_id],
-            True,
-        )
-
-    # ----------------------------------------------------------------------------
-    async def async_turn_off(self, **kwargs: Any) -> None:
-        """Turn the entity off."""
-        await super().async_turn_off(**kwargs)
-        await self._coordinator.async_switch_charger(
-            self._coordinator.device_controls[self._subentry.subentry_id],
-            False,
-        )
-
-
-# ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 async def async_setup_entry(
     hass: core.HomeAssistant,
@@ -245,19 +187,6 @@ async def async_setup_entry(
         # Must haves, ie. not hidden for all
         # entity_category=None
         #####################################
-        # Control switches - calls coordinator to perform action
-        #####################################
-        (
-            SWITCH_CHARGE,
-            SolarChargerSwitchChargeEntity,
-            # RESTORE_ON_START_FALSE,
-            RESTORE_ON_START_TRUE,
-            coordinator.async_switch_charger,
-            SolarChargerEntityType.LOCAL_DEFAULT,
-            SwitchEntityDescription(
-                key=SWITCH_CHARGE,
-            ),
-        ),
         #####################################
         # Boolean switches
         #####################################
@@ -294,7 +223,7 @@ async def async_setup_entry(
             ),
         ),
         #####################################
-        # Action switches
+        # Action switches - calls coordinator to perform action
         #####################################
         (
             SWITCH_SCHEDULE_CHARGE,
@@ -330,9 +259,18 @@ async def async_setup_entry(
             ),
         ),
         (
+            SWITCH_CHARGE,
+            SolarChargerSwitchActionEntity,
+            RESTORE_ON_START_TRUE,
+            coordinator.async_switch_charge,
+            SolarChargerEntityType.LOCAL_DEFAULT,
+            SwitchEntityDescription(
+                key=SWITCH_CHARGE,
+            ),
+        ),
+        (
             SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
             SolarChargerSwitchActionEntity,
-            # RESTORE_ON_START_FALSE,
             RESTORE_ON_START_TRUE,
             coordinator.async_switch_calibrate_max_charge_speed,
             SolarChargerEntityType.LOCAL_DEFAULT,
