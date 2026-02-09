@@ -93,7 +93,7 @@ class Tracker(ScOptionState):
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Async unload of the Tracker."""
-        remove_all_callback_subscriptions(self._unsub_callbacks)
+        remove_all_callback_subscriptions(self._caller, self._unsub_callbacks)
 
     # ----------------------------------------------------------------------------
     # General utils

@@ -12,7 +12,13 @@ from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import Event, EventStateChangedData, HomeAssistant, State
+from homeassistant.core import (
+    CoreState,
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+    State,
+)
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.typing import NoEventData
 
@@ -560,7 +566,7 @@ class ChargeController(ScOptionState):
             self._tracker.untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------
-    async def _async_init_controller_config(self, event: Event[NoEventData]) -> None:
+    async def _async_init_controller_config(self, event: Event[NoEventData] | None) -> None:
         """Initialize controller config.
 
         The charge task can hold up HA on restart, so must run charge task after HA has started.
@@ -596,7 +602,10 @@ class ChargeController(ScOptionState):
 
         self._initialising = False
 
-        self._tracker.track_ha_started(self._async_init_controller_config)
+        if self._hass.state == CoreState.running:
+            await self._async_init_controller_config(None)
+        else:
+            self._tracker.track_ha_started(self._async_init_controller_config)
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:

@@ -198,11 +198,19 @@ def remove_callback_subscription(
     caller: str, unsub_callbacks: dict[str, CALLBACK_TYPE], callback_key: str
 ) -> CALLBACK_TYPE | None:
     """Remove callback subscription."""
+
     unsubscribe = unsub_callbacks.get(callback_key)
     if unsubscribe is not None:
-        unsubscribe()
-        unsub_callbacks.pop(callback_key)
         _LOGGER.warning("%s: Removed callback: %s", caller, callback_key)
+        unsub_callbacks.pop(callback_key)
+
+        try:
+            unsubscribe()
+        except Exception:
+            _LOGGER.exception(
+                "%s: Failed to unsubscribe callback: %s", caller, callback_key
+            )
+
     else:
         _LOGGER.debug(
             "%s: Callback not exist for removal: %s",
@@ -215,7 +223,7 @@ def remove_callback_subscription(
 
 # ----------------------------------------------------------------------------
 def save_callback_subscription(
-    caller,
+    caller: str,
     unsub_callbacks: dict[str, CALLBACK_TYPE],
     callback_key: str,
     subscription: CALLBACK_TYPE,
@@ -235,11 +243,19 @@ def save_callback_subscription(
 
 # ----------------------------------------------------------------------------
 def remove_all_callback_subscriptions(
+    caller: str,
     unsub_callbacks: dict[str, CALLBACK_TYPE],
 ) -> None:
     """Remove all callback subscriptions."""
-    for unsubscribe in unsub_callbacks.values():
-        unsubscribe()
+
+    for callback_key, unsubscribe in list(unsub_callbacks.items()):
+        try:
+            unsubscribe()
+        except Exception:
+            _LOGGER.exception(
+                "%s: Failed to unsubscribe callback: %s", caller, callback_key
+            )
+
     unsub_callbacks.clear()
 
 
