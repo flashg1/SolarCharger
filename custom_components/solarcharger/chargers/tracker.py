@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -34,6 +34,7 @@ from homeassistant.util.event_type import EventType
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
     CALLBACK_HA_STARTED,
+    CALLBACK_HA_STOP,
     CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
     CALLBACK_NEXT_CHARGE_TIME_UPDATE,
     CALLBACK_PLUG_IN_CHARGER,
@@ -218,10 +219,16 @@ class Tracker(ScOptionState):
         self.remove_callback(CALLBACK_SOC_UPDATE)
 
     # ----------------------------------------------------------------------------
-    def track_ha_started(self, action: EVENT_CALLBACK) -> None:
+    def on_ha_started(self, action: EVENT_CALLBACK) -> None:
         """Track HA started event."""
 
         self._track_event_once(EVENT_HOMEASSISTANT_STARTED, CALLBACK_HA_STARTED, action)
+
+    # ----------------------------------------------------------------------------
+    def on_ha_stop(self, action: EVENT_CALLBACK) -> None:
+        """Track HA stop event."""
+
+        self._track_event_once(EVENT_HOMEASSISTANT_STOP, CALLBACK_HA_STOP, action)
 
     # ----------------------------------------------------------------------------
     # Sensors that are created by default

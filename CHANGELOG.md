@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.3.9 2026-02-08
+- Track both EVENT_HOMEASSISTANT_STARTED and EVENT_HOMEASSISTANT_STOP events.
 - Resume charge after HA restart.
 - Refactored charger controller.
 - Removed redundant start charge button.

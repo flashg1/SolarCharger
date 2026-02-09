@@ -566,12 +566,18 @@ class ChargeController(ScOptionState):
             self._tracker.untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------
-    async def _async_init_controller_config(self, event: Event[NoEventData] | None) -> None:
+    async def _async_init_controller_config(
+        self, event: Event[NoEventData] | None
+    ) -> None:
         """Initialize controller config.
 
         The charge task can hold up HA on restart, so must run charge task after HA has started.
         Other switches are ok, but best to also run after HA has started to ensure the entities are available.
         """
+
+        # Only activate switch actions when HA has fully started, otherwise will hang others during startup.
+        # eg. Switch on charge while HA is still starting up.
+        self._initialising = False
 
         # Track next charge time trigger
         self._subscribe_next_charge_time_update()
@@ -593,6 +599,15 @@ class ChargeController(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
+    async def _async_abort_solar_charger(
+        self, event: Event[NoEventData] | None
+    ) -> None:
+        """Stop solar charger."""
+
+        # Stop charge task to avoid blocking HA shutdown.
+        await self._async_abort_charge_task(self._charger, self._chargeable)
+
+    # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Async setup of the ChargeController."""
@@ -600,12 +615,12 @@ class ChargeController(ScOptionState):
         await self._charger.async_setup()
         await self._tracker.async_setup()
 
-        self._initialising = False
+        self._tracker.on_ha_stop(self._async_abort_solar_charger)
 
         if self._hass.state == CoreState.running:
             await self._async_init_controller_config(None)
         else:
-            self._tracker.track_ha_started(self._async_init_controller_config)
+            self._tracker.on_ha_started(self._async_init_controller_config)
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
@@ -1737,6 +1752,38 @@ class ChargeController(ScOptionState):
         return self._charge_task
 
     # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
+    async def _async_abort_charge_task(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        """Abort charge task."""
+
+        if self._charge_task:
+            if not self._charge_task.done():
+                self._charge_task.cancel()
+
+                try:
+                    await self._charge_task
+                except asyncio.CancelledError:
+                    _LOGGER.warning(
+                        "%s: Aborted charge task",
+                        self._caller,
+                    )
+                except Exception as e:
+                    _LOGGER.error(
+                        "%s: Error aborting charge task: %s",
+                        self._caller,
+                        e,
+                    )
+
+                self._unsubscribe_allocated_power_update()
+
+            else:
+                _LOGGER.info(
+                    "%s: Charge task already completed",
+                    self._caller,
+                )
+
     # ----------------------------------------------------------------------------
     async def _async_stop_charge_task(
         self, charger: Charger, chargeable: Chargeable
