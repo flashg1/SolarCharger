@@ -4,7 +4,7 @@
 - Terminate charge task on HA stop or reconfigure.
 - Track both EVENT_HOMEASSISTANT_STARTED and EVENT_HOMEASSISTANT_STOP events.
 - Resume charge after HA restart.
-- Refactored charger controller.
+- Refactored charger controller by moving charge control into controller.
 - Removed redundant start charge button.
 
 ## v0.3.8.1 2026-02-07

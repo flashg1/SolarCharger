@@ -183,9 +183,8 @@ async def async_setup_entry(
         ...,
     ] = (
         #####################################
-        # Control entities
-        # Must haves, ie. not hidden for all
-        # entity_category=None
+        # Control:  entity_category=None
+        # Config:   entity_category=EntityCategory.CONFIG
         #####################################
         #####################################
         # Boolean switches

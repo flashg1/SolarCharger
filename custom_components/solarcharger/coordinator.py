@@ -105,7 +105,7 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     # For some reason, this function has been called twice irrespective of the number of chargers defined.
-    # Not sure why?
+    # Not sure why? Maybe to ensure the reload is successful?
     # eg. try changing the wait_net_power_update.
     async def _async_handle_options_update(
         self,

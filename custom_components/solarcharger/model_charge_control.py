@@ -46,8 +46,6 @@ class ChargeControl:
     # Callbacks
     # unsub_callbacks: dict[str, CALLBACK_TYPE]
 
-    # controller: ChargeController | None = None
-
     charge_task: Task | None = None
     instance_count: int = 0
     end_charge_task: Task | None = None
