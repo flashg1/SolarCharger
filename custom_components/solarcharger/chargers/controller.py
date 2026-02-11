@@ -55,6 +55,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
     OPTION_CHARGER_CHARGING_SENSOR,
+    OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     SENSOR_RUN_STATE,
     SWITCH,
@@ -591,7 +592,7 @@ class ChargeController(ScOptionState):
 
         # Resume charging if it was charging before HA restart
         await self.async_switch_charge(self._is_charge_switch_on())
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
 
         # Resume charging if it was charging before HA restart
         await self.async_switch_calibrate_max_charge_speed(
@@ -877,14 +878,12 @@ class ChargeController(ScOptionState):
             await self._async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
 
     # ----------------------------------------------------------------------------
-    async def _async_poll_charger_charging_status(
-        self, wait_after_update: bool
-    ) -> None:
-        """Poll charger for charging status."""
+    async def _async_poll_charger_update(self, wait_after_update: bool) -> None:
+        """Poll charger for update using charger switch entity since every charger must have one."""
 
-        charging_sensor = self.option_get_id(OPTION_CHARGER_CHARGING_SENSOR)
-        if charging_sensor:
-            await self.async_poll_entity_id(charging_sensor)
+        charger_entity = self.option_get_id(OPTION_CHARGER_ON_OFF_SWITCH)
+        if charger_entity:
+            await self.async_poll_entity_id(charger_entity)
             if wait_after_update:
                 await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
@@ -895,7 +894,7 @@ class ChargeController(ScOptionState):
         """Get third party integration to update HA with latest data."""
 
         if self._is_poll_charger_update():
-            await self._async_poll_charger_charging_status(wait_after_update)
+            await self._async_poll_charger_update(wait_after_update)
         else:
             config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
             val_dict = ConfigValueDict(config_item, {})
@@ -1029,6 +1028,21 @@ class ChargeController(ScOptionState):
             _LOGGER.exception("%s: Error getting SOC or charge limit", self._caller)
 
         return is_below_limit
+
+    # ----------------------------------------------------------------------------
+    def _is_charging(self, charger: Charger) -> bool:
+        """Is charger currently charging? Always return false in case of error."""
+
+        config_item = OPTION_CHARGER_CHARGING_SENSOR
+        val_dict = ConfigValueDict(config_item, {})
+        is_charging = charger.is_charging(val_dict=val_dict)
+
+        # If there is no charging sensor defined, then use the next best thing,
+        # ie. use charger switch state to determine whether charger is charging or not.
+        if val_dict.config_values[config_item].entity_id is None:
+            is_charging = charger.is_charger_switch_on()
+
+        return is_charging
 
     # ----------------------------------------------------------------------------
     def _is_sun_above_start_end_elevation_triggers(self) -> tuple[bool, float]:
@@ -1393,7 +1407,7 @@ class ChargeController(ScOptionState):
 
         is_connected = self._is_connected(charger)
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
-        is_charging = charger.is_charging()
+        is_charging = self._is_charging(charger)
         (is_sun_above_start_end_elevations, elevation) = (
             self._is_sun_above_start_end_elevation_triggers()
         )
@@ -1457,7 +1471,7 @@ class ChargeController(ScOptionState):
             msg,
             self._is_connected(charger),
             charger.is_charger_switch_on(),
-            charger.is_charging(),
+            self._is_charging(charger),
         )
 
     # ----------------------------------------------------------------------------

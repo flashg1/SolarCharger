@@ -1,7 +1,8 @@
 # Changelog
 
 ## v0.3.10 2026-02-11
-
+- Custom charger can now charge with only 2 controls, ie. on/off switch and set charge current.
+- For custom charger, use on/off switch state to determine whether charger is charging or not.
 
 ## v0.3.9 2026-02-08
 - Terminate charge task on HA stop or reconfigure.
