@@ -70,7 +70,7 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [Telsa Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
 - [Tessie](https://www.home-assistant.io/integrations/tessie)
 
-If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities > Submit
+If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch and read/set charge current are required as a minimum) > Submit
 
 
 ## Installation
