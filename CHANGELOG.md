@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.10 2026-02-11
+
+
 ## v0.3.9 2026-02-08
 - Terminate charge task on HA stop or reconfigure.
 - Track both EVENT_HOMEASSISTANT_STARTED and EVENT_HOMEASSISTANT_STOP events.

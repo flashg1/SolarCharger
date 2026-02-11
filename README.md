@@ -34,20 +34,20 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 
 ## Features
 
--   Charge from excess solar adjusting car charging current according to feedback loop value "Main Power Net".  The "Main Power Net" sensor expresses negative value in Watts for available power for charging car, or positive value for consumed power.
--   Support multi-day solar charging using sun elevation triggers to start and stop.
--   Compatible with off-peak night time charging.
--   Configurable 7 days charge limit schedule.  Default is to use existing charge limit already set in car.
--   Support just-in-time schedule charging to required charge limit using solar and grid if charge completion time is set for the day.
--   Automatically charge more today if today has no charge completion time and next 3 days have higher charge limit.
--   Automatically adjust to the highest charge limit set within a rainy forecast period.  The highest charge limit is selected from the 7 days charge limit settings that are within the forecast period taking into account the charge limit on bad weather setting.  The objective is to charge more before a rainy period.  Default disabled. (TODO)
--   Might be possible to prolong car battery life by setting daily charge limit to 60%, and only charge more before a rainy period by enabling option to adjust daily car charge limit based on weather. (TODO)
--   Allow manual top up from secondary power source (eg. grid, battery) if there is not enough solar during the day, or if required to charge during the night. Just need to set the power offset to specify the maximum power to draw from secondary power source. Also need to toggle on secondary power source if required to charge during the night. (TODO)
--   Support manually setting or automatic programming of minimum charge current according to your requirement.
--   Support charging multiple cars at the same time based on power allocation weighting for each car.
--   Support skew to shift the power export/import curve left or right to achieve your minimal power import. (TODO)
--   Configurable return codes for comparison with connect trigger states, connected states and charging states returned by your EV or charger specific API. These states are used to determine the stages of the charging process.
--   Use EV specific API to control a EV for charging, and/or use OCPP to control an OCPP compliant charger to charge a EV. Only tested with [OCPP simulator](https://github.com/lewei50/iammeter-simulator) and Tesla car. OCPP and Tesla Fleet API support in beta testing phase.
+- Charge from excess solar adjusting car charging current according to feedback loop value "Main Power Net".  The "Main Power Net" sensor expresses negative value in Watts for available power for charging car, or positive value for consumed power.
+- Support multi-day solar charging using sun elevation triggers to start and stop.
+- Compatible with off-peak night time charging.
+- Configurable 7 days charge limit schedule.  Default is to use existing charge limit already set in car.
+- Support just-in-time schedule charging to required charge limit using solar and grid if charge completion time is set for the day.
+- Automatically charge more today if today has no charge completion time and next 3 days have higher charge limit.
+- Automatically adjust to the highest charge limit set within a rainy forecast period.  The highest charge limit is selected from the 7 days charge limit settings that are within the forecast period taking into account the charge limit on bad weather setting.  The objective is to charge more before a rainy period.  Default disabled. (TODO)
+- Might be possible to prolong car battery life by setting daily charge limit to 60%, and only charge more before a rainy period by enabling option to adjust daily car charge limit based on weather. (TODO)
+- Allow manual top up from secondary power source (eg. grid, battery) if there is not enough solar during the day, or if required to charge during the night. Just need to set the power offset to specify the maximum power to draw from secondary power source. Also need to toggle on secondary power source if required to charge during the night. (TODO)
+- Support manually setting or automatic programming of minimum charge current according to your requirement.
+- Support charging multiple cars at the same time based on power allocation weighting for each car.
+- Support skew to shift the power export/import curve left or right to achieve your minimal power import. (TODO)
+- Configurable return codes for comparison with connect trigger states, connected states and charging states returned by your EV or charger specific API. These states are used to determine the stages of the charging process.
+- Use EV specific API to control a EV for charging, and/or use OCPP to control an OCPP compliant charger to charge a EV. Only tested with [OCPP simulator](https://github.com/lewei50/iammeter-simulator) and Tesla car. OCPP and Tesla Fleet API support in beta testing phase.
 
 
 **💡 Tip:** Please :star: this project if you find it useful, and may be also buy me a coffee!
@@ -56,17 +56,25 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 
 
 ## My setup
--	Home Assistant, https://www.home-assistant.io/
--	Enphase Envoy Integration configured for 30 seconds update interval, https://www.home-assistant.io/integrations/enphase_envoy
--	Tesla Custom Integration v3.20.4 (this is for people who want to control their Tesla via Tesla cloud), https://github.com/alandtse/tesla
-- Tesla BLE MQTT docker v0.5.0 (this is for people who want to control their Tesla locally via Bluetooth without cloud), https://github.com/tesla-local-control/tesla_ble_mqtt_docker
-- OCPP v0.84 (this is for people who want to use OCPP to control an OCPP compliant charger to charge their EV), https://github.com/lbbrhzn/ocpp
--	Tesla UMC charger, 230V, max 15A.
--	Tesla Model 3.
+- [Home Assistant](https://www.home-assistant.io/)
+- [Enphase Envoy Integration](https://www.home-assistant.io/integrations/enphase_envoy) configured for 20 seconds update interval.
+- [Tesla Custom Integration](https://github.com/alandtse/tesla) v3.20.4 (to control charging Tesla via Tesla cloud).
+- Tesla UMC charger, 230V, max 15A.
+- Tesla Model 3.
+
+### Other supported integrations
+Entities from following integrations are also pre-configured in SolarCharger, ie. charger can be added using "Add charger device" button.  Since I am not using these integrations, these integrations have only been tested by other users.  Please feel free to ask for help in GitHub discussions.
+
+- [Tesla BLE MQTT docker](https://github.com/tesla-local-control/tesla_ble_mqtt_docker)  This is for people who want to control their Tesla locally via Bluetooth without cloud.
+- [OCPP](https://github.com/lbbrhzn/ocpp)  This is for people who want to use OCPP to control an OCPP compliant charger to charge their EV.
+- [Telsa Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
+- [Tessie](https://www.home-assistant.io/integrations/tessie)
+
+If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities.
 
 
 ## Installation
-### HACS (Recommended)
+### Install via HACS (Recommended)
 The [Home Assistant Community Store (HACS)](https://www.hacs.xyz/) is a custom integration that provides a UI to manage custom elements such as Solar Charger Custom Integration in Home Assistant.
 You first need to [install and configure](https://www.hacs.xyz/docs/use/) it before following these instructions below.
 
@@ -77,17 +85,17 @@ You first need to [install and configure](https://www.hacs.xyz/docs/use/) it bef
 3. Restart Home Assistant
 
 
-### Manual
+### Manual install
 - Copy the solarcharger directory to your Home Assistant machine, ie.
 ```
 From:  <Your git clone directory>\SolarCharger\custom_components\solarcharger
 To:    \\homeassistant.local\config\custom_components\solarcharger
 ```
--  Restart Home Assistant.
+- Restart Home Assistant.
 
 ## Configuration
--  Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
--	Set up "Main Power Net" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor main_power_net expresses negative value in Watts for available power for charging or positive value for consumed power.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
+- Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
+- Set up "Main Power Net" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor main_power_net expresses negative value in Watts for available power for charging or positive value for consumed power.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
 ```
 Settings > Devices & services > Helpers > Create helper > Template > Template a sensor >
 
@@ -102,7 +110,7 @@ Device: Envoy [YourEnvoyId]
 
 - If using OCPP charger, configure your charger to point to your HA OCPP central server, eg. ws://homeassistant.local:9000
 
--	Config the integration specifying the charger effective voltage, maximum current, maximum charge speed, ie.
+- Config the integration specifying the charger effective voltage, maximum current, maximum charge speed, ie.
 ```
 SolarCharger > Global defaults > Configuration > Effective voltage
 SolarCharger > Your local device > Configuration > Max current (if available)
@@ -111,11 +119,11 @@ SolarCharger > Your local device > Configuration > Max current (if available)
 How to use
 ==========
 
--	Set your car charge limit.
--	Connect charger to car.  Normal charging at constant current should begin immediately if schedule charging is disabled.  After a little while, the integration will take over and manage the charging current during daylight hours.  Please see [wiki](https://github.com/flashg1/SolarCharger/wiki/User-guide#automation-cannot-be-triggered) if automation cannot be triggered.
--	There are 2 options on how to charge the car (see below).
--	The integration will stop if charger is turned off manually or automatically by car when reaching charge limit.
--	To abort charging, toggle off the "Charge" switch.
+- Set your car charge limit.
+- Connect charger to car.  Normal charging at constant current should begin immediately if schedule charging is disabled.  After a little while, the integration will take over and manage the charging current during daylight hours.  Please see [wiki](https://github.com/flashg1/SolarCharger/wiki/User-guide#automation-cannot-be-triggered) if automation cannot be triggered.
+- There are 2 options on how to charge the car (see below).
+- The integration will stop if charger is turned off manually or automatically by car when reaching charge limit.
+- To abort charging, toggle off the "Charge" switch.
 
 2 options on how to charge the car:
 
