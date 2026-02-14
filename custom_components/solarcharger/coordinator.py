@@ -392,8 +392,7 @@ class SolarChargerCoordinator(ScOptionState):
         """Reset charge limit defaults."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
-        # No need for controller for this function.
-        # Global defaults subentry has no controller.
+        # Global defaults subentry has controller, but no charger nor chargeable devices.
         if control:
             subentry = self._entry.subentries.get(control.subentry_id)
             if (

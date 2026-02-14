@@ -393,16 +393,11 @@ class ScState:
         await self.async_ha_entity_call("button", "press", entity_id)
 
     # ----------------------------------------------------------------------------
-    async def async_turn_switch_on(self, entity_id: str) -> None:
-        """Turn on switch entity."""
+    async def async_turn_switch(self, entity_id: str, turn_on: bool) -> None:
+        """Turn switch on or off."""
 
-        await self.async_ha_entity_call("switch", "turn_on", entity_id)
-
-    # ----------------------------------------------------------------------------
-    async def async_turn_switch_off(self, entity_id: str) -> None:
-        """Turn off switch entity."""
-
-        await self.async_ha_entity_call("switch", "turn_off", entity_id)
+        service_name = "turn_on" if turn_on else "turn_off"
+        await self.async_ha_entity_call("switch", service_name, entity_id)
 
     # ----------------------------------------------------------------------------
     async def async_poll_entity_id(self, entity_id: str) -> None:
@@ -459,3 +454,7 @@ class ScState:
         _LOGGER.debug(
             "Emitted SolarCharger event: action=%s, value=%s", action, new_current
         )
+
+    # ----------------------------------------------------------------------------
+    # Local device utils
+    # ----------------------------------------------------------------------------

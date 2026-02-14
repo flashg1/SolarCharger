@@ -11,14 +11,14 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .const import BUTTON, BUTTON_RESET_CHARGE_LIMIT_AND_TIME, DOMAIN, ICON_START
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
-from .model_charge_control import ChargeControl
+from .model_device_control import DeviceControl
 
 # type BUTTON_ACTION_TYPE = Callable[[ChargeControl], Coroutine[Any, Any, None] | None]
 # type BUTTON_ACTION_TYPE = (
 #     core.HassJob[[ChargeControl], Coroutine[Any, Any, None] | None]
 #     | Callable[[ChargeControl], Coroutine[Any, Any, None] | None]
 # )
-type BUTTON_ACTION_TYPE = Callable[[ChargeControl], Coroutine[Any, Any, None]]
+type BUTTON_ACTION_TYPE = Callable[[DeviceControl], Coroutine[Any, Any, None]]
 
 
 # ----------------------------------------------------------------------------
@@ -78,9 +78,7 @@ class SolarChargerButtonActionEntity(SolarChargerButtonEntity):
         #     self._coordinator.charge_controls[self._subentry.subentry_id]
         # )
         await self._action(
-            self._coordinator.device_controls[
-                self._subentry.subentry_id
-            ].controller.charge_control
+            self._coordinator.device_controls[self._subentry.subentry_id]
         )
 
 

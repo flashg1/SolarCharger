@@ -71,16 +71,10 @@ class Charger(ABC):
         """Is charger switched on?"""
 
     @abstractmethod
-    async def async_turn_charger_switch_on(
-        self, val_dict: ConfigValueDict | None = None
+    async def async_turn_charger_switch(
+        self, turn_on: bool, val_dict: ConfigValueDict | None = None
     ) -> None:
-        """Switch on charger."""
-
-    @abstractmethod
-    async def async_turn_charger_switch_off(
-        self, val_dict: ConfigValueDict | None = None
-    ) -> None:
-        """Switch off charger."""
+        """Switch on or off charger."""
 
     @abstractmethod
     def is_charging(self, val_dict: ConfigValueDict | None = None) -> bool:

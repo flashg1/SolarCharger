@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
 
 from .config_utils import get_saved_option_value
 from .const import (
@@ -19,6 +19,10 @@ from .const import (
     NUMBER_CHARGE_LIMIT_THURSDAY,
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+    NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
+    NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
     TIME_CHARGE_ENDTIME_SATURDAY,
@@ -29,6 +33,7 @@ from .const import (
 )
 from .model_config import ConfigValue, ConfigValueDict
 from .sc_config_state import ScConfigState
+from .utils import get_sun_attribute_or_abort  # noqa: TID252
 
 
 # ----------------------------------------------------------------------------
@@ -413,40 +418,27 @@ class ScOptionState(ScConfigState):
             await self.async_press_button(entity_id)
 
     # ----------------------------------------------------------------------------
-    async def async_option_turn_entity_switch_on(
+    async def async_option_turn_entity_switch(
         self,
         config_item: str,
+        turn_on: bool,
         subentry: ConfigSubentry | None = None,
         val_dict: ConfigValueDict | None = None,
     ) -> None:
-        """Turn on switch entity."""
+        """Turn on or off switch entity."""
 
         subentry = self._get_subentry(subentry)
         entity_id = self.option_get_id(config_item, subentry)
         self._set_config_value_dict(
-            val_dict, subentry.unique_id, config_item, entity_id, "on"
+            val_dict,
+            subentry.unique_id,
+            config_item,
+            entity_id,
+            "on" if turn_on else "off",
         )
 
         if entity_id:
-            await self.async_turn_switch_on(entity_id)
-
-    # ----------------------------------------------------------------------------
-    async def async_option_turn_entity_switch_off(
-        self,
-        config_item: str,
-        subentry: ConfigSubentry | None = None,
-        val_dict: ConfigValueDict | None = None,
-    ) -> None:
-        """Turn off switch entity."""
-
-        subentry = self._get_subentry(subentry)
-        entity_id = self.option_get_id(config_item, subentry)
-        self._set_config_value_dict(
-            val_dict, subentry.unique_id, config_item, entity_id, "off"
-        )
-
-        if entity_id:
-            await self.async_turn_switch_off(entity_id)
+            await self.async_turn_switch(entity_id, turn_on)
 
     # ----------------------------------------------------------------------------
     # General utils
@@ -458,7 +450,102 @@ class ScOptionState(ScConfigState):
         await asyncio.sleep(duration)
 
     # ----------------------------------------------------------------------------
-    # Specific utils
+    # Global or local defaults, with local defaults taking priority over global defaults.
+    # ----------------------------------------------------------------------------
+    def is_reduce_charge_limit_difference_between_days(self) -> bool:
+        """Return True if reduce charge limit difference between days is enabled."""
+
+        return self.option_get_entity_boolean_or_abort(
+            SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE
+        )
+
+    # ----------------------------------------------------------------------------
+    def get_min_charge_limit(self) -> float:
+        """Get minimum charge limit."""
+
+        return self.option_get_entity_number_or_abort(NUMBER_CHARGEE_MIN_CHARGE_LIMIT)
+
+    # ----------------------------------------------------------------------------
+    def is_sun_above_start_end_elevation_triggers(self) -> tuple[bool, float]:
+        """Is sun above start and end elevation triggers?"""
+
+        sun_above_start_end_elevations = False
+
+        sun_state: State = self.get_sun_state_or_abort()
+        sunrise_elevation_start_trigger: float = self.option_get_entity_number_or_abort(
+            NUMBER_SUNRISE_ELEVATION_START_TRIGGER
+        )
+        sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
+            NUMBER_SUNSET_ELEVATION_END_TRIGGER
+        )
+        sun_elevation: float = get_sun_attribute_or_abort(
+            self._caller, sun_state, "elevation"
+        )
+        sun_is_rising: bool = get_sun_attribute_or_abort(
+            self._caller, sun_state, "rising"
+        )
+
+        if (sun_is_rising and sun_elevation >= sunrise_elevation_start_trigger) or (
+            not sun_is_rising and sun_elevation > sunset_elevation_end_trigger
+        ):
+            sun_above_start_end_elevations = True
+
+        return (sun_above_start_end_elevations, sun_elevation)
+
+    # ----------------------------------------------------------------------------
+    # Edge cases: Around midnight.
+    # _is_sun_below_end_elevation_and_decending() cannot be exactly midnight.
+    # If cutoff is just before midnight, before cutoff is ok, after cutoff it won't get tomorrow goal.
+    # If cutoff is just after midnight, then ...
+    # Midnight time is used to determine whether it is today or tomorrow.
+    def is_sun_below_end_elevation_trigger_and_decending(self) -> bool:
+        """Roughly between end elevation trigger and midnight."""
+
+        sun_state: State = self.get_sun_state_or_abort()
+        sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
+            NUMBER_SUNSET_ELEVATION_END_TRIGGER
+        )
+        sun_elevation: float = get_sun_attribute_or_abort(
+            self._caller, sun_state, "elevation"
+        )
+        sun_is_rising: bool = get_sun_attribute_or_abort(
+            self._caller, sun_state, "rising"
+        )
+
+        return sun_elevation < sunset_elevation_end_trigger and not sun_is_rising
+
+    # ----------------------------------------------------------------------------
+    def is_sun_between_end_elevation_trigger_and_sunset(self) -> bool:
+        """Is sun between end elevation trigger and sunset?"""
+
+        sun_state: State = self.get_sun_state_or_abort()
+        sunset_elevation_end_trigger: float = self.option_get_entity_number_or_abort(
+            NUMBER_SUNSET_ELEVATION_END_TRIGGER
+        )
+        sun_elevation: float = get_sun_attribute_or_abort(
+            self._caller, sun_state, "elevation"
+        )
+        sun_is_rising: bool = get_sun_attribute_or_abort(
+            self._caller, sun_state, "rising"
+        )
+
+        if sunset_elevation_end_trigger >= 0:
+            # For positive sunset_elevation_end_trigger
+            inbetween = (
+                sun_elevation >= 0
+                and sun_elevation <= sunset_elevation_end_trigger
+                and not sun_is_rising
+            )
+        else:
+            # For negative sunset_elevation_end_trigger
+            inbetween = (
+                sun_elevation < 0
+                and sun_elevation >= sunset_elevation_end_trigger
+                and not sun_is_rising
+            )
+
+        return inbetween
+
     # ----------------------------------------------------------------------------
     def get_weekly_schedule(self) -> list[ChargeSchedule]:
         """Get daily charge schedule."""

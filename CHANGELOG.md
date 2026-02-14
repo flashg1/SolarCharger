@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.11 2026-02-14
+- Refactored ChargeController adding SolarCharge class.
+- Fixed issue with "Reset charge limit and time" button not working.
+
 ## v0.3.10 2026-02-11
 - Custom charger can now charge with only 2 controls, ie. on/off switch and set charge current.
 - For custom charger, use on/off switch state to determine whether charger is charging or not.

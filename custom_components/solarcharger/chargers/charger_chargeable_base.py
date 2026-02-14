@@ -207,21 +207,13 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         return switched_on
 
     # ----------------------------------------------------------------------------
-    async def async_turn_charger_switch_on(
-        self, val_dict: ConfigValueDict | None = None
+    async def async_turn_charger_switch(
+        self, turn_on: bool, val_dict: ConfigValueDict | None = None
     ) -> None:
-        """Switch on charger."""
-        await self.async_option_turn_entity_switch_on(
-            OPTION_CHARGER_ON_OFF_SWITCH, val_dict=val_dict
-        )
+        """Switch on or off charger."""
 
-    # ----------------------------------------------------------------------------
-    async def async_turn_charger_switch_off(
-        self, val_dict: ConfigValueDict | None = None
-    ) -> None:
-        """Switch off charger."""
-        await self.async_option_turn_entity_switch_off(
-            OPTION_CHARGER_ON_OFF_SWITCH, val_dict=val_dict
+        await self.async_option_turn_entity_switch(
+            OPTION_CHARGER_ON_OFF_SWITCH, turn_on, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
