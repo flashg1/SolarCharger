@@ -251,6 +251,32 @@ class SolarChargerCoordinator(ScOptionState):
         return self.config_get_entity_number(CONF_NET_POWER)
 
     # ----------------------------------------------------------------------------
+    # def _get_total_allocation_pool(self) -> dict[str, float]:
+    #     allocation_pool: dict[str, float] = {}
+
+    #     for control in self.device_controls.values():
+    #         if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
+    #             continue
+
+    #         subentry = self._entry.subentries.get(control.subentry_id)
+    #         if subentry:
+    #             allocation_weight = self.option_get_entity_number(
+    #                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT, subentry
+    #             )
+    #             if allocation_weight is None:
+    #                 raise RuntimeError(
+    #                     f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {subentry.unique_id}"
+    #                 )
+    #             allocation_pool[control.subentry_id] = (
+    #                 allocation_weight * control.controller.charge_control.instance_count
+    #             )
+    #         else:
+    #             # TODO: Need to remove stale control
+    #             allocation_pool[control.subentry_id] = 0
+
+    #     return allocation_pool
+
+    # ----------------------------------------------------------------------------
     def _get_total_allocation_pool(self) -> dict[str, float]:
         allocation_pool: dict[str, float] = {}
 
@@ -258,14 +284,14 @@ class SolarChargerCoordinator(ScOptionState):
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
 
-            subentry = self._entry.subentries.get(control.subentry_id)
-            if subentry:
-                allocation_weight = self.option_get_entity_number(
-                    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT, subentry
-                )
+            # Power allocation weight is local only.
+            if control.controller.charge_control.numbers is not None:
+                allocation_weight = control.controller.charge_control.numbers[
+                    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
+                ].native_value
                 if allocation_weight is None:
                     raise RuntimeError(
-                        f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {subentry.unique_id}"
+                        f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {control.config_name}"
                     )
                 allocation_pool[control.subentry_id] = (
                     allocation_weight * control.controller.charge_control.instance_count

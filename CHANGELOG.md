@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.3.11 2026-02-14
+- Refactored sc_option_state by removing _get_subentry().
 - Refactored ChargeController adding SolarCharge class.
 - Fixed issue with "Reset charge limit and time" button not working.
 

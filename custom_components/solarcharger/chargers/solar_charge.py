@@ -185,42 +185,42 @@ class SolarCharge(ScOptionState):
             return self._charger  # type: ignore[return-value]
         return None
 
-    @property
+    @cached_property
     def next_charge_time_trigger(self) -> str:
         """Return the next charge time trigger entity ID."""
         return self._next_charge_time_trigger
 
-    @property
+    @cached_property
     def fast_charge_mode_switch(self) -> str:
         """Return the fast charge mode switch entity ID."""
         return self._fast_charge_mode_switch
 
-    @property
+    @cached_property
     def poll_charger_update_switch(self) -> str:
         """Return the poll charger update switch entity ID."""
         return self._poll_charger_update_switch
 
-    @property
+    @cached_property
     def charge_switch(self) -> str:
         """Return the charge switch entity ID."""
         return self._charge_switch
 
-    @property
+    @cached_property
     def schedule_charge_switch(self) -> str:
         """Return the schedule charge switch entity ID."""
         return self._schedule_charge_switch
 
-    @property
+    @cached_property
     def plugin_trigger_switch(self) -> str:
         """Return the plugin trigger switch entity ID."""
         return self._plugin_trigger_switch
 
-    @property
+    @cached_property
     def sun_trigger_switch(self) -> str:
         """Return the sun trigger switch entity ID."""
         return self._sun_trigger_switch
 
-    @property
+    @cached_property
     def calibrate_max_charge_speed_switch(self) -> str:
         """Return the calibrate max charge speed switch entity ID."""
         return self._calibrate_max_charge_speed_switch
