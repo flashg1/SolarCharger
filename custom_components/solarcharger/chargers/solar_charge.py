@@ -368,11 +368,11 @@ class SolarCharge(ScOptionState):
     # Set up and unload
     # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
-        """Async setup of the SolarCharger."""
+        """Async setup of SolarCharge."""
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
-        """Async unload of the SolarCharger."""
+        """Async unload of SolarCharge."""
 
         self._unsubscribe_allocated_power_update()
         self._tracker.untrack_soc_sensor()
