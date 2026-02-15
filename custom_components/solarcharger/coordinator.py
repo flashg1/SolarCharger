@@ -416,16 +416,9 @@ class SolarChargerCoordinator(ScOptionState):
                     datetime.now().astimezone()
                 )
 
-        # Check charge schedule for chargers.
+        # Check to see if need to reschedule charge.
         for control in self.device_controls.values():
-            if control.controller.is_check_charge_schedule:
-                if (
-                    control.controller.is_schedule_charge
-                    and control.controller.charge_control.instance_count == 0
-                    and control.controller.solar_charge.device_at_location_and_connected()
-                ):
-                    control.controller.turn_charger_switch(turn_on=True)
-                control.controller.set_check_charge_schedule(False)
+            await control.controller.async_check_if_need_to_reschedule_charge()
 
     # ----------------------------------------------------------------------------
     # Coordinator functions

@@ -157,7 +157,7 @@ class ChargerScheduler(ScOptionState):
                     look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
                 )
 
-            if look_ahead_charge_limit > goal.new_charge_limit:
+            if look_ahead_charge_limit > goal.new_charge_limit:  # noqa: PLR1730
                 goal.new_charge_limit = look_ahead_charge_limit
 
     # ----------------------------------------------------------------------------

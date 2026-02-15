@@ -43,10 +43,10 @@ from .const import (
     TIME_CHARGE_ENDTIME_TUESDAY,
     TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
-from .entity import compose_entity_id  # noqa: TID252
+from .entity import compose_entity_id
 from .model_config import ConfigValue, ConfigValueDict
 from .sc_config_state import ScConfigState
-from .utils import get_sun_attribute_or_abort  # noqa: TID252
+from .utils import get_sun_attribute_or_abort
 
 
 # ----------------------------------------------------------------------------

@@ -119,7 +119,23 @@ class SolarCharge(ScOptionState):
         return None
 
     # ----------------------------------------------------------------------------
-    # Local device control entities
+    # Subscriptions
+    # ----------------------------------------------------------------------------
+    def _subscribe_allocated_power_update(self) -> None:
+        """Subscribe for allocated power update."""
+
+        self._tracker.track_allocated_power_update(
+            self._async_handle_allocated_power_update
+        )
+
+    # ----------------------------------------------------------------------------
+    def _unsubscribe_allocated_power_update(self) -> None:
+        """Unsubscribe allocated power update."""
+
+        self._tracker.untrack_allocated_power_update()
+
+    # ----------------------------------------------------------------------------
+    # Handle SOC update for calibrating max charge speed
     # ----------------------------------------------------------------------------
     async def async_stop_calibrate_max_charge_speed(self) -> None:
         """Stop tracking SOC and reset flag."""
@@ -136,22 +152,6 @@ class SolarCharge(ScOptionState):
             await self.async_turn_switch(
                 self.calibrate_max_charge_speed_switch_entity_id, turn_on=False
             )
-
-    # ----------------------------------------------------------------------------
-    # Subscriptions
-    # ----------------------------------------------------------------------------
-    def _subscribe_allocated_power_update(self) -> None:
-        """Subscribe for allocated power update."""
-
-        self._tracker.track_allocated_power_update(
-            self._async_handle_allocated_power_update
-        )
-
-    # ----------------------------------------------------------------------------
-    def _unsubscribe_allocated_power_update(self) -> None:
-        """Unsubscribe allocated power update."""
-
-        self._tracker.untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------
     async def async_handle_soc_update(
@@ -222,6 +222,25 @@ class SolarCharge(ScOptionState):
 
         self._unsubscribe_allocated_power_update()
         self._tracker.untrack_soc_sensor()
+
+    # ----------------------------------------------------------------------------
+    # General utils
+    # ----------------------------------------------------------------------------
+    async def async_get_current_schedule_data(self) -> ScheduleData:
+        """Get current schedule data."""
+
+        return await self._scheduler.async_get_schedule_data(
+            self._chargeable, include_tomorrow=True, started_calibration=False
+        )
+
+    # ----------------------------------------------------------------------------
+    def device_at_location_and_connected(self) -> bool:
+        """Is device at location and charger connected?"""
+
+        is_at_location = self._is_at_location(self._chargeable)
+        is_connected = self.is_connected(self._charger)
+
+        return is_at_location and is_connected
 
     # ----------------------------------------------------------------------------
     # Charger code
@@ -423,7 +442,7 @@ class SolarCharge(ScOptionState):
             _LOGGER.warning(
                 "%s: Timeout getting SOC or charge limit: %s", self._caller, e
             )
-        except Exception as e:
+        except Exception:
             _LOGGER.exception("%s: Error getting SOC or charge limit", self._caller)
 
         return is_below_limit
@@ -820,7 +839,7 @@ class SolarCharge(ScOptionState):
 
             except TimeoutError as e:
                 _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
-            except Exception as e:
+            except Exception:
                 _LOGGER.exception("%s: Error charging device", self._caller)
 
             # Sleep before re-evaluating charging conditions.
@@ -830,15 +849,6 @@ class SolarCharge(ScOptionState):
             loop_count = loop_count + 1
 
         await self.async_unload()
-
-    # ----------------------------------------------------------------------------
-    def device_at_location_and_connected(self) -> bool:
-        """Is device at location and charger connected?"""
-
-        is_at_location = self._is_at_location(self._chargeable)
-        is_connected = self.is_connected(self._charger)
-
-        return is_at_location and is_connected
 
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(
@@ -885,7 +895,7 @@ class SolarCharge(ScOptionState):
             await self._async_charge_device(charger, chargeable)
             await self.async_tidy_up_on_exit(charger, chargeable)
 
-        except Exception as e:
+        except Exception:
             _LOGGER.exception("%s: Abort charge", self._caller)
             await self.async_tidy_up_on_exit(charger, chargeable)
 
