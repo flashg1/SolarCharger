@@ -141,13 +141,22 @@ class ChargeController(ScOptionState):
         """Reschedule charge due to schedule update."""
 
         if self.is_updated_today_tomorrow_schedule:
-            if self.charge_control.instance_count == 0:
-                goal: ScheduleData = (
-                    await self._solar_charge.async_get_current_schedule_data()
+            try:
+                if (
+                    self.charge_control.instance_count == 0
+                    and self.is_schedule_charge()
+                ):
+                    goal: ScheduleData = (
+                        await self._solar_charge.async_get_current_schedule_data()
+                    )
+                    if goal.use_charge_schedule and goal.has_charge_endtime:
+                        if self._solar_charge.device_at_location_and_connected():
+                            self._turn_charger_switch(turn_on=True)
+
+            except Exception:
+                _LOGGER.exception(
+                    "%s: Failed to check if need to reschedule charge", self._caller
                 )
-                if goal.use_charge_schedule and goal.has_charge_endtime:
-                    if self._solar_charge.device_at_location_and_connected():
-                        self._turn_charger_switch(turn_on=True)
 
             self.set_updated_today_tomorrow_schedule(False)
 
