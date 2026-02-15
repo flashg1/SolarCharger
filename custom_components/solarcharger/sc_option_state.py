@@ -126,9 +126,10 @@ class ScOptionState(ScConfigState):
         ScConfigState.__init__(self, hass, entry, caller)
 
     # ----------------------------------------------------------------------------
+    # Local device only entities.
     # Non-modifiable local device entities, ie.
     # not defined in config_options_flow _charger_control_entities_schema().
-
+    # ----------------------------------------------------------------------------
     @cached_property
     def next_charge_time_trigger_entity_id(self) -> str:
         """Return the next charge time trigger entity ID."""
@@ -180,6 +181,105 @@ class ScOptionState(ScConfigState):
         return compose_entity_id(
             SWITCH, self._subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
         )
+
+    # ----------------------------------------------------------------------------
+    # Local or global device entities.
+    # ----------------------------------------------------------------------------
+    @cached_property
+    def charge_limit_monday_entity_id(self) -> str:
+        """Return Monday charge limit entity ID."""
+        return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_MONDAY)
+
+    @cached_property
+    def charge_limit_tuesday_entity_id(self) -> str:
+        """Return Tuesday charge limit entity ID."""
+        return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_TUESDAY)
+
+    @cached_property
+    def charge_limit_wednesday_entity_id(self) -> str:
+        """Return Wednesday charge limit entity ID."""
+        return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_WEDNESDAY)
+
+    @cached_property
+    def charge_limit_thursday_entity_id(self) -> str:
+        """Return Thursday charge limit entity ID."""
+        return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_THURSDAY)
+
+    @cached_property
+    def charge_limit_friday_entity_id(self) -> str:
+        """Return Friday charge limit entity ID."""
+        return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_FRIDAY)
+
+    @cached_property
+    def charge_limit_saturday_entity_id(self) -> str:
+        """Return Saturday charge limit entity ID."""
+        return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_SATURDAY)
+
+    @cached_property
+    def charge_limit_sunday_entity_id(self) -> str:
+        """Return Sunday charge limit entity ID."""
+        return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_SUNDAY)
+
+    @cached_property
+    def charge_endtime_monday_entity_id(self) -> str:
+        """Return Monday charge endtime entity ID."""
+        return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_MONDAY)
+
+    @cached_property
+    def charge_endtime_tuesday_entity_id(self) -> str:
+        """Return Tuesday charge endtime entity ID."""
+        return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_TUESDAY)
+
+    @cached_property
+    def charge_endtime_wednesday_entity_id(self) -> str:
+        """Return Wednesday charge endtime entity ID."""
+        return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_WEDNESDAY)
+
+    @cached_property
+    def charge_endtime_thursday_entity_id(self) -> str:
+        """Return Thursday charge endtime entity ID."""
+        return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_THURSDAY)
+
+    @cached_property
+    def charge_endtime_friday_entity_id(self) -> str:
+        """Return Friday charge endtime entity ID."""
+        return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_FRIDAY)
+
+    @cached_property
+    def charge_endtime_saturday_entity_id(self) -> str:
+        """Return Saturday charge endtime entity ID."""
+        return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_SATURDAY)
+
+    @cached_property
+    def charge_endtime_sunday_entity_id(self) -> str:
+        """Return Sunday charge endtime entity ID."""
+        return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_SUNDAY)
+
+    @cached_property
+    def get_charge_limit_entity_ids(self) -> dict[str, int]:
+        """Return all charge limit entity IDs with their corresponding day index."""
+        return {
+            self.charge_limit_monday_entity_id: 0,
+            self.charge_limit_tuesday_entity_id: 1,
+            self.charge_limit_wednesday_entity_id: 2,
+            self.charge_limit_thursday_entity_id: 3,
+            self.charge_limit_friday_entity_id: 4,
+            self.charge_limit_saturday_entity_id: 5,
+            self.charge_limit_sunday_entity_id: 6,
+        }
+
+    @cached_property
+    def get_charge_endtime_entity_ids(self) -> dict[str, int]:
+        """Return all charge endtime entity IDs with their corresponding day index."""
+        return {
+            self.charge_endtime_monday_entity_id: 0,
+            self.charge_endtime_tuesday_entity_id: 1,
+            self.charge_endtime_wednesday_entity_id: 2,
+            self.charge_endtime_thursday_entity_id: 3,
+            self.charge_endtime_friday_entity_id: 4,
+            self.charge_endtime_saturday_entity_id: 5,
+            self.charge_endtime_sunday_entity_id: 6,
+        }
 
     # ----------------------------------------------------------------------------
     # General utils

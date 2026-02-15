@@ -1,6 +1,6 @@
 """Module to track entity updates."""
 
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Iterable
 from datetime import date, datetime, time, timedelta
 import logging
 from typing import Any
@@ -44,6 +44,8 @@ from ..const import (  # noqa: TID252
     NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    CALLBACK_CHARGE_LIMIT_UPDATE,
+    CALLBACK_CHARGE_ENDTIME_UPDATE,
 )
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
@@ -131,9 +133,9 @@ class Tracker(ScOptionState):
         remove_callback_subscription(self._caller, self._unsub_callbacks, callback_key)
 
     # ----------------------------------------------------------------------------
-    def _track_entity_state(
+    def _track_state_change(
         self,
-        entity_id: str | None,
+        entity_ids: str | Iterable[str] | None,
         callback_id: str,
         action: STATE_CHANGE_CALLBACK,
         check_entity: bool = True,
@@ -141,19 +143,26 @@ class Tracker(ScOptionState):
         """Track entity update events."""
         ok: bool = True
 
-        if entity_id:
+        if entity_ids:
             if check_entity:
                 # Check entity ID does exist in system
-                entity_entry = self.get_entity_entry(entity_id)
-                if not entity_entry:
-                    ok = False
+                if isinstance(entity_ids, str):
+                    entity_entry = self.get_entity_entry(entity_ids)
+                    if not entity_entry:
+                        ok = False
+                else:
+                    for entity_id in entity_ids:
+                        entity_entry = self.get_entity_entry(entity_id)
+                        if not entity_entry:
+                            ok = False
+                            break
 
             if ok:
                 _LOGGER.info(
-                    "%s: %s: Track entity: %s", self._caller, callback_id, entity_id
+                    "%s: %s: Track entity: %s", self._caller, callback_id, entity_ids
                 )
                 subscription = async_track_state_change_event(
-                    self._hass, entity_id, action
+                    self._hass, entity_ids, action
                 )
                 self.save_callback(callback_id, subscription)
         else:
@@ -161,19 +170,27 @@ class Tracker(ScOptionState):
 
         if not ok:
             _LOGGER.error(
-                "%s: %s: Invalid entity: %s", self._caller, callback_id, entity_id
+                "%s: %s: Invalid entity: %s", self._caller, callback_id, entity_ids
             )
 
         return ok
 
     # ----------------------------------------------------------------------------
-    def _track_state(
+    def _track_entities_state(
+        self, entity_ids: list[str], callback_id: str, action: STATE_CHANGE_CALLBACK
+    ) -> bool:
+        """Track device entity update events."""
+
+        return self._track_state_change(entity_ids, callback_id, action)
+
+    # ----------------------------------------------------------------------------
+    def _track_config_item_state(
         self, config_item: str, callback_id: str, action: STATE_CHANGE_CALLBACK
     ) -> bool:
         """Track device entity update events."""
 
         entity_id = self.option_get_id(config_item)
-        return self._track_entity_state(entity_id, callback_id, action)
+        return self._track_state_change(entity_id, callback_id, action)
 
     # ----------------------------------------------------------------------------
     def _track_event_once(
@@ -191,33 +208,7 @@ class Tracker(ScOptionState):
         self.save_callback(callback_id, subscription)
 
     # ----------------------------------------------------------------------------
-    # Sensors that might not exist, so check return code.
-    # ----------------------------------------------------------------------------
-    def track_charger_plugged_in_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
-        """Track charger plug in event."""
-
-        return self._track_state(
-            OPTION_CHARGER_PLUGGED_IN_SENSOR, CALLBACK_PLUG_IN_CHARGER, action
-        )
-
-    # ----------------------------------------------------------------------------
-    def untrack_charger_plugged_in_sensor(self) -> None:
-        """Unsubscribe charger plug in event."""
-
-        self.remove_callback(CALLBACK_PLUG_IN_CHARGER)
-
-    # ----------------------------------------------------------------------------
-    def track_soc_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
-        """Track SOC update events."""
-
-        return self._track_state(OPTION_CHARGEE_SOC_SENSOR, CALLBACK_SOC_UPDATE, action)
-
-    # ----------------------------------------------------------------------------
-    def untrack_soc_sensor(self) -> None:
-        """Unsubscribe SOC update events."""
-
-        self.remove_callback(CALLBACK_SOC_UPDATE)
-
+    # Track system events
     # ----------------------------------------------------------------------------
     def on_ha_started(self, action: EVENT_CALLBACK) -> None:
         """Track HA started event."""
@@ -231,24 +222,68 @@ class Tracker(ScOptionState):
         self._track_event_once(EVENT_HOMEASSISTANT_STOP, CALLBACK_HA_STOP, action)
 
     # ----------------------------------------------------------------------------
-    # Sensors that are created by default
+    # Track multiple entities
     # ----------------------------------------------------------------------------
-    # See sun.sun entity.  Updates are at specific intervals.
-    # Hard to calculate sun elevation offset time.
-    # So just compare state change with configured elevation to trigger start of charge.
-    def track_sun_elevation(self, action: STATE_CHANGE_CALLBACK) -> None:
-        """Track sun elevation events."""
+    def track_charge_limit_schedule(
+        self, entity_ids: list[str], action: STATE_CHANGE_CALLBACK
+    ) -> bool:
+        """Track charge limit schedule update events."""
 
-        # HA_SUN_ENTITY is not a true entity, so don't check it.
-        self._track_entity_state(
-            HA_SUN_ENTITY, CALLBACK_SUN_ELEVATION_UPDATE, action, check_entity=False
+        return self._track_entities_state(
+            entity_ids, CALLBACK_CHARGE_LIMIT_UPDATE, action
         )
 
     # ----------------------------------------------------------------------------
-    def untrack_sun_elevation(self) -> None:
-        """Unsubscribe sun elevation events."""
+    def untrack_charge_limit_schedule(self) -> None:
+        """Unsubscribe charge limit schedule update events."""
 
-        self.remove_callback(CALLBACK_SUN_ELEVATION_UPDATE)
+        self.remove_callback(CALLBACK_CHARGE_LIMIT_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def track_charge_endtime_schedule(
+        self, entity_ids: list[str], action: STATE_CHANGE_CALLBACK
+    ) -> bool:
+        """Track charge end time schedule update events."""
+
+        return self._track_entities_state(
+            entity_ids, CALLBACK_CHARGE_ENDTIME_UPDATE, action
+        )
+
+    # ----------------------------------------------------------------------------
+    def untrack_charge_endtime_schedule(self) -> None:
+        """Unsubscribe charge end time schedule update events."""
+
+        self.remove_callback(CALLBACK_CHARGE_ENDTIME_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    # Track single entity updates
+    # ----------------------------------------------------------------------------
+    def track_charger_plugged_in_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
+        """Track charger plug in event. Sensors that might not exist, so check return code."""
+
+        return self._track_config_item_state(
+            OPTION_CHARGER_PLUGGED_IN_SENSOR, CALLBACK_PLUG_IN_CHARGER, action
+        )
+
+    # ----------------------------------------------------------------------------
+    def untrack_charger_plugged_in_sensor(self) -> None:
+        """Unsubscribe charger plug in event."""
+
+        self.remove_callback(CALLBACK_PLUG_IN_CHARGER)
+
+    # ----------------------------------------------------------------------------
+    def track_soc_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
+        """Track SOC update events."""
+
+        return self._track_config_item_state(
+            OPTION_CHARGEE_SOC_SENSOR, CALLBACK_SOC_UPDATE, action
+        )
+
+    # ----------------------------------------------------------------------------
+    def untrack_soc_sensor(self) -> None:
+        """Unsubscribe SOC update events."""
+
+        self.remove_callback(CALLBACK_SOC_UPDATE)
 
     # ----------------------------------------------------------------------------
     def unschedule_next_charge_time(self) -> None:
@@ -291,7 +326,7 @@ class Tracker(ScOptionState):
     ) -> None:
         """Track next charge time trigger events."""
 
-        self._track_entity_state(entity_id, CALLBACK_NEXT_CHARGE_TIME_UPDATE, action)
+        self._track_state_change(entity_id, CALLBACK_NEXT_CHARGE_TIME_UPDATE, action)
 
     # ----------------------------------------------------------------------------
     def untrack_next_charge_time_trigger(self) -> None:
@@ -309,7 +344,7 @@ class Tracker(ScOptionState):
         # async_track_state_change_event - send changed events.
         # So need both to see all events?
         #     self._async_handle_allocated_power_update,
-        self._track_state(
+        self._track_config_item_state(
             NUMBER_CHARGER_ALLOCATED_POWER, CALLBACK_ALLOCATE_POWER, action
         )
 
@@ -318,6 +353,26 @@ class Tracker(ScOptionState):
         """Unsubscribe allocated power update events."""
 
         self.remove_callback(CALLBACK_ALLOCATE_POWER)
+
+    # ----------------------------------------------------------------------------
+    # Sensors that are created by default
+    # ----------------------------------------------------------------------------
+    # See sun.sun entity.  Updates are at specific intervals.
+    # Hard to calculate sun elevation offset time.
+    # So just compare state change with configured elevation to trigger start of charge.
+    def track_sun_elevation(self, action: STATE_CHANGE_CALLBACK) -> None:
+        """Track sun elevation events."""
+
+        # HA_SUN_ENTITY is not a true entity, so don't check it.
+        self._track_state_change(
+            HA_SUN_ENTITY, CALLBACK_SUN_ELEVATION_UPDATE, action, check_entity=False
+        )
+
+    # ----------------------------------------------------------------------------
+    def untrack_sun_elevation(self) -> None:
+        """Unsubscribe sun elevation events."""
+
+        self.remove_callback(CALLBACK_SUN_ELEVATION_UPDATE)
 
     # ----------------------------------------------------------------------------
     # Sunrise/sunset trigger code

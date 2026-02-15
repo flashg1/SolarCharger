@@ -832,6 +832,15 @@ class SolarCharge(ScOptionState):
         await self.async_unload()
 
     # ----------------------------------------------------------------------------
+    def device_at_location_and_connected(self) -> bool:
+        """Is device at location and charger connected?"""
+
+        is_at_location = self._is_at_location(self._chargeable)
+        is_connected = self.is_connected(self._charger)
+
+        return is_at_location and is_connected
+
+    # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:

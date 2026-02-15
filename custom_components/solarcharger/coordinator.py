@@ -188,17 +188,55 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
+    # def validate_default_charge_limits(
+    #     self, subentry: ConfigSubentry, data: dict[str, Any]
+    # ) -> bool:
+    #     """Validate default charge limits."""
+    #     ok = True
+
+    #     min_charge_limit = self.option_get_entity_number_or_abort(
+    #         NUMBER_CHARGEE_MIN_CHARGE_LIMIT, subentry
+    #     )
+    #     max_charge_limit = self.option_get_entity_number_or_abort(
+    #         NUMBER_CHARGEE_MAX_CHARGE_LIMIT, subentry
+    #     )
+
+    #     # Check default charge limits
+    #     for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
+    #         default_val = data.get(day_limit_default)
+    #         if default_val is None:
+    #             continue
+
+    #         if not (min_charge_limit <= default_val <= max_charge_limit):
+    #             _LOGGER.error(
+    #                 "%s: Invalid default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
+    #                 self._caller,
+    #                 default_val,
+    #                 day_limit_default,
+    #                 min_charge_limit,
+    #                 max_charge_limit,
+    #             )
+    #             ok = False
+    #             break
+
+    #             # Do no raise exception inside the coordinator as it breaks the coordinator loop.
+    #             # Raise exception at source of call instead.
+    #             # raise ValidationExceptionError("base", "invalid_default_charge_limit")
+
+    #     return ok
+
+    # ----------------------------------------------------------------------------
     def validate_default_charge_limits(
-        self, subentry: ConfigSubentry, data: dict[str, Any]
+        self, control: DeviceControl, data: dict[str, Any]
     ) -> bool:
         """Validate default charge limits."""
         ok = True
 
-        min_charge_limit = self.option_get_entity_number_or_abort(
-            NUMBER_CHARGEE_MIN_CHARGE_LIMIT, subentry
+        min_charge_limit = control.controller.option_get_entity_number_or_abort(
+            NUMBER_CHARGEE_MIN_CHARGE_LIMIT
         )
-        max_charge_limit = self.option_get_entity_number_or_abort(
-            NUMBER_CHARGEE_MAX_CHARGE_LIMIT, subentry
+        max_charge_limit = control.controller.option_get_entity_number_or_abort(
+            NUMBER_CHARGEE_MAX_CHARGE_LIMIT
         )
 
         # Check default charge limits
@@ -226,15 +264,29 @@ class SolarChargerCoordinator(ScOptionState):
         return ok
 
     # ----------------------------------------------------------------------------
+    # def validate_config_options(self, config_name: str, data: dict[str, Any]) -> str:
+    #     """Validate configuration options."""
+    #     error_code = ""
+
+    #     subentry_id = get_subentry_id(self._entry, config_name)
+    #     if subentry_id:
+    #         subentry = self._entry.subentries.get(subentry_id)
+    #         if subentry:
+    #             if not self.validate_default_charge_limits(subentry, data):
+    #                 error_code = ERROR_DEFAULT_CHARGE_LIMIT
+
+    #     return error_code
+
+    # ----------------------------------------------------------------------------
     def validate_config_options(self, config_name: str, data: dict[str, Any]) -> str:
         """Validate configuration options."""
         error_code = ""
 
         subentry_id = get_subentry_id(self._entry, config_name)
         if subentry_id:
-            subentry = self._entry.subentries.get(subentry_id)
-            if subentry:
-                if not self.validate_default_charge_limits(subentry, data):
+            control = self.device_controls.get(subentry_id)
+            if control:
+                if not self.validate_default_charge_limits(control, data):
                     error_code = ERROR_DEFAULT_CHARGE_LIMIT
 
         return error_code
@@ -363,6 +415,17 @@ class SolarChargerCoordinator(ScOptionState):
                 control.controller.charge_control.sensors[SENSOR_LAST_CHECK].set_state(
                     datetime.now().astimezone()
                 )
+
+        # Check charge schedule for chargers.
+        for control in self.device_controls.values():
+            if control.controller.is_check_charge_schedule:
+                if (
+                    control.controller.is_schedule_charge
+                    and control.controller.charge_control.instance_count == 0
+                    and control.controller.solar_charge.device_at_location_and_connected()
+                ):
+                    control.controller.turn_charger_switch(turn_on=True)
+                control.controller.set_check_charge_schedule(False)
 
     # ----------------------------------------------------------------------------
     # Coordinator functions

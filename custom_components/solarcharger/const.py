@@ -667,6 +667,8 @@ CALLBACK_NEXT_CHARGE_TIME_TRIGGER = "callback_next_charge_time_trigger"
 CALLBACK_SOC_UPDATE = "callback_soc_update"
 CALLBACK_HA_STARTED = "callback_ha_started"
 CALLBACK_HA_STOP = "callback_ha_stop"
+CALLBACK_CHARGE_LIMIT_UPDATE = "callback_charge_limit_update"
+CALLBACK_CHARGE_ENDTIME_UPDATE = "callback_charge_endtime_update"
 
 
 #######################################################

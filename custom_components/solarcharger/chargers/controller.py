@@ -84,19 +84,29 @@ class ChargeController(ScOptionState):
         self._charger = charger
         self._chargeable = chargeable
         self._tracker = Tracker(hass, entry, subentry, caller)
-        self._solar_charge = SolarCharge(
+        self.solar_charge = SolarCharge(
             hass, entry, subentry, self._tracker, charger, chargeable
         )
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
 
         self._is_charge_started_by_calibration_switch = False
+        self._check_charge_schedule = False
 
     # ----------------------------------------------------------------------------
     @cached_property
     def charge_control(self) -> ChargeControl:
         """Return the charge control object if applicable."""
         return self._control
+
+    @property
+    def is_check_charge_schedule(self) -> bool:
+        """Return whether need to check charge schedule."""
+        return self._check_charge_schedule
+
+    def set_check_charge_schedule(self, value: bool) -> None:
+        """Set whether need to check charge schedule."""
+        self._check_charge_schedule = value
 
     # ----------------------------------------------------------------------------
     # General utils
@@ -108,7 +118,7 @@ class ChargeController(ScOptionState):
             self._hass.loop.create_task(action(turn_on))
 
     # ----------------------------------------------------------------------------
-    def _turn_charger_switch(self, turn_on: bool) -> None:
+    def turn_charger_switch(self, turn_on: bool) -> None:
         """Create a task to turn on the charger switch."""
 
         # async_track_sunrise() does not directly support coroutine callback, so create coroutine in event loop.
@@ -204,8 +214,8 @@ class ChargeController(ScOptionState):
                     and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
                     and new_state.state != old_state.state
                 ):
-                    if self._solar_charge.is_connected(self._charger):
-                        self._turn_charger_switch(turn_on=True)
+                    if self.solar_charge.is_connected(self._charger):
+                        self.turn_charger_switch(turn_on=True)
 
     # ----------------------------------------------------------------------------
     async def async_handle_next_charge_time_update(
@@ -237,6 +247,75 @@ class ChargeController(ScOptionState):
             self.next_charge_time_trigger_entity_id,
             self.async_handle_next_charge_time_update,
         )
+
+    # ----------------------------------------------------------------------------
+    async def async_handle_charge_limit_update(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Fetch and process state change event."""
+        data = event.data
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
+
+        self._tracker.log_state_change(event)
+
+        if new_state is not None and old_state is not None:
+            if new_state.state not in (
+                STATE_UNKNOWN,
+                STATE_UNAVAILABLE,
+            ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                today_index = datetime.now().date().weekday()
+                tomorrow_index = (today_index + 1) % 7
+                day_index = self.get_charge_limit_entity_ids.get(new_state.entity_id)
+                if day_index in (today_index, tomorrow_index):
+                    if self._control.instance_count == 0:
+                        self._check_charge_schedule = True
+
+    # ----------------------------------------------------------------------------
+    async def async_handle_charge_endtime_update(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Fetch and process state change event."""
+        data = event.data
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
+
+        self._tracker.log_state_change(event)
+
+        if new_state is not None and old_state is not None:
+            if new_state.state not in (
+                STATE_UNKNOWN,
+                STATE_UNAVAILABLE,
+            ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                today_index = datetime.now().date().weekday()
+                tomorrow_index = (today_index + 1) % 7
+                day_index = self.get_charge_endtime_entity_ids.get(new_state.entity_id)
+                if day_index in (today_index, tomorrow_index):
+                    if self._control.instance_count == 0:
+                        self._check_charge_schedule = True
+
+    # ----------------------------------------------------------------------------
+    def _subscribe_charge_schedule_update(self) -> None:
+        """Subscribe to charge schedule update. This is always on."""
+
+        if not self._tracker.track_charge_limit_schedule(
+            list(self.get_charge_limit_entity_ids.keys()),
+            self.async_handle_charge_limit_update,
+        ):
+            raise RuntimeError("Failed to subscribe to charge limit schedule updates")
+
+        if not self._tracker.track_charge_endtime_schedule(
+            list(self.get_charge_endtime_entity_ids.keys()),
+            self.async_handle_charge_endtime_update,
+        ):
+            raise RuntimeError("Failed to subscribe to charge endtime schedule updates")
+
+    # ----------------------------------------------------------------------------
+    def _unsubscribe_charge_schedule_update(self) -> None:
+        """Unsubscribe from charge schedule update."""
+
+        self._tracker.untrack_charge_limit_schedule()
+        self._tracker.untrack_charge_endtime_schedule()
 
     # ----------------------------------------------------------------------------
     # Switch actions
@@ -299,13 +378,13 @@ class ChargeController(ScOptionState):
         if turn_on:
             if self._charge_task is None or self._charge_task.done():
                 self._is_charge_started_by_calibration_switch = True
-                self._turn_charger_switch(turn_on=True)
+                self.turn_charger_switch(turn_on=True)
         else:
-            await self._solar_charge.async_stop_calibrate_max_charge_speed()
+            await self.solar_charge.async_stop_calibrate_max_charge_speed()
 
             # Will get error message if charger switch already turned off by user.
             if self._is_charge_started_by_calibration_switch:
-                self._turn_charger_switch(turn_on=False)
+                self.turn_charger_switch(turn_on=False)
 
             self._is_charge_started_by_calibration_switch = False
 
@@ -322,7 +401,7 @@ class ChargeController(ScOptionState):
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Async task to start the charger."""
-        await self._solar_charge.async_start_charge_task(charger, chargeable)
+        await self.solar_charge.async_start_charge_task(charger, chargeable)
 
     # ----------------------------------------------------------------------------
     async def async_start_charge(self) -> Task:
@@ -371,7 +450,7 @@ class ChargeController(ScOptionState):
                         e,
                     )
 
-                await self._solar_charge.async_unload()
+                await self.solar_charge.async_unload()
 
             else:
                 _LOGGER.info(
@@ -403,14 +482,14 @@ class ChargeController(ScOptionState):
                     _LOGGER.info(
                         "Task %s cancelled successfully", self._charge_task.get_name()
                     )
-                    await self._solar_charge.async_tidy_up_on_exit(charger, chargeable)
+                    await self.solar_charge.async_tidy_up_on_exit(charger, chargeable)
                 except Exception as e:
                     _LOGGER.error(
                         "%s: Error stopping charge task: %s",
                         self._caller,
                         e,
                     )
-                    await self._solar_charge.async_unload()
+                    await self.solar_charge.async_unload()
 
             else:
                 _LOGGER.info("Task %s already completed", self._charge_task.get_name())
@@ -559,8 +638,11 @@ class ChargeController(ScOptionState):
         # eg. Switch on charge while HA is still starting up.
         self._initialising = False
 
-        # Track next charge time trigger
+        # Subscriptions
         self._subscribe_next_charge_time_update()
+        self._subscribe_charge_schedule_update()
+
+        # Track next charge time trigger
         await self.async_switch_schedule_charge(self.is_schedule_charge())
 
         # Track charger plug in
