@@ -78,6 +78,9 @@ class ScheduleData:
     # New charge limit or from schedule
     new_charge_limit: float = -1
 
+    # Charge limit for max charge speed calibration, which is set once on start of calibration, otherwise None.
+    calibrate_max_charge_limit: float | None = None
+
     charge_endtime = datetime.min
 
     battery_soc: float | None = None

@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.3.11 2026-02-14
+- Refactored SolarCharge adding ChargerScheduler class.
 - Moved local only entities from SolarCharge to sc_option_state.
 - Refactored sc_option_state by removing _get_subentry().
 - Refactored ChargeController adding SolarCharge class.

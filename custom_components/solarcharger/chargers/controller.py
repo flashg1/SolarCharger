@@ -8,6 +8,8 @@ import inspect
 import logging
 from typing import Any
 
+from propcache.api import cached_property
+
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import (
@@ -91,7 +93,7 @@ class ChargeController(ScOptionState):
         self._is_charge_started_by_calibration_switch = False
 
     # ----------------------------------------------------------------------------
-    @property
+    @cached_property
     def charge_control(self) -> ChargeControl:
         """Return the charge control object if applicable."""
         return self._control
