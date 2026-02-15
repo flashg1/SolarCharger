@@ -363,15 +363,20 @@ class ChargeController(ScOptionState):
 
         _LOGGER.info("%s: Schedule charge: %s", self._caller, turn_on)
         if turn_on:
-            # Trigger is lost on restart, so reschedule if applicable.
+            # Trigger is lost on restart, so reschedule next charge session if applicable.
             next_charge_time = self.get_datetime(
                 self.next_charge_time_trigger_entity_id
             )
             self._tracker.schedule_next_charge_time(
                 next_charge_time, self._async_turn_on_charger_switch
             )
+
+            # Monitor charge schedule updates for rescheduling.
+            self._subscribe_charge_schedule_update()
+
         else:
             self._tracker.unschedule_next_charge_time()
+            self._unsubscribe_charge_schedule_update()
 
     # ----------------------------------------------------------------------------
     async def _async_switch_plugin_trigger(self, turn_on: bool) -> None:
@@ -691,9 +696,8 @@ class ChargeController(ScOptionState):
         # eg. Switch on charge while HA is still starting up.
         self._initialising = False
 
-        # Subscriptions
+        # Permanent subscriptions
         self._subscribe_next_charge_time_update()
-        self._subscribe_charge_schedule_update()
 
         # Track next charge time trigger
         await self.async_switch_schedule_charge(self.is_schedule_charge())
