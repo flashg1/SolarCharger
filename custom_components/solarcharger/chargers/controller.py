@@ -109,13 +109,14 @@ class ChargeController(ScOptionState):
         self._is_updated_today_tomorrow_schedule = value
 
     # ----------------------------------------------------------------------------
-    # General utils
+    # Call HA to turn on or off the actual switch
     # ----------------------------------------------------------------------------
-    async def _async_switch_task(self, action: SWITCH_ACTION, turn_on: bool):
-        """Start another task to action a switch state when not initialising. The switch must be in the correct state when starting task."""
+    async def _async_turn_off_plugin_trigger(self) -> None:
+        """Turn off plug-in trigger switch."""
 
-        if not self._initialising:
-            self._hass.loop.create_task(action(turn_on))
+        await self.async_turn_switch(
+            self.plugin_trigger_switch_entity_id, turn_on=False
+        )
 
     # ----------------------------------------------------------------------------
     def _turn_charger_switch(self, turn_on: bool) -> None:
@@ -137,6 +138,15 @@ class ChargeController(ScOptionState):
         await self.async_turn_switch(self.charge_switch_entity_id, turn_on=True)
 
     # ----------------------------------------------------------------------------
+    # General utils
+    # ----------------------------------------------------------------------------
+    async def _async_switch_task(self, action: SWITCH_ACTION, turn_on: bool):
+        """Start another task to action a switch state when not initialising. The switch must be in the correct state when starting task."""
+
+        if not self._initialising:
+            self._hass.loop.create_task(action(turn_on))
+
+    # ----------------------------------------------------------------------------
     async def async_check_if_need_to_reschedule_charge(self) -> None:
         """Reschedule charge due to schedule update."""
 
@@ -151,6 +161,10 @@ class ChargeController(ScOptionState):
                     )
                     if goal.use_charge_schedule and goal.has_charge_endtime:
                         if self._solar_charge.device_at_location_and_connected():
+                            _LOGGER.warning(
+                                "%s: Rescheduling charge due to schedule update",
+                                self._caller,
+                            )
                             self._turn_charger_switch(turn_on=True)
 
             except Exception:
@@ -288,11 +302,11 @@ class ChargeController(ScOptionState):
                 STATE_UNKNOWN,
                 STATE_UNAVAILABLE,
             ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-                today_index = datetime.now().date().weekday()
+                today_index = self.get_local_datetime().weekday()
                 tomorrow_index = (today_index + 1) % 7
                 day_index = self.get_charge_limit_entity_ids.get(new_state.entity_id)
                 if day_index in (today_index, tomorrow_index):
-                    if self._control.instance_count == 0:
+                    if self.charge_control.instance_count == 0:
                         self.set_updated_today_tomorrow_schedule(True)
 
     # ----------------------------------------------------------------------------
@@ -311,11 +325,11 @@ class ChargeController(ScOptionState):
                 STATE_UNKNOWN,
                 STATE_UNAVAILABLE,
             ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-                today_index = datetime.now().date().weekday()
+                today_index = self.get_local_datetime().weekday()
                 tomorrow_index = (today_index + 1) % 7
                 day_index = self.get_charge_endtime_entity_ids.get(new_state.entity_id)
                 if day_index in (today_index, tomorrow_index):
-                    if self._control.instance_count == 0:
+                    if self.charge_control.instance_count == 0:
                         self.set_updated_today_tomorrow_schedule(True)
 
     # ----------------------------------------------------------------------------
@@ -344,61 +358,50 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     # Switch actions
     # ----------------------------------------------------------------------------
-    async def async_switch_schedule_charge(self, turn_on: bool) -> None:
-        """Schedule charge switch."""
+    async def _async_switch_schedule_charge(self, turn_on: bool) -> None:
+        """Action schedule charge switch."""
+
         _LOGGER.info("%s: Schedule charge: %s", self._caller, turn_on)
-
-        if not self._initialising:
-            if turn_on:
-                # Trigger is lost on restart, so reschedule if applicable.
-                next_charge_time = self.get_datetime(
-                    self.next_charge_time_trigger_entity_id
-                )
-                self._tracker.schedule_next_charge_time(
-                    next_charge_time, self._async_turn_on_charger_switch
-                )
-            else:
-                self._tracker.unschedule_next_charge_time()
+        if turn_on:
+            # Trigger is lost on restart, so reschedule if applicable.
+            next_charge_time = self.get_datetime(
+                self.next_charge_time_trigger_entity_id
+            )
+            self._tracker.schedule_next_charge_time(
+                next_charge_time, self._async_turn_on_charger_switch
+            )
+        else:
+            self._tracker.unschedule_next_charge_time()
 
     # ----------------------------------------------------------------------------
-    async def _async_turn_off_plugin_trigger(self) -> None:
-        await self.async_turn_switch(
-            self.plugin_trigger_switch_entity_id, turn_on=False
-        )
+    async def _async_switch_plugin_trigger(self, turn_on: bool) -> None:
+        """Action plug-in trigger switch."""
 
-    # ----------------------------------------------------------------------------
-    async def async_switch_plugin_trigger(self, turn_on: bool) -> None:
-        """Plugin trigger switch."""
         _LOGGER.info("%s: Plugin trigger: %s", self._caller, turn_on)
-
-        if not self._initialising:
-            if turn_on:
-                ok = self._tracker.track_charger_plugged_in_sensor(
-                    self.async_handle_plug_in_charger_event
-                )
-                if not ok:
-                    await self._async_turn_off_plugin_trigger()
-            else:
-                self._tracker.untrack_charger_plugged_in_sensor()
+        if turn_on:
+            ok = self._tracker.track_charger_plugged_in_sensor(
+                self.async_handle_plug_in_charger_event
+            )
+            if not ok:
+                await self._async_turn_off_plugin_trigger()
+        else:
+            self._tracker.untrack_charger_plugged_in_sensor()
 
     # ----------------------------------------------------------------------------
-    async def async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
-        """Sun elevation trigger switch."""
-        _LOGGER.info("%s: Sun elevation trigger: %s", self._caller, turn_on)
+    async def _async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
+        """Action sun elevation trigger switch."""
 
-        if not self._initialising:
-            if turn_on:
-                self._tracker.track_sun_elevation(
-                    self.async_handle_sun_elevation_update
-                )
-            else:
-                self._tracker.untrack_sun_elevation()
+        _LOGGER.info("%s: Sun elevation trigger: %s", self._caller, turn_on)
+        if turn_on:
+            self._tracker.track_sun_elevation(self.async_handle_sun_elevation_update)
+        else:
+            self._tracker.untrack_sun_elevation()
 
     # ----------------------------------------------------------------------------
     async def _async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
-        """Calibrate max charge speed switch."""
-        _LOGGER.info("%s: Calibrate max charge speed: %s", self._caller, turn_on)
+        """Action calibrate max charge speed switch."""
 
+        _LOGGER.info("%s: Calibrate max charge speed: %s", self._caller, turn_on)
         if turn_on:
             if self._charge_task is None or self._charge_task.done():
                 self._is_charge_started_by_calibration_switch = True
@@ -411,14 +414,6 @@ class ChargeController(ScOptionState):
                 self._turn_charger_switch(turn_on=False)
 
             self._is_charge_started_by_calibration_switch = False
-
-    # ----------------------------------------------------------------------------
-    async def async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
-        """Calibrate max charge speed switch."""
-
-        await self._async_switch_task(
-            self._async_switch_calibrate_max_charge_speed, turn_on
-        )
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge(
@@ -623,26 +618,60 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def _async_switch_charge(self, turn_on: bool):
-        """Called by switch entity to start or stop charge."""
+        """Action charge switch."""
 
-        _LOGGER.debug("%s: Switch charge on: %s", self._control.config_name, turn_on)
+        _LOGGER.debug(
+            "%s: Switch charge on: %s", self.charge_control.config_name, turn_on
+        )
 
         if turn_on:
-            if self._control.switch_charge:
-                _LOGGER.error("%s: Charger already running", self._control.config_name)
+            if self.charge_control.switch_charge:
+                _LOGGER.error(
+                    "%s: Charger already running", self.charge_control.config_name
+                )
             else:
-                self._control.switch_charge = True
-                await self.async_start_charger(self._control)
+                self.charge_control.switch_charge = True
+                await self.async_start_charger(self.charge_control)
         else:  # noqa: PLR5501
-            if self._control.switch_charge:
-                self._control.switch_charge = False
-                await self.async_stop_charger(self._control)
+            if self.charge_control.switch_charge:
+                self.charge_control.switch_charge = False
+                await self.async_stop_charger(self.charge_control)
             else:
-                _LOGGER.error("%s: Charger already stopped", self._control.config_name)
+                _LOGGER.error(
+                    "%s: Charger already stopped", self.charge_control.config_name
+                )
+
+    # ----------------------------------------------------------------------------
+    # Called by switch entities/coordinator to action the switch state
+    # ----------------------------------------------------------------------------
+    async def async_switch_schedule_charge(self, turn_on: bool) -> None:
+        """Called by switch entity/coordinator to turn on/off schedule charge."""
+
+        await self._async_switch_task(self._async_switch_schedule_charge, turn_on)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_plugin_trigger(self, turn_on: bool) -> None:
+        """Called by switch entity/coordinator to turn on/off plug-in trigger."""
+
+        await self._async_switch_task(self._async_switch_plugin_trigger, turn_on)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
+        """Called by switch entity/coordinator to turn on/off sun elevation trigger."""
+
+        await self._async_switch_task(self._async_switch_sun_elevation_trigger, turn_on)
+
+    # ----------------------------------------------------------------------------
+    async def async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
+        """Called by switch entity/coordinator to calibrate max charge speed switch."""
+
+        await self._async_switch_task(
+            self._async_switch_calibrate_max_charge_speed, turn_on
+        )
 
     # ----------------------------------------------------------------------------
     async def async_switch_charge(self, turn_on: bool):
-        """Called by switch entity to start or stop charge."""
+        """Called by switch entity/coordinator to start or stop charge."""
 
         await self._async_switch_task(self._async_switch_charge, turn_on)
 
