@@ -113,7 +113,7 @@ class ChargeController(ScOptionState):
         # self._hass.loop.create_task(self.async_start_charge())
 
         self._hass.loop.create_task(
-            self.async_turn_switch(self._solar_charge.charge_switch, turn_on)
+            self.async_turn_switch(self.charge_switch_entity_id, turn_on)
         )
 
     # ----------------------------------------------------------------------------
@@ -122,7 +122,7 @@ class ChargeController(ScOptionState):
         """Start charger from coroutine callback."""
 
         # async_call_later do support coroutine callback, so can call directly.
-        await self.async_turn_switch(self._solar_charge.charge_switch, turn_on=True)
+        await self.async_turn_switch(self.charge_switch_entity_id, turn_on=True)
 
     # ----------------------------------------------------------------------------
     # Tracker callbacks
@@ -171,7 +171,7 @@ class ChargeController(ScOptionState):
                     ):
                         # Start charger
                         await self.async_turn_switch(
-                            self._solar_charge.charge_switch, turn_on=True
+                            self.charge_switch_entity_id, turn_on=True
                         )
 
     # ----------------------------------------------------------------------------
@@ -232,7 +232,7 @@ class ChargeController(ScOptionState):
         """Subscribe for next charge time update. This is always on."""
 
         self._tracker.track_next_charge_time_trigger(
-            self._solar_charge.next_charge_time_trigger,
+            self.next_charge_time_trigger_entity_id,
             self.async_handle_next_charge_time_update,
         )
 
@@ -247,7 +247,7 @@ class ChargeController(ScOptionState):
             if turn_on:
                 # Trigger is lost on restart, so reschedule if applicable.
                 next_charge_time = self.get_datetime(
-                    self._solar_charge.next_charge_time_trigger
+                    self.next_charge_time_trigger_entity_id
                 )
                 self._tracker.schedule_next_charge_time(
                     next_charge_time, self._async_turn_on_charger_switch
@@ -258,7 +258,7 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     async def _async_turn_off_plugin_trigger(self) -> None:
         await self.async_turn_switch(
-            self._solar_charge.plugin_trigger_switch, turn_on=False
+            self.plugin_trigger_switch_entity_id, turn_on=False
         )
 
     # ----------------------------------------------------------------------------
@@ -559,23 +559,21 @@ class ChargeController(ScOptionState):
 
         # Track next charge time trigger
         self._subscribe_next_charge_time_update()
-        await self.async_switch_schedule_charge(self._solar_charge.is_schedule_charge())
+        await self.async_switch_schedule_charge(self.is_schedule_charge())
 
         # Track charger plug in
-        await self.async_switch_plugin_trigger(self._solar_charge.is_plugin_trigger())
+        await self.async_switch_plugin_trigger(self.is_plugin_trigger())
 
         # Track sun elevation
-        await self.async_switch_sun_elevation_trigger(
-            self._solar_charge.is_sun_trigger()
-        )
+        await self.async_switch_sun_elevation_trigger(self.is_sun_trigger())
 
         # Resume charging if it was charging before HA restart
-        await self.async_switch_charge(self._solar_charge.is_charge_switch_on())
+        await self.async_switch_charge(self.is_charge_switch_on())
         await asyncio.sleep(1)
 
         # Resume charging if it was charging before HA restart
         await self.async_switch_calibrate_max_charge_speed(
-            self._solar_charge.is_calibrate_max_charge_speed()
+            self.is_calibrate_max_charge_speed()
         )
 
     # ----------------------------------------------------------------------------

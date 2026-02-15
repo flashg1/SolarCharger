@@ -23,8 +23,6 @@ from ..const import (  # noqa: TID252
     CALIBRATE_SOC_INCREASE,
     CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
     CONF_WAIT_NET_POWER_UPDATE,
-    DATETIME,
-    DATETIME_NEXT_CHARGE_TIME,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
@@ -45,16 +43,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
-    SWITCH,
-    SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
-    SWITCH_CHARGE,
-    SWITCH_FAST_CHARGE_MODE,
-    SWITCH_PLUGIN_TRIGGER,
-    SWITCH_POLL_CHARGER_UPDATE,
-    SWITCH_SCHEDULE_CHARGE,
-    SWITCH_SUN_TRIGGER,
 )
-from ..entity import compose_entity_id  # noqa: TID252
 from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import (  # noqa: TID252
@@ -118,37 +107,6 @@ class SolarCharge(ScOptionState):
         self._charger = charger
         self._chargeable = chargeable
 
-        # Non-modifiable local device entities, ie.
-        # not defined in config_options_flow _charger_control_entities_schema().
-        # These entities are also defined in config options, but not created until
-        # after first initialisation (see above).
-        self._next_charge_time_trigger = compose_entity_id(
-            DATETIME, subentry.unique_id, DATETIME_NEXT_CHARGE_TIME
-        )
-
-        self._fast_charge_mode_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_FAST_CHARGE_MODE
-        )
-        self._poll_charger_update_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_POLL_CHARGER_UPDATE
-        )
-
-        self._charge_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_CHARGE
-        )
-        self._schedule_charge_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_SCHEDULE_CHARGE
-        )
-        self._plugin_trigger_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_PLUGIN_TRIGGER
-        )
-        self._sun_trigger_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_SUN_TRIGGER
-        )
-        self._calibrate_max_charge_speed_switch = compose_entity_id(
-            SWITCH, subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
-        )
-
         self._history_date = datetime(2026, 1, 1, 0, 0, 0)
 
         self._session_triggered_by_timer = False
@@ -185,83 +143,8 @@ class SolarCharge(ScOptionState):
             return self._charger  # type: ignore[return-value]
         return None
 
-    @cached_property
-    def next_charge_time_trigger(self) -> str:
-        """Return the next charge time trigger entity ID."""
-        return self._next_charge_time_trigger
-
-    @cached_property
-    def fast_charge_mode_switch(self) -> str:
-        """Return the fast charge mode switch entity ID."""
-        return self._fast_charge_mode_switch
-
-    @cached_property
-    def poll_charger_update_switch(self) -> str:
-        """Return the poll charger update switch entity ID."""
-        return self._poll_charger_update_switch
-
-    @cached_property
-    def charge_switch(self) -> str:
-        """Return the charge switch entity ID."""
-        return self._charge_switch
-
-    @cached_property
-    def schedule_charge_switch(self) -> str:
-        """Return the schedule charge switch entity ID."""
-        return self._schedule_charge_switch
-
-    @cached_property
-    def plugin_trigger_switch(self) -> str:
-        """Return the plugin trigger switch entity ID."""
-        return self._plugin_trigger_switch
-
-    @cached_property
-    def sun_trigger_switch(self) -> str:
-        """Return the sun trigger switch entity ID."""
-        return self._sun_trigger_switch
-
-    @cached_property
-    def calibrate_max_charge_speed_switch(self) -> str:
-        """Return the calibrate max charge speed switch entity ID."""
-        return self._calibrate_max_charge_speed_switch
-
     # ----------------------------------------------------------------------------
     # Local device control entities
-    # ----------------------------------------------------------------------------
-    def is_fast_charge_mode(self) -> bool:
-        """Is fast charge mode on?"""
-        return self.get_boolean_or_abort(self.fast_charge_mode_switch)
-
-    # ----------------------------------------------------------------------------
-    def is_poll_charger_update(self) -> bool:
-        """Is poll charger update on?"""
-        return self.get_boolean_or_abort(self.poll_charger_update_switch)
-
-    # ----------------------------------------------------------------------------
-    def is_schedule_charge(self) -> bool:
-        """Is schedule charge on?"""
-        return self.get_boolean_or_abort(self.schedule_charge_switch)
-
-    # ----------------------------------------------------------------------------
-    def is_plugin_trigger(self) -> bool:
-        """Is plugin trigger on?"""
-        return self.get_boolean_or_abort(self.plugin_trigger_switch)
-
-    # ----------------------------------------------------------------------------
-    def is_sun_trigger(self) -> bool:
-        """Is sun trigger on?"""
-        return self.get_boolean_or_abort(self.sun_trigger_switch)
-
-    # ----------------------------------------------------------------------------
-    def is_charge_switch_on(self) -> bool:
-        """Is charge switch on?"""
-        return self.get_boolean_or_abort(self.charge_switch)
-
-    # ----------------------------------------------------------------------------
-    def is_calibrate_max_charge_speed(self) -> bool:
-        """Is calibrate max charge speed on?"""
-        return self.get_boolean_or_abort(self.calibrate_max_charge_speed_switch)
-
     # ----------------------------------------------------------------------------
     async def async_stop_calibrate_max_charge_speed(self) -> None:
         """Stop tracking SOC and reset flag."""
@@ -276,7 +159,7 @@ class SolarCharge(ScOptionState):
         if self.is_calibrate_max_charge_speed():
             await self.async_stop_calibrate_max_charge_speed()
             await self.async_turn_switch(
-                self._calibrate_max_charge_speed_switch, turn_on=False
+                self.calibrate_max_charge_speed_switch_entity_id, turn_on=False
             )
 
     # ----------------------------------------------------------------------------
@@ -388,7 +271,7 @@ class SolarCharge(ScOptionState):
         time_diff = timedelta(seconds=0)
 
         charge_start_time = self.get_local_datetime()
-        next_charge_time = self.get_datetime(self._next_charge_time_trigger)
+        next_charge_time = self.get_datetime(self.next_charge_time_trigger_entity_id)
         if next_charge_time is not None:
             if charge_start_time > next_charge_time:
                 time_diff = charge_start_time - next_charge_time
@@ -1256,7 +1139,7 @@ class SolarCharge(ScOptionState):
 
         # Note: Cannot set next_charge_time = datetime.min
         await self.async_set_datetime(
-            self._next_charge_time_trigger,
+            self.next_charge_time_trigger_entity_id,
             next_charge_time,
         )
 

@@ -7,11 +7,15 @@ import json
 import logging
 from typing import Any
 
+from propcache.api import cached_property
+
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant, State
 
 from .config_utils import get_saved_option_value
 from .const import (
+    DATETIME,
+    DATETIME_NEXT_CHARGE_TIME,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -22,7 +26,15 @@ from .const import (
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    SWITCH,
+    SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
+    SWITCH_CHARGE,
+    SWITCH_FAST_CHARGE_MODE,
+    SWITCH_PLUGIN_TRIGGER,
+    SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
+    SWITCH_SCHEDULE_CHARGE,
+    SWITCH_SUN_TRIGGER,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
     TIME_CHARGE_ENDTIME_SATURDAY,
@@ -31,6 +43,7 @@ from .const import (
     TIME_CHARGE_ENDTIME_TUESDAY,
     TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
+from .entity import compose_entity_id  # noqa: TID252
 from .model_config import ConfigValue, ConfigValueDict
 from .sc_config_state import ScConfigState
 from .utils import get_sun_attribute_or_abort  # noqa: TID252
@@ -108,6 +121,62 @@ class ScOptionState(ScConfigState):
 
         self._subentry = subentry
         ScConfigState.__init__(self, hass, entry, caller)
+
+    # ----------------------------------------------------------------------------
+    # Non-modifiable local device entities, ie.
+    # not defined in config_options_flow _charger_control_entities_schema().
+
+    @cached_property
+    def next_charge_time_trigger_entity_id(self) -> str:
+        """Return the next charge time trigger entity ID."""
+        return compose_entity_id(
+            DATETIME, self._subentry.unique_id, DATETIME_NEXT_CHARGE_TIME
+        )
+
+    @cached_property
+    def fast_charge_mode_switch_entity_id(self) -> str:
+        """Return the fast charge mode switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_FAST_CHARGE_MODE
+        )
+
+    @cached_property
+    def poll_charger_update_switch_entity_id(self) -> str:
+        """Return the poll charger update switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_POLL_CHARGER_UPDATE
+        )
+
+    @cached_property
+    def charge_switch_entity_id(self) -> str:
+        """Return the charge switch entity ID."""
+        return compose_entity_id(SWITCH, self._subentry.unique_id, SWITCH_CHARGE)
+
+    @cached_property
+    def schedule_charge_switch_entity_id(self) -> str:
+        """Return the schedule charge switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_SCHEDULE_CHARGE
+        )
+
+    @cached_property
+    def plugin_trigger_switch_entity_id(self) -> str:
+        """Return the plugin trigger switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_PLUGIN_TRIGGER
+        )
+
+    @cached_property
+    def sun_trigger_switch_entity_id(self) -> str:
+        """Return the sun trigger switch entity ID."""
+        return compose_entity_id(SWITCH, self._subentry.unique_id, SWITCH_SUN_TRIGGER)
+
+    @cached_property
+    def calibrate_max_charge_speed_switch_entity_id(self) -> str:
+        """Return the calibrate max charge speed switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
+        )
 
     # ----------------------------------------------------------------------------
     # General utils
@@ -578,3 +647,45 @@ class ScOptionState(ScConfigState):
         ]
 
         return weekly_schedule
+
+    # ----------------------------------------------------------------------------
+    # Local device control entities
+    # ----------------------------------------------------------------------------
+    def is_fast_charge_mode(self) -> bool:
+        """Is fast charge mode on?"""
+        return self.get_boolean_or_abort(self.fast_charge_mode_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_poll_charger_update(self) -> bool:
+        """Is poll charger update on?"""
+        return self.get_boolean_or_abort(self.poll_charger_update_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_schedule_charge(self) -> bool:
+        """Is schedule charge on?"""
+        return self.get_boolean_or_abort(self.schedule_charge_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_plugin_trigger(self) -> bool:
+        """Is plugin trigger on?"""
+        return self.get_boolean_or_abort(self.plugin_trigger_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_sun_trigger(self) -> bool:
+        """Is sun trigger on?"""
+        return self.get_boolean_or_abort(self.sun_trigger_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_charge_switch_on(self) -> bool:
+        """Is charge switch on?"""
+        return self.get_boolean_or_abort(self.charge_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_calibrate_max_charge_speed(self) -> bool:
+        """Is calibrate max charge speed on?"""
+        return self.get_boolean_or_abort(
+            self.calibrate_max_charge_speed_switch_entity_id
+        )
+
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
