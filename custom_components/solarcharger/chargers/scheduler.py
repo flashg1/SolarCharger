@@ -40,7 +40,7 @@ LOOK_AHEAD_CHARGE_LIMIT_DAYS = 4
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class ChargerScheduler(ScOptionState):
+class ChargeScheduler(ScOptionState):
     """Class to manage the charge scheduling."""
 
     def __init__(

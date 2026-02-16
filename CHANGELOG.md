@@ -5,7 +5,7 @@
 - Updating today or tomorrow charge schedule will trigger charger to reschedule charge if required.
 ### Improvement
 - Tidied up ChargeController switch code.
-- Refactored SolarCharge adding ChargerScheduler class.
+- Refactored SolarCharge adding ChargeScheduler class.
 - Moved local only entities from SolarCharge to sc_option_state.
 - Refactored sc_option_state by removing _get_subentry().
 - Refactored ChargeController adding SolarCharge class.

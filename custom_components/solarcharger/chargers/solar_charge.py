@@ -44,7 +44,7 @@ from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge  # noqa
 from ..utils import get_sun_elevation, log_is_event_loop  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
-from .scheduler import ChargerScheduler
+from .scheduler import ChargeScheduler
 from .tracker import Tracker
 
 # ----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ class SolarCharge(ScOptionState):
         self._tracker = tracker
         self._charger = charger
         self._chargeable = chargeable
-        self._scheduler = ChargerScheduler(hass, entry, subentry)
+        self._scheduler = ChargeScheduler(hass, entry, subentry)
 
         self._session_triggered_by_timer = False
         self._starting_goal: ScheduleData
