@@ -57,6 +57,7 @@ class ChargerScheduler(ScOptionState):
         ScOptionState.__init__(self, hass, entry, subentry, caller)
 
         self._history_date = datetime(2026, 1, 1, 0, 0, 0)
+        self.calibrate_max_charge_limit: float = -1
 
     # ----------------------------------------------------------------------------
     # Check if enough time to complete charge
@@ -253,7 +254,7 @@ class ChargerScheduler(ScOptionState):
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit_goal_if_calibration(
         self, chargeable: Chargeable, goal: ScheduleData, started_calibration: bool
-    ) -> float | None:
+    ) -> None:
         """Set new charge limit for calibration if required."""
 
         if self.is_calibrate_max_charge_speed():
@@ -263,22 +264,30 @@ class ChargerScheduler(ScOptionState):
                     battery_soc = self._get_soc_for_max_charge_speed_calibration(
                         chargeable
                     )
-                    goal.calibrate_max_charge_limit = (
+                    self.calibrate_max_charge_limit = (
                         battery_soc + CALIBRATE_SOC_INCREASE
                     )
 
-                    # Set new charge limit if required
-                    min_charge_limit = self.get_min_charge_limit()
-                    if (
-                        goal.new_charge_limit < goal.calibrate_max_charge_limit
-                        and goal.calibrate_max_charge_limit >= min_charge_limit
-                    ):
-                        goal.new_charge_limit = goal.calibrate_max_charge_limit
+                goal.calibrate_max_charge_limit = self.calibrate_max_charge_limit
+
+                # Set new charge limit if required
+                min_charge_limit = self.get_min_charge_limit()
+                if (
+                    goal.new_charge_limit < self.calibrate_max_charge_limit
+                    and self.calibrate_max_charge_limit >= min_charge_limit
+                ):
+                    goal.new_charge_limit = self.calibrate_max_charge_limit
 
             except EntityExceptionError as e:
                 _LOGGER.error(
                     "%s: Cannot calibrate max charge speed: %s", self._caller, e
                 )
+
+    # ----------------------------------------------------------------------------
+    def log_goal(self, goal: ScheduleData, msg: str = "") -> None:
+        """Log schedule data."""
+
+        _LOGGER.warning("%s: %s: ScheduleData=%s", self._caller, msg, goal)
 
     # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.
@@ -294,6 +303,7 @@ class ChargerScheduler(ScOptionState):
         chargeable: Chargeable,
         include_tomorrow: bool,
         started_calibration: bool,
+        msg: str = "",
         log_it: bool = False,
     ) -> ScheduleData:
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
@@ -368,7 +378,7 @@ class ChargerScheduler(ScOptionState):
         self._calc_charge_starttime(goal)
 
         if log_it:
-            _LOGGER.warning("%s: ScheduleData=%s", self._caller, goal)
+            self.log_goal(goal, msg)
 
         return goal
 
@@ -437,6 +447,7 @@ class ChargerScheduler(ScOptionState):
             chargeable,
             include_tomorrow=True,
             started_calibration=started_calibration,
+            msg="Next",
             log_it=True,
         )
         if next_goal.use_charge_schedule:

@@ -152,14 +152,27 @@ class ChargeController(ScOptionState):
 
         if self.is_updated_today_tomorrow_schedule:
             try:
+                _LOGGER.info(
+                    "%s: Checking if need to reschedule charge due to schedule update",
+                    self._caller,
+                )
                 if (
                     self.charge_control.instance_count == 0
                     and self.is_schedule_charge()
                 ):
+                    await self._solar_charge.async_wake_up_and_update_ha(
+                        self._chargeable
+                    )
                     goal: ScheduleData = (
                         await self._solar_charge.async_get_current_schedule_data()
                     )
-                    if goal.use_charge_schedule and goal.has_charge_endtime:
+                    if goal.use_charge_schedule and (
+                        goal.has_charge_endtime
+                        or (
+                            goal.battery_soc is not None
+                            and goal.battery_soc < goal.new_charge_limit
+                        )
+                    ):
                         if self._solar_charge.device_at_location_and_connected():
                             _LOGGER.warning(
                                 "%s: Rescheduling charge due to schedule update",
@@ -298,15 +311,19 @@ class ChargeController(ScOptionState):
         self._tracker.log_state_change(event)
 
         if new_state is not None and old_state is not None:
-            if new_state.state not in (
-                STATE_UNKNOWN,
-                STATE_UNAVAILABLE,
-            ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            if (
+                new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                and new_state.state != old_state.state
+            ):
                 today_index = self.get_local_datetime().weekday()
                 tomorrow_index = (today_index + 1) % 7
                 day_index = self.get_charge_limit_entity_ids.get(new_state.entity_id)
                 if day_index in (today_index, tomorrow_index):
-                    if self.charge_control.instance_count == 0:
+                    if (
+                        self.charge_control.instance_count == 0
+                        and self.is_schedule_charge()
+                    ):
                         self.set_updated_today_tomorrow_schedule(True)
 
     # ----------------------------------------------------------------------------
@@ -321,15 +338,19 @@ class ChargeController(ScOptionState):
         self._tracker.log_state_change(event)
 
         if new_state is not None and old_state is not None:
-            if new_state.state not in (
-                STATE_UNKNOWN,
-                STATE_UNAVAILABLE,
-            ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            if (
+                new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                and new_state.state != old_state.state
+            ):
                 today_index = self.get_local_datetime().weekday()
                 tomorrow_index = (today_index + 1) % 7
                 day_index = self.get_charge_endtime_entity_ids.get(new_state.entity_id)
                 if day_index in (today_index, tomorrow_index):
-                    if self.charge_control.instance_count == 0:
+                    if (
+                        self.charge_control.instance_count == 0
+                        and self.is_schedule_charge()
+                    ):
                         self.set_updated_today_tomorrow_schedule(True)
 
     # ----------------------------------------------------------------------------

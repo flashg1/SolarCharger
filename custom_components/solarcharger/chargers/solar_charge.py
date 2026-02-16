@@ -91,7 +91,6 @@ class SolarCharge(ScOptionState):
         self._started_calibrate_max_charge_speed = False
         self._charge_current_updatetime: float = 0
         self._soc_updates: list[StateOfCharge] = []
-        self._calibrate_max_charge_limit: float
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -196,7 +195,7 @@ class SolarCharge(ScOptionState):
                             self._soc_updates,
                         )
 
-                    if soc >= self._calibrate_max_charge_limit:
+                    if soc >= self._scheduler.calibrate_max_charge_limit:
                         await self.async_option_set_entity_number(
                             NUMBER_CHARGER_MAX_SPEED, max_charge_speed
                         )
@@ -230,7 +229,11 @@ class SolarCharge(ScOptionState):
         """Get current schedule data."""
 
         return await self._scheduler.async_get_schedule_data(
-            self._chargeable, include_tomorrow=True, started_calibration=False
+            self._chargeable,
+            include_tomorrow=True,
+            started_calibration=False,
+            msg="Schedule",
+            log_it=False,
         )
 
     # ----------------------------------------------------------------------------
@@ -342,12 +345,11 @@ class SolarCharge(ScOptionState):
             raise RuntimeError(f"{self._caller}: Device not at charger location")
 
     # ----------------------------------------------------------------------------
-    def _set_calibrate_max_charge_limit(self, goal: ScheduleData) -> None:
-        """Set charge limit for max charge speed calibration."""
+    async def async_wake_up_and_update_ha(self, chargeable: Chargeable) -> None:
+        """Wake up device and update HA."""
 
-        if self.is_calibrate_max_charge_speed():
-            if goal.calibrate_max_charge_limit is not None:
-                self._calibrate_max_charge_limit = goal.calibrate_max_charge_limit
+        await self._async_wakeup_device(chargeable)
+        await self._async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------
     async def _async_init_device(self, chargeable: Chargeable) -> None:
@@ -364,9 +366,7 @@ class SolarCharge(ScOptionState):
         sun_elevation: float = get_sun_elevation(self._caller, sun_state)
         _LOGGER.warning("%s: Started at sun_elevation=%s", self._caller, sun_elevation)
 
-        await self._async_wakeup_device(chargeable)
-        await self._async_update_ha(chargeable)
-
+        await self.async_wake_up_and_update_ha(chargeable)
         self._check_if_at_location_or_abort(chargeable)
 
         #####################################
@@ -376,9 +376,9 @@ class SolarCharge(ScOptionState):
             chargeable,
             self._session_triggered_by_timer,
             self._started_calibrate_max_charge_speed,
+            msg="Start",
             log_it=True,
         )
-        self._set_calibrate_max_charge_limit(self._starting_goal)
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit(
@@ -805,16 +805,14 @@ class SolarCharge(ScOptionState):
                 chargeable,
                 self._session_triggered_by_timer,
                 self._started_calibrate_max_charge_speed,
+                msg="Loop",
             ),
         ):
             try:
                 # Check schedule change and update charge limit if required
                 self._running_goal = goal
-                self._set_calibrate_max_charge_limit(self._running_goal)
                 if await self._async_init_charge_limit(chargeable, self._running_goal):
-                    _LOGGER.warning(
-                        "%s: ScheduleData=%s", self._caller, self._running_goal
-                    )
+                    self._scheduler.log_goal(self._running_goal, "Limit changed")
 
                 # Turn on charger if looping for the first time
                 if loop_count == 0:
