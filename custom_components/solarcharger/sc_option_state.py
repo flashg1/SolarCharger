@@ -50,7 +50,6 @@ from .utils import get_sun_attribute_or_abort
 
 
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 @dataclass
 class ChargeSchedule:
     """Daily charge schedule."""
@@ -59,7 +58,12 @@ class ChargeSchedule:
     charge_limit: float
     charge_end_time: time
 
+    def __repr__(self) -> str:
+        """Return string representation of ChargeSchedule."""
+        return f"({self.charge_day}: {self.charge_limit}, {self.charge_end_time})"
 
+
+# ----------------------------------------------------------------------------
 @dataclass
 class ScheduleData:
     """Charge limit schedule data."""
@@ -94,13 +98,33 @@ class ScheduleData:
     # Is charge to start immediately?
     is_immediate_start: bool = False
 
+    def __repr__(self) -> str:
+        """Return string representation of ScheduleData."""
+        return (
+            f"day_index={self.day_index}, "
+            f"use_charge_schedule={self.use_charge_schedule}, "
+            f"has_charge_endtime={self.has_charge_endtime}, charge_endtime={self.charge_endtime}, "
+            f"propose_charge_starttime={self.propose_charge_starttime}, need_charge_duration={self.need_charge_duration}, "
+            f"is_immediate_start={self.is_immediate_start}, "
+            f"battery_soc={self.battery_soc}, "
+            f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
+            f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "
+            f"data_timestamp={self.data_timestamp}, "
+            f"{self.weekly_schedule}"
+        )
 
+
+# ----------------------------------------------------------------------------
 @dataclass
 class StateOfCharge:
     """State of charge data."""
 
     state_of_charge: float
     update_time: datetime
+
+    def __repr__(self) -> str:
+        """Return string representation of StateOfCharge."""
+        return f"{self.update_time}: {self.state_of_charge}"
 
 
 # ----------------------------------------------------------------------------

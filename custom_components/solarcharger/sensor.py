@@ -47,6 +47,13 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
         self._attr_native_value = new_status
         self.update_ha_state()
 
+    # ----------------------------------------------------------------------------
+    # See https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/entity-event-setup/
+    async def async_added_to_hass(self) -> None:
+        """Entity about to be added to hass. Restore state and subscribe for events here if needed."""
+
+        await super().async_added_to_hass()
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

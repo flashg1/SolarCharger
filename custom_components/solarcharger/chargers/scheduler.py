@@ -287,7 +287,7 @@ class ChargeScheduler(ScOptionState):
     def log_goal(self, goal: ScheduleData, msg: str = "") -> None:
         """Log schedule data."""
 
-        _LOGGER.warning("%s: %s: ScheduleData=%s", self._caller, msg, goal)
+        _LOGGER.warning("%s: %s: ScheduleData: %s", self._caller, msg, goal)
 
     # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.

@@ -43,6 +43,13 @@ class SolarChargerButtonEntity(SolarChargerEntity, ButtonEntity):
 
         self._coordinator = coordinator
 
+    # ----------------------------------------------------------------------------
+    # See https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/entity-event-setup/
+    async def async_added_to_hass(self) -> None:
+        """Entity about to be added to hass. Restore state and subscribe for events here if needed."""
+
+        await super().async_added_to_hass()
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

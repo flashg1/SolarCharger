@@ -94,10 +94,13 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
         self.turn_off()
 
     # ----------------------------------------------------------------------------
+    # See https://developers.home-assistant.io/docs/core/integration-quality-scale/rules/entity-event-setup/
     async def async_added_to_hass(self) -> None:
-        """Run when entity about to be added to hass."""
-        turn_on = self._default_val
+        """Entity about to be added to hass. Restore state and subscribe for events here if needed."""
 
+        await super().async_added_to_hass()
+
+        turn_on = self._default_val
         if self._is_restore_state:
             restored: State | None = await self.async_get_last_state()
             if restored is not None:
