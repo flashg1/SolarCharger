@@ -57,7 +57,13 @@ class ChargeScheduler(ScOptionState):
         ScOptionState.__init__(self, hass, entry, subentry, caller)
 
         self._history_date = datetime(2026, 1, 1, 0, 0, 0)
-        self.calibrate_max_charge_limit: float = -1
+        self._calibrate_max_charge_limit: float = -1
+
+    # ----------------------------------------------------------------------------
+    @property
+    def calibrate_max_charge_limit(self) -> float:
+        """Get calibrate max charge limit."""
+        return self._calibrate_max_charge_limit
 
     # ----------------------------------------------------------------------------
     # Check if enough time to complete charge
@@ -261,22 +267,25 @@ class ChargeScheduler(ScOptionState):
             try:
                 # Save calibration charge limit only once at start of calibration.
                 if not started_calibration:
+                    # Set to -1 first to make sure it is updated in case of exception.
+                    self._calibrate_max_charge_limit = -1
+
                     battery_soc = self._get_soc_for_max_charge_speed_calibration(
                         chargeable
                     )
-                    self.calibrate_max_charge_limit = (
+                    self._calibrate_max_charge_limit = (
                         battery_soc + CALIBRATE_SOC_INCREASE
                     )
 
-                goal.calibrate_max_charge_limit = self.calibrate_max_charge_limit
+                goal.calibrate_max_charge_limit = self._calibrate_max_charge_limit
 
                 # Set new charge limit if required
                 min_charge_limit = self.get_min_charge_limit()
                 if (
-                    goal.new_charge_limit < self.calibrate_max_charge_limit
-                    and self.calibrate_max_charge_limit >= min_charge_limit
+                    goal.new_charge_limit < self._calibrate_max_charge_limit
+                    and self._calibrate_max_charge_limit >= min_charge_limit
                 ):
-                    goal.new_charge_limit = self.calibrate_max_charge_limit
+                    goal.new_charge_limit = self._calibrate_max_charge_limit
 
             except EntityExceptionError as e:
                 _LOGGER.error(

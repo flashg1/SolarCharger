@@ -774,9 +774,29 @@ class SolarCharge(ScOptionState):
 
         if self.is_calibrate_max_charge_speed():
             if not self._started_calibrate_max_charge_speed:
+                # Set the calibration charge limit
+                goal = await self._scheduler.async_get_schedule_data(
+                    chargeable,
+                    self._session_triggered_by_timer,
+                    self._started_calibrate_max_charge_speed,
+                    msg="Calibration",
+                )
+
+                if self._scheduler.calibrate_max_charge_limit == -1:
+                    _LOGGER.error(
+                        "%s: Abort calibrate max charge speed due to limit not set",
+                        self._caller,
+                    )
+                    await self._async_turn_off_calibrate_max_charge_speed_switch()
+                    return
+
                 # Track SOC
                 self._soc_updates = []
                 if self._tracker.track_soc_sensor(self.async_handle_soc_update):
+                    # Change charge limit if required
+                    if await self._async_init_charge_limit(chargeable, goal):
+                        self._scheduler.log_goal(goal, "Calibration limit changed")
+                    # Set max current
                     charger_max_current = self._get_charger_max_current(charger)
                     await self._async_set_charge_current(charger, charger_max_current)
                     self._started_calibrate_max_charge_speed = True
@@ -786,6 +806,7 @@ class SolarCharge(ScOptionState):
                         self._caller,
                     )
                     await self._async_turn_off_calibrate_max_charge_speed_switch()
+                    return
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(

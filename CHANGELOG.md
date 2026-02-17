@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.12 2026-02-17
+### Improvement
+### Fix
+- Fixed divide by zero issue with max charge speed calibration when SOC is above 91%.
+
 ## v0.3.11 2026-02-14
 ### New feature
 - Updating today or tomorrow charge schedule will trigger charger to reschedule charge if required.
