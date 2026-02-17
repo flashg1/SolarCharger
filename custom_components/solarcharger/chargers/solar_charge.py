@@ -343,7 +343,7 @@ class SolarCharge(ScOptionState):
     def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
         is_at_location = self._is_at_location(chargeable)
         if not is_at_location:
-            raise RuntimeError(f"{self._caller}: Device not at charger location")
+            raise RuntimeError("Device not at charger location")
 
     # ----------------------------------------------------------------------------
     async def async_wake_up_and_update_ha(self, chargeable: Chargeable) -> None:
@@ -492,7 +492,7 @@ class SolarCharge(ScOptionState):
 
         charger_max_current = charger.get_max_charge_current()
         if charger_max_current is None or charger_max_current <= 0:
-            raise ValueError(f"{self._caller}: Failed to get charger max current")
+            raise ValueError("Failed to get charger max current")
 
         return charger_max_current
 
@@ -510,7 +510,7 @@ class SolarCharge(ScOptionState):
 
         battery_charge_current = charger.get_charge_current()
         if battery_charge_current is None:
-            raise ValueError(f"{self._caller}: Failed to get charge current")
+            raise ValueError("Failed to get charge current")
         old_charge_current = self._check_current(
             charger_max_current, battery_charge_current
         )
@@ -550,7 +550,7 @@ class SolarCharge(ScOptionState):
         )
         if charger_effective_voltage <= 0:
             raise ValueError(
-                f"{self._caller}: Invalid charger effective voltage {charger_effective_voltage}"
+                f"Invalid charger effective voltage {charger_effective_voltage}"
             )
 
         one_amp_watt_step = charger_effective_voltage * 1
