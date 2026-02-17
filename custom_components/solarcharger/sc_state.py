@@ -257,9 +257,7 @@ class ScState:
 
         state_str = self.get_boolean(entity_id)
         if state_str is None:
-            raise EntityExceptionError(
-                f"{self._caller}: Cannot get boolean for entity '{entity_id}'"
-            )
+            raise EntityExceptionError(f"Cannot get boolean for entity '{entity_id}'")
 
         return state_str
 

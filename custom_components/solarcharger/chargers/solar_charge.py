@@ -39,6 +39,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
 )
+from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge  # noqa: TID252
 from ..utils import get_sun_elevation, log_is_event_loop  # noqa: TID252
@@ -372,13 +373,13 @@ class SolarCharge(ScOptionState):
         #####################################
         # Set starting goal
         #####################################
-        self._starting_goal = await self._scheduler.async_get_schedule_data(
-            chargeable,
-            self._session_triggered_by_timer,
-            self._started_calibrate_max_charge_speed,
-            msg="Start",
-            log_it=True,
-        )
+        # self._starting_goal = await self._scheduler.async_get_schedule_data(
+        #     chargeable,
+        #     self._session_triggered_by_timer,
+        #     self._started_calibrate_max_charge_speed,
+        #     msg="Start",
+        #     log_it=True,
+        # )
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit(
@@ -390,13 +391,13 @@ class SolarCharge(ScOptionState):
         await self._async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
-    async def _async_init_charge_limit(
+    async def _async_set_charge_limit_if_required(
         self, chargeable: Chargeable, goal: ScheduleData
     ) -> bool:
         """Set new charge limit if changed, otherwise use existing charge limit."""
 
         if charge_limit_changed := (goal.old_charge_limit != goal.new_charge_limit):
-            _LOGGER.info(
+            _LOGGER.warning(
                 "%s: Changing charge limit from %.1f %% to %.1f %% for %s",
                 self._caller,
                 goal.old_charge_limit,
@@ -698,7 +699,10 @@ class SolarCharge(ScOptionState):
         """Check if to continue charging."""
 
         is_connected = self.is_connected(charger)
+
+        # Device charge limit must have already been set before this check.
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
+
         is_charging = self._is_charging(charger)
         (is_sun_above_start_end_elevations, elevation) = (
             self.is_sun_above_start_end_elevation_triggers()
@@ -716,9 +720,12 @@ class SolarCharge(ScOptionState):
         else:
             is_immediate_start_with_grace = False
 
+        # Charge just-in-time feature:
+        # If end time is set, charge can still stop at end elevation trigger,
+        # and then start again closer to end time to complete charge.
         continue_charge = (
             is_connected
-            and (is_below_charge_limit or is_calibrate_max_charge_speed)
+            and is_below_charge_limit
             and (loop_count == 0 or is_charging)
             and (
                 is_sun_above_start_end_elevations
@@ -767,46 +774,116 @@ class SolarCharge(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
-    async def _async_check_if_calibration(
+    async def _async_start_max_charge_speed_calibration(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        """Start max charge speed calibration."""
+
+        # Set the calibration charge limit
+        goal = await self._scheduler.async_get_schedule_data(
+            chargeable,
+            self._session_triggered_by_timer,
+            self._started_calibrate_max_charge_speed,
+            msg="Calibration",
+        )
+        if self._scheduler.calibrate_max_charge_limit == -1:
+            raise EntityExceptionError("Charge limit not set")
+
+        # Track SOC
+        self._soc_updates = []
+        if self._tracker.track_soc_sensor(self.async_handle_soc_update):
+            # Change charge limit if required
+            await self._async_set_charge_limit_if_required(chargeable, goal)
+            # Set max current
+            charger_max_current = self._get_charger_max_current(charger)
+            await self._async_set_charge_current(charger, charger_max_current)
+            self._started_calibrate_max_charge_speed = True
+        else:
+            raise EntityExceptionError("Missing SOC sensor")
+
+    # ----------------------------------------------------------------------------
+    async def _async_calibrate_max_charge_speed_if_required(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Check if calibration is required during charge."""
 
         if self.is_calibrate_max_charge_speed():
             if not self._started_calibrate_max_charge_speed:
-                # Set the calibration charge limit
-                goal = await self._scheduler.async_get_schedule_data(
-                    chargeable,
-                    self._session_triggered_by_timer,
-                    self._started_calibrate_max_charge_speed,
-                    msg="Calibration",
-                )
-
-                if self._scheduler.calibrate_max_charge_limit == -1:
-                    _LOGGER.error(
-                        "%s: Abort calibrate max charge speed due to limit not set",
-                        self._caller,
+                try:
+                    await self._async_start_max_charge_speed_calibration(
+                        charger, chargeable
                     )
-                    await self._async_turn_off_calibrate_max_charge_speed_switch()
-                    return
 
-                # Track SOC
-                self._soc_updates = []
-                if self._tracker.track_soc_sensor(self.async_handle_soc_update):
-                    # Change charge limit if required
-                    if await self._async_init_charge_limit(chargeable, goal):
-                        self._scheduler.log_goal(goal, "Calibration limit changed")
-                    # Set max current
-                    charger_max_current = self._get_charger_max_current(charger)
-                    await self._async_set_charge_current(charger, charger_max_current)
                     self._started_calibrate_max_charge_speed = True
-                else:
+
+                except EntityExceptionError as e:
                     _LOGGER.error(
-                        "%s: Abort calibrate max charge speed due to missing SOC sensor",
+                        "%s: Abort calibrate max charge speed: %s",
                         self._caller,
+                        e,
                     )
                     await self._async_turn_off_calibrate_max_charge_speed_switch()
-                    return
+
+    # ----------------------------------------------------------------------------
+    # async def _async_charge_device(
+    #     self, charger: Charger, chargeable: Chargeable
+    # ) -> None:
+    #     loop_count = 0
+
+    #     wait_net_power_update = self.config_get_number_or_abort(
+    #         CONF_WAIT_NET_POWER_UPDATE
+    #     )
+
+    #     while self._is_continue_charge(
+    #         charger,
+    #         chargeable,
+    #         loop_count,
+    #         goal := await self._scheduler.async_get_schedule_data(
+    #             chargeable,
+    #             self._session_triggered_by_timer,
+    #             self._started_calibrate_max_charge_speed,
+    #             msg="Loop",
+    #         ),
+    #     ):
+    #         try:
+    #             # Check schedule change and update charge limit if required
+    #             self._running_goal = goal
+    #             if await self._async_init_charge_limit(chargeable, self._running_goal):
+    #                 self._scheduler.log_goal(self._running_goal, "Limit changed")
+
+    #             # Turn on charger if looping for the first time
+    #             if loop_count == 0:
+    #                 await self._async_turn_charger_switch(charger, turn_on=True)
+    #                 await self._async_set_charge_current(
+    #                     charger, INITIAL_CHARGE_CURRENT
+    #                 )
+    #                 self._subscribe_allocated_power_update()
+
+    #                 self._log_charging_status(charger, "Before update")
+    #                 await self._async_update_ha(chargeable)
+    #                 self._log_charging_status(charger, "After update")
+
+    #             # Check if calibration is required during charge
+    #             await self._async_check_if_calibration(charger, chargeable)
+
+    #             # Update status after turning on power, or at every interval.
+    #             # This is either required here or after setting current.
+    #             # It is better here since it is garanteed periodic.
+    #             # Do not wait here. Depends on the main loop to wait.
+    #             await self._async_update_ha(chargeable, wait_after_update=False)
+
+    #         except TimeoutError as e:
+    #             _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
+    #         except Exception:
+    #             _LOGGER.exception("%s: Error charging device", self._caller)
+
+    #         # Sleep before re-evaluating charging conditions.
+    #         # Charging state must be "charging" for loop_count > 0.
+    #         # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
+    #         await asyncio.sleep(wait_net_power_update)
+    #         loop_count = loop_count + 1
+
+    #     await self.async_unload()
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -818,37 +895,42 @@ class SolarCharge(ScOptionState):
             CONF_WAIT_NET_POWER_UPDATE
         )
 
-        while self._is_continue_charge(
-            charger,
-            chargeable,
-            loop_count,
-            goal := await self._scheduler.async_get_schedule_data(
-                chargeable,
-                self._session_triggered_by_timer,
-                self._started_calibrate_max_charge_speed,
-                msg="Loop",
-            ),
-        ):
+        while True:
             try:
-                # Check schedule change and update charge limit if required
-                self._running_goal = goal
-                if await self._async_init_charge_limit(chargeable, self._running_goal):
-                    self._scheduler.log_goal(self._running_goal, "Limit changed")
+                # Get schedule data at start of each loop since schedule might change while charging.
+                self._running_goal = await self._scheduler.async_get_schedule_data(
+                    chargeable,
+                    self._session_triggered_by_timer,
+                    self._started_calibrate_max_charge_speed,
+                    msg="Loop",
+                )
 
-                # Turn on charger if looping for the first time
+                # Set charge limit if required.
+                await self._async_set_charge_limit_if_required(
+                    chargeable, self._running_goal
+                )
+
+                # Check if continue charging or exit loop. Must run after setting charge limit.
+                if not self._is_continue_charge(
+                    charger, chargeable, loop_count, self._running_goal
+                ):
+                    break
+
+                # Turn on charger if looping for the first time.
                 if loop_count == 0:
+                    self._starting_goal = self._running_goal
+                    self._scheduler.log_goal(self._starting_goal, "Start")
                     await self._async_turn_charger_switch(charger, turn_on=True)
                     await self._async_set_charge_current(
                         charger, INITIAL_CHARGE_CURRENT
                     )
                     self._subscribe_allocated_power_update()
-
-                    self._log_charging_status(charger, "Before update")
                     await self._async_update_ha(chargeable)
-                    self._log_charging_status(charger, "After update")
 
-                # Check if calibration is required during charge
-                await self._async_check_if_calibration(charger, chargeable)
+                # Check if calibration is required during charge.
+                await self._async_calibrate_max_charge_speed_if_required(
+                    charger, chargeable
+                )
 
                 # Update status after turning on power, or at every interval.
                 # This is either required here or after setting current.
@@ -910,7 +992,7 @@ class SolarCharge(ScOptionState):
         #####################################
         try:
             await self._async_init_device(chargeable)
-            await self._async_init_charge_limit(chargeable, self._starting_goal)
+            # await self._async_init_charge_limit(chargeable, self._starting_goal)
             await self._async_charge_device(charger, chargeable)
             await self.async_tidy_up_on_exit(charger, chargeable)
 

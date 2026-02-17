@@ -128,9 +128,7 @@ class ChargeScheduler(ScOptionState):
 
         charge_limit = chargeable.get_charge_limit()
         if charge_limit is None:
-            raise EntityExceptionError(
-                f"{self._caller}: Cannot get charge limit from chargeable device"
-            )
+            raise EntityExceptionError("Cannot get charge limit")
 
         return charge_limit
 
@@ -247,13 +245,9 @@ class ChargeScheduler(ScOptionState):
 
         battery_soc = chargeable.get_state_of_charge()
         if battery_soc is None:
-            raise EntityExceptionError(
-                f"{self._caller}: Cannot calibrate max charge speed due to missing SOC sensor"
-            )
+            raise EntityExceptionError("Missing SOC sensor")
         if battery_soc > CALIBRATE_MAX_SOC:
-            raise EntityExceptionError(
-                f"{self._caller}: Cannot calibrate max charge speed due to SOC > {CALIBRATE_MAX_SOC} %"
-            )
+            raise EntityExceptionError(f"SOC > {CALIBRATE_MAX_SOC}%")
 
         return battery_soc
 
@@ -267,12 +261,14 @@ class ChargeScheduler(ScOptionState):
             try:
                 # Save calibration charge limit only once at start of calibration.
                 if not started_calibration:
-                    # Set to -1 first to make sure it is updated in case of exception.
+                    # Calibration charge limit cannot be -1 if set successfully.
                     self._calibrate_max_charge_limit = -1
 
                     battery_soc = self._get_soc_for_max_charge_speed_calibration(
                         chargeable
                     )
+
+                    # Setting calibration charge limit
                     self._calibrate_max_charge_limit = (
                         battery_soc + CALIBRATE_SOC_INCREASE
                     )
