@@ -2,6 +2,7 @@
 
 ## v0.3.12 2026-02-17
 ### Improvement
+- Tidied async_added_to_hass() and pretty print schedule data.
 ### Fix
 - Fixed divide by zero issue with max charge speed calibration when SOC is above 91%.
 
