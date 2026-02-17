@@ -370,17 +370,6 @@ class SolarCharge(ScOptionState):
         await self.async_wake_up_and_update_ha(chargeable)
         self._check_if_at_location_or_abort(chargeable)
 
-        #####################################
-        # Set starting goal
-        #####################################
-        # self._starting_goal = await self._scheduler.async_get_schedule_data(
-        #     chargeable,
-        #     self._session_triggered_by_timer,
-        #     self._started_calibrate_max_charge_speed,
-        #     msg="Start",
-        #     log_it=True,
-        # )
-
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit(
         self, chargeable: Chargeable, charge_limit: float
@@ -797,7 +786,6 @@ class SolarCharge(ScOptionState):
             # Set max current
             charger_max_current = self._get_charger_max_current(charger)
             await self._async_set_charge_current(charger, charger_max_current)
-            self._started_calibrate_max_charge_speed = True
         else:
             raise EntityExceptionError("Missing SOC sensor")
 
@@ -823,67 +811,6 @@ class SolarCharge(ScOptionState):
                         e,
                     )
                     await self._async_turn_off_calibrate_max_charge_speed_switch()
-
-    # ----------------------------------------------------------------------------
-    # async def _async_charge_device(
-    #     self, charger: Charger, chargeable: Chargeable
-    # ) -> None:
-    #     loop_count = 0
-
-    #     wait_net_power_update = self.config_get_number_or_abort(
-    #         CONF_WAIT_NET_POWER_UPDATE
-    #     )
-
-    #     while self._is_continue_charge(
-    #         charger,
-    #         chargeable,
-    #         loop_count,
-    #         goal := await self._scheduler.async_get_schedule_data(
-    #             chargeable,
-    #             self._session_triggered_by_timer,
-    #             self._started_calibrate_max_charge_speed,
-    #             msg="Loop",
-    #         ),
-    #     ):
-    #         try:
-    #             # Check schedule change and update charge limit if required
-    #             self._running_goal = goal
-    #             if await self._async_init_charge_limit(chargeable, self._running_goal):
-    #                 self._scheduler.log_goal(self._running_goal, "Limit changed")
-
-    #             # Turn on charger if looping for the first time
-    #             if loop_count == 0:
-    #                 await self._async_turn_charger_switch(charger, turn_on=True)
-    #                 await self._async_set_charge_current(
-    #                     charger, INITIAL_CHARGE_CURRENT
-    #                 )
-    #                 self._subscribe_allocated_power_update()
-
-    #                 self._log_charging_status(charger, "Before update")
-    #                 await self._async_update_ha(chargeable)
-    #                 self._log_charging_status(charger, "After update")
-
-    #             # Check if calibration is required during charge
-    #             await self._async_check_if_calibration(charger, chargeable)
-
-    #             # Update status after turning on power, or at every interval.
-    #             # This is either required here or after setting current.
-    #             # It is better here since it is garanteed periodic.
-    #             # Do not wait here. Depends on the main loop to wait.
-    #             await self._async_update_ha(chargeable, wait_after_update=False)
-
-    #         except TimeoutError as e:
-    #             _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
-    #         except Exception:
-    #             _LOGGER.exception("%s: Error charging device", self._caller)
-
-    #         # Sleep before re-evaluating charging conditions.
-    #         # Charging state must be "charging" for loop_count > 0.
-    #         # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
-    #         await asyncio.sleep(wait_net_power_update)
-    #         loop_count = loop_count + 1
-
-    #     await self.async_unload()
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -992,7 +919,6 @@ class SolarCharge(ScOptionState):
         #####################################
         try:
             await self._async_init_device(chargeable)
-            # await self._async_init_charge_limit(chargeable, self._starting_goal)
             await self._async_charge_device(charger, chargeable)
             await self.async_tidy_up_on_exit(charger, chargeable)
 

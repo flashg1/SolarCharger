@@ -5,7 +5,7 @@
 - Refactored _async_charge_device() and _async_calibrate_max_charge_speed_if_required().
 - Tidied async_added_to_hass() and pretty print schedule data.
 ### Fix
-- Fixed divide by zero issue with max charge speed calibration when SOC is above 91%.
+- Fixed divide by zero issue when starting max charge speed calibration with SOC above 91%.
 
 ## v0.3.11 2026-02-14
 ### New feature
