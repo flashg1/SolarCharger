@@ -76,6 +76,9 @@ class ScheduleData:
     # Timestamp of current data
     data_timestamp: datetime = datetime.min
 
+    # Sun elevation
+    sun_elevation: float = 0
+
     # Current device charge limit
     old_charge_limit: float = -1
 
@@ -109,7 +112,7 @@ class ScheduleData:
             f"battery_soc={self.battery_soc}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "
-            f"data_timestamp={self.data_timestamp}, "
+            f"sun_elevation={self.sun_elevation}, data_timestamp={self.data_timestamp}, "
             f"{self.weekly_schedule}"
         )
 

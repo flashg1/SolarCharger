@@ -42,7 +42,7 @@ from ..const import (  # noqa: TID252
 from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge  # noqa: TID252
-from ..utils import get_sun_elevation, log_is_event_loop  # noqa: TID252
+from ..utils import log_is_event_loop  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
 from .scheduler import ChargeScheduler
@@ -362,10 +362,6 @@ class SolarCharge(ScOptionState):
         # Must run this first thing to estimate if session started by timer
         self._session_triggered_by_timer = self._is_session_triggered_by_timer()
         self._started_calibrate_max_charge_speed = False
-
-        sun_state = self.get_sun_state_or_abort()
-        sun_elevation: float = get_sun_elevation(self._caller, sun_state)
-        _LOGGER.warning("%s: Started at sun_elevation=%s", self._caller, sun_elevation)
 
         await self.async_wake_up_and_update_ha(chargeable)
         self._check_if_at_location_or_abort(chargeable)
@@ -789,6 +785,8 @@ class SolarCharge(ScOptionState):
         else:
             raise EntityExceptionError("Missing SOC sensor")
 
+        self._scheduler.log_goal(goal, "Calibrate charge speed")
+
     # ----------------------------------------------------------------------------
     async def _async_calibrate_max_charge_speed_if_required(
         self, charger: Charger, chargeable: Chargeable
@@ -846,13 +844,13 @@ class SolarCharge(ScOptionState):
                 # Turn on charger if looping for the first time.
                 if loop_count == 0:
                     self._starting_goal = self._running_goal
-                    self._scheduler.log_goal(self._starting_goal, "Start")
+                    self._scheduler.log_goal(self._starting_goal, "Start session")
                     await self._async_turn_charger_switch(charger, turn_on=True)
                     await self._async_set_charge_current(
                         charger, INITIAL_CHARGE_CURRENT
                     )
-                    self._subscribe_allocated_power_update()
                     await self._async_update_ha(chargeable)
+                    self._subscribe_allocated_power_update()
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
@@ -892,10 +890,6 @@ class SolarCharge(ScOptionState):
         if switched_on:
             await self._async_set_charge_current(charger, 0)
             await self._async_turn_charger_switch(charger, turn_on=False)
-
-        sun_state = self.get_sun_state_or_abort()
-        sun_elevation: float = get_sun_elevation(self._caller, sun_state)
-        _LOGGER.warning("%s: Stopped at sun_elevation=%s", self._caller, sun_elevation)
 
         await self._async_turn_off_calibrate_max_charge_speed_switch()
 

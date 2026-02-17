@@ -19,9 +19,10 @@ from ..sc_option_state import (  # noqa: TID252
     ScheduleData,
     ScOptionState,
 )
-from ..utils import (  # noqa: TID252
+from ..utils import (  # noqa: TID252  # noqa: TID252
     get_next_sunrise_time,
     get_sec_per_degree_sun_elevation,
+    get_sun_elevation,
 )
 from .chargeable import Chargeable
 
@@ -314,11 +315,15 @@ class ChargeScheduler(ScOptionState):
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
 
         goal = ScheduleData(weekly_schedule=[])
+
         # Ensure time is in local timezone
         now_time = self.get_local_datetime()
         goal.data_timestamp = now_time
         goal.old_charge_limit = self._get_charge_limit_or_abort(chargeable)
         goal.new_charge_limit = goal.old_charge_limit
+
+        sun_state = self.get_sun_state_or_abort()
+        goal.sun_elevation = get_sun_elevation(self._caller, sun_state)
 
         # Normal schedule
         if self.is_schedule_charge():
@@ -452,7 +457,7 @@ class ChargeScheduler(ScOptionState):
             chargeable,
             include_tomorrow=True,
             started_calibration=started_calibration,
-            msg="Next",
+            msg="Next session",
             log_it=True,
         )
         if next_goal.use_charge_schedule:
