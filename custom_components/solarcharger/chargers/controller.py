@@ -90,7 +90,6 @@ class ChargeController(ScOptionState):
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
 
-        self._is_charge_started_by_calibration_switch = False
         self._is_updated_today_tomorrow_schedule = False
 
     # ----------------------------------------------------------------------------
@@ -430,16 +429,9 @@ class ChargeController(ScOptionState):
         _LOGGER.info("%s: Calibrate max charge speed: %s", self._caller, turn_on)
         if turn_on:
             if self._charge_task is None or self._charge_task.done():
-                self._is_charge_started_by_calibration_switch = True
                 self._turn_charger_switch(turn_on=True)
         else:
             await self._solar_charge.async_stop_calibrate_max_charge_speed()
-
-            # Will get error message if charger switch already turned off by user.
-            if self._is_charge_started_by_calibration_switch:
-                self._turn_charger_switch(turn_on=False)
-
-            self._is_charge_started_by_calibration_switch = False
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge(
