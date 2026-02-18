@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.13 2026-02-18
+### Improvement
+
 ## v0.3.12 2026-02-17
 ### Improvement
 - Refactored _async_charge_device() and _async_calibrate_max_charge_speed_if_required().
