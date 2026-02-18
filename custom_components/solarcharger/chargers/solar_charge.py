@@ -196,10 +196,17 @@ class SolarCharge(ScOptionState):
                             self._soc_updates,
                         )
 
-                    if soc >= self._scheduler.calibrate_max_charge_limit:
-                        await self.async_option_set_entity_number(
-                            NUMBER_CHARGER_MAX_SPEED, max_charge_speed
-                        )
+                    if soc >= self._scheduler.calibration_charge_limit:
+                        if max_charge_speed > 0:
+                            await self.async_option_set_entity_number(
+                                NUMBER_CHARGER_MAX_SPEED, max_charge_speed
+                            )
+                        else:
+                            _LOGGER.error(
+                                "%s: Abort setting invalid max charge speed: %s %%/hr",
+                                self._caller,
+                                max_charge_speed,
+                            )
                         await self._async_turn_off_calibrate_max_charge_speed_switch()
 
                 except (ValueError, TypeError) as e:
@@ -383,7 +390,8 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_below_charge_limit(self, chargeable: Chargeable) -> bool:
-        """Is device SOC below charge limit? Always return true in case of error."""
+        """Is device SOC below charge limit? Always return true if SOC entity ID is not defined."""
+
         is_below_limit = True
 
         try:
@@ -758,7 +766,7 @@ class SolarCharge(ScOptionState):
             self._started_calibrate_max_charge_speed,
             msg="Calibration",
         )
-        if self._scheduler.calibrate_max_charge_limit == -1:
+        if self._scheduler.calibration_charge_limit == -1:
             raise EntityExceptionError("Charge limit not set")
 
         # Track SOC
@@ -818,6 +826,7 @@ class SolarCharge(ScOptionState):
                 )
 
                 # Set charge limit if required.
+                # Once set, the latest and correct state can be requested without calling _async_update_ha() first.
                 await self._async_set_charge_limit_if_required(
                     chargeable, self._running_goal
                 )
