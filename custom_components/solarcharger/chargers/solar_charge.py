@@ -211,19 +211,6 @@ class SolarCharge(ScOptionState):
                     )
 
     # ----------------------------------------------------------------------------
-    # Set up and unload
-    # ----------------------------------------------------------------------------
-    async def async_setup(self) -> None:
-        """Async setup of SolarCharge."""
-
-    # ----------------------------------------------------------------------------
-    async def async_unload(self) -> None:
-        """Async unload of SolarCharge."""
-
-        self._unsubscribe_allocated_power_update()
-        self._tracker.untrack_soc_sensor()
-
-    # ----------------------------------------------------------------------------
     # General utils
     # ----------------------------------------------------------------------------
     async def async_get_current_schedule_data(self) -> ScheduleData:
@@ -874,15 +861,14 @@ class SolarCharge(ScOptionState):
             await asyncio.sleep(wait_net_power_update)
             loop_count = loop_count + 1
 
-        await self.async_unload()
-
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Tidy up on exit."""
 
-        await self.async_unload()
+        self._unsubscribe_allocated_power_update()
+        await self._async_turn_off_calibrate_max_charge_speed_switch()
 
         await self._async_update_ha(chargeable)
 
@@ -890,8 +876,6 @@ class SolarCharge(ScOptionState):
         if switched_on:
             await self._async_set_charge_current(charger, 0)
             await self._async_turn_charger_switch(charger, turn_on=False)
-
-        await self._async_turn_off_calibrate_max_charge_speed_switch()
 
         # Only schedule next charge session if car is connected and at location.
         if self.is_connected(charger) and self._is_at_location(chargeable):

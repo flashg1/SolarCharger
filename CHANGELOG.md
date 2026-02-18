@@ -2,6 +2,7 @@
 
 ## v0.3.13 2026-02-18
 ### Improvement
+- Remove async_load/unload from solar_charge.
 
 ## v0.3.12 2026-02-17
 ### Improvement
