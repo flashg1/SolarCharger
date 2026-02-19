@@ -95,7 +95,7 @@ To:    \\homeassistant.local\config\custom_components\solarcharger
 
 ## Configuration
 - Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
-- Set up "Net Power" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor net_power expresses negative value in Watts for power exported to grid or positive value power imported from grid.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
+- Set up "Net Power" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor net_power expresses negative value in Watts for power exported to grid, or positive value for power imported from grid.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
 ```
 Settings > Devices & services > Helpers > Create helper > Template > Template a sensor >
 
