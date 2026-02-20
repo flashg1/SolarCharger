@@ -9,6 +9,8 @@ from homeassistant.helpers.device_registry import DeviceEntry
 
 from ..const import (  # noqa: TID252
     CHARGER_DOMAIN_OCPP,
+    OCPP_CHARGING_STATE,
+    OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_OCPP_CHARGER_ID,
     OPTION_OCPP_TRANSACTION_ID,
 )
@@ -88,6 +90,16 @@ class OcppCharger(ChargerChargeableBase):
         self, charge_current: float, val_dict: ConfigValueDict | None = None
     ) -> None:
         """Set charger charge current."""
+
+        # Only set charge current when charger is in OCPP_CHARGING_STATE.
+        state = self.option_get_entity_string(OPTION_CHARGER_CHARGING_SENSOR)
+        if state != OCPP_CHARGING_STATE:
+            _LOGGER.warning(
+                "%s: Cannot set OCPP current because charger is in state %s)",
+                self._caller,
+                state,
+            )
+            return
 
         new_charge_current = int(round(charge_current))
         ocpp_charger_transaction_id = self.option_get_entity_integer(

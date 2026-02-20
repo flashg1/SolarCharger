@@ -472,6 +472,7 @@ CONFIG_NAME_MARKER = "<ConfigName>"
 # OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing", "Available"]',
 # Add 'Available' to rc_ocpp_charger_connected for normal testing, and switch off charger to exit automation.
 # OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
+OCPP_CHARGING_STATE = "Charging"
 OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     OPTION_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}status_connector",
