@@ -482,7 +482,9 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_CHARGING_STATE_LIST: '["Charging", "SuspendedEV", "SuspendedEVSE"]',
     OPTION_CHARGER_MAX_CURRENT: f"{NUMBER}.{DEVICE_NAME_MARKER}maximum_current",
     OPTION_CHARGER_GET_CHARGE_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}current_import",
-    OPTION_CHARGER_SET_CHARGE_CURRENT: f"{NUMBER}.{DEVICE_NAME_MARKER}charge_current",
+    # OCPP set current entity does not exist. OCPP charge current is set by custom service call with charge profile.
+    # Setting this to blank string to disallow configuration in settings.
+    OPTION_CHARGER_SET_CHARGE_CURRENT: "",
     OPTION_CHARGEE_SOC_SENSOR: None,
     OPTION_CHARGEE_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{OPTION_CHARGEE_CHARGE_LIMIT}",
     OPTION_CHARGEE_LOCATION_SENSOR: None,

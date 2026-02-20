@@ -195,7 +195,10 @@ def get_sec_per_degree_sun_elevation(caller: str, sun_state: State) -> float:
 
 # ----------------------------------------------------------------------------
 def remove_callback_subscription(
-    caller: str, unsub_callbacks: dict[str, CALLBACK_TYPE], callback_key: str
+    caller: str,
+    unsub_callbacks: dict[str, CALLBACK_TYPE],
+    callback_key: str,
+    cancel_subscription: bool = True,
 ) -> CALLBACK_TYPE | None:
     """Remove callback subscription."""
 
@@ -204,12 +207,13 @@ def remove_callback_subscription(
         _LOGGER.warning("%s: Removed callback: %s", caller, callback_key)
         unsub_callbacks.pop(callback_key)
 
-        try:
-            unsubscribe()
-        except Exception:
-            _LOGGER.exception(
-                "%s: Failed to unsubscribe callback: %s", caller, callback_key
-            )
+        if cancel_subscription:
+            try:
+                unsubscribe()
+            except Exception:
+                _LOGGER.exception(
+                    "%s: Failed to unsubscribe callback: %s", caller, callback_key
+                )
 
     else:
         _LOGGER.debug(
@@ -229,6 +233,7 @@ def save_callback_subscription(
     subscription: CALLBACK_TYPE,
 ) -> None:
     """Save callback subscription."""
+
     # unsubscribe = remove_callback_subscription(caller, unsub_callbacks, callback_key)
     # if unsubscribe is not None:
     #     _LOGGER.warning(

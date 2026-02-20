@@ -467,7 +467,7 @@ class ChargeController(ScOptionState):
     async def _async_abort_charge_task(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
-        """Abort charge task."""
+        """Abort charge task on HA stop."""
 
         if self._charge_task:
             if not self._charge_task.done():
@@ -486,8 +486,6 @@ class ChargeController(ScOptionState):
                         self._caller,
                         e,
                     )
-
-                await self._solar_charge.async_unload()
 
             else:
                 _LOGGER.info(
@@ -526,7 +524,6 @@ class ChargeController(ScOptionState):
                         self._caller,
                         e,
                     )
-                    await self._solar_charge.async_unload()
 
             else:
                 _LOGGER.info("Task %s already completed", self._charge_task.get_name())
@@ -729,6 +726,9 @@ class ChargeController(ScOptionState):
         await self.async_switch_calibrate_max_charge_speed(
             self.is_calibrate_max_charge_speed()
         )
+
+        # Remove HA started callback if exists
+        self._tracker.remove_ha_started_callback()
 
     # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:

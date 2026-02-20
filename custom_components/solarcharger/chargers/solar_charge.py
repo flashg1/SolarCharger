@@ -449,6 +449,8 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def _async_turn_charger_switch(self, charger: Charger, turn_on: bool) -> None:
+        """Turn charger switch on or off."""
+
         if turn_on:
             switched_on = charger.is_charger_switch_on()
             if not switched_on:
@@ -462,11 +464,18 @@ class SolarCharge(ScOptionState):
     async def _async_set_charge_current(self, charger: Charger, current: float) -> None:
         """Set charge current."""
 
-        await charger.async_set_charge_current(current)
-        self.emit_solarcharger_event(
-            self._device.id, EVENT_ACTION_NEW_CHARGE_CURRENT, current
-        )
-        await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+        try:
+            await charger.async_set_charge_current(current)
+
+            self.emit_solarcharger_event(
+                self._device.id, EVENT_ACTION_NEW_CHARGE_CURRENT, current
+            )
+            await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+
+        except Exception:
+            _LOGGER.exception(
+                "%s: Error setting charge current to %s A", self._caller, current
+            )
 
     # ----------------------------------------------------------------------------
     def _check_current(self, max_current: float, current: float) -> float:

@@ -33,6 +33,8 @@ from homeassistant.util.event_type import EventType
 # from homeassistant.helpers.sun import get_astral_event_next
 from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
+    CALLBACK_CHARGE_ENDTIME_UPDATE,
+    CALLBACK_CHARGE_LIMIT_UPDATE,
     CALLBACK_HA_STARTED,
     CALLBACK_HA_STOP,
     CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
@@ -44,8 +46,6 @@ from ..const import (  # noqa: TID252
     NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
-    CALLBACK_CHARGE_LIMIT_UPDATE,
-    CALLBACK_CHARGE_ENDTIME_UPDATE,
 )
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
@@ -127,10 +127,14 @@ class Tracker(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
-    def remove_callback(self, callback_key: str) -> None:
+    def remove_callback(
+        self, callback_key: str, cancel_subscription: bool = True
+    ) -> None:
         """Remove callback."""
 
-        remove_callback_subscription(self._caller, self._unsub_callbacks, callback_key)
+        remove_callback_subscription(
+            self._caller, self._unsub_callbacks, callback_key, cancel_subscription
+        )
 
     # ----------------------------------------------------------------------------
     def _track_state_change(
@@ -214,6 +218,31 @@ class Tracker(ScOptionState):
         """Track HA started event."""
 
         self._track_event_once(EVENT_HOMEASSISTANT_STARTED, CALLBACK_HA_STARTED, action)
+
+        # 2026-02-20 03:07:06.081 WARNING (MainThread) [custom_components.solarcharger.utils] ocpp_charger: Unsubscribe callback: callback_ha_started
+        # 2026-02-20 03:07:06.081 ERROR (MainThread) [homeassistant.core] Unable to remove unknown job listener (
+        # <Job onetime listen homeassistant_started <bound method ChargeController._async_activate_controller_switches of
+        # <custom_components.solarcharger.chargers.controller.ChargeController object at 0x7be615eeca50>> HassJobType.Callback
+        # <_OneTimeListener custom_components.solarcharger.chargers.controller:<bound method ChargeController._async_activate_controller_switches of
+        # <custom_components.solarcharger.chargers.controller.ChargeController object at 0x7be615eeca50>>>>, None)
+        # Traceback (most recent call last):
+        #   File "/workspaces/core/homeassistant/core.py", line 1711, in _async_remove_listener
+        #     self._listeners[event_type].remove(filterable_job)
+        #     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+        # ValueError: list.remove(x): x not in list
+
+        # DO NOT unsubscribe here, otherwise will not receive event callback and cause issue with charger switch activation at startup.
+        # Unsubscribe later will cause above error because HA already unsubscribed the callback after it is called.
+        # So just remove the callback from the dict to avoid later unsubscribe error.
+        # remove_callback_subscription(
+        #     self._caller, self._unsub_callbacks, CALLBACK_HA_STARTED
+        # )
+
+    # ----------------------------------------------------------------------------
+    def remove_ha_started_callback(self) -> None:
+        """Removed CALLBACK_HA_STARTED once triggered because unsubscribe is already done by HA."""
+
+        self.remove_callback(CALLBACK_HA_STARTED, cancel_subscription=False)
 
     # ----------------------------------------------------------------------------
     def on_ha_stop(self, action: EVENT_CALLBACK) -> None:
