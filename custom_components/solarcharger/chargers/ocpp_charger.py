@@ -88,10 +88,13 @@ class OcppCharger(ChargerChargeableBase):
         self, charge_current: float, val_dict: ConfigValueDict | None = None
     ) -> None:
         """Set charger charge current."""
+
         new_charge_current = int(round(charge_current))
         ocpp_charger_transaction_id = self.option_get_entity_integer(
             OPTION_OCPP_TRANSACTION_ID
         )
+
+        # Get the OCPP charge profile max stack level to override all other profiles.
         ocpp_max_stack_level_map: ServiceResponse = (
             await self._async_get_ocpp_max_stack_level()
         )

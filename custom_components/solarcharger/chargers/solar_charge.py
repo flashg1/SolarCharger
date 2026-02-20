@@ -672,7 +672,7 @@ class SolarCharge(ScOptionState):
                     )
                 except Exception:
                     _LOGGER.exception(
-                        "%s: Cannot adjust charge current: %s",
+                        "%s: Failed to adjust current for net power: %s W",
                         self._caller,
                         new_state.state,
                     )
@@ -856,6 +856,7 @@ class SolarCharge(ScOptionState):
                     )
                     await self._async_update_ha(chargeable)
                     self._subscribe_allocated_power_update()
+                    self._log_charging_status(charger, "Charger ON")
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
