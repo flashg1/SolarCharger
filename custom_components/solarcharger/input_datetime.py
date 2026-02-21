@@ -124,7 +124,7 @@ CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     #####################################
     (
         TIME_CHARGE_ENDTIME_MONDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         {
             CONF_NAME: TIME_CHARGE_ENDTIME_MONDAY,
             CONF_HAS_DATE: False,
@@ -134,7 +134,7 @@ CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     ),
     (
         TIME_CHARGE_ENDTIME_TUESDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         {
             CONF_NAME: TIME_CHARGE_ENDTIME_TUESDAY,
             CONF_HAS_DATE: False,
@@ -144,7 +144,7 @@ CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     ),
     (
         TIME_CHARGE_ENDTIME_WEDNESDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         {
             CONF_NAME: TIME_CHARGE_ENDTIME_WEDNESDAY,
             CONF_HAS_DATE: False,
@@ -154,7 +154,7 @@ CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     ),
     (
         TIME_CHARGE_ENDTIME_THURSDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         {
             CONF_NAME: TIME_CHARGE_ENDTIME_THURSDAY,
             CONF_HAS_DATE: False,
@@ -164,7 +164,7 @@ CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     ),
     (
         TIME_CHARGE_ENDTIME_FRIDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         {
             CONF_NAME: TIME_CHARGE_ENDTIME_FRIDAY,
             CONF_HAS_DATE: False,
@@ -174,7 +174,7 @@ CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     ),
     (
         TIME_CHARGE_ENDTIME_SATURDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         {
             CONF_NAME: TIME_CHARGE_ENDTIME_SATURDAY,
             CONF_HAS_DATE: False,
@@ -184,7 +184,7 @@ CONFIG_TIME_LIST: tuple[tuple[str, SolarChargerEntityType, ConfigType], ...] = (
     ),
     (
         TIME_CHARGE_ENDTIME_SUNDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         {
             CONF_NAME: TIME_CHARGE_ENDTIME_SUNDAY,
             CONF_HAS_DATE: False,

@@ -128,7 +128,7 @@ CONFIG_TIME_LIST: tuple[
     #####################################
     (
         TIME_CHARGE_ENDTIME_MONDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         TimeEntityDescription(
             key=TIME_CHARGE_ENDTIME_MONDAY,
             entity_category=EntityCategory.CONFIG,
@@ -136,7 +136,7 @@ CONFIG_TIME_LIST: tuple[
     ),
     (
         TIME_CHARGE_ENDTIME_TUESDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         TimeEntityDescription(
             key=TIME_CHARGE_ENDTIME_TUESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -144,7 +144,7 @@ CONFIG_TIME_LIST: tuple[
     ),
     (
         TIME_CHARGE_ENDTIME_WEDNESDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         TimeEntityDescription(
             key=TIME_CHARGE_ENDTIME_WEDNESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -152,7 +152,7 @@ CONFIG_TIME_LIST: tuple[
     ),
     (
         TIME_CHARGE_ENDTIME_THURSDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         TimeEntityDescription(
             key=TIME_CHARGE_ENDTIME_THURSDAY,
             entity_category=EntityCategory.CONFIG,
@@ -160,7 +160,7 @@ CONFIG_TIME_LIST: tuple[
     ),
     (
         TIME_CHARGE_ENDTIME_FRIDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         TimeEntityDescription(
             key=TIME_CHARGE_ENDTIME_FRIDAY,
             entity_category=EntityCategory.CONFIG,
@@ -168,7 +168,7 @@ CONFIG_TIME_LIST: tuple[
     ),
     (
         TIME_CHARGE_ENDTIME_SATURDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         TimeEntityDescription(
             key=TIME_CHARGE_ENDTIME_SATURDAY,
             entity_category=EntityCategory.CONFIG,
@@ -176,7 +176,7 @@ CONFIG_TIME_LIST: tuple[
     ),
     (
         TIME_CHARGE_ENDTIME_SUNDAY,
-        SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         TimeEntityDescription(
             key=TIME_CHARGE_ENDTIME_SUNDAY,
             entity_category=EntityCategory.CONFIG,

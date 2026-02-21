@@ -42,18 +42,24 @@ def compose_entity_unique_id(platform_str: str, subentry: ConfigSubentry, key: s
 class SolarChargerEntityType(Enum):
     """Enumeration of Solar Charger entity types."""
 
+    #####################################
     # Create global default entities only
-    GLOBAL_DEFAULT = "global_default"
+    #####################################
+    TYPE_GLOBAL = "global_default"
 
-    # Create local default entities only
-    LOCAL_DEFAULT = "local_default"
-    LOCAL_HIDDEN = "local_hidden"
+    #####################################
+    # Create local device default entities only
+    #####################################
+    TYPE_LOCAL = "local_default"
+    TYPE_LOCALHIDDEN = "local_hidden"
 
-    # Create both local and global default entities
-    HIDDEN_DEFAULT = "hidden_default"
-    LOCAL_AND_GLOBAL = "local_and_global"
-    # Local default if exists will take precedence over global default. Local default entities are hidden.
-    LOCAL_HIDDEN_OR_GLOBAL = "local_hidden_or_global"
+    #####################################
+    # Create both local device and global default entities
+    #####################################
+    TYPE_ALL_HIDDEN = "hidden_default"
+    TYPE_LOCAL_GLOBAL = "local_and_global"
+    # Local device default if exists will take precedence over global default. Local device entities are hidden.
+    TYPE_LOCALHIDDEN_GLOBAL = "local_hidden_or_global"
 
 
 # ----------------------------------------------------------------------------
@@ -63,12 +69,12 @@ def is_entity_enabled(
     """Check if entity is enabled."""
     enabled: bool = True
 
-    if entity_type == SolarChargerEntityType.HIDDEN_DEFAULT or (
+    if entity_type == SolarChargerEntityType.TYPE_ALL_HIDDEN or (
         subentry.subentry_type in SUBENTRY_CHARGER_TYPES
         and entity_type
         in (
-            SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
-            SolarChargerEntityType.LOCAL_HIDDEN,
+            SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+            SolarChargerEntityType.TYPE_LOCALHIDDEN,
         )
     ):
         enabled = False
@@ -84,12 +90,14 @@ def is_create_entity(
     is_create: bool = True
 
     if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
-        if entity_type == SolarChargerEntityType.GLOBAL_DEFAULT:
+        # Charger subentry types
+        if entity_type == SolarChargerEntityType.TYPE_GLOBAL:
             is_create = False
     else:
+        # Global defaults subentry types
         if entity_type in (
-            SolarChargerEntityType.LOCAL_DEFAULT,
-            SolarChargerEntityType.LOCAL_HIDDEN,
+            SolarChargerEntityType.TYPE_LOCAL,
+            SolarChargerEntityType.TYPE_LOCALHIDDEN,
         ):
             is_create = False
 

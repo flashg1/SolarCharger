@@ -115,7 +115,7 @@ CONFIG_DATETIME_LIST: tuple[
     #####################################
     (
         DATETIME_NEXT_CHARGE_TIME,
-        SolarChargerEntityType.LOCAL_DEFAULT,
+        SolarChargerEntityType.TYPE_LOCAL,
         DateTimeEntityDescription(
             key=DATETIME_NEXT_CHARGE_TIME,
         ),

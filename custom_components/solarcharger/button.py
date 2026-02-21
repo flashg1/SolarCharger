@@ -119,7 +119,7 @@ async def async_setup_entry(
             BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
             SolarChargerButtonActionEntity,
             coordinator.async_reset_charge_limit_default,
-            SolarChargerEntityType.LOCAL_HIDDEN_OR_GLOBAL,
+            SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
             ButtonEntityDescription(
                 key=BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
             ),
