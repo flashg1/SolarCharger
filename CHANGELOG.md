@@ -5,7 +5,7 @@
 - Added config to set OCPP charge profile ID and stack level. Set both to -1 to use profile ID 1 and max stack level.
 - Refactored SolarChargerEntityType.
 - Log actual charging status.
-- Possible invalid OCPP state for setting charge current.
+- For OCPP, only adjust charge current when it is in charging state.
 - Removed CALLBACK_HA_STARTED once triggered because unsubscribe is already done by HA.
 - Removed OCPP set current entity.
 - Removed async_load/unload from solar_charge.
