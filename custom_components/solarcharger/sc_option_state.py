@@ -16,6 +16,7 @@ from .config_utils import get_saved_option_value
 from .const import (
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
+    NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -24,6 +25,8 @@ from .const import (
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+    NUMBER_OCPP_PROFILE_ID,
+    NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     SWITCH,
@@ -207,6 +210,20 @@ class ScOptionState(ScConfigState):
         """Return the calibrate max charge speed switch entity ID."""
         return compose_entity_id(
             SWITCH, self._subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
+        )
+
+    @cached_property
+    def ocpp_profile_id_entity_id(self) -> str:
+        """Return the ocpp charge profile id number entity ID."""
+        return compose_entity_id(
+            NUMBER, self._subentry.unique_id, NUMBER_OCPP_PROFILE_ID
+        )
+
+    @cached_property
+    def ocpp_profile_stack_level_entity_id(self) -> str:
+        """Return the ocpp charge profile stack level number entity ID."""
+        return compose_entity_id(
+            NUMBER, self._subentry.unique_id, NUMBER_OCPP_PROFILE_STACK_LEVEL
         )
 
     # ----------------------------------------------------------------------------

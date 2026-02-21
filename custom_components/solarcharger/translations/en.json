@@ -252,6 +252,12 @@
             "sunset_elevation_end_trigger": {
                 "name": "Sunset elevation end trigger"
             },
+            "ocpp_profile_id": {
+                "name": "Charge profile ID"
+            },
+            "ocpp_profile_stack_level": {
+                "name": "Charge profile stack level"
+            },
             "wait_chargee_wakeup": {
                 "name": "Wait wakeup"
             },

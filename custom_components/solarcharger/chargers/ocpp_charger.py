@@ -9,6 +9,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 
 from ..const import (  # noqa: TID252
     CHARGER_DOMAIN_OCPP,
+    DEFAULT_OCPP_PROFILE_ID,
     OCPP_CHARGING_STATE,
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_OCPP_CHARGER_ID,
@@ -102,37 +103,54 @@ class OcppCharger(ChargerChargeableBase):
             return
 
         new_charge_current = int(round(charge_current))
+
+        # Get charge profile id
+        charge_profile_id = self.get_integer(self.ocpp_profile_id_entity_id)
+        if charge_profile_id is None or charge_profile_id < 0:
+            charge_profile_id = DEFAULT_OCPP_PROFILE_ID
+
+        # Get charge profile stack level
+        charge_profile_stack_level: int | None = self.get_integer(
+            self.ocpp_profile_stack_level_entity_id
+        )
+
+        if charge_profile_stack_level is None or charge_profile_stack_level < 0:
+            # Get the OCPP charge profile max stack level to override all other profiles.
+            ocpp_max_stack_level_map: ServiceResponse = (
+                await self._async_get_ocpp_max_stack_level()
+            )
+            if ocpp_max_stack_level_map is None:
+                raise ValueError("Failed to get OCPP max stack level")
+
+            json_val: str = cast(str, ocpp_max_stack_level_map.get("value"))
+            charge_profile_stack_level = int(json_val)
+
+        # Get OCPP transaction id
         ocpp_charger_transaction_id = self.option_get_entity_integer(
             OPTION_OCPP_TRANSACTION_ID
         )
+        if ocpp_charger_transaction_id is None:
+            raise ValueError("Invalid OCPP transaction id")
 
-        # Get the OCPP charge profile max stack level to override all other profiles.
-        ocpp_max_stack_level_map: ServiceResponse = (
-            await self._async_get_ocpp_max_stack_level()
-        )
-        if ocpp_max_stack_level_map is not None:
-            json_val: str = cast(str, ocpp_max_stack_level_map.get("value"))
-            max_stack_level: int = int(json_val)
-
-            service_name = "set_charge_rate"
-            service_data: dict[str, Any] = {
-                "custom_profile": {
-                    "transactionId": ocpp_charger_transaction_id,
-                    "chargingProfileId": 1,
-                    "stackLevel": max_stack_level,
-                    "chargingProfilePurpose": "TxProfile",
-                    "chargingProfileKind": "Relative",
-                    "chargingSchedule": {
-                        "chargingRateUnit": "A",
-                        "chargingSchedulePeriod": [
-                            {"startPeriod": 0, "limit": new_charge_current}
-                        ],
-                    },
+        service_name = "set_charge_rate"
+        service_data: dict[str, Any] = {
+            "custom_profile": {
+                "transactionId": ocpp_charger_transaction_id,
+                "chargingProfileId": charge_profile_id,
+                "stackLevel": charge_profile_stack_level,
+                "chargingProfilePurpose": "TxProfile",
+                "chargingProfileKind": "Relative",
+                "chargingSchedule": {
+                    "chargingRateUnit": "A",
+                    "chargingSchedulePeriod": [
+                        {"startPeriod": 0, "limit": new_charge_current}
+                    ],
                 },
-                "conn_id": 1,
-            }
+            },
+            "conn_id": 1,
+        }
 
-            await self.async_ha_call(CHARGER_DOMAIN_OCPP, service_name, service_data)
+        await self.async_ha_call(CHARGER_DOMAIN_OCPP, service_name, service_data)
 
     # ----------------------------------------------------------------------------
     # async def async_set_charge_current(

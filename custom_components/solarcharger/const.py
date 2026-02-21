@@ -217,8 +217,12 @@ OPTION_CHARGER_CHARGING_STATE_LIST = "charger_charging_state_list"
 OPTION_CHARGER_MAX_CURRENT = "charger_max_current"
 OPTION_CHARGER_GET_CHARGE_CURRENT = "charger_get_charge_current"
 OPTION_CHARGER_SET_CHARGE_CURRENT = "charger_set_charge_current"
+
 OPTION_OCPP_CHARGER_ID = "charger_specific_id"
 OPTION_OCPP_TRANSACTION_ID = "charger_transaction_id"
+NUMBER_OCPP_PROFILE_ID = "ocpp_profile_id"
+NUMBER_OCPP_PROFILE_STACK_LEVEL = "ocpp_profile_stack_level"
+DEFAULT_OCPP_PROFILE_ID = 1
 
 #####################################
 # Chargee control entities
@@ -373,6 +377,8 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
 OCPP_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_CHARGER_MIN_CURRENT: 0,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: 6,
+    NUMBER_OCPP_PROFILE_ID: 1,
+    NUMBER_OCPP_PROFILE_STACK_LEVEL: 0,
 }
 
 TESLA_MQTTBLE_DEFAULT_VALUES: dict[str, Any] = {

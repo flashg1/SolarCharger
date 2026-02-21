@@ -2,6 +2,7 @@
 
 ## v0.3.13 2026-02-18
 ### Improvement
+- Added config to set OCPP charge profile ID and stack level. Set both to -1 to use profile ID 1 and max stack level.
 - Refactored SolarChargerEntityType.
 - Log actual charging status.
 - Possible invalid OCPP state for setting charge current.

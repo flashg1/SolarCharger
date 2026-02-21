@@ -41,6 +41,8 @@ from .const import (
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_OCPP_PROFILE_ID,
+    NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
@@ -468,6 +470,29 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0.0,
             native_max_value=100.0,
+        ),
+    ),
+    #####################################
+    # OCPP only
+    #####################################
+    (
+        NUMBER_OCPP_PROFILE_ID,
+        SolarChargerEntityType.TYPE_LOCAL_OCPP,
+        NumberEntityDescription(
+            key=NUMBER_OCPP_PROFILE_ID,
+            entity_category=EntityCategory.CONFIG,
+            native_min_value=-1,
+            native_max_value=100,
+        ),
+    ),
+    (
+        NUMBER_OCPP_PROFILE_STACK_LEVEL,
+        SolarChargerEntityType.TYPE_LOCAL_OCPP,
+        NumberEntityDescription(
+            key=NUMBER_OCPP_PROFILE_STACK_LEVEL,
+            entity_category=EntityCategory.CONFIG,
+            native_min_value=-1,
+            native_max_value=100,
         ),
     ),
     #####################################
