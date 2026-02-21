@@ -222,7 +222,6 @@ OPTION_OCPP_CHARGER_ID = "charger_specific_id"
 OPTION_OCPP_TRANSACTION_ID = "charger_transaction_id"
 NUMBER_OCPP_PROFILE_ID = "ocpp_profile_id"
 NUMBER_OCPP_PROFILE_STACK_LEVEL = "ocpp_profile_stack_level"
-DEFAULT_OCPP_PROFILE_ID = 1
 
 #####################################
 # Chargee control entities

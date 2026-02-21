@@ -9,7 +9,6 @@ from homeassistant.helpers.device_registry import DeviceEntry
 
 from ..const import (  # noqa: TID252
     CHARGER_DOMAIN_OCPP,
-    DEFAULT_OCPP_PROFILE_ID,
     OCPP_CHARGING_STATE,
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_OCPP_CHARGER_ID,
@@ -96,7 +95,7 @@ class OcppCharger(ChargerChargeableBase):
         state = self.option_get_entity_string(OPTION_CHARGER_CHARGING_SENSOR)
         if state != OCPP_CHARGING_STATE:
             _LOGGER.warning(
-                "%s: Cannot set OCPP current because charger is in state %s)",
+                "%s: Cannot set current due to charger in state %s)",
                 self._caller,
                 state,
             )
@@ -106,8 +105,6 @@ class OcppCharger(ChargerChargeableBase):
 
         # Get charge profile id
         charge_profile_id = self.get_integer(self.ocpp_profile_id_entity_id)
-        if charge_profile_id is None or charge_profile_id < 0:
-            charge_profile_id = DEFAULT_OCPP_PROFILE_ID
 
         # Get charge profile stack level
         charge_profile_stack_level: int | None = self.get_integer(
@@ -120,7 +117,7 @@ class OcppCharger(ChargerChargeableBase):
                 await self._async_get_ocpp_max_stack_level()
             )
             if ocpp_max_stack_level_map is None:
-                raise ValueError("Failed to get OCPP max stack level")
+                raise ValueError("Failed to get max stack level")
 
             json_val: str = cast(str, ocpp_max_stack_level_map.get("value"))
             charge_profile_stack_level = int(json_val)
@@ -130,7 +127,7 @@ class OcppCharger(ChargerChargeableBase):
             OPTION_OCPP_TRANSACTION_ID
         )
         if ocpp_charger_transaction_id is None:
-            raise ValueError("Invalid OCPP transaction id")
+            raise ValueError("Failed to get transaction id")
 
         service_name = "set_charge_rate"
         service_data: dict[str, Any] = {
