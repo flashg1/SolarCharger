@@ -14,8 +14,8 @@ from homeassistant.helpers.event import async_track_time_interval
 
 from .config_utils import get_saved_option_value, get_subentry_id
 from .const import (
-    CONF_NET_POWER,
-    CONF_WAIT_NET_POWER_UPDATE,
+    CONFIG_NET_POWER,
+    CONFIG_WAIT_NET_POWER_UPDATE,
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     DEFAULT_CHARGE_LIMIT_MAP,
@@ -145,7 +145,7 @@ class SolarChargerCoordinator(ScOptionState):
         """Track net power update."""
 
         wait_net_power_update = self.config_get_number_or_abort(
-            CONF_WAIT_NET_POWER_UPDATE
+            CONFIG_WAIT_NET_POWER_UPDATE
         )
         _LOGGER.info("wait_net_power_update=%s", wait_net_power_update)
 
@@ -300,7 +300,7 @@ class SolarChargerCoordinator(ScOptionState):
         # SolarChargerCoordinator: Failed to parse state 'unavailable' for entity 'sensor.main_power_net':
         # could not convert string to float: 'unavailable'
 
-        return self.config_get_entity_number(CONF_NET_POWER)
+        return self.config_get_entity_number(CONFIG_NET_POWER)
 
     # ----------------------------------------------------------------------------
     # def _get_total_allocation_pool(self) -> dict[str, float]:

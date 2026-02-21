@@ -168,8 +168,8 @@ SUBENTRY_CHARGER_DEVICE_ID = "charger_device_id"
 #####################################
 # Power import/export sensor
 #####################################
-CONF_NET_POWER = "net_power"
-CONF_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 60 seconds
+CONFIG_NET_POWER = "net_power"
+CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 60 seconds
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 OPTION_LAST_CHARGER_ID = "last_charger_id"
@@ -481,6 +481,8 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_ON_OFF_SWITCH: f"{SWITCH}.{DEVICE_NAME_MARKER}charge_control",
     OPTION_CHARGER_CHARGING_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}status_connector",
     OPTION_CHARGER_CHARGING_STATE_LIST: '["Charging", "SuspendedEV", "SuspendedEVSE"]',
+    # OCPP max current is obtained from charge profile, not from sensor, because some chargers do not report offered current when charger is off.
+    # OPTION_CHARGER_MAX_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}current_offered",
     OPTION_CHARGER_MAX_CURRENT: f"{NUMBER}.{DEVICE_NAME_MARKER}maximum_current",
     OPTION_CHARGER_GET_CHARGE_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}current_import",
     # OCPP set current entity does not exist. OCPP charge current is set by custom service call with charge profile.

@@ -24,8 +24,8 @@ from .config_subentry_charger import AddChargerSubEntryFlowHandler
 from .config_subentry_custom import AddCustomSubEntryFlowHandler
 from .config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
 from .const import (
-    CONF_NET_POWER,
-    CONF_WAIT_NET_POWER_UPDATE,
+    CONFIG_NET_POWER,
+    CONFIG_WAIT_NET_POWER_UPDATE,
     DOMAIN,
     ERROR_SINGLE_INSTANCE_ALLOWED,
     SUBENTRY_TYPE_CHARGER,
@@ -46,8 +46,8 @@ CONF_DEVICE_NAME_DEFAULT = "device_name_default"
 
 STEP_SOURCE_POWER_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_NET_POWER, default=None): POWER_ENTITY_SELECTOR,
-        vol.Optional(CONF_WAIT_NET_POWER_UPDATE, default=60): WAIT_TIME_SELECTOR,
+        vol.Required(CONFIG_NET_POWER, default=None): POWER_ENTITY_SELECTOR,
+        vol.Optional(CONFIG_WAIT_NET_POWER_UPDATE, default=60): WAIT_TIME_SELECTOR,
     }
 )
 
@@ -154,16 +154,18 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 )
 
         # Get previously configured valies to show as defaults in the form.
-        net_power: str = self._get_reconfigure_entry().data[CONF_NET_POWER]
+        net_power: str = self._get_reconfigure_entry().data[CONFIG_NET_POWER]
         wait_net_power_update: float = self._get_reconfigure_entry().data[
-            CONF_WAIT_NET_POWER_UPDATE
+            CONFIG_WAIT_NET_POWER_UPDATE
         ]
 
         net_power_schema = vol.Schema(
             {
-                vol.Required(CONF_NET_POWER, default=net_power): POWER_ENTITY_SELECTOR,
+                vol.Required(
+                    CONFIG_NET_POWER, default=net_power
+                ): POWER_ENTITY_SELECTOR,
                 vol.Optional(
-                    CONF_WAIT_NET_POWER_UPDATE, default=wait_net_power_update
+                    CONFIG_WAIT_NET_POWER_UPDATE, default=wait_net_power_update
                 ): WAIT_TIME_SELECTOR,
             }
         )

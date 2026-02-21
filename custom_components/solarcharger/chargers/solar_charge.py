@@ -18,7 +18,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.util.dt import as_local, utcnow
 
 from ..const import (  # noqa: TID252
-    CONF_WAIT_NET_POWER_UPDATE,
+    CONFIG_WAIT_NET_POWER_UPDATE,
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
@@ -429,11 +429,13 @@ class SolarCharge(ScOptionState):
         return is_below_limit
 
     # ----------------------------------------------------------------------------
-    def _is_charging(self, charger: Charger) -> bool:
+    def _is_charging(
+        self, charger: Charger, val_dict: ConfigValueDict | None = None
+    ) -> bool:
         """Is charger currently charging? Always return false in case of error."""
 
         config_item = OPTION_CHARGER_CHARGING_SENSOR
-        val_dict = ConfigValueDict(config_item, {})
+        val_dict = ConfigValueDict(config_item, {}) if val_dict is None else val_dict
         is_charging = charger.is_charging(val_dict=val_dict)
 
         # If there is no charging sensor defined, then use the next best thing,
@@ -692,7 +694,9 @@ class SolarCharge(ScOptionState):
         # Device charge limit must have already been set before this check.
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
 
-        is_charging = self._is_charging(charger)
+        val_dict = ConfigValueDict(OPTION_CHARGER_CHARGING_SENSOR, {})
+        is_charging = self._is_charging(charger, val_dict=val_dict)
+
         (is_sun_above_start_end_elevations, elevation) = (
             self.is_sun_above_start_end_elevation_triggers()
         )
@@ -727,7 +731,7 @@ class SolarCharge(ScOptionState):
         if not continue_charge:
             _LOGGER.warning(
                 "%s: Stopping charge: is_connected=%s, "
-                "is_below_charge_limit=%s, loop_count=%s, is_charging=%s, "
+                "is_below_charge_limit=%s, loop_count=%s, is_charging=%s (%s), "
                 "is_sun_above_start_end_elevations=%s, elevation=%s, is_use_secondary_power_source=%s, "
                 "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s, is_immediate_start=%s, "
                 "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s",
@@ -736,6 +740,7 @@ class SolarCharge(ScOptionState):
                 is_below_charge_limit,
                 loop_count,
                 is_charging,
+                val_dict.config_values[OPTION_CHARGER_CHARGING_SENSOR].entity_value,
                 is_sun_above_start_end_elevations,
                 elevation,
                 is_use_secondary_power_source,
@@ -753,13 +758,17 @@ class SolarCharge(ScOptionState):
     def _log_charging_status(self, charger: Charger, msg: str) -> None:
         """Generate debug message only if required."""
 
+        val_dict = ConfigValueDict(OPTION_CHARGER_CHARGING_SENSOR, {})
+        is_charging = self._is_charging(charger, val_dict=val_dict)
+
         _LOGGER.warning(
-            "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s",
+            "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s (%s)",
             self._caller,
             msg,
             self.is_connected(charger),
             charger.is_charger_switch_on(),
-            self._is_charging(charger),
+            is_charging,
+            val_dict.config_values[OPTION_CHARGER_CHARGING_SENSOR].entity_value,
         )
 
     # ----------------------------------------------------------------------------
@@ -821,7 +830,7 @@ class SolarCharge(ScOptionState):
         loop_count = 0
 
         wait_net_power_update = self.config_get_number_or_abort(
-            CONF_WAIT_NET_POWER_UPDATE
+            CONFIG_WAIT_NET_POWER_UPDATE
         )
 
         while True:
