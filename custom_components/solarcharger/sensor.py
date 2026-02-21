@@ -116,7 +116,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_LAST_CHECK,
         SolarChargerSensorLastCheck,
-        SolarChargerEntityType.TYPE_ALL_HIDDEN,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN,
         SensorEntityDescription(
             key=SENSOR_LAST_CHECK,
         ),

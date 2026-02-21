@@ -8,8 +8,16 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import slugify
 
-from .config_utils import is_config_entity_used_as_local_device_entity
+from .config_utils import (
+    get_device_domain,
+    is_config_entity_used_as_local_device_entity,
+)
 from .const import (
+    CHARGER_DOMAIN_OCPP,
+    CHARGER_DOMAIN_TESLA_CUSTOM,
+    CHARGER_DOMAIN_TESLA_FLEET,
+    CHARGER_DOMAIN_TESLA_MQTTBLE,
+    CHARGER_DOMAIN_TESLA_TESSIE,
     CONFIG_URL,
     DOMAIN,
     ICON,
@@ -43,20 +51,29 @@ class SolarChargerEntityType(Enum):
     """Enumeration of Solar Charger entity types."""
 
     #####################################
-    # Create global default entities only
+    # Create global default entities for all devices
     #####################################
     TYPE_GLOBAL = "global_default"
 
     #####################################
-    # Create local device default entities only
+    # Create local device entities
     #####################################
+    # For all devices
     TYPE_LOCAL = "local_default"
     TYPE_LOCALHIDDEN = "local_hidden"
 
+    # For specify device
+    TYPE_LOCAL_OCPP = CHARGER_DOMAIN_OCPP
+    TYPE_LOCAL_TESLA_CUSTOM = CHARGER_DOMAIN_TESLA_CUSTOM
+    TYPE_LOCAL_TESLA_MQTTBLE = CHARGER_DOMAIN_TESLA_MQTTBLE
+    TYPE_LOCAL_TESLA_FLEET = CHARGER_DOMAIN_TESLA_FLEET
+    TYPE_LOCAL_TESLA_TESSIE = CHARGER_DOMAIN_TESLA_TESSIE
+    TYPE_LOCAL_USER_CUSTOM = DOMAIN
+
     #####################################
-    # Create both local device and global default entities
+    # Create both local device and global default entities for all devices
     #####################################
-    TYPE_ALL_HIDDEN = "hidden_default"
+    TYPE_LOCALHIDDEN_GLOBALHIDDEN = "hidden_default"
     TYPE_LOCAL_GLOBAL = "local_and_global"
     # Local device default if exists will take precedence over global default. Local device entities are hidden.
     TYPE_LOCALHIDDEN_GLOBAL = "local_hidden_or_global"
@@ -66,10 +83,11 @@ class SolarChargerEntityType(Enum):
 def is_entity_enabled(
     subentry: ConfigSubentry, entity_type: SolarChargerEntityType
 ) -> bool:
-    """Check if entity is enabled."""
+    """Disable entity if hidden."""
+
     enabled: bool = True
 
-    if entity_type == SolarChargerEntityType.TYPE_ALL_HIDDEN or (
+    if entity_type == SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN or (
         subentry.subentry_type in SUBENTRY_CHARGER_TYPES
         and entity_type
         in (
@@ -87,19 +105,38 @@ def is_create_entity(
     subentry: ConfigSubentry, entity_type: SolarChargerEntityType
 ) -> bool:
     """Check if entity is enabled."""
-    is_create: bool = True
+    is_create: bool = False
 
     if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
         # Charger subentry types
-        if entity_type == SolarChargerEntityType.TYPE_GLOBAL:
-            is_create = False
-    else:
+        device_domain = get_device_domain(subentry)
+        if device_domain is None:
+            raise SystemError(
+                f"Device domain is None for subentry {subentry.unique_id}"
+            )
+
+        if (
+            entity_type
+            in (
+                SolarChargerEntityType.TYPE_LOCAL,
+                SolarChargerEntityType.TYPE_LOCALHIDDEN,
+                SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN,
+                SolarChargerEntityType.TYPE_LOCAL_GLOBAL,
+                SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+            )
+            or entity_type.value == device_domain
+        ):
+            is_create = True
+
+    else:  # noqa: PLR5501
         # Global defaults subentry types
         if entity_type in (
-            SolarChargerEntityType.TYPE_LOCAL,
-            SolarChargerEntityType.TYPE_LOCALHIDDEN,
+            SolarChargerEntityType.TYPE_GLOBAL,
+            SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN,
+            SolarChargerEntityType.TYPE_LOCAL_GLOBAL,
+            SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
         ):
-            is_create = False
+            is_create = True
 
     return is_create
 
