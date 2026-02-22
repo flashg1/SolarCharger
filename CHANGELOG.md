@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.14 2026-02-22
+### Improvement
+
 ## v0.3.13 2026-02-18
 ### Improvement
 - Added config to set OCPP charge profile ID and stack level. Set stack level to -1 to use max stack level.
