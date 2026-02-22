@@ -1,3 +1,4 @@
+# ruff: noqa: TRY401
 """Module to manage the solar charging."""
 
 import asyncio
@@ -423,8 +424,10 @@ class SolarCharge(ScOptionState):
             _LOGGER.warning(
                 "%s: Timeout getting SOC or charge limit: %s", self._caller, e
             )
-        except Exception:
-            _LOGGER.exception("%s: Error getting SOC or charge limit", self._caller)
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Error getting SOC or charge limit: %s", self._caller, e
+            )
 
         return is_below_limit
 
@@ -474,9 +477,9 @@ class SolarCharge(ScOptionState):
             )
             await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
-        except Exception:
+        except Exception as e:
             _LOGGER.exception(
-                "%s: Error setting charge current to %s A", self._caller, current
+                "%s: Error setting charge current %s A: %s", self._caller, current, e
             )
 
     # ----------------------------------------------------------------------------
@@ -672,11 +675,12 @@ class SolarCharge(ScOptionState):
                     await self._async_adjust_charge_current(
                         self._charger, self._chargeable, float(new_state.state)
                     )
-                except Exception:
+                except Exception as e:
                     _LOGGER.exception(
-                        "%s: Failed to adjust current for net power: %s W",
+                        "%s: Failed to adjust current for net power %s W: %s",
                         self._caller,
                         new_state.state,
+                        e,
                     )
 
     # ----------------------------------------------------------------------------
@@ -880,8 +884,8 @@ class SolarCharge(ScOptionState):
 
             except TimeoutError as e:
                 _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
-            except Exception:
-                _LOGGER.exception("%s: Error charging device", self._caller)
+            except Exception as e:
+                _LOGGER.exception("%s: Error charging device: %s", self._caller, e)
 
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
@@ -928,25 +932,6 @@ class SolarCharge(ScOptionState):
             await self._async_charge_device(charger, chargeable)
             await self.async_tidy_up_on_exit(charger, chargeable)
 
-        except Exception:
-            _LOGGER.exception("%s: Abort charge", self._caller)
+        except Exception as e:
+            _LOGGER.exception("%s: Abort charge: %s", self._caller, e)
             await self.async_tidy_up_on_exit(charger, chargeable)
-
-            # To show exception location, eg.
-            # 2026-02-05 04:27:43.054 ERROR (MainThread) [custom_components.solarcharger.chargers.controller] ocpp_charger: Abort charge
-            # Traceback (most recent call last):
-            #   File "/workspaces/core/config/custom_components/solarcharger/chargers/controller.py", line 1623, in _async_start_charge_task
-            #     await self._async_charge_device(charger, chargeable)
-            #   File "/workspaces/core/config/custom_components/solarcharger/chargers/controller.py", line 1402, in _async_charge_device
-            #     while self._is_continue_charge(
-            #           ~~~~~~~~~~~~~~~~~~~~~~~~^
-            #         charger,
-            #         ^^^^^^^^
-            #     ...<4 lines>...
-            #         ),
-            #         ^^
-            #     ):
-            #     ^
-            #   File "/workspaces/core/config/custom_components/solarcharger/chargers/controller.py", line 1322, in _is_continue_charge
-            #     goal.propose_charge_starttime <= current_time_with_grace
-            # TypeError: can't compare offset-naive and offset-aware datetimes

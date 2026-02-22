@@ -1,3 +1,5 @@
+# ruff: noqa: TRY401
+# TRY401: Checks for excessive logging of exception objects.
 """Utilities."""
 
 import asyncio
@@ -210,9 +212,12 @@ def remove_callback_subscription(
         if cancel_subscription:
             try:
                 unsubscribe()
-            except Exception:
+            except Exception as e:
                 _LOGGER.exception(
-                    "%s: Failed to unsubscribe callback: %s", caller, callback_key
+                    "%s: %s: Failed to unsubscribe callback: %s",
+                    caller,
+                    callback_key,
+                    e,
                 )
 
     else:
@@ -257,9 +262,9 @@ def remove_all_callback_subscriptions(
         _LOGGER.warning("%s: Unsubscribe callback: %s", caller, callback_key)
         try:
             unsubscribe()
-        except Exception:
+        except Exception as e:
             _LOGGER.exception(
-                "%s: Failed to unsubscribe callback: %s", caller, callback_key
+                "%s: %s: Failed to unsubscribe callback: %s", caller, callback_key, e
             )
 
     unsub_callbacks.clear()

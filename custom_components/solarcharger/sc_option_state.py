@@ -16,7 +16,6 @@ from .config_utils import get_saved_option_value
 from .const import (
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
-    NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -25,8 +24,6 @@ from .const import (
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-    NUMBER_OCPP_PROFILE_ID,
-    NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     SWITCH,
@@ -45,6 +42,9 @@ from .const import (
     TIME_CHARGE_ENDTIME_THURSDAY,
     TIME_CHARGE_ENDTIME_TUESDAY,
     TIME_CHARGE_ENDTIME_WEDNESDAY,
+    WEEKLY_CHARGE_ENDTIMES,
+    WEEKLY_CHARGE_LIMITS,
+    WEEKLY_DAY_NAMES,
 )
 from .entity import compose_entity_id
 from .model_config import ConfigValue, ConfigValueDict
@@ -210,20 +210,6 @@ class ScOptionState(ScConfigState):
         """Return the calibrate max charge speed switch entity ID."""
         return compose_entity_id(
             SWITCH, self._subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
-        )
-
-    @cached_property
-    def ocpp_profile_id_entity_id(self) -> str:
-        """Return the ocpp charge profile id number entity ID."""
-        return compose_entity_id(
-            NUMBER, self._subentry.unique_id, NUMBER_OCPP_PROFILE_ID
-        )
-
-    @cached_property
-    def ocpp_profile_stack_level_entity_id(self) -> str:
-        """Return the ocpp charge profile stack level number entity ID."""
-        return compose_entity_id(
-            NUMBER, self._subentry.unique_id, NUMBER_OCPP_PROFILE_STACK_LEVEL
         )
 
     # ----------------------------------------------------------------------------
@@ -727,71 +713,19 @@ class ScOptionState(ScConfigState):
     def get_weekly_schedule(self) -> list[ChargeSchedule]:
         """Get daily charge schedule."""
 
-        weekly_schedule: list[ChargeSchedule] = [
-            ChargeSchedule(
-                charge_day="Monday",
+        weekly_schedule: list[ChargeSchedule] = []
+
+        for day in range(7):
+            schedule = ChargeSchedule(
+                charge_day=WEEKLY_DAY_NAMES[day],
                 charge_limit=self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGE_LIMIT_MONDAY
+                    WEEKLY_CHARGE_LIMITS[day]
                 ),
                 charge_end_time=self.option_get_entity_time_or_abort(
-                    TIME_CHARGE_ENDTIME_MONDAY
+                    WEEKLY_CHARGE_ENDTIMES[day]
                 ),
-            ),
-            ChargeSchedule(
-                charge_day="Tuesday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGE_LIMIT_TUESDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    TIME_CHARGE_ENDTIME_TUESDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Wednesday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGE_LIMIT_WEDNESDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    TIME_CHARGE_ENDTIME_WEDNESDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Thursday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGE_LIMIT_THURSDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    TIME_CHARGE_ENDTIME_THURSDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Friday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGE_LIMIT_FRIDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    TIME_CHARGE_ENDTIME_FRIDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Saturday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGE_LIMIT_SATURDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    TIME_CHARGE_ENDTIME_SATURDAY
-                ),
-            ),
-            ChargeSchedule(
-                charge_day="Sunday",
-                charge_limit=self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGE_LIMIT_SUNDAY
-                ),
-                charge_end_time=self.option_get_entity_time_or_abort(
-                    TIME_CHARGE_ENDTIME_SUNDAY
-                ),
-            ),
-        ]
+            )
+            weekly_schedule.append(schedule)
 
         return weekly_schedule
 

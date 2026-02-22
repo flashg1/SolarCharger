@@ -3,17 +3,23 @@
 import logging
 from typing import Any, cast
 
+from propcache.api import cached_property
+
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant, ServiceResponse
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from ..const import (  # noqa: TID252
     CHARGER_DOMAIN_OCPP,
+    NUMBER,
+    NUMBER_OCPP_PROFILE_ID,
+    NUMBER_OCPP_PROFILE_STACK_LEVEL,
     OCPP_CHARGING_STATE,
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_OCPP_CHARGER_ID,
     OPTION_OCPP_TRANSACTION_ID,
 )
+from ..entity import compose_entity_id  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from .charger_chargeable_base import ChargerChargeableBase
 
@@ -37,6 +43,21 @@ class OcppCharger(ChargerChargeableBase):
         """Initialize the OCPP charger."""
 
         ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
+
+    # ----------------------------------------------------------------------------
+    @cached_property
+    def ocpp_profile_id_entity_id(self) -> str:
+        """Return the ocpp charge profile id number entity ID."""
+        return compose_entity_id(
+            NUMBER, self._subentry.unique_id, NUMBER_OCPP_PROFILE_ID
+        )
+
+    @cached_property
+    def ocpp_profile_stack_level_entity_id(self) -> str:
+        """Return the ocpp charge profile stack level number entity ID."""
+        return compose_entity_id(
+            NUMBER, self._subentry.unique_id, NUMBER_OCPP_PROFILE_STACK_LEVEL
+        )
 
     # ----------------------------------------------------------------------------
     # Chargeable interface implementation

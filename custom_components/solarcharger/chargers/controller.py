@@ -1,3 +1,4 @@
+# ruff: noqa: TRY401
 """Module to manage the charging process and entity subscriptions."""
 
 import asyncio
@@ -179,9 +180,11 @@ class ChargeController(ScOptionState):
                             )
                             self._turn_charger_switch(turn_on=True)
 
-            except Exception:
+            except Exception as e:
                 _LOGGER.exception(
-                    "%s: Failed to check if need to reschedule charge", self._caller
+                    "%s: Failed to check if need to reschedule charge: %s",
+                    self._caller,
+                    e,
                 )
 
             self.set_updated_today_tomorrow_schedule(False)
