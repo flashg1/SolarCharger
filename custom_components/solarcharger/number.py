@@ -2,9 +2,6 @@
 
 import logging
 
-from httpx import get
-from numpy import single
-
 from homeassistant import config_entries, core
 from homeassistant.components.number import (
     NumberDeviceClass,
