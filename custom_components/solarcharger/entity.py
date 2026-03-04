@@ -81,7 +81,12 @@ class SolarChargerEntityType(Enum):
 def is_entity_enabled(
     subentry: ConfigSubentry, entity_type: SolarChargerEntityType
 ) -> bool:
-    """Disable entity if hidden."""
+    """Disable entity if hidden.
+
+    Global default entities = Enabled.
+    Charger specific entities = Enabled. (eg. TYPE_LOCAL_OCPP)
+    Local device entities = Disabled.
+    """
 
     enabled: bool = True
 
@@ -222,7 +227,17 @@ class SolarChargerEntity(Entity):
         # self._attr_name = self.type.capitalize()
         # self._attr_entity_registry_enabled_default = self._enabled_by_default
 
-        # Hide entity if not used.
+        #####################################
+        # Hidden entities are disabled unless it is defined in the charger API.
+        #
+        # Global default entities = Enabled
+        # Charger specific entities = Enabled (eg. TYPE_LOCAL_OCPP)
+        # Local device entities = Disabled unless defined in charger API **using same config_item key** (eg. max current)
+        #
+        # Note:
+        # - OCPP and user custom charge limit entities use different config keys for get and set, and for the entity itself.
+        # - OCPP and user custom charge limit entities are enabled by TYPE_LOCAL_OCPP and TYPE_LOCAL_USER_CUSTOM respectively.
+        #####################################
         self._attr_entity_registry_enabled_default = is_entity_enabled(
             subentry, entity_type
         ) or is_api_defined_solarcharger_entity(subentry, config_item)
