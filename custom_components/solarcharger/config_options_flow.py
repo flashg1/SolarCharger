@@ -75,9 +75,10 @@ from .const import (
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
-    OPTION_CHARGEE_CHARGE_LIMIT,
+    OPTION_CHARGEE_GET_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
+    OPTION_CHARGEE_SET_CHARGE_LIMIT,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
@@ -462,10 +463,19 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 SENSOR_ENTITY_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGEE_CHARGE_LIMIT, use_default
+                subentry, OPTION_CHARGEE_GET_CHARGE_LIMIT, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGEE_CHARGE_LIMIT,
+                OPTION_CHARGEE_GET_CHARGE_LIMIT,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+                modifiable_if_local_config_entity=True,
+            ),
+            self._optional(
+                subentry, OPTION_CHARGEE_SET_CHARGE_LIMIT, use_default
+            ): choose_selector(
+                api_entities,
+                OPTION_CHARGEE_SET_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_local_config_entity=True,

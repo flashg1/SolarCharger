@@ -10,9 +10,10 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from ..const import (  # noqa: TID252
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-    OPTION_CHARGEE_CHARGE_LIMIT,
+    OPTION_CHARGEE_GET_CHARGE_LIMIT,
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
+    OPTION_CHARGEE_SET_CHARGE_LIMIT,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
@@ -126,7 +127,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     def get_charge_limit(self, val_dict: ConfigValueDict | None = None) -> float | None:
         """Get chargeable device charge limit."""
         return self.option_get_entity_number(
-            OPTION_CHARGEE_CHARGE_LIMIT, val_dict=val_dict
+            OPTION_CHARGEE_GET_CHARGE_LIMIT, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
@@ -144,7 +145,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
             msg = f"Invalid charge limit {charge_limit}. Must be between {min_limit} and {max_limit} %%."
             raise ValueError(msg)
         await self.async_option_set_entity_number(
-            OPTION_CHARGEE_CHARGE_LIMIT, charge_limit, val_dict=val_dict
+            OPTION_CHARGEE_SET_CHARGE_LIMIT, charge_limit, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------

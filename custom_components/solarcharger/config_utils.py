@@ -30,6 +30,7 @@ from .const import (
     CHARGE_API_ENTITIES,
     CONFIG_NAME_MARKER,
     DEVICE_NAME_MARKER,
+    DOMAIN,
     NON_ENTITY_CONFIGS,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
@@ -187,6 +188,15 @@ TIME_ENTITY_SELECTOR = EntitySelector(
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+def _is_solarcharger_entity(entity_id: str) -> bool:
+    """Entity with solarcharger prefix is a solarcharger entity."""
+
+    # return config_item in entity_id
+    # Local device entity must contain .solarcharger_ in entity_id.
+    return DOMAIN in entity_id
+
+
+# ----------------------------------------------------------------------------
 def choose_selector(
     api_entities: dict[str, str | None] | None,
     config_item: str,
@@ -203,8 +213,7 @@ def choose_selector(
     if api_entities:
         entity_id = api_entities.get(config_item)
         if entity_id is not None:
-            if config_item in entity_id:
-                # Local config entity
+            if _is_solarcharger_entity(entity_id):
                 if not modifiable_if_local_config_entity:
                     return read_only_selector
             else:
@@ -249,19 +258,19 @@ def get_device_api_entities(subentry: ConfigSubentry) -> dict[str, str | None] |
 
 
 # ----------------------------------------------------------------------------
-def is_config_entity_used_as_local_device_entity(
+def is_api_defined_solarcharger_entity(
     subentry: ConfigSubentry, config_item: str
 ) -> bool:
-    """Entity with config name indicates local device entity and not a built-in entity."""
-    used_as_local_device_entity = False
+    """Is charger API defined a solarcharger entity or third-party entity for config item?"""
+    defined_solarcharger_entity = False
 
     api_entities = get_device_api_entities(subentry)
     if api_entities is not None:
         entity_id = api_entities.get(config_item)
         if entity_id is not None:
-            used_as_local_device_entity = config_item in entity_id
+            defined_solarcharger_entity = _is_solarcharger_entity(entity_id)
 
-    return used_as_local_device_entity
+    return defined_solarcharger_entity
 
 
 # ----------------------------------------------------------------------------

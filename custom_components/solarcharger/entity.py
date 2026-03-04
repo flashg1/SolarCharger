@@ -8,10 +8,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import slugify
 
-from .config_utils import (
-    get_device_domain,
-    is_config_entity_used_as_local_device_entity,
-)
+from .config_utils import get_device_domain, is_api_defined_solarcharger_entity
 from .const import (
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
@@ -63,6 +60,7 @@ class SolarChargerEntityType(Enum):
     TYPE_LOCALHIDDEN = "local_hidden"
 
     # For specify device
+    # Only the following can be placed in a list when defining entities. All others must be single entity type.
     TYPE_LOCAL_OCPP = CHARGER_DOMAIN_OCPP
     TYPE_LOCAL_TESLA_CUSTOM = CHARGER_DOMAIN_TESLA_CUSTOM
     TYPE_LOCAL_TESLA_MQTTBLE = CHARGER_DOMAIN_TESLA_MQTTBLE
@@ -88,6 +86,9 @@ def is_entity_enabled(
     enabled: bool = True
 
     if entity_type == SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN or (
+        #####################################
+        # Charger subentry
+        #####################################
         subentry.subentry_type in SUBENTRY_CHARGER_TYPES
         and entity_type
         in (
@@ -101,8 +102,49 @@ def is_entity_enabled(
 
 
 # ----------------------------------------------------------------------------
+def get_single_entity_type(
+    subentry: ConfigSubentry,
+    entity_type: SolarChargerEntityType | list[SolarChargerEntityType],
+) -> SolarChargerEntityType:
+    """Get the single entity type from a list of entity types or return the entity type if it's not a list."""
+
+    if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
+        # Charger subentry types
+        device_domain = get_device_domain(subentry)
+        if device_domain is None:
+            raise SystemError(
+                f"Device domain is None for subentry {subentry.unique_id}"
+            )
+
+        # entity_type is a list of SolarChargerEntityType for charger specific entities.
+        if isinstance(entity_type, list):
+            if len(entity_type) <= 0:
+                raise ValueError("Expected at least a single entity type in list.")
+
+            if SolarChargerEntityType(device_domain) in entity_type:
+                single_entity_type = SolarChargerEntityType(device_domain)
+            else:
+                # If is_create_entity() is true, code will never reach here.
+                single_entity_type = SolarChargerEntityType.TYPE_LOCALHIDDEN
+        else:
+            single_entity_type = entity_type
+
+    else:
+        # Global defaults subentry types
+        if isinstance(entity_type, list):
+            raise ValueError(
+                "Global default entity must be defined with a single entity type."
+            )
+
+        single_entity_type = entity_type
+
+    return single_entity_type
+
+
+# ----------------------------------------------------------------------------
 def is_create_entity(
-    subentry: ConfigSubentry, entity_type: SolarChargerEntityType
+    subentry: ConfigSubentry,
+    entity_type: SolarChargerEntityType | list[SolarChargerEntityType],
 ) -> bool:
     """Check if entity is enabled."""
     is_create: bool = False
@@ -115,17 +157,23 @@ def is_create_entity(
                 f"Device domain is None for subentry {subentry.unique_id}"
             )
 
-        if (
-            entity_type
-            in (
-                SolarChargerEntityType.TYPE_LOCAL,
-                SolarChargerEntityType.TYPE_LOCALHIDDEN,
-                SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN,
-                SolarChargerEntityType.TYPE_LOCAL_GLOBAL,
-                SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
-            )
-            or entity_type.value == device_domain
-        ):
+        # entity_type is a single SolarChargerEntityType.
+        if isinstance(entity_type, SolarChargerEntityType):
+            if (
+                entity_type
+                in (
+                    SolarChargerEntityType.TYPE_LOCAL,
+                    SolarChargerEntityType.TYPE_LOCALHIDDEN,
+                    SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN,
+                    SolarChargerEntityType.TYPE_LOCAL_GLOBAL,
+                    SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+                )
+                or entity_type.value == device_domain
+            ):
+                is_create = True
+
+        # entity_type is a list of SolarChargerEntityType for charger specific entities.
+        elif SolarChargerEntityType(device_domain) in entity_type:
             is_create = True
 
     else:  # noqa: PLR5501
@@ -174,9 +222,10 @@ class SolarChargerEntity(Entity):
         # self._attr_name = self.type.capitalize()
         # self._attr_entity_registry_enabled_default = self._enabled_by_default
 
+        # Hide entity if not used.
         self._attr_entity_registry_enabled_default = is_entity_enabled(
             subentry, entity_type
-        ) or is_config_entity_used_as_local_device_entity(subentry, config_item)
+        ) or is_api_defined_solarcharger_entity(subentry, config_item)
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._subentry.subentry_id)},

@@ -2,6 +2,7 @@
 
 ## v0.3.14 2026-02-22
 ### Improvement
+- Breaking change: Created separate entities for get and set device charge limit. Please delete then re-add the integration.
 - Lint ignore TRY401.
 - Moved OCPP cached_property from sc_option_state to ocpp_charger.
 

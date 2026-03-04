@@ -2,6 +2,9 @@
 
 import logging
 
+from httpx import get
+from numpy import single
+
 from homeassistant import config_entries, core
 from homeassistant.components.number import (
     NumberDeviceClass,
@@ -55,7 +58,12 @@ from .const import (
     OPTION_CHARGER_MAX_CURRENT,
 )
 from .coordinator import SolarChargerCoordinator
-from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .entity import (
+    SolarChargerEntity,
+    SolarChargerEntityType,
+    get_single_entity_type,
+    is_create_entity,
+)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -159,7 +167,12 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 CONFIG_NUMBER_LIST: tuple[
-    tuple[str, SolarChargerEntityType, NumberEntityDescription], ...
+    tuple[
+        str,
+        SolarChargerEntityType | list[SolarChargerEntityType],
+        NumberEntityDescription,
+    ],
+    ...,
 ] = (
     #####################################
     # Global defaults or local device entities
@@ -169,7 +182,10 @@ CONFIG_NUMBER_LIST: tuple[
     # Used as local device entity for OCPP only. Others come with own entity.
     (
         OPTION_CHARGEE_CHARGE_LIMIT,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN,
+        [
+            SolarChargerEntityType.TYPE_LOCAL_OCPP,
+            SolarChargerEntityType.TYPE_LOCAL_USER_CUSTOM,
+        ],
         NumberEntityDescription(
             key=OPTION_CHARGEE_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
@@ -532,12 +548,15 @@ async def async_setup_entry(
 
         # For both global default and charger subentries
         numbers: dict[str, SolarChargerNumberConfigEntity] = {}
-        for config_item, entity_type, entity_description in CONFIG_NUMBER_LIST:
-            if is_create_entity(subentry, entity_type):
+        for config_item, entity_type_or_list, entity_description in CONFIG_NUMBER_LIST:
+            if is_create_entity(subentry, entity_type_or_list):
+                single_entity_type = get_single_entity_type(
+                    subentry, entity_type_or_list
+                )
                 numbers[config_item] = SolarChargerNumberConfigEntity(
                     config_item,
                     subentry,
-                    entity_type,
+                    single_entity_type,
                     entity_description,
                     get_device_config_default_value(subentry, config_item),
                 )
