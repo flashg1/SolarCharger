@@ -1,6 +1,8 @@
 # Changelog
 
 ## v0.3.14 2026-02-22
+### New feature
+- Added support for PedroKTFC esphome-tesla-ble charger.
 ### Improvement
 - Breaking change: Created separate entities for get and set device charge limit. Please delete then re-add the integration.
 - Lint ignore TRY401.
