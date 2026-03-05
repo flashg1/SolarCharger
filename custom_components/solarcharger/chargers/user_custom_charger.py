@@ -32,6 +32,8 @@ class UserCustomCharger(ChargerChargeableBase):
     @staticmethod
     def is_chargeable_device(device: DeviceEntry) -> bool:
         """Check if the given device is an User Custom charger."""
+
+        _LOGGER.debug("%s: %s", device.name, device)
         return any(id_domain == DOMAIN for id_domain, _ in device.identifiers)
 
     # ----------------------------------------------------------------------------
@@ -40,4 +42,6 @@ class UserCustomCharger(ChargerChargeableBase):
     @staticmethod
     def is_charger_device(device: DeviceEntry) -> bool:
         """Check if device is a User Custom charger."""
+
+        _LOGGER.debug("%s: %s", device.name, device)
         return any(id_domain == DOMAIN for id_domain, _ in device.identifiers)

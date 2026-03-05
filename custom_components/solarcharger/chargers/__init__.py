@@ -11,6 +11,7 @@ from homeassistant.helpers import device_registry as dr
 from .charger import Charger
 from .ocpp_charger import OcppCharger
 from .tesla_custom_charger import TeslaCustomCharger
+from .tesla_espble_charger import TeslaEspBleCharger
 from .tesla_fleet_charger import TeslaFleetCharger
 from .tesla_mqttble_charger import TeslaMqttBleCharger
 from .tesla_tessie_charger import TeslaTessieCharger
@@ -42,6 +43,7 @@ async def charger_factory(
         OcppCharger,
         TeslaCustomCharger,
         TeslaMqttBleCharger,
+        TeslaEspBleCharger,
         TeslaFleetCharger,
         TeslaTessieCharger,
         UserCustomCharger,

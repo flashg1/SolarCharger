@@ -1,4 +1,4 @@
-"""Tesla MQTT BLE Charger implementation."""
+"""Tesla ESPHome BLE Charger implementation."""
 
 import logging
 
@@ -6,14 +6,17 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import CHARGER_DOMAIN_TESLA_MQTTBLE  # noqa: TID252
+from ..const import (  # noqa: TID252
+    ESPHOME_TESLA_BLE_MANUFACTURER,
+    ESPHOME_TESLA_BLE_MODEL,
+)
 from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class TeslaMqttBleCharger(ChargerChargeableBase):
-    """Implementation of the Charger class for Tesla MQTT BLE chargers."""
+class TeslaEspBleCharger(ChargerChargeableBase):
+    """Implementation of the Charger class for Tesla ESPHome BLE chargers."""
 
     def __init__(
         self,
@@ -22,7 +25,7 @@ class TeslaMqttBleCharger(ChargerChargeableBase):
         subentry: ConfigSubentry,
         device: DeviceEntry,
     ) -> None:
-        """Initialize the Tesla MQTT BLE charger."""
+        """Initialize the Tesla ESPHome BLE charger."""
 
         ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
 
@@ -38,7 +41,10 @@ class TeslaMqttBleCharger(ChargerChargeableBase):
         if device is None or device.manufacturer is None or device.model is None:
             return False
 
-        if device.manufacturer == "tesla-local-control" and device.model == "Tesla_BLE":
+        if (
+            device.manufacturer == ESPHOME_TESLA_BLE_MANUFACTURER
+            and device.model == ESPHOME_TESLA_BLE_MODEL
+        ):
             return True
 
         return False
@@ -46,23 +52,15 @@ class TeslaMqttBleCharger(ChargerChargeableBase):
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_chargeable_device(device: DeviceEntry) -> bool:
-        """Check if the given device is an Tesla MQTT BLE charger."""
+        """Check if the given device is an Tesla ESPHome BLE charger."""
 
-        _LOGGER.debug("%s: %s", device.name, device)
-        return any(
-            id_domain == CHARGER_DOMAIN_TESLA_MQTTBLE
-            for id_domain, _ in device.identifiers
-        )
+        return TeslaEspBleCharger.is_matched_device(device)
 
     # ----------------------------------------------------------------------------
     # Charger interface implementation
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_charger_device(device: DeviceEntry) -> bool:
-        """Check if device is a Tesla MQTT BLE charger."""
+        """Check if device is a Tesla ESPHome BLE charger."""
 
-        _LOGGER.debug("%s: %s", device.name, device)
-        return any(
-            id_domain == CHARGER_DOMAIN_TESLA_MQTTBLE
-            for id_domain, _ in device.identifiers
-        )
+        return TeslaEspBleCharger.is_matched_device(device)

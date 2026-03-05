@@ -35,6 +35,7 @@ from homeassistant.util import slugify
 from .config_options_flow import reset_api_entities
 from .config_utils import get_subentry_id
 from .const import (
+    CHARGER_DOMAIN_ESPHOME,
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
     CHARGER_DOMAIN_TESLA_FLEET,
@@ -43,6 +44,8 @@ from .const import (
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_SELECT_CHARGER,
     ERROR_SUBENTRY_CREATED,
+    ESPHOME_TESLA_BLE_MANUFACTURER,
+    ESPHOME_TESLA_BLE_MODEL,
     OPTION_CHARGER_NAME,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
@@ -64,6 +67,11 @@ _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_OCPP),
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_MQTTBLE),
+    DeviceFilterSelectorConfig(
+        integration=CHARGER_DOMAIN_ESPHOME,
+        manufacturer=ESPHOME_TESLA_BLE_MANUFACTURER,
+        model=ESPHOME_TESLA_BLE_MODEL,
+    ),
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_FLEET),
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_TESSIE),
 ]

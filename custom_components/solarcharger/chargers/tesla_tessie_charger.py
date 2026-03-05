@@ -32,6 +32,8 @@ class TeslaTessieCharger(ChargerChargeableBase):
     @staticmethod
     def is_chargeable_device(device: DeviceEntry) -> bool:
         """Check if the given device is an Tesla Tessie charger."""
+
+        _LOGGER.debug("%s: %s", device.name, device)
         return any(
             id_domain == CHARGER_DOMAIN_TESLA_TESSIE
             for id_domain, _ in device.identifiers
@@ -43,6 +45,8 @@ class TeslaTessieCharger(ChargerChargeableBase):
     @staticmethod
     def is_charger_device(device: DeviceEntry) -> bool:
         """Check if device is a Tesla Tessie charger."""
+
+        _LOGGER.debug("%s: %s", device.name, device)
         return any(
             id_domain == CHARGER_DOMAIN_TESLA_TESSIE
             for id_domain, _ in device.identifiers
