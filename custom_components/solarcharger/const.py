@@ -57,12 +57,34 @@ PLATFORMS: list[Platform | str] = [
     # INPUT_TIME,
 ]
 
-PLATFORM_OCPP = "ocpp"
-PLATFORM_USER_CUSTOM = "user_custom"
+# PLATFORM_OCPP = "ocpp"
+# PLATFORM_USER_CUSTOM = "user_custom"
+
+#######################################################
+# Subentry constants
+#######################################################
+SUBENTRY_TYPE_DEFAULTS = "defaults"
+SUBENTRY_TYPE_CHARGER = "charger"
+SUBENTRY_TYPE_CUSTOM = "custom"
+
+# Charger device types
+SUBENTRY_CHARGER_TYPES: list[str] = [SUBENTRY_TYPE_CHARGER, SUBENTRY_TYPE_CUSTOM]
+
+SUBENTRY_CHARGER_DEVICE_DOMAIN = "charger_device_domain"
+SUBENTRY_CHARGER_DEVICE_NAME = "charger_device_name"
+SUBENTRY_CHARGER_DEVICE_ID = "charger_device_id"
+
+#######################################################
+# Domains
+#######################################################
+CONFIG_NAME_GLOBAL_DEFAULTS = "global_defaults"
 
 CHARGER_DOMAIN_OCPP = "ocpp"
 CHARGER_DOMAIN_TESLA_CUSTOM = "tesla_custom"
-CHARGER_DOMAIN_TESLA_MQTTBLE = "mqtt"
+
+CHARGER_DOMAIN_MQTT = "mqtt"
+MQTT_TESLA_BLE_MANUFACTURER = "tesla-local-control"
+MQTT_TESLA_BLE_MODEL = "Tesla_BLE"
 
 CHARGER_DOMAIN_ESPHOME = "esphome"
 ESPHOME_TESLA_BLE_MANUFACTURER = "PedroKTFC"
@@ -71,15 +93,25 @@ ESPHOME_TESLA_BLE_MODEL = "esphome-tesla-ble"
 CHARGER_DOMAIN_TESLA_FLEET = "tesla"
 CHARGER_DOMAIN_TESLA_TESSIE = "tessie"
 
-
 SUPPORTED_CHARGER_DOMAIN_LIST: list[str] = [
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
-    CHARGER_DOMAIN_TESLA_MQTTBLE,
+    CHARGER_DOMAIN_MQTT,
     CHARGER_DOMAIN_ESPHOME,
     CHARGER_DOMAIN_TESLA_FLEET,
     CHARGER_DOMAIN_TESLA_TESSIE,
 ]
+
+DEVICE_MODEL_MAP: dict[str, str] = {
+    CONFIG_NAME_GLOBAL_DEFAULTS: f"{DOMAIN}_{SUBENTRY_TYPE_DEFAULTS}",
+    DOMAIN: f"{DOMAIN}_{SUBENTRY_TYPE_CUSTOM}",
+    CHARGER_DOMAIN_OCPP: f"{DOMAIN}_{CHARGER_DOMAIN_OCPP}",
+    CHARGER_DOMAIN_TESLA_CUSTOM: f"{DOMAIN}_{CHARGER_DOMAIN_TESLA_CUSTOM}",
+    CHARGER_DOMAIN_MQTT: f"{DOMAIN}_{MQTT_TESLA_BLE_MODEL}",
+    CHARGER_DOMAIN_ESPHOME: f"{DOMAIN}_{ESPHOME_TESLA_BLE_MODEL}",
+    CHARGER_DOMAIN_TESLA_FLEET: f"{DOMAIN}_{CHARGER_DOMAIN_TESLA_FLEET}",
+    CHARGER_DOMAIN_TESLA_TESSIE: f"{DOMAIN}_{CHARGER_DOMAIN_TESLA_TESSIE}",
+}
 
 #######################################################
 # Error codes
@@ -154,20 +186,6 @@ EVENT_ATTR_ACTION = "action"
 EVENT_ATTR_VALUE = "new_current"
 
 #######################################################
-# Subentry constants
-#######################################################
-SUBENTRY_TYPE_DEFAULTS = "defaults"
-SUBENTRY_TYPE_CHARGER = "charger"
-SUBENTRY_TYPE_CUSTOM = "custom"
-
-# Charger device types
-SUBENTRY_CHARGER_TYPES: list[str] = [SUBENTRY_TYPE_CHARGER, SUBENTRY_TYPE_CUSTOM]
-
-SUBENTRY_CHARGER_DEVICE_DOMAIN = "charger_device_domain"
-SUBENTRY_CHARGER_DEVICE_NAME = "charger_device_name"
-SUBENTRY_CHARGER_DEVICE_ID = "charger_device_id"
-
-#######################################################
 # Option constants
 #######################################################
 
@@ -184,7 +202,6 @@ OPTION_LAST_CHARGER_ID = "last_charger_id"
 # Option admin
 #####################################
 OPTION_GLOBAL_DEFAULTS_ID = "Global defaults"
-CONFIG_NAME_GLOBAL_DEFAULTS = "global_defaults"
 OPTION_ID = "option_id"
 OPTION_NAME = "option_name"
 
@@ -420,7 +437,7 @@ CHARGE_API_DEFAULT_VALUES: dict[str, dict[str, Any | None]] = {
     OPTION_GLOBAL_DEFAULTS_ID: OPTION_COMMON_DEFAULT_VALUES,
     CHARGER_DOMAIN_OCPP: OCPP_DEFAULT_VALUES,
     CHARGER_DOMAIN_TESLA_CUSTOM: {},
-    CHARGER_DOMAIN_TESLA_MQTTBLE: TESLA_MQTTBLE_DEFAULT_VALUES,
+    CHARGER_DOMAIN_MQTT: TESLA_MQTTBLE_DEFAULT_VALUES,
     CHARGER_DOMAIN_ESPHOME: {},
     CHARGER_DOMAIN_TESLA_FLEET: {},
     CHARGER_DOMAIN_TESLA_TESSIE: {},
@@ -717,7 +734,7 @@ USER_CUSTOM_ENTITIES: dict[str, str | None] = {
 CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
     CHARGER_DOMAIN_OCPP: OCPP_CHARGER_ENTITIES,
     CHARGER_DOMAIN_TESLA_CUSTOM: TESLA_CUSTOM_ENTITIES,
-    CHARGER_DOMAIN_TESLA_MQTTBLE: TESLA_MQTTBLE_ENTITIES,
+    CHARGER_DOMAIN_MQTT: TESLA_MQTTBLE_ENTITIES,
     CHARGER_DOMAIN_ESPHOME: TESLA_ESPBLE_ENTITIES,
     CHARGER_DOMAIN_TESLA_FLEET: TESLA_FLEET_ENTITIES,
     CHARGER_DOMAIN_TESLA_TESSIE: TESLA_TESSIE_ENTITIES,

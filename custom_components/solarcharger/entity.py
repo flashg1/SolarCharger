@@ -10,13 +10,15 @@ from homeassistant.util import slugify
 
 from .config_utils import get_device_domain, is_api_defined_solarcharger_entity
 from .const import (
+    CHARGER_DOMAIN_ESPHOME,
+    CHARGER_DOMAIN_MQTT,
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
-    CHARGER_DOMAIN_ESPHOME,
     CHARGER_DOMAIN_TESLA_FLEET,
-    CHARGER_DOMAIN_TESLA_MQTTBLE,
     CHARGER_DOMAIN_TESLA_TESSIE,
+    CONFIG_NAME_GLOBAL_DEFAULTS,
     CONFIG_URL,
+    DEVICE_MODEL_MAP,
     DOMAIN,
     ICON,
     MANUFACTURER,
@@ -64,7 +66,7 @@ class SolarChargerEntityType(Enum):
     # Only the following can be placed in a list when defining entities. All others must be single entity type.
     TYPE_LOCAL_OCPP = CHARGER_DOMAIN_OCPP
     TYPE_LOCAL_TESLA_CUSTOM = CHARGER_DOMAIN_TESLA_CUSTOM
-    TYPE_LOCAL_TESLA_MQTTBLE = CHARGER_DOMAIN_TESLA_MQTTBLE
+    TYPE_LOCAL_TESLA_MQTTBLE = CHARGER_DOMAIN_MQTT
     TYPE_LOCAL_TESLA_ESPBLE = CHARGER_DOMAIN_ESPHOME
     TYPE_LOCAL_TESLA_FLEET = CHARGER_DOMAIN_TESLA_FLEET
     TYPE_LOCAL_TESLA_TESSIE = CHARGER_DOMAIN_TESLA_TESSIE
@@ -244,11 +246,17 @@ class SolarChargerEntity(Entity):
             subentry, entity_type
         ) or is_api_defined_solarcharger_entity(subentry, config_item)
 
+        domain = get_device_domain(subentry)
+        if domain is None:
+            domain = CONFIG_NAME_GLOBAL_DEFAULTS
+        device_model = DEVICE_MODEL_MAP.get(domain)
+
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._subentry.subentry_id)},
             name=self._subentry.title,
-            model=VERSION,
             manufacturer=MANUFACTURER,
+            model=device_model,
+            sw_version=VERSION,
             configuration_url=(CONFIG_URL),
         )
 

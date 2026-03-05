@@ -6,7 +6,11 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import CHARGER_DOMAIN_TESLA_MQTTBLE  # noqa: TID252
+from ..const import (  # noqa: TID252
+    CHARGER_DOMAIN_MQTT,
+    MQTT_TESLA_BLE_MANUFACTURER,
+    MQTT_TESLA_BLE_MODEL,
+)
 from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,7 +42,10 @@ class TeslaMqttBleCharger(ChargerChargeableBase):
         if device is None or device.manufacturer is None or device.model is None:
             return False
 
-        if device.manufacturer == "tesla-local-control" and device.model == "Tesla_BLE":
+        if (
+            device.manufacturer == MQTT_TESLA_BLE_MANUFACTURER
+            and device.model == MQTT_TESLA_BLE_MODEL
+        ):
             return True
 
         return False
@@ -50,8 +57,7 @@ class TeslaMqttBleCharger(ChargerChargeableBase):
 
         _LOGGER.debug("%s: %s", device.name, device)
         return any(
-            id_domain == CHARGER_DOMAIN_TESLA_MQTTBLE
-            for id_domain, _ in device.identifiers
+            id_domain == CHARGER_DOMAIN_MQTT for id_domain, _ in device.identifiers
         )
 
     # ----------------------------------------------------------------------------
@@ -63,6 +69,5 @@ class TeslaMqttBleCharger(ChargerChargeableBase):
 
         _LOGGER.debug("%s: %s", device.name, device)
         return any(
-            id_domain == CHARGER_DOMAIN_TESLA_MQTTBLE
-            for id_domain, _ in device.identifiers
+            id_domain == CHARGER_DOMAIN_MQTT for id_domain, _ in device.identifiers
         )

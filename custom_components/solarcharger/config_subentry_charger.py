@@ -36,10 +36,10 @@ from .config_options_flow import reset_api_entities
 from .config_utils import get_subentry_id
 from .const import (
     CHARGER_DOMAIN_ESPHOME,
+    CHARGER_DOMAIN_MQTT,
     CHARGER_DOMAIN_OCPP,
     CHARGER_DOMAIN_TESLA_CUSTOM,
     CHARGER_DOMAIN_TESLA_FLEET,
-    CHARGER_DOMAIN_TESLA_MQTTBLE,
     CHARGER_DOMAIN_TESLA_TESSIE,
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_SELECT_CHARGER,
@@ -66,7 +66,7 @@ _LOGGER = logging.getLogger(__name__)
 _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_OCPP),
     DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_MQTTBLE),
+    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_MQTT),
     DeviceFilterSelectorConfig(
         integration=CHARGER_DOMAIN_ESPHOME,
         manufacturer=ESPHOME_TESLA_BLE_MANUFACTURER,
