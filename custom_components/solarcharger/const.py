@@ -4,7 +4,8 @@ from enum import Enum
 from typing import Any
 
 from homeassistant.const import Platform, __version__ as HA_VERSION
-from homeassistant.util import slugify
+
+from .utils import compose_subdomain
 
 MANUFACTURER = "FlashG"
 NAME = "Solar Charger"
@@ -94,15 +95,15 @@ DOMAIN_TESLA_CUSTOM = "tesla_custom"
 DOMAIN_MQTT = "mqtt"
 MQTT_TESLA_BLE_MANUFACTURER = "tesla-local-control"
 MQTT_TESLA_BLE_MODEL = "Tesla_BLE"
-SUBDOMAIN_MQTT_TESLA_BLE = slugify(
-    f"{DOMAIN_MQTT} {MQTT_TESLA_BLE_MANUFACTURER} {MQTT_TESLA_BLE_MODEL}"
+SUBDOMAIN_MQTT_TESLA_BLE = compose_subdomain(
+    DOMAIN_MQTT, MQTT_TESLA_BLE_MANUFACTURER, MQTT_TESLA_BLE_MODEL
 )
 
 DOMAIN_ESPHOME = "esphome"
 ESPHOME_TESLA_BLE_MANUFACTURER = "PedroKTFC"
 ESPHOME_TESLA_BLE_MODEL = "esphome-tesla-ble"
-SUBDOMAIN_ESPHOME_TESLA_BLE = slugify(
-    f"{DOMAIN_ESPHOME} {ESPHOME_TESLA_BLE_MANUFACTURER} {ESPHOME_TESLA_BLE_MODEL}"
+SUBDOMAIN_ESPHOME_TESLA_BLE = compose_subdomain(
+    DOMAIN_ESPHOME, ESPHOME_TESLA_BLE_MANUFACTURER, ESPHOME_TESLA_BLE_MODEL
 )
 
 DOMAIN_TESLA_FLEET = "tesla"

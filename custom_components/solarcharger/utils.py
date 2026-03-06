@@ -12,6 +12,7 @@ from typing import Any
 
 # import pytz
 from homeassistant.core import CALLBACK_TYPE, State
+from homeassistant.util import slugify
 from homeassistant.util.dt import as_local, parse_datetime
 
 # ----------------------------------------------------------------------------
@@ -25,6 +26,13 @@ _LOGGER = logging.getLogger(__name__)
 # def combined_conf_key(*conf_keys: list) -> str:
 #     """Combine configuration keys into a single string."""
 #     return ".".join(conf_keys)
+
+
+# ----------------------------------------------------------------------------
+def compose_subdomain(domain: str, manufacturer: str | None, model: str | None) -> str:
+    """Compose device subdomain."""
+
+    return slugify(f"{domain} {manufacturer} {model}")
 
 
 # ----------------------------------------------------------------------------

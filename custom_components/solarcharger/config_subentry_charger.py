@@ -57,6 +57,7 @@ from .const import (
     SUPPORTED_CHARGER_DOMAIN_LIST,
 )
 from .exceptions.validation_exception import ValidationExceptionError
+from .utils import compose_subdomain
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -208,7 +209,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
 
                 # Get charger domain and name to create unique_id
                 # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
-                thirdparty_config_entry_id: str | None = None
+                # thirdparty_config_entry_id: str | None = None
                 thirdparty_config_entry: ConfigEntry | None = None
 
                 for entry_id in thirdparty_charger.config_entries:
@@ -218,7 +219,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     if entry is not None:
                         # Best guess to match
                         if entry.domain in SUPPORTED_CHARGER_DOMAIN_LIST:
-                            thirdparty_config_entry_id = entry_id
+                            # thirdparty_config_entry_id = entry_id
                             thirdparty_config_entry = entry
                             break
 
@@ -233,14 +234,16 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
 
                 if not thirdparty_config_entry:
                     raise ValueError(
-                        f"Charger config entry {thirdparty_config_entry_id} not found."
+                        f"{thirdparty_charger.name}: Charger config entry not found"
                     )
                 thirdparty_display_name = (
                     f"{thirdparty_config_entry.domain} {thirdparty_charger.name}"
                 )
                 thirdparty_config_name = slugify(f"{thirdparty_display_name}")
-                thirdparty_charger_subdomain = slugify(
-                    f"{thirdparty_config_entry.domain} {thirdparty_charger.manufacturer} {thirdparty_charger.model}"
+                thirdparty_charger_subdomain = compose_subdomain(
+                    thirdparty_config_entry.domain,
+                    thirdparty_charger.manufacturer,
+                    thirdparty_charger.model,
                 )
 
                 _LOGGER.info(

@@ -39,6 +39,7 @@ from .const import (
 )
 from .entity import compose_entity_id
 from .exceptions.validation_exception import ValidationExceptionError
+from .utils import compose_subdomain
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -161,8 +162,10 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                     f"{SUBENTRY_TYPE_CUSTOM} {custom_charger_name}"
                 )
                 custom_charger_config_name = slugify(f"{custom_charger_display_name}")
-                custom_charger_subdomain = slugify(
-                    f"{config_entry.domain} {global_defaults_device_entry.manufacturer} {global_defaults_device_entry.model}"
+                custom_charger_subdomain = compose_subdomain(
+                    config_entry.domain,
+                    global_defaults_device_entry.manufacturer,
+                    global_defaults_device_entry.model,
                 )
 
                 _LOGGER.info(
