@@ -12,7 +12,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.3.14-beta1"
+VERSION = "0.3.14-beta2"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -657,7 +657,8 @@ TESLA_ESPBLE_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_ON_OFF_SWITCH: f"{SWITCH}.{DEVICE_NAME_MARKER}charger",
     OPTION_CHARGER_CHARGING_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}charging_state",
     OPTION_CHARGER_CHARGING_STATE_LIST: '["Starting", "Charging"]',
-    OPTION_CHARGER_MAX_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}current_limit",
+    # OPTION_CHARGER_MAX_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}current_limit",
+    OPTION_CHARGER_MAX_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{OPTION_CHARGER_MAX_CURRENT}",
     OPTION_CHARGER_GET_CHARGE_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}charge_current",
     OPTION_CHARGER_SET_CHARGE_CURRENT: f"{NUMBER}.{DEVICE_NAME_MARKER}charging_amps",
     OPTION_CHARGEE_SOC_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}charge_level",

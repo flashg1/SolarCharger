@@ -66,6 +66,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 Entities from following integrations are also pre-configured in SolarCharger, ie. charger can be added using "Add charger device" button.  Since I am not using these integrations, these integrations have only been tested by other users.  Please feel free to ask for help in GitHub discussions.
 
 - [Tesla BLE MQTT docker](https://github.com/tesla-local-control/tesla_ble_mqtt_docker)  This is for people who want to control their Tesla locally via Bluetooth without cloud.
+- [ESPHome Tesla BLE](https://github.com/PedroKTFC/esphome-tesla-ble)  Local control using Tesla BLE on Home Assistant ESPHome device.
 - [OCPP](https://github.com/lbbrhzn/ocpp)  This is for people who want to use OCPP to control an OCPP compliant charger to charge their EV.
 - [Telsa Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
 - [Tessie](https://www.home-assistant.io/integrations/tessie)

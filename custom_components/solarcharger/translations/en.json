@@ -60,7 +60,7 @@
             "entry_type": "Charger device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9  Please ensure charger voltage is set in \"Global defaults\", and max current set in charger config if applicable."
+                "device_subentry_created": "Added charger device.\n\n\u23F9  Please set charger voltage in \"Global defaults\", max current in charger config if available, and configs in Settings (cog wheel) if required."
             }
         },
         "custom": {
@@ -86,7 +86,7 @@
             "entry_type": "Custom device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9  Please ensure charger voltage is set in \"Global defaults\", and max current set in charger config if applicable."
+                "device_subentry_created": "Added charger device.\n\n\u23F9  Please set charger voltage in \"Global defaults\", max current in charger config if available, and configs in Settings (cog wheel) if required."
             }
         }
     },
