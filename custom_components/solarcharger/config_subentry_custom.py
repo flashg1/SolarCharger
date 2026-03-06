@@ -34,6 +34,7 @@ from .const import (
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
+    SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
     SUBENTRY_TYPE_CUSTOM,
 )
 from .entity import compose_entity_id
@@ -160,12 +161,16 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                     f"{SUBENTRY_TYPE_CUSTOM} {custom_charger_name}"
                 )
                 custom_charger_config_name = slugify(f"{custom_charger_display_name}")
+                custom_charger_subdomain = slugify(
+                    f"{config_entry.domain} {global_defaults_device_entry.manufacturer} {global_defaults_device_entry.model}"
+                )
 
                 _LOGGER.info(
-                    "Creating subentry %d for charger '%s' with unique_id '%s'",
+                    "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
                     len(config_entry.subentries) + 1,
                     custom_charger_name,
                     custom_charger_config_name,
+                    custom_charger_subdomain,
                 )
 
                 # Check if subentry with this unique_id already exists
@@ -183,6 +188,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                         data=MappingProxyType(  # make data immutable
                             {
                                 SUBENTRY_CHARGER_DEVICE_DOMAIN: DOMAIN,  # Integration domain
+                                SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: custom_charger_subdomain,  # Integration sub-domain
                                 SUBENTRY_CHARGER_DEVICE_NAME: custom_charger_name,  # Integration-specific device name
                                 SUBENTRY_CHARGER_DEVICE_ID: global_defaults_device_entry.id,  # Integration-specific device ID
                             }
@@ -197,10 +203,11 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                 )
 
                 _LOGGER.info(
-                    "Created subentry %d for charger '%s' with config_name '%s'",
+                    "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
                     len(config_entry.subentries),
                     custom_charger_name,
                     custom_charger_config_name,
+                    custom_charger_subdomain,
                 )
 
                 # Must return with SubentryFlowResult as stipulated in the return type

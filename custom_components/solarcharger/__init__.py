@@ -17,6 +17,7 @@ from .const import (
     DOMAIN,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
+    OPTION_GLOBAL_DEFAULTS_NAME,
     PLATFORMS,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
@@ -55,7 +56,7 @@ async def async_create_global_defaults_subentry(
             config_entry,
             ConfigSubentry(
                 subentry_type=SUBENTRY_TYPE_DEFAULTS,
-                title="Global defaults",
+                title=OPTION_GLOBAL_DEFAULTS_NAME,
                 unique_id=OPTION_GLOBAL_DEFAULTS_ID,
                 data=MappingProxyType(  # make data immutable
                     {

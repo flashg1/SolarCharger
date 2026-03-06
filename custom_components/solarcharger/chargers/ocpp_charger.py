@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, ServiceResponse
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from ..const import (  # noqa: TID252
-    CHARGER_DOMAIN_OCPP,
+    DOMAIN_OCPP,
     NUMBER,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
@@ -67,9 +67,7 @@ class OcppCharger(ChargerChargeableBase):
         """Check if the given device is an OCPP charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
-        return any(
-            id_domain == CHARGER_DOMAIN_OCPP for id_domain, _ in device.identifiers
-        )
+        return any(id_domain == DOMAIN_OCPP for id_domain, _ in device.identifiers)
 
     # ----------------------------------------------------------------------------
     # Charger interface implementation
@@ -79,9 +77,7 @@ class OcppCharger(ChargerChargeableBase):
         """Check if the given device is an OCPP charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
-        return any(
-            id_domain == CHARGER_DOMAIN_OCPP for id_domain, _ in device.identifiers
-        )
+        return any(id_domain == DOMAIN_OCPP for id_domain, _ in device.identifiers)
 
     # ----------------------------------------------------------------------------
     # 2025-11-03 11:53:39.370 INFO (MainThread) [ocpp] sn123456789: send [2,"3cf0a97a-6bd3-4ecd-b914-c9a57ec0b3be","GetConfiguration",{"key":["ChargeProfileMaxStackLevel"]}]
@@ -101,7 +97,7 @@ class OcppCharger(ChargerChargeableBase):
         }
 
         ocpp_max_stack_level_map: ServiceResponse = await self.async_ha_call(
-            CHARGER_DOMAIN_OCPP,
+            DOMAIN_OCPP,
             service_name,
             service_data,
             # target=ocpp_max_stack_level_map,
@@ -172,7 +168,7 @@ class OcppCharger(ChargerChargeableBase):
             "conn_id": 1,
         }
 
-        await self.async_ha_call(CHARGER_DOMAIN_OCPP, service_name, service_data)
+        await self.async_ha_call(DOMAIN_OCPP, service_name, service_data)
 
     # ----------------------------------------------------------------------------
     # async def async_set_charge_current(

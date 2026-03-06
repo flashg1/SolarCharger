@@ -4,6 +4,7 @@
 ### New feature
 - Added support for PedroKTFC esphome-tesla-ble charger.
 ### Improvement
+- Support setting defaults for chargers from differet manufacturers under the same domain, eg. mqtt, esphome.
 - Breaking change: Created separate entities for get and set device charge limit. Please delete then re-add the integration.
 - Lint ignore TRY401.
 - Moved OCPP cached_property from sc_option_state to ocpp_charger.

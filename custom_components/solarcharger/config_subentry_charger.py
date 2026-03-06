@@ -35,21 +35,24 @@ from homeassistant.util import slugify
 from .config_options_flow import reset_api_entities
 from .config_utils import get_subentry_id
 from .const import (
-    CHARGER_DOMAIN_ESPHOME,
-    CHARGER_DOMAIN_MQTT,
-    CHARGER_DOMAIN_OCPP,
-    CHARGER_DOMAIN_TESLA_CUSTOM,
-    CHARGER_DOMAIN_TESLA_FLEET,
-    CHARGER_DOMAIN_TESLA_TESSIE,
+    DOMAIN_ESPHOME,
+    DOMAIN_MQTT,
+    DOMAIN_OCPP,
+    DOMAIN_TESLA_CUSTOM,
+    DOMAIN_TESLA_FLEET,
+    DOMAIN_TESLA_TESSIE,
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_SELECT_CHARGER,
     ERROR_SUBENTRY_CREATED,
     ESPHOME_TESLA_BLE_MANUFACTURER,
     ESPHOME_TESLA_BLE_MODEL,
+    MQTT_TESLA_BLE_MANUFACTURER,
+    MQTT_TESLA_BLE_MODEL,
     OPTION_CHARGER_NAME,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
+    SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
     SUBENTRY_TYPE_CHARGER,
     SUPPORTED_CHARGER_DOMAIN_LIST,
 )
@@ -64,16 +67,20 @@ _LOGGER = logging.getLogger(__name__)
 # SUBENTRY_DEVICE_NAME_DEFAULT = "device_name_default"
 
 _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_OCPP),
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_CUSTOM),
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_MQTT),
+    DeviceFilterSelectorConfig(integration=DOMAIN_OCPP),
+    DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_CUSTOM),
     DeviceFilterSelectorConfig(
-        integration=CHARGER_DOMAIN_ESPHOME,
+        integration=DOMAIN_MQTT,
+        manufacturer=MQTT_TESLA_BLE_MANUFACTURER,
+        model=MQTT_TESLA_BLE_MODEL,
+    ),
+    DeviceFilterSelectorConfig(
+        integration=DOMAIN_ESPHOME,
         manufacturer=ESPHOME_TESLA_BLE_MANUFACTURER,
         model=ESPHOME_TESLA_BLE_MODEL,
     ),
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_FLEET),
-    DeviceFilterSelectorConfig(integration=CHARGER_DOMAIN_TESLA_TESSIE),
+    DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_FLEET),
+    DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_TESSIE),
 ]
 
 STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
@@ -232,12 +239,16 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     f"{thirdparty_config_entry.domain} {thirdparty_charger.name}"
                 )
                 thirdparty_config_name = slugify(f"{thirdparty_display_name}")
+                thirdparty_charger_subdomain = slugify(
+                    f"{thirdparty_config_entry.domain} {thirdparty_charger.manufacturer} {thirdparty_charger.model}"
+                )
 
                 _LOGGER.info(
-                    "Creating subentry %d for charger '%s' with unique_id '%s'",
+                    "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
                     len(config_entry.subentries) + 1,
                     thirdparty_charger.name,
                     thirdparty_config_name,
+                    thirdparty_charger_subdomain,
                 )
 
                 # Check if subentry with this unique_id already exists
@@ -265,6 +276,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                         data=MappingProxyType(  # make data immutable
                             {
                                 SUBENTRY_CHARGER_DEVICE_DOMAIN: thirdparty_config_entry.domain,  # Integration domain
+                                SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: thirdparty_charger_subdomain,  # Integration sub-domain
                                 SUBENTRY_CHARGER_DEVICE_NAME: thirdparty_charger.name,  # Integration-specific device name
                                 SUBENTRY_CHARGER_DEVICE_ID: thirdparty_charger_id,  # Integration-specific device ID
                             }
@@ -279,10 +291,11 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 )
 
                 _LOGGER.info(
-                    "Created subentry %d for charger '%s' with config_name '%s'",
+                    "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
                     len(config_entry.subentries),
                     thirdparty_charger.name,
                     thirdparty_config_name,
+                    thirdparty_charger_subdomain,
                 )
 
                 # Must return with SubentryFlowResult as stipulated in the return type

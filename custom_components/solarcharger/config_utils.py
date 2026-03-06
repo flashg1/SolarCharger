@@ -31,6 +31,7 @@ from .const import (
     CONFIG_NAME_MARKER,
     DEVICE_NAME_MARKER,
     DOMAIN,
+    DOMAIN_WITH_SUBDOMAINS,
     NON_ENTITY_CONFIGS,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     OPTION_CHARGER_MAX_CURRENT,
@@ -38,6 +39,7 @@ from .const import (
     OPTION_DELETE_ENTITY,
     OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
+    SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
 )
 
 # ----------------------------------------------------------------------------
@@ -238,6 +240,9 @@ def get_device_domain(subentry: ConfigSubentry) -> str | None:
         device_domain = None
     else:
         device_domain = subentry.data.get(SUBENTRY_CHARGER_DEVICE_DOMAIN)
+        if device_domain in DOMAIN_WITH_SUBDOMAINS:
+            device_domain = subentry.data.get(SUBENTRY_CHARGER_DEVICE_SUBDOMAIN)
+
         if device_domain is None:
             raise SystemError(
                 f"Subentry {subentry.subentry_id}: Failed to get device domain"

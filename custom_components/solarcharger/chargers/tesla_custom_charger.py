@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import CHARGER_DOMAIN_TESLA_CUSTOM  # noqa: TID252
+from ..const import DOMAIN_TESLA_CUSTOM  # noqa: TID252
 from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,8 +35,7 @@ class TeslaCustomCharger(ChargerChargeableBase):
 
         _LOGGER.debug("%s: %s", device.name, device)
         return any(
-            id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
-            for id_domain, _ in device.identifiers
+            id_domain == DOMAIN_TESLA_CUSTOM for id_domain, _ in device.identifiers
         )
 
     # ----------------------------------------------------------------------------
@@ -48,6 +47,5 @@ class TeslaCustomCharger(ChargerChargeableBase):
 
         _LOGGER.debug("%s: %s", device.name, device)
         return any(
-            id_domain == CHARGER_DOMAIN_TESLA_CUSTOM
-            for id_domain, _ in device.identifiers
+            id_domain == DOMAIN_TESLA_CUSTOM for id_domain, _ in device.identifiers
         )
