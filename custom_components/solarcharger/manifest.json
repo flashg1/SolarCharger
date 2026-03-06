@@ -11,6 +11,7 @@
     "ocpp",
     "tesla_custom",
     "mqtt",
+    "esphome",
     "tesla",
     "tessie"
   ],
