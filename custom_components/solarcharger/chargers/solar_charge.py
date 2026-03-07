@@ -41,6 +41,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
 )
 from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
+from ..model_charge_stats import ChargeStats  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge  # noqa: TID252
 from ..utils import log_is_event_loop  # noqa: TID252
@@ -93,6 +94,7 @@ class SolarCharge(ScOptionState):
         self._started_calibrate_max_charge_speed = False
         self._charge_current_updatetime: float = 0
         self._soc_updates: list[StateOfCharge] = []
+        self._stats = ChargeStats()
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -297,16 +299,20 @@ class SolarCharge(ScOptionState):
     ) -> None:
         """Get third party integration to update HA with latest data."""
 
-        if self.is_poll_charger_update():
-            await self._async_poll_charger_update(wait_after_update)
-        else:
-            config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
-            val_dict = ConfigValueDict(config_item, {})
+        try:
+            if self.is_poll_charger_update():
+                await self._async_poll_charger_update(wait_after_update)
+            else:
+                config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
+                val_dict = ConfigValueDict(config_item, {})
 
-            await chargeable.async_update_ha(val_dict)
-            if val_dict.config_values[config_item].entity_id is not None:
-                if wait_after_update:
-                    await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+                await chargeable.async_update_ha(val_dict)
+                if val_dict.config_values[config_item].entity_id is not None:
+                    if wait_after_update:
+                        await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+
+        except Exception as e:
+            _LOGGER.exception("%s: Error updating HA: %s", self._caller, e)
 
     # ----------------------------------------------------------------------------
     def _is_at_location(self, chargeable: Chargeable) -> bool:
@@ -357,6 +363,7 @@ class SolarCharge(ScOptionState):
         # Must run this first thing to estimate if session started by timer
         self._session_triggered_by_timer = self._is_session_triggered_by_timer()
         self._started_calibrate_max_charge_speed = False
+        self._stats = ChargeStats()
 
         await self.async_wake_up_and_update_ha(chargeable)
         self._check_if_at_location_or_abort(chargeable)
@@ -688,8 +695,8 @@ class SolarCharge(ScOptionState):
         self,
         charger: Charger,
         chargeable: Chargeable,
-        loop_count: int,
         goal: ScheduleData,
+        stats: ChargeStats,
     ) -> bool:
         """Check if to continue charging."""
 
@@ -723,7 +730,7 @@ class SolarCharge(ScOptionState):
         continue_charge = (
             is_connected
             and is_below_charge_limit
-            and (loop_count == 0 or is_charging)
+            and (stats.loop_success == 0 or is_charging)
             and (
                 is_sun_above_start_end_elevations
                 or is_use_secondary_power_source
@@ -734,15 +741,15 @@ class SolarCharge(ScOptionState):
 
         if not continue_charge:
             _LOGGER.warning(
-                "%s: Stopping charge: is_connected=%s, "
-                "is_below_charge_limit=%s, loop_count=%s, is_charging=%s (%s), "
+                "%s: Stopping charge: "
+                "is_connected=%s, is_below_charge_limit=%s, is_charging=%s (%s), "
                 "is_sun_above_start_end_elevations=%s, elevation=%s, is_use_secondary_power_source=%s, "
                 "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s, is_immediate_start=%s, "
-                "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s",
+                "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s, "
+                "stats=%s",
                 self._caller,
                 is_connected,
                 is_below_charge_limit,
-                loop_count,
                 is_charging,
                 val_dict.config_values[OPTION_CHARGER_CHARGING_SENSOR].entity_value,
                 is_sun_above_start_end_elevations,
@@ -754,6 +761,7 @@ class SolarCharge(ScOptionState):
                 goal.propose_charge_starttime,
                 current_time_with_grace,
                 is_immediate_start_with_grace,
+                stats,
             )
 
         return continue_charge
@@ -831,7 +839,7 @@ class SolarCharge(ScOptionState):
     async def _async_charge_device(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
-        loop_count = 0
+        """Loop to charge device."""
 
         wait_net_power_update = self.config_get_number_or_abort(
             CONFIG_WAIT_NET_POWER_UPDATE
@@ -855,12 +863,12 @@ class SolarCharge(ScOptionState):
 
                 # Check if continue charging or exit loop. Must run after setting charge limit.
                 if not self._is_continue_charge(
-                    charger, chargeable, loop_count, self._running_goal
+                    charger, chargeable, self._running_goal, self._stats
                 ):
                     break
 
                 # Turn on charger if looping for the first time.
-                if loop_count == 0:
+                if self._stats.loop_success == 0:
                     self._starting_goal = self._running_goal
                     self._scheduler.log_goal(self._starting_goal, "Start session")
                     await self._async_turn_charger_switch(charger, turn_on=True)
@@ -871,27 +879,32 @@ class SolarCharge(ScOptionState):
                     self._subscribe_allocated_power_update()
                     self._log_charging_status(charger, "Charger ON")
 
+                # Completed loop successfully at this point.
+                self._stats.loop_success += 1
+
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
                     charger, chargeable
                 )
 
-                # Update status after turning on power, or at every interval.
-                # This is either required here or after setting current.
-                # It is better here since it is garanteed periodic.
-                # Do not wait here. Depends on the main loop to wait.
-                await self._async_update_ha(chargeable, wait_after_update=False)
-
             except TimeoutError as e:
+                self._stats.loop_failure += 1
                 _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
             except Exception as e:
+                self._stats.loop_failure += 1
                 _LOGGER.exception("%s: Error charging device: %s", self._caller, e)
+
+            # Update status after turning on power, or at every interval.
+            # This is either required here or after setting current.
+            # It is better here since it is garanteed periodic.
+            # Do not wait here. Depends on the main loop to wait.
+            await self._async_update_ha(chargeable, wait_after_update=False)
 
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
             # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
             await asyncio.sleep(wait_net_power_update)
-            loop_count = loop_count + 1
+            self._stats.loop_total += 1
 
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(

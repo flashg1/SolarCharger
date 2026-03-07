@@ -319,6 +319,13 @@ class ChargeScheduler(ScOptionState):
         # Ensure time is in local timezone
         now_time = self.get_local_datetime()
         goal.data_timestamp = now_time
+
+        #####################################
+        # Good place to throws exception in the charging loop if device is not ready and will try again in the next loop.
+        # All devices have charge limit entity, either from device itself or created by SolarCharger.
+        # Charge limit is only required when charge schedule is enabled.
+        # If getting charge limit is causing unwanted exception elsewhere, then consider using is_schedule_charge().
+        #####################################
         goal.old_charge_limit = self._get_charge_limit_or_abort(chargeable)
         goal.new_charge_limit = goal.old_charge_limit
 

@@ -60,7 +60,7 @@
             "entry_type": "Charger device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9  Please set charger voltage in \"Global defaults\", max current in charger config if available, and configs in Settings (cog wheel) if required."
+                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage in \"Global defaults\", max current in charger device if available, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
             }
         },
         "custom": {
@@ -86,7 +86,7 @@
             "entry_type": "Custom device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9  Please set charger voltage in \"Global defaults\", max current in charger config if available, and configs in Settings (cog wheel) if required."
+                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage in \"Global defaults\", max current in charger device if available, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
             }
         }
     },
@@ -94,9 +94,9 @@
         "step": {
             "init": {
                 "title": "SolarCharger settings",
-                "description": "Device local entities, if defined, will always take precedence over global defaults.",
+                "description": "Device local configs, if defined, will always take precedence over global defaults.",
                 "data": {
-                    "select_global_or_local_settings": "Select global defaults or device local settings"
+                    "select_global_or_local_settings": "Select global defaults or device local configs"
                 }
             },
             "config_device": {

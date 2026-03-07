@@ -6,6 +6,7 @@
 ### New feature
 - Added support for PedroKTFC esphome-tesla-ble charger.
 ### Improvement
+- Improved charge loop exception handling to only increase loop count after switching on charger.
 - Support setting defaults for chargers from differet manufacturers under the same domain, eg. mqtt, esphome.
 - Lint ignore TRY401.
 - Moved OCPP cached_property from sc_option_state to ocpp_charger.
