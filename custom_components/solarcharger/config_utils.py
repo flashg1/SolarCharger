@@ -120,6 +120,19 @@ NUMBER_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
         read_only=True,
     )
 )
+BINARY_SENSOR_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["binary_sensor"],
+    )
+)
+BINARY_SENSOR_ENTITY_SELECTOR_READ_ONLY = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["binary_sensor"],
+        read_only=True,
+    )
+)
 SENSOR_ENTITY_SELECTOR = EntitySelector(
     EntitySelectorConfig(
         multiple=False,

@@ -19,6 +19,8 @@ from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from .config_utils import (
+    BINARY_SENSOR_ENTITY_SELECTOR,
+    BINARY_SENSOR_ENTITY_SELECTOR_READ_ONLY,
     BUTTON_ENTITY_SELECTOR,
     BUTTON_ENTITY_SELECTOR_READ_ONLY,
     LOCATION_ENTITY_SELECTOR,
@@ -378,8 +380,8 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): choose_selector(
                 api_entities,
                 OPTION_DEVICE_PRESENCE_SENSOR,
-                SENSOR_ENTITY_SELECTOR_READ_ONLY,
-                SENSOR_ENTITY_SELECTOR,
+                BINARY_SENSOR_ENTITY_SELECTOR_READ_ONLY,
+                BINARY_SENSOR_ENTITY_SELECTOR,
             ),
             #####################################
             # Local device entities
