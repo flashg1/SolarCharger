@@ -13,7 +13,7 @@
 <!-- [total-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total -->
 [total-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.total
 <!-- [latest-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/latest/total -->
-[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.3.14']
+[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.4.0']
 [hacs-link]: https://hacs.xyz/
 
 
@@ -58,7 +58,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 ## My setup
 - [Home Assistant](https://www.home-assistant.io/)
 - [Enphase Envoy Integration](https://www.home-assistant.io/integrations/enphase_envoy) configured for 20 seconds update interval.
-- [Tesla Custom Integration](https://github.com/alandtse/tesla) v3.20.4 (to control charging Tesla via Tesla cloud).
+- [Tesla Custom Integration](https://github.com/alandtse/tesla) v3.20.4 and above: To control charging Tesla via Tesla cloud.
 - Tesla UMC charger, 230V, max 15A.
 - Tesla Model 3.
 
@@ -66,7 +66,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 Entities from following integrations are also pre-configured in SolarCharger, ie. charger can be added using "Add charger device" button.  Since I am not using these integrations, these integrations have only been tested by other users.  Please feel free to ask for help in GitHub discussions.
 
 - [Tesla BLE MQTT docker](https://github.com/tesla-local-control/tesla_ble_mqtt_docker):  Local control using Tesla BLE (Bluetooth Low Energy) on MQTT docker device.
-- [ESPHome Tesla BLE](https://github.com/PedroKTFC/esphome-tesla-ble) v2026.2.1 and above:  Local control using Tesla BLE on Home Assistant ESPHome device.
+- [ESPHome Tesla BLE](https://github.com/PedroKTFC/esphome-tesla-ble) v2026.2.1 and above:  Local control using Tesla BLE on Home Assistant ESPHome device.  (In beta testing.)
 - [OCPP](https://github.com/lbbrhzn/ocpp):  Local control of an OCPP compliant charger.
 - [Telsa Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
 - [Tessie](https://www.home-assistant.io/integrations/tessie)

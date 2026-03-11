@@ -2,9 +2,9 @@
 
 ## v0.3.14 2026-02-22
 ### Breaking change
-- Created separate entities for get and set device charge limit. Please delete then re-add the integration.
+- Created separate entities for get and set device charge limit. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature
-- Added support for PedroKTFC esphome-tesla-ble charger.
+- Added support for PedroKTFC esphome-tesla-ble charger (beta release).
 ### Improvement
 - Improved charge loop exception handling to only increase loop count after switching on charger.
 - Support setting defaults for chargers from differet manufacturers under the same domain, eg. mqtt, esphome.
