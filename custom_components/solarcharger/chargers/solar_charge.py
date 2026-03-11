@@ -895,7 +895,13 @@ class SolarCharge(ScOptionState):
             CONFIG_WAIT_NET_POWER_UPDATE
         )
 
-        while self._stats.consecutive_failure_count <= MAX_CONSECUTIVE_FAILURE_COUNT:
+        while True:
+            # Abort charge if exceeds MAX_CONSECUTIVE_FAILURE_COUNT
+            if self._stats.consecutive_failure_count <= MAX_CONSECUTIVE_FAILURE_COUNT:
+                raise RuntimeError(
+                    f"Max number of allowable consecutive failures ({MAX_CONSECUTIVE_FAILURE_COUNT}) reached in charge loop"
+                )
+
             try:
                 # Get schedule data at start of each loop since schedule might change while charging.
                 self._running_goal = await self._scheduler.async_get_schedule_data(
@@ -965,20 +971,26 @@ class SolarCharge(ScOptionState):
     ) -> None:
         """Tidy up on exit."""
 
-        self._unsubscribe_allocated_power_update()
-        await self._async_turn_off_calibrate_max_charge_speed_switch()
+        try:
+            self._unsubscribe_allocated_power_update()
+            await self._async_turn_off_calibrate_max_charge_speed_switch()
 
-        await self._async_update_ha(chargeable)
+            await self._async_update_ha(chargeable)
 
-        switched_on = charger.is_charger_switch_on()
-        if switched_on:
-            await self._async_set_charge_current(charger, 0)
-            await self._async_turn_charger_switch(charger, turn_on=False)
+            switched_on = charger.is_charger_switch_on()
+            if switched_on:
+                await self._async_set_charge_current(charger, 0)
+                await self._async_turn_charger_switch(charger, turn_on=False)
 
-        # Only schedule next charge session if car is connected and at location.
-        if self.is_connected(charger) and self._is_at_location(chargeable):
-            await self._scheduler.async_schedule_next_charge_session(
-                chargeable, self._started_calibrate_max_charge_speed
+            # Only schedule next charge session if car is connected and at location.
+            if self.is_connected(charger) and self._is_at_location(chargeable):
+                await self._scheduler.async_schedule_next_charge_session(
+                    chargeable, self._started_calibrate_max_charge_speed
+                )
+
+        except Exception as e:
+            _LOGGER.error(
+                "%s: Failed to tidy up charge task on exit: %s", self._caller, e
             )
 
     # ----------------------------------------------------------------------------

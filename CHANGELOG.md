@@ -2,6 +2,7 @@
 
 ## v0.4.1 2026-03-11
 ### Improvement
+- Added max number of allowable consecutive failures in charge loop.
 - Added support for ping ICMP to detect device presence.
 
 ## v0.4.0 2026-02-22
