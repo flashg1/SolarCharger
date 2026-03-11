@@ -57,6 +57,9 @@ _LOGGER = logging.getLogger(__name__)
 
 INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
 MIN_TIME_BETWEEN_UPDATE = 10  # Minimum seconds between charger current updates
+MAX_CONSECUTIVE_FAILURE_COUNT = (
+    10  # Max number of allowable consecutive failures in charge loop
+)
 
 
 # ----------------------------------------------------------------------------
@@ -892,7 +895,7 @@ class SolarCharge(ScOptionState):
             CONFIG_WAIT_NET_POWER_UPDATE
         )
 
-        while True:
+        while self._stats.consecutive_failure_count <= MAX_CONSECUTIVE_FAILURE_COUNT:
             try:
                 # Get schedule data at start of each loop since schedule might change while charging.
                 self._running_goal = await self._scheduler.async_get_schedule_data(
@@ -928,6 +931,7 @@ class SolarCharge(ScOptionState):
 
                 # Completed loop successfully at this point.
                 self._stats.loop_success += 1
+                self._stats.consecutive_failure_count = 0
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
@@ -936,9 +940,11 @@ class SolarCharge(ScOptionState):
 
             except TimeoutError as e:
                 self._stats.loop_failure += 1
+                self._stats.consecutive_failure_count += 1
                 _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
             except Exception as e:
                 self._stats.loop_failure += 1
+                self._stats.consecutive_failure_count += 1
                 _LOGGER.exception("%s: Error charging device: %s", self._caller, e)
 
             # Update status after turning on power, or at every interval.

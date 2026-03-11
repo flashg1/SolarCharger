@@ -17,3 +17,6 @@ class ChargeStats:
 
     # Loop failure count
     loop_failure: int = 0
+
+    # Consecutive failure count
+    consecutive_failure_count: int = 0
