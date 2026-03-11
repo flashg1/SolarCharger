@@ -91,6 +91,7 @@ class SolarCharge(ScOptionState):
         self._starting_goal: ScheduleData
         self._running_goal: ScheduleData
 
+        self.update_ha_task_count = 0
         self._started_calibrate_max_charge_speed = False
         self._charge_current_updatetime: float = 0
         self._soc_updates: list[StateOfCharge] = []
@@ -247,7 +248,6 @@ class SolarCharge(ScOptionState):
     async def async_retry_15_times_to_update_ha_until_charger_on(self) -> None:
         """Wake up device and retry 15 times to update HA until charger is on."""
 
-        _LOGGER.info("%s: Presence detected.")
         await self._async_wakeup_device(self._chargeable)
 
         count = 0
@@ -257,15 +257,38 @@ class SolarCharge(ScOptionState):
             if self._charger.is_charger_switch_on():
                 charger_on = True
                 break
-            count += 1
             await asyncio.sleep(60)
+            count += 1
 
         _LOGGER.warning(
-            "%s: Presence detected: Charger on=%s, count=%s",
+            "%s: Device presence detected: Charger on=%s, count=%s",
             self._caller,
             charger_on,
             count,
         )
+
+    # ----------------------------------------------------------------------------
+    async def async_update_ha_with_latest_data(self) -> None:
+        """Wake up device and retry 15 times to update HA until charger is on."""
+
+        if self.update_ha_task_count == 0:
+            self.update_ha_task_count = 1
+            try:
+                await self.async_retry_15_times_to_update_ha_until_charger_on()
+            except Exception as e:
+                _LOGGER.exception(
+                    "%s: Error updating HA triggered by presence detection: %s",
+                    self._caller,
+                    e,
+                )
+
+            self.update_ha_task_count = 0
+
+        else:
+            _LOGGER.error(
+                "%s: Update HA task triggered by presence detection already running.",
+                self._caller,
+            )
 
     # ----------------------------------------------------------------------------
     # Charger code

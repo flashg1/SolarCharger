@@ -7,6 +7,7 @@ from collections.abc import Callable, Coroutine
 from datetime import datetime
 import inspect
 import logging
+import threading
 from typing import Any
 
 from propcache.api import cached_property
@@ -90,6 +91,9 @@ class ChargeController(ScOptionState):
         )
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
+
+        # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
+        self._update_ha_task_semaphore = threading.Semaphore(value=1)
 
         self._is_updated_today_tomorrow_schedule = False
 
@@ -279,6 +283,23 @@ class ChargeController(ScOptionState):
                         self._turn_charger_switch(turn_on=True)
 
     # ----------------------------------------------------------------------------
+    def _run_device_presence_detected_task(self) -> None:
+        """Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running."""
+
+        _LOGGER.info("%s: Device presence detected.")
+
+        with self._update_ha_task_semaphore:
+            if self._solar_charge.update_ha_task_count == 0:
+                self._hass.loop.create_task(
+                    self._solar_charge.async_update_ha_with_latest_data()
+                )
+            else:
+                _LOGGER.error(
+                    "%s: Update HA task triggered by presence detection already running.",
+                    self._caller,
+                )
+
+    # ----------------------------------------------------------------------------
     async def async_handle_device_presence_event(
         self, event: Event[EventStateChangedData]
     ) -> None:
@@ -297,7 +318,7 @@ class ChargeController(ScOptionState):
                     and new_state.state != old_state.state
                 ):
                     if new_state.state == STATE_ON:
-                        await self._solar_charge.async_retry_15_times_to_update_ha_until_charger_on()
+                        self._run_device_presence_detected_task()
 
     # ----------------------------------------------------------------------------
     async def async_handle_next_charge_time_update(
@@ -764,7 +785,7 @@ class ChargeController(ScOptionState):
         # Track next charge time trigger
         await self.async_switch_schedule_charge(self.is_schedule_charge())
 
-        # Track charger plug in
+        # Track charger plug-in
         await self.async_switch_plugin_trigger(self.is_plugin_trigger())
 
         # Track device presence
