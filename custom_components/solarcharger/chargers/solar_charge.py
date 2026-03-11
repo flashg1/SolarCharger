@@ -244,6 +244,30 @@ class SolarCharge(ScOptionState):
         return is_at_location and is_connected
 
     # ----------------------------------------------------------------------------
+    async def async_retry_15_times_to_update_ha_until_charger_on(self) -> None:
+        """Wake up device and retry 15 times to update HA until charger is on."""
+
+        _LOGGER.info("%s: Presence detected.")
+        await self._async_wakeup_device(self._chargeable)
+
+        count = 0
+        charger_on = False
+        while count < 15:
+            await self._async_update_ha(self._chargeable)
+            if self._charger.is_charger_switch_on():
+                charger_on = True
+                break
+            count += 1
+            await asyncio.sleep(60)
+
+        _LOGGER.warning(
+            "%s: Presence detected: Charger on=%s, count=%s",
+            self._caller,
+            charger_on,
+            count,
+        )
+
+    # ----------------------------------------------------------------------------
     # Charger code
     # ----------------------------------------------------------------------------
     # Estimation only.

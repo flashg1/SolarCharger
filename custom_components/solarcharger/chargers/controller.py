@@ -12,7 +12,7 @@ from typing import Any
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import (
     CoreState,
     Event,
@@ -116,6 +116,14 @@ class ChargeController(ScOptionState):
 
         await self.async_turn_switch(
             self.plugin_trigger_switch_entity_id, turn_on=False
+        )
+
+    # ----------------------------------------------------------------------------
+    async def _async_turn_off_presence_trigger(self) -> None:
+        """Turn off detect presence trigger switch."""
+
+        await self.async_turn_switch(
+            self.presence_trigger_switch_entity_id, turn_on=False
         )
 
     # ----------------------------------------------------------------------------
@@ -271,6 +279,27 @@ class ChargeController(ScOptionState):
                         self._turn_charger_switch(turn_on=True)
 
     # ----------------------------------------------------------------------------
+    async def async_handle_device_presence_event(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Fetch and process state change event."""
+        data = event.data
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
+
+        self._tracker.log_state_change(event)
+
+        if new_state is not None:
+            if old_state is not None:
+                if (
+                    new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                    and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                    and new_state.state != old_state.state
+                ):
+                    if new_state.state == STATE_ON:
+                        await self._solar_charge.async_retry_15_times_to_update_ha_until_charger_on()
+
+    # ----------------------------------------------------------------------------
     async def async_handle_next_charge_time_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
@@ -414,6 +443,20 @@ class ChargeController(ScOptionState):
                 await self._async_turn_off_plugin_trigger()
         else:
             self._tracker.untrack_charger_plugged_in_sensor()
+
+    # ----------------------------------------------------------------------------
+    async def _async_switch_presence_trigger(self, turn_on: bool) -> None:
+        """Action presence trigger switch."""
+
+        _LOGGER.info("%s: Presence trigger: %s", self._caller, turn_on)
+        if turn_on:
+            ok = self._tracker.track_device_presence_sensor(
+                self.async_handle_device_presence_event
+            )
+            if not ok:
+                await self._async_turn_off_presence_trigger()
+        else:
+            self._tracker.untrack_device_presence_sensor()
 
     # ----------------------------------------------------------------------------
     async def _async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
@@ -674,6 +717,12 @@ class ChargeController(ScOptionState):
         await self._async_switch_task(self._async_switch_plugin_trigger, turn_on)
 
     # ----------------------------------------------------------------------------
+    async def async_switch_presence_trigger(self, turn_on: bool) -> None:
+        """Called by switch entity/coordinator to turn on/off presence trigger."""
+
+        await self._async_switch_task(self._async_switch_presence_trigger, turn_on)
+
+    # ----------------------------------------------------------------------------
     async def async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
         """Called by switch entity/coordinator to turn on/off sun elevation trigger."""
 
@@ -717,6 +766,9 @@ class ChargeController(ScOptionState):
 
         # Track charger plug in
         await self.async_switch_plugin_trigger(self.is_plugin_trigger())
+
+        # Track device presence
+        await self.async_switch_presence_trigger(self.is_presence_trigger())
 
         # Track sun elevation
         await self.async_switch_sun_elevation_trigger(self.is_sun_trigger())

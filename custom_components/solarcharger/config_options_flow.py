@@ -92,6 +92,7 @@ from .const import (
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
+    OPTION_DEVICE_PRESENCE_SENSOR,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_ID,
@@ -371,6 +372,14 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_ALLOCATED_POWER,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
+            ),
+            self._optional(
+                subentry, OPTION_DEVICE_PRESENCE_SENSOR, use_default
+            ): choose_selector(
+                api_entities,
+                OPTION_DEVICE_PRESENCE_SENSOR,
+                SENSOR_ENTITY_SELECTOR_READ_ONLY,
+                SENSOR_ENTITY_SELECTOR,
             ),
             #####################################
             # Local device entities

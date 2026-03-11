@@ -23,6 +23,7 @@ from .const import (
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
+    SWITCH_PRESENCE_TRIGGER,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_SUN_TRIGGER,
@@ -246,6 +247,17 @@ async def async_setup_entry(
             SolarChargerEntityType.TYPE_LOCAL,
             SwitchEntityDescription(
                 key=SWITCH_PLUGIN_TRIGGER,
+                entity_category=EntityCategory.CONFIG,
+            ),
+        ),
+        (
+            SWITCH_PRESENCE_TRIGGER,
+            SolarChargerSwitchActionEntity,
+            RESTORE_ON_START_TRUE,
+            coordinator.async_switch_presence_trigger,
+            SolarChargerEntityType.TYPE_LOCAL,
+            SwitchEntityDescription(
+                key=SWITCH_PRESENCE_TRIGGER,
                 entity_category=EntityCategory.CONFIG,
             ),
         ),

@@ -32,6 +32,7 @@ from .const import (
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
+    SWITCH_PRESENCE_TRIGGER,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_SUN_TRIGGER,
@@ -198,6 +199,13 @@ class ScOptionState(ScConfigState):
         """Return the plugin trigger switch entity ID."""
         return compose_entity_id(
             SWITCH, self._subentry.unique_id, SWITCH_PLUGIN_TRIGGER
+        )
+
+    @cached_property
+    def presence_trigger_switch_entity_id(self) -> str:
+        """Return the presence trigger switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_PRESENCE_TRIGGER
         )
 
     @cached_property
@@ -750,6 +758,11 @@ class ScOptionState(ScConfigState):
     def is_plugin_trigger(self) -> bool:
         """Is plugin trigger on?"""
         return self.get_boolean_or_abort(self.plugin_trigger_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_presence_trigger(self) -> bool:
+        """Is presence trigger on?"""
+        return self.get_boolean_or_abort(self.presence_trigger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_sun_trigger(self) -> bool:

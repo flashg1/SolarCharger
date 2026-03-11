@@ -35,6 +35,7 @@ from ..const import (  # noqa: TID252
     CALLBACK_ALLOCATE_POWER,
     CALLBACK_CHARGE_ENDTIME_UPDATE,
     CALLBACK_CHARGE_LIMIT_UPDATE,
+    CALLBACK_DEVICE_PRESENCE,
     CALLBACK_HA_STARTED,
     CALLBACK_HA_STOP,
     CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
@@ -46,6 +47,7 @@ from ..const import (  # noqa: TID252
     NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    OPTION_DEVICE_PRESENCE_SENSOR,
 )
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
@@ -288,7 +290,7 @@ class Tracker(ScOptionState):
     # Track single entity updates
     # ----------------------------------------------------------------------------
     def track_charger_plugged_in_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
-        """Track charger plug in event. Sensors that might not exist, so check return code."""
+        """Track charger plug-in event. Sensors that might not exist, so check return code."""
 
         return self._track_config_item_state(
             OPTION_CHARGER_PLUGGED_IN_SENSOR, CALLBACK_PLUG_IN_CHARGER, action
@@ -296,9 +298,23 @@ class Tracker(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def untrack_charger_plugged_in_sensor(self) -> None:
-        """Unsubscribe charger plug in event."""
+        """Unsubscribe charger plug-in event."""
 
         self.remove_callback(CALLBACK_PLUG_IN_CHARGER)
+
+    # ----------------------------------------------------------------------------
+    def track_device_presence_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
+        """Track device presence event. Sensors that might not exist, so check return code."""
+
+        return self._track_config_item_state(
+            OPTION_DEVICE_PRESENCE_SENSOR, CALLBACK_DEVICE_PRESENCE, action
+        )
+
+    # ----------------------------------------------------------------------------
+    def untrack_device_presence_sensor(self) -> None:
+        """Unsubscribe device presence event."""
+
+        self.remove_callback(CALLBACK_DEVICE_PRESENCE)
 
     # ----------------------------------------------------------------------------
     def track_soc_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:

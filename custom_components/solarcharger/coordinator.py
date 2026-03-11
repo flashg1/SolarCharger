@@ -452,6 +452,15 @@ class SolarChargerCoordinator(ScOptionState):
             await control.controller.async_switch_plugin_trigger(turn_on)
 
     # ----------------------------------------------------------------------------
+    async def async_switch_presence_trigger(
+        self, control: DeviceControl, turn_on: bool
+    ) -> None:
+        """Device presence trigger switch."""
+
+        if control.controller is not None:
+            await control.controller.async_switch_presence_trigger(turn_on)
+
+    # ----------------------------------------------------------------------------
     async def async_switch_sun_elevation_trigger(
         self, control: DeviceControl, turn_on: bool
     ) -> None:

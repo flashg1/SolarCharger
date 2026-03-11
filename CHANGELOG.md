@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1 2026-03-11
+### Improvement
+- Added support for ping ICMP to detect device presence.
+
 ## v0.4.0 2026-02-22
 ### Breaking change
 - Created separate entities for get and set device charge limit. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).

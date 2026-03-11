@@ -37,6 +37,7 @@ from .const import (
     OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_NAME,
     OPTION_DELETE_ENTITY,
+    OPTION_DEVICE_PRESENCE_SENSOR,
     OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
@@ -318,6 +319,7 @@ def get_device_config_default_value(subentry: ConfigSubentry, config_item: str) 
             val = _get_device_global_default_value(config_item)
 
     # Entities can have no default values, eg. charger effective voltage, charger max current.
+    # This is for default value of the entity, ie. not for default entity name.
     if val is None:
         if config_item not in [
             NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
