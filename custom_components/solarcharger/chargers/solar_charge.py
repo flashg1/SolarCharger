@@ -897,9 +897,9 @@ class SolarCharge(ScOptionState):
 
         while True:
             # Abort charge if exceeds MAX_CONSECUTIVE_FAILURE_COUNT
-            if self._stats.consecutive_failure_count <= MAX_CONSECUTIVE_FAILURE_COUNT:
+            if self._stats.consecutive_failure_count > MAX_CONSECUTIVE_FAILURE_COUNT:
                 raise RuntimeError(
-                    f"Max number of allowable consecutive failures ({MAX_CONSECUTIVE_FAILURE_COUNT}) reached in charge loop"
+                    f"Exceeded max number of allowable consecutive failures ({MAX_CONSECUTIVE_FAILURE_COUNT}) in charge loop"
                 )
 
             try:

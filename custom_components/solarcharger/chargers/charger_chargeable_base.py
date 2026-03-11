@@ -24,6 +24,7 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    OPTION_CHARGER_SET_CHARGE_CURRENT,
 )
 from ..ha_device import HaDevice  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
@@ -246,7 +247,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     ) -> None:
         """Set charger charge current in AMPS."""
         await self.async_option_set_entity_integer(
-            OPTION_CHARGER_GET_CHARGE_CURRENT, round(charge_current), val_dict=val_dict
+            OPTION_CHARGER_SET_CHARGE_CURRENT, round(charge_current), val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------

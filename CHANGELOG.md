@@ -1,9 +1,12 @@
 # Changelog
 
 ## v0.4.1 2026-03-11
+### New feature
+- Added support for ping ICMP to detect device presence.
+### Fix
+- Fixed bug that uses the same entity to set and get charge current for esphome-tesla-ble.
 ### Improvement
 - Added max number of allowable consecutive failures in charge loop before aborting charge.
-- Added support for ping ICMP to detect device presence.
 
 ## v0.4.0 2026-02-22
 ### Breaking change
