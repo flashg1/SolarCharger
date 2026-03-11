@@ -13,7 +13,7 @@ from typing import Any
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import (
     CoreState,
     Event,
@@ -317,7 +317,7 @@ class ChargeController(ScOptionState):
                     and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
                     and new_state.state != old_state.state
                 ):
-                    if new_state.state == STATE_ON:
+                    if new_state.state == STATE_ON and old_state.state == STATE_OFF:
                         self._run_device_presence_detected_task()
 
     # ----------------------------------------------------------------------------
