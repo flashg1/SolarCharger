@@ -294,7 +294,7 @@ class ChargeController(ScOptionState):
                     self._solar_charge.async_update_ha_with_latest_data()
                 )
             else:
-                _LOGGER.error(
+                _LOGGER.warning(
                     "%s: Update HA task triggered by presence detection already running.",
                     self._caller,
                 )

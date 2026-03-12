@@ -288,6 +288,7 @@ class SolarCharge(ScOptionState):
             self.update_ha_task_count = 0
 
         else:
+            # Should never be here.
             _LOGGER.error(
                 "%s: Update HA task triggered by presence detection already running.",
                 self._caller,
