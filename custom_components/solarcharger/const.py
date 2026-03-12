@@ -12,7 +12,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.4.1-beta1"
+VERSION = "0.4.1-beta2"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -106,7 +106,7 @@ SUBDOMAIN_ESPHOME_TESLA_BLE = compose_subdomain(
     DOMAIN_ESPHOME, ESPHOME_TESLA_BLE_MANUFACTURER, ESPHOME_TESLA_BLE_MODEL
 )
 
-DOMAIN_TESLA_FLEET = "tesla"
+DOMAIN_TESLA_FLEET = "tesla_fleet"
 DOMAIN_TESLA_TESSIE = "tessie"
 
 # Domains that can contain charger devices with totally different control entities.

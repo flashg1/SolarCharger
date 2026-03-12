@@ -4,6 +4,8 @@
 ### New feature
 - Added support for ping ICMP to detect device presence.
 ### Fix
+- Catch exception if datetime cannot be restored when set to min time UTC.
+- Changed Tesla Fleet domain name from tesla to tesla_fleet.
 - Fixed bug that uses the same entity to set and get charge current for esphome-tesla-ble.
 ### Improvement
 - Added max number of allowable consecutive failures in charge loop before aborting charge.

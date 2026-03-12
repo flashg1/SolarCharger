@@ -1,6 +1,6 @@
 """SolarCharger datetime platform."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 import logging
 from zoneinfo import ZoneInfo
 
@@ -12,6 +12,7 @@ from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 # from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.util.dt import as_local
 
 from .const import DATETIME, DATETIME_NEXT_CHARGE_TIME, DOMAIN
 from .coordinator import SolarChargerCoordinator
@@ -58,11 +59,31 @@ class SolarChargerDateTimeEntity(SolarChargerEntity, DateTimeEntity, RestoreEnti
         ) is not None and last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             # Stored string is in ISO format UTC (eg. 2025-12-28T05:51:05+00:00).
             # Convert to local timezone (eg. 2025-12-28 16:51:05+11:00)
-            await self.async_set_value(
-                datetime.fromisoformat(last_state.state).astimezone(
-                    ZoneInfo(self.hass.config.time_zone)
+
+            try:
+                # From Google AI:
+                # This minimum datetime value (often used as a placeholder for an "empty" or "null" date)
+                # falls outside the range where the system can reliably determine the local offset,
+                # which varied significantly in ancient history.
+
+                # Worked for me but not other people possibly with different hardware.
+                # await self.async_set_value(
+                #     datetime.fromisoformat(last_state.state).astimezone(
+                #         ZoneInfo(self.hass.config.time_zone)
+                #     )
+                # )
+                await self.async_set_value(
+                    as_local(datetime.fromisoformat(last_state.state))
                 )
-            )
+
+            except Exception as e:
+                _LOGGER.error(
+                    "%s: %s: Unable to restore datetime %s: %s",
+                    self._subentry.unique_id,
+                    self._entity_key,
+                    last_state.state,
+                    e,
+                )
 
 
 # ----------------------------------------------------------------------------
@@ -79,23 +100,36 @@ class SolarChargerDateTimeConfigEntity(SolarChargerDateTimeEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: DateTimeEntityDescription,
-        default_val: datetime = datetime.min.replace(tzinfo=timezone.utc),
-        # default_val: datetime = datetime.min.astimezone(),
-        # default_val: datetime = datetime.min.replace(tzinfo=ZoneInfo(self._hass.config.time_zone))
+        default_val: datetime = datetime.min,  # default_val must have TZ info.
     ) -> None:
         """Initialise datetime."""
         super().__init__(config_item, subentry, entity_type, desc)
 
-        # if desc.entity_category == EntityCategory.CONFIG:
-        #     # Disable local device entities. User needs to manually enable if required.
-        #     if subentry.unique_id != OPTION_GLOBAL_DEFAULTS_ID:
-        #         if not is_config_entity_used_as_local_device_entity(
-        #             subentry, config_item
-        #         ):
-        #             self._attr_entity_registry_enabled_default = False
-
         self._attr_has_entity_name = True
-        self._attr_native_value = default_val
+
+        if default_val == datetime.min:
+            # ValueError: Invalid datetime: datetime.solarcharger_custom_test105_next_charge_time provides state '0001-01-01 00:00:00', which is missing timezone information
+            # self._attr_native_value = default_val
+
+            #   File "/workspaces/core/homeassistant/components/datetime/__init__.py", line 112, in state
+            #     return value.astimezone(UTC).isoformat(timespec="seconds")
+            #            ~~~~~~~~~~~~~~~~^^^^^
+            # OverflowError: date value out of range
+            # self._attr_native_value = as_local(default_val)
+
+            #   File "/workspaces/core/config/custom_components/solarcharger/datetime.py", line 103, in __init__
+            #     tzinfo=ZoneInfo(self.hass.config.time_zone)
+            #                     ^^^^^^^^^^^^^^^^
+            # AttributeError: 'NoneType' object has no attribute 'config'
+            # self._attr_native_value = datetime.min.replace(
+            #     tzinfo=ZoneInfo(self.hass.config.time_zone)
+            # )
+
+            # Both worked ok
+            # self._attr_native_value = datetime.min.replace(tzinfo=timezone.utc)
+            self._attr_native_value = datetime.min.replace(tzinfo=UTC)
+        else:
+            self._attr_native_value = default_val
 
     # ----------------------------------------------------------------------------
     async def async_set_native_value(self, value: datetime) -> None:
