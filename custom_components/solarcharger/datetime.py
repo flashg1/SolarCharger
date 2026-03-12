@@ -60,30 +60,33 @@ class SolarChargerDateTimeEntity(SolarChargerEntity, DateTimeEntity, RestoreEnti
             # Stored string is in ISO format UTC (eg. 2025-12-28T05:51:05+00:00).
             # Convert to local timezone (eg. 2025-12-28 16:51:05+11:00)
 
+            val = datetime.min.replace(tzinfo=UTC)
             try:
                 # From Google AI:
                 # This minimum datetime value (often used as a placeholder for an "empty" or "null" date)
                 # falls outside the range where the system can reliably determine the local offset,
                 # which varied significantly in ancient history.
 
-                # Worked for me but not other people possibly with different hardware.
-                # await self.async_set_value(
-                #     datetime.fromisoformat(last_state.state).astimezone(
-                #         ZoneInfo(self.hass.config.time_zone)
-                #     )
+                # Worked for me but not some people possibly with different hardware/OS.
+                # val = datetime.fromisoformat(last_state.state).astimezone(
+                #     ZoneInfo(self.hass.config.time_zone)
                 # )
-                await self.async_set_value(
-                    as_local(datetime.fromisoformat(last_state.state))
-                )
+
+                # Use this one.
+                val = as_local(datetime.fromisoformat(last_state.state))
 
             except Exception as e:
+                # The restore value will be wrong.
+                # This is only a problem if initial value is UTC min time, so should be ok.
                 _LOGGER.error(
-                    "%s: %s: Unable to restore datetime %s: %s",
+                    "%s: %s: Unable to restore to local time %s: %s",
                     self._subentry.unique_id,
                     self._entity_key,
                     last_state.state,
                     e,
                 )
+
+            await self.async_set_value(val)
 
 
 # ----------------------------------------------------------------------------
