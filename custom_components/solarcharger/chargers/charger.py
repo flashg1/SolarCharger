@@ -59,11 +59,10 @@ class Charger(ABC):
     def is_connected(self, val_dict: ConfigValueDict | None = None) -> bool:
         """Is charger connected to chargeable device?
 
+        For future implementaion:
         This does not mean that the car is actually able to charge, for which
-        you can use can_charge().
-
-        When the connected car is not authorised (and therefore the charger is not
-        ready) we consider it a "disconnected" state.
+        you can use can_charge().  When the connected car is not authorised (and
+        therefore the charger is not ready) we consider it a "disconnected" state.
         """
 
     @abstractmethod

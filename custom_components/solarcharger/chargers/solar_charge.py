@@ -253,21 +253,25 @@ class SolarCharge(ScOptionState):
 
         await self._async_wakeup_device(self._chargeable)
 
-        count = 0
-        charger_on = False
-        while count < 15:
+        loop = 0
+        charger_connected = False
+        while loop < 15:
             await self._async_update_ha(self._chargeable)
-            if self._charger.is_charger_switch_on():
-                charger_on = True
+            if (
+                # Plug-in sensor might not be defined, so also check charger switch.
+                self.is_really_connected(self._charger)
+                or self._charger.is_charger_switch_on()
+            ):
+                charger_connected = True
                 break
             await asyncio.sleep(60)
-            count += 1
+            loop += 1
 
         _LOGGER.warning(
-            "%s: Device presence detected: Charger on=%s, count=%s",
+            "%s: Device presence detected: charger_connected=%s, loop=%s",
             self._caller,
-            charger_on,
-            count,
+            charger_connected,
+            loop,
         )
 
     # ----------------------------------------------------------------------------
@@ -377,6 +381,12 @@ class SolarCharge(ScOptionState):
             is_at_location = True
 
         return is_at_location
+
+    # ----------------------------------------------------------------------------
+    def is_really_connected(self, charger: Charger) -> bool:
+        """Is charger connected to chargeable device? Returns false if sensor is not defined."""
+
+        return charger.is_connected()
 
     # ----------------------------------------------------------------------------
     def is_connected(self, charger: Charger) -> bool:
