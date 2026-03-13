@@ -13,7 +13,7 @@
     "tesla_custom",
     "mqtt",
     "esphome",
-    "tesla",
+    "tesla_fleet",
     "tessie"
   ],
   "codeowners": [
