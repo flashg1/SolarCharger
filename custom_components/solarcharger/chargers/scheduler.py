@@ -482,16 +482,19 @@ class ChargeScheduler(ScOptionState):
                         self._get_next_start_elevation_trigger_time()
                     )
 
+                    is_sun_trigger = self.is_sun_trigger()
                     set_next_charge_time = (
                         next_starttime < next_start_elevation_trigger_time
-                        or not self.is_sun_trigger()
+                        or not is_sun_trigger
                     )
                     if set_next_charge_time:
                         await self._async_set_next_charge_time(next_starttime)
 
                     _LOGGER.warning(
-                        "%s: set_next_charge_time=%s, next_starttime=%s, next_start_elevation_trigger_time=%s",
+                        "%s: is_sun_trigger=%s, set_next_charge_time=%s, next_starttime=%s, "
+                        "next_start_elevation_trigger_time=%s",
                         self._caller,
+                        is_sun_trigger,
                         set_next_charge_time,
                         next_starttime,
                         next_start_elevation_trigger_time,
