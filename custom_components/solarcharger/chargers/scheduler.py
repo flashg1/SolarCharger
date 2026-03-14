@@ -110,7 +110,7 @@ class ChargeScheduler(ScOptionState):
             # if current is already at chargerMaxCurrent and needChargeDuration is only
             # slightly less than availableChargeDuration.
             is_not_enough_time = available_charge_duration.total_seconds() > 0 and (
-                not self.is_daytime()
+                (self.is_sun_trigger() and not self.is_daytime())
                 or need_charge_duration >= available_charge_duration
                 or (
                     (need_charge_duration + one_percent_charge_duration)

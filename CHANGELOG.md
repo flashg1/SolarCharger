@@ -2,8 +2,9 @@
 
 ## v0.4.2 2026-03-14
 ### Breaking change
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
+- With "Sun trigger" off, "Sunset elevation end trigger" will no longer stop SolarCharger.
 ### New feature
+- With "Sun trigger" off, SolarCharger will continue to adjust current as long as there is surplus power (eg. from battery, wind turbine, etc) irrespective of time of day. Thanks @mrblond18 for the idea.
 ### Fix
 ### Improvement
 

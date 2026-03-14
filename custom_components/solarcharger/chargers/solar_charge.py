@@ -769,6 +769,7 @@ class SolarCharge(ScOptionState):
         val_dict = ConfigValueDict(OPTION_CHARGER_CHARGING_SENSOR, {})
         is_charging = self._is_charging(charger, val_dict=val_dict)
 
+        is_sun_trigger = self.is_sun_trigger()
         (is_sun_above_start_end_elevations, elevation) = (
             self.is_sun_above_start_end_elevation_triggers()
         )
@@ -793,7 +794,8 @@ class SolarCharge(ScOptionState):
             and is_below_charge_limit
             and (stats.loop_success == 0 or is_charging)
             and (
-                is_sun_above_start_end_elevations
+                not is_sun_trigger  # Sun trigger off, continue.
+                or is_sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
                 or is_use_secondary_power_source
                 or is_calibrate_max_charge_speed
                 or (goal.has_charge_endtime and is_immediate_start_with_grace)
@@ -804,8 +806,9 @@ class SolarCharge(ScOptionState):
             _LOGGER.warning(
                 "%s: Stopping charge: "
                 "is_connected=%s, is_below_charge_limit=%s, is_charging=%s (%s), "
-                "is_sun_above_start_end_elevations=%s, elevation=%s, is_use_secondary_power_source=%s, "
-                "is_calibrate_max_charge_speed=%s, has_charge_endtime=%s, is_immediate_start=%s, "
+                "is_sun_trigger=%s, is_sun_above_start_end_elevations=%s, elevation=%s, "
+                "is_use_secondary_power_source=%s, is_calibrate_max_charge_speed=%s, "
+                "has_charge_endtime=%s, is_immediate_start=%s, "
                 "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s, "
                 "stats=%s",
                 self._caller,
@@ -813,6 +816,7 @@ class SolarCharge(ScOptionState):
                 is_below_charge_limit,
                 is_charging,
                 val_dict.config_values[OPTION_CHARGER_CHARGING_SENSOR].entity_value,
+                is_sun_trigger,
                 is_sun_above_start_end_elevations,
                 elevation,
                 is_use_secondary_power_source,
