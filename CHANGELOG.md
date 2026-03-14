@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.2 2026-03-14
+### Breaking change
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
+### New feature
+### Fix
+### Improvement
+
 ## v0.4.1 2026-03-11
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
