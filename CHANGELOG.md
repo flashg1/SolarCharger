@@ -6,7 +6,7 @@
 - With "Sun trigger" off, "Sunset elevation end trigger" will no longer stop SolarCharger.
 ### New feature
 - With "Sun trigger" off, SolarCharger will continue to adjust current as long as there is surplus power (eg. from battery, wind turbine, etc.) irrespective of time of day. Thanks @mrblond18 for the idea.
-- If all triggers are turned off (ie. Plugin trigger, Sun trigger, Schedule charge), user can now program their own automation to start and stop charger without inteference from SolarCharger.
+- If all triggers are turned off (ie. Plugin trigger, Sun trigger, Schedule charge), user can now program their own automation to start and stop charger without interference from SolarCharger.
 
 ## v0.4.1 2026-03-11
 ### Breaking change
