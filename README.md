@@ -48,7 +48,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 - Support skew to shift the power export/import curve left or right to achieve your minimal power import. (TODO)
 - Configurable return codes for comparison with connect trigger states, connected states and charging states returned by your EV or charger specific API. These states are used to determine the stages of the charging process.
 - Use EV specific API to control a EV for charging, and/or use OCPP to control an OCPP compliant charger to charge a EV. Only tested with [OCPP simulator](https://github.com/lewei50/iammeter-simulator) and Tesla car. OCPP and Tesla Fleet API support in beta testing phase.
-
+- Use Ping ICMP to detect car presence and retry updating HA for 15 minutes until car is connected.
 
 **💡 Tip:** Please :star: this project if you find it useful, and may be also buy me a coffee!
 
