@@ -1,4 +1,4 @@
-"""Tesla Tessie Charger implementation."""
+"""Teslemetry charger implementation."""
 
 import logging
 
@@ -6,14 +6,14 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import DOMAIN_TESLA_TESSIE  # noqa: TID252
+from ..const import DOMAIN_TESLEMETRY  # noqa: TID252
 from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class TeslaTessieCharger(ChargerChargeableBase):
-    """Implementation of the Charger class for Tesla Tessie chargers."""
+class TeslemetryCharger(ChargerChargeableBase):
+    """Implementation of the Charger class for Teslemetry chargers."""
 
     def __init__(
         self,
@@ -22,7 +22,7 @@ class TeslaTessieCharger(ChargerChargeableBase):
         subentry: ConfigSubentry,
         device: DeviceEntry,
     ) -> None:
-        """Initialize the Tesla Tessie charger."""
+        """Initialize the Teslemetry charger."""
 
         ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
 
@@ -31,11 +31,11 @@ class TeslaTessieCharger(ChargerChargeableBase):
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_chargeable_device(device: DeviceEntry) -> bool:
-        """Check if the given device is an Tesla Tessie charger."""
+        """Check if the given device is an Teslemetry charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
         return any(
-            id_domain == DOMAIN_TESLA_TESSIE for id_domain, _ in device.identifiers
+            id_domain == DOMAIN_TESLEMETRY for id_domain, _ in device.identifiers
         )
 
     # ----------------------------------------------------------------------------
@@ -43,9 +43,9 @@ class TeslaTessieCharger(ChargerChargeableBase):
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_charger_device(device: DeviceEntry) -> bool:
-        """Check if device is a Tesla Tessie charger."""
+        """Check if device is a Teslemetry charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
         return any(
-            id_domain == DOMAIN_TESLA_TESSIE for id_domain, _ in device.identifiers
+            id_domain == DOMAIN_TESLEMETRY for id_domain, _ in device.identifiers
         )

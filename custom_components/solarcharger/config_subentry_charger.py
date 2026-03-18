@@ -40,7 +40,8 @@ from .const import (
     DOMAIN_OCPP,
     DOMAIN_TESLA_CUSTOM,
     DOMAIN_TESLA_FLEET,
-    DOMAIN_TESLA_TESSIE,
+    DOMAIN_TESLEMETRY,
+    DOMAIN_TESSIE,
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_SELECT_CHARGER,
     ERROR_SUBENTRY_CREATED,
@@ -81,7 +82,8 @@ _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
         model=ESPHOME_TESLA_BLE_MODEL,
     ),
     DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_FLEET),
-    DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_TESSIE),
+    DeviceFilterSelectorConfig(integration=DOMAIN_TESSIE),
+    DeviceFilterSelectorConfig(integration=DOMAIN_TESLEMETRY),
 ]
 
 STEP_SELECT_CHARGER_SCHEMA = vol.Schema(

@@ -1,4 +1,4 @@
-"""Solar Charger Chargers."""
+"""Solar Charger factory."""
 
 from typing import TYPE_CHECKING
 
@@ -6,21 +6,22 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 
-# from .controller import ChargeController
-# from .chargeable import Chargeable
 from .charger import Charger
 from .ocpp_charger import OcppCharger
 from .tesla_custom_charger import TeslaCustomCharger
 from .tesla_espble_charger import TeslaEspBleCharger
 from .tesla_fleet_charger import TeslaFleetCharger
 from .tesla_mqttble_charger import TeslaMqttBleCharger
-from .tesla_tessie_charger import TeslaTessieCharger
+from .teslemetry_charger import TeslemetryCharger
+from .tessie_charger import TessieCharger
 from .user_custom_charger import UserCustomCharger
 
 if TYPE_CHECKING:
     from homeassistant.helpers.device_registry import DeviceEntry
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 async def charger_factory(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -45,7 +46,8 @@ async def charger_factory(
         TeslaMqttBleCharger,
         TeslaEspBleCharger,
         TeslaFleetCharger,
-        TeslaTessieCharger,
+        TessieCharger,
+        TeslemetryCharger,
         UserCustomCharger,
     ]:
         if charger_cls.is_charger_device(device):

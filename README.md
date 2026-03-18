@@ -13,7 +13,7 @@
 <!-- [total-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total -->
 [total-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.total
 <!-- [latest-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/latest/total -->
-[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.4.2']
+[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.4.3']
 [hacs-link]: https://hacs.xyz/
 
 
@@ -71,6 +71,7 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [OCPP](https://github.com/lbbrhzn/ocpp):  Local control of an OCPP compliant charger.
 - [Telsa Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
 - [Tessie](https://www.home-assistant.io/integrations/tessie)
+- [Teslemetry](https://www.home-assistant.io/integrations/teslemetry/) beta release.
 
 If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch and read/set charge current are required as a minimum) > Submit
 

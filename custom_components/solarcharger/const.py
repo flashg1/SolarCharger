@@ -12,7 +12,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also used in manifest.json
-VERSION = "0.4.2"
+VERSION = "0.4.3"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -89,6 +89,8 @@ OPTION_NAME = "option_name"
 #######################################################
 # Domains
 #######################################################
+# Don't forget to add charger to the charger factory.
+
 DOMAIN_OCPP = "ocpp"
 DOMAIN_TESLA_CUSTOM = "tesla_custom"
 
@@ -107,7 +109,8 @@ SUBDOMAIN_ESPHOME_TESLA_BLE = compose_subdomain(
 )
 
 DOMAIN_TESLA_FLEET = "tesla_fleet"
-DOMAIN_TESLA_TESSIE = "tessie"
+DOMAIN_TESSIE = "tessie"
+DOMAIN_TESLEMETRY = "teslemetry"
 
 # Domains that can contain charger devices with totally different control entities.
 # Hence the use of sub-domain to identify device models.
@@ -122,7 +125,8 @@ SUPPORTED_CHARGER_DOMAIN_LIST: list[str] = [
     DOMAIN_MQTT,
     DOMAIN_ESPHOME,
     DOMAIN_TESLA_FLEET,
-    DOMAIN_TESLA_TESSIE,
+    DOMAIN_TESSIE,
+    DOMAIN_TESLEMETRY,
 ]
 
 DEVICE_MODEL_MAP: dict[str, str] = {
@@ -133,7 +137,8 @@ DEVICE_MODEL_MAP: dict[str, str] = {
     SUBDOMAIN_MQTT_TESLA_BLE: f"{DOMAIN}-{DOMAIN_MQTT}_tesla_ble",
     SUBDOMAIN_ESPHOME_TESLA_BLE: f"{DOMAIN}-{DOMAIN_ESPHOME}_tesla_ble",
     DOMAIN_TESLA_FLEET: f"{DOMAIN}-{DOMAIN_TESLA_FLEET}",
-    DOMAIN_TESLA_TESSIE: f"{DOMAIN}-{DOMAIN_TESLA_TESSIE}",
+    DOMAIN_TESSIE: f"{DOMAIN}-{DOMAIN_TESSIE}",
+    DOMAIN_TESLEMETRY: f"{DOMAIN}-{DOMAIN_TESLEMETRY}",
 }
 
 #######################################################
@@ -467,7 +472,8 @@ CHARGE_API_DEFAULT_VALUES: dict[str, dict[str, Any | None]] = {
     SUBDOMAIN_MQTT_TESLA_BLE: TESLA_MQTTBLE_DEFAULT_VALUES,
     SUBDOMAIN_ESPHOME_TESLA_BLE: TESLA_ESPBLE_DEFAULT_VALUES,
     DOMAIN_TESLA_FLEET: {},
-    DOMAIN_TESLA_TESSIE: {},
+    DOMAIN_TESSIE: {},
+    DOMAIN_TESLEMETRY: {},
     DOMAIN: USER_CUSTOM_DEFAULT_VALUES,
 }
 
@@ -728,7 +734,9 @@ TESLA_FLEET_ENTITIES: dict[str, str | None] = {
     # SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
 }
 
-TESLA_TESSIE_ENTITIES: dict[str, str | None] = TESLA_FLEET_ENTITIES
+# Tessie and Teslemetry are using same entity names as Tesla Fleet.
+TESSIE_ENTITIES: dict[str, str | None] = TESLA_FLEET_ENTITIES
+TESLEMETRY_ENTITIES: dict[str, str | None] = TESLA_FLEET_ENTITIES
 
 USER_CUSTOM_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
@@ -771,7 +779,8 @@ CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {
     SUBDOMAIN_MQTT_TESLA_BLE: TESLA_MQTTBLE_ENTITIES,
     SUBDOMAIN_ESPHOME_TESLA_BLE: TESLA_ESPBLE_ENTITIES,
     DOMAIN_TESLA_FLEET: TESLA_FLEET_ENTITIES,
-    DOMAIN_TESLA_TESSIE: TESLA_TESSIE_ENTITIES,
+    DOMAIN_TESSIE: TESSIE_ENTITIES,
+    DOMAIN_TESLEMETRY: TESLEMETRY_ENTITIES,
     DOMAIN: USER_CUSTOM_ENTITIES,
 }
 

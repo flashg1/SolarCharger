@@ -14,7 +14,8 @@
     "mqtt",
     "esphome",
     "tesla_fleet",
-    "tessie"
+    "tessie",
+    "teslemetry"
   ],
   "codeowners": [
     "@flashg1"
@@ -26,5 +27,5 @@
   "issue_tracker": "https://github.com/flashg1/solarcharger/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.4.2"
+  "version": "0.4.3"
 }

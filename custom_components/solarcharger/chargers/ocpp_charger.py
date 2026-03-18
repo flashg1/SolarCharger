@@ -1,4 +1,4 @@
-"""OCPP Charger implementation."""
+"""OCPP charger implementation."""
 
 import logging
 from typing import Any, cast

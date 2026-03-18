@@ -1,4 +1,4 @@
-"""Tesla MQTT BLE Charger implementation."""
+"""Tesla MQTT BLE charger implementation."""
 
 import logging
 

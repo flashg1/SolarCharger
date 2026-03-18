@@ -1,4 +1,4 @@
-"""Tesla Custom Charger implementation."""
+"""Tesla Custom charger implementation."""
 
 import logging
 
