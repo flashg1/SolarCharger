@@ -8,6 +8,7 @@
     "sensor",
     "switch",
     "time",
+    "sun",
     "ping",
     "ocpp",
     "tesla_custom",
