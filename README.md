@@ -69,7 +69,7 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [Tesla BLE MQTT docker](https://github.com/tesla-local-control/tesla_ble_mqtt_docker):  Local control using Tesla BLE (Bluetooth Low Energy) on MQTT docker device.
 - [ESPHome Tesla BLE](https://github.com/PedroKTFC/esphome-tesla-ble) v2026.2.1 and above:  Local control using Tesla BLE on Home Assistant ESPHome device.
 - [OCPP](https://github.com/lbbrhzn/ocpp):  Local control of an OCPP compliant charger.
-- [Telsa Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
+- [Tesla Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
 - [Tessie](https://www.home-assistant.io/integrations/tessie)
 - [Teslemetry](https://www.home-assistant.io/integrations/teslemetry/) beta release.
 
