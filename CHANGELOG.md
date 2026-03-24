@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.4 2026-03-23
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
+### Improvement
+- Included brand icons for SolarCharger starting with HA 2026.3.
+- Included sun integration as dependency in manifest.json.
+
 ## v0.4.3 2026-03-18
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
