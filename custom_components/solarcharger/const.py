@@ -34,16 +34,17 @@ ICON_POWER = "mdi:power"
 HA_SUN_ENTITY = "sun.sun"
 
 # Platforms
+BUTTON = Platform.BUTTON
+DATETIME = Platform.DATETIME
+NUMBER = Platform.NUMBER
 SENSOR = Platform.SENSOR
 SWITCH = Platform.SWITCH
-BUTTON = Platform.BUTTON
-NUMBER = Platform.NUMBER
 TIME = Platform.TIME
-DATETIME = Platform.DATETIME
+# Entities not created by SolarCharger
 BINARY_SENSOR = Platform.BINARY_SENSOR
 DEVICE_TRACKER = Platform.DEVICE_TRACKER
-SELECT = Platform.SELECT
 INPUT_TIME = "input_datetime"
+SELECT = Platform.SELECT
 
 # Platforms used by SolarCharger
 PLATFORMS: list[Platform | str] = [

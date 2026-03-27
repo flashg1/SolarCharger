@@ -164,6 +164,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         }
         reset_api_entities(config_entry, subentry_unique_id, data)
 
+        # Use | (union) to replace or add key:data pair.
         self.hass.config_entries.async_update_entry(
             config_entry,
             options=config_entry.options

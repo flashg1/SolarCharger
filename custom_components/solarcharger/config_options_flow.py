@@ -340,7 +340,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MAX_SPEED,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                modifiable_if_local_config_entity=True,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_CURRENT, use_default
@@ -349,7 +349,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MIN_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                modifiable_if_local_config_entity=True,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_WORKABLE_CURRENT, use_default
@@ -366,6 +366,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_ALLOCATED_POWER, use_default
@@ -374,6 +375,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_ALLOCATED_POWER,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, OPTION_DEVICE_PRESENCE_SENSOR, use_default
@@ -447,7 +449,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGER_MAX_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                modifiable_if_local_config_entity=True,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, OPTION_CHARGER_GET_CHARGE_CURRENT, use_default
@@ -480,7 +482,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGEE_GET_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                modifiable_if_local_config_entity=True,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_SET_CHARGE_LIMIT, use_default
@@ -489,7 +491,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGEE_SET_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                modifiable_if_local_config_entity=True,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_LOCATION_SENSOR, use_default

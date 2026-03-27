@@ -38,12 +38,6 @@ from .exceptions.validation_exception import ValidationExceptionError
 _LOGGER = logging.getLogger(__name__)
 
 
-CONF_NET_POWER_DEFAULT = "sensor.net_power"
-
-CONF_CHARGER_DEVICE = "charger_device"
-CONF_DEVICE_ORIGIN = "device_origin"
-CONF_DEVICE_NAME_DEFAULT = "device_name_default"
-
 STEP_SOURCE_POWER_SCHEMA = vol.Schema(
     {
         vol.Required(CONFIG_NET_POWER, default=None): POWER_ENTITY_SELECTOR,
@@ -54,6 +48,9 @@ STEP_SOURCE_POWER_SCHEMA = vol.Schema(
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+CONF_CHARGER_DEVICE = "charger_device"
+
+
 def validate_charger_selection(
     _hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
@@ -75,9 +72,6 @@ def validate_charger_config(
 # ----------------------------------------------------------------------------
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Solar Charger."""
-
-    VERSION = 1
-    MINOR_VERSION = 0
 
     cf_data: dict | None = None
 

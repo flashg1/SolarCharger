@@ -218,7 +218,7 @@ def choose_selector(
     config_item: str,
     read_only_selector: EntitySelector,
     default_selector: EntitySelector,
-    modifiable_if_local_config_entity: bool = False,
+    modifiable_if_solarcharger_entity: bool = False,
 ) -> EntitySelector:
     """Entity selector is readonly if API entity is a local device entity, ie. user cannot change it.
 
@@ -230,7 +230,7 @@ def choose_selector(
         entity_id = api_entities.get(config_item)
         if entity_id is not None:
             if _is_solarcharger_entity(entity_id):
-                if not modifiable_if_local_config_entity:
+                if not modifiable_if_solarcharger_entity:
                     return read_only_selector
             else:
                 # Local device entity, ie. non-configurable.

@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_set_allocated_power(
     control: ChargeControl, allocated_power: float
 ) -> bool:
-    """Set allocated power number entity."""
+    """Set allocated power number entity directly."""
     ok: bool = False
 
     if control.numbers:

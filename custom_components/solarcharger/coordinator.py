@@ -304,20 +304,22 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     # def _get_total_allocation_pool(self) -> dict[str, float]:
+    #     """Get allocation pool direct from numbers."""
+
     #     allocation_pool: dict[str, float] = {}
 
     #     for control in self.device_controls.values():
     #         if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
     #             continue
 
-    #         subentry = self._entry.subentries.get(control.subentry_id)
-    #         if subentry:
-    #             allocation_weight = self.option_get_entity_number(
-    #                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT, subentry
-    #             )
+    #         # Power allocation weight is local only.
+    #         if control.controller.charge_control.numbers is not None:
+    #             allocation_weight = control.controller.charge_control.numbers[
+    #                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
+    #             ].native_value
     #             if allocation_weight is None:
     #                 raise RuntimeError(
-    #                     f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {subentry.unique_id}"
+    #                     f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {control.config_name}"
     #                 )
     #             allocation_pool[control.subentry_id] = (
     #                 allocation_weight * control.controller.charge_control.instance_count
@@ -325,48 +327,54 @@ class SolarChargerCoordinator(ScOptionState):
     #         else:
     #             # TODO: Need to remove stale control
     #             allocation_pool[control.subentry_id] = 0
+    #             _LOGGER.error(
+    #                 "%s: Cannot get power allocation weight: Missing all number entities",
+    #                 control.config_name,
+    #             )
 
     #     return allocation_pool
 
     # ----------------------------------------------------------------------------
-    def _get_total_allocation_pool(self) -> dict[str, float]:
+    def _get_total_allocation_pool(self) -> tuple[dict[str, float], int]:
+        """Get allocation pool from options. Note allocation weight entity can be overriden."""
+
         allocation_pool: dict[str, float] = {}
+        total_instance = 0
 
         for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
 
-            # Power allocation weight is local only.
-            if control.controller.charge_control.numbers is not None:
-                allocation_weight = control.controller.charge_control.numbers[
-                    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
-                ].native_value
-                if allocation_weight is None:
-                    raise RuntimeError(
-                        f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {control.config_name}"
-                    )
-                allocation_pool[control.subentry_id] = (
-                    allocation_weight * control.controller.charge_control.instance_count
+            allocation_weight = control.controller.option_get_entity_number(
+                NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
+            )
+            if allocation_weight is None:
+                raise RuntimeError(
+                    f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {control.config_name}"
                 )
-            else:
-                # TODO: Need to remove stale control
-                allocation_pool[control.subentry_id] = 0
+            allocation_pool[control.subentry_id] = (
+                allocation_weight * control.controller.charge_control.instance_count
+            )
 
-        return allocation_pool
+            total_instance += control.controller.charge_control.instance_count
+
+        return (allocation_pool, total_instance)
 
     # ----------------------------------------------------------------------------
     async def _async_allocate_net_power(self) -> None:
+        """Calculate power allocation. Power allocation weight can be 0."""
+
         net_power = self._get_net_power()
         if net_power is None:
             _LOGGER.warning("Failed to get net power update. Try again next cycle.")
             return
 
-        pool = self._get_total_allocation_pool()
+        pool, total_instance = self._get_total_allocation_pool()
         total_weight = 0
         for weight in pool.values():
-            total_weight = total_weight + weight
+            total_weight += weight
 
-        if total_weight > 0:
+        if total_instance > 0:
             for control in self.device_controls.values():
                 # Information only. Global default variable shows net power available for allocation.
                 if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
@@ -376,7 +384,12 @@ class SolarChargerCoordinator(ScOptionState):
                     continue
 
                 allocation_weight = pool[control.subentry_id]
-                allocated_power = net_power * allocation_weight / total_weight
+                if total_weight > 0:
+                    allocated_power = net_power * allocation_weight / total_weight
+                else:
+                    allocated_power = 0
+
+                # Writer will set entity value directly. Reader will get value via entity ID in options which can be overridden.
                 await async_set_allocated_power(
                     control.controller.charge_control, allocated_power
                 )
