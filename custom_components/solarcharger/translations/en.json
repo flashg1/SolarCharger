@@ -177,6 +177,9 @@
             "instance_count": {
                 "name": "Instance count"
             },
+            "share_allocation": {
+                "name": "Share allocation"
+            },
             "run_state": {
                 "name": "Run state",
                 "state": {

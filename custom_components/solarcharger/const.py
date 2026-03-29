@@ -162,10 +162,11 @@ ERROR_SINGLE_INSTANCE_ALLOWED = "single_instance_allowed"
 # Internal entities
 #####################################
 # Sensors
-SENSOR_LAST_CHECK = "last_check"
-SENSOR_RUN_STATE = "run_state"
-SENSOR_INSTANCE_COUNT = "instance_count"
+SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
+SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
 SENSOR_CONSUMED_POWER = "consumed_power"
+SENSOR_RUN_STATE = "run_state"
+SENSOR_LAST_CHECK = "last_check"
 
 # Boolean switches
 # Global defaults

@@ -1,5 +1,7 @@
 """SolarCharger sensor platform."""
 
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from homeassistant import config_entries, core
@@ -10,11 +12,13 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigSubentry
-from homeassistant.const import UnitOfPower
+from homeassistant.const import STATE_UNKNOWN, UnitOfPower
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.typing import StateType
 
 from .const import (
+    COORDINATOR_STATE_STOPPED,
     COORDINATOR_STATES,
     DOMAIN,
     SENSOR,
@@ -22,6 +26,7 @@ from .const import (
     SENSOR_INSTANCE_COUNT,
     SENSOR_LAST_CHECK,
     SENSOR_RUN_STATE,
+    SENSOR_SHARE_ALLOCATION,
     SUBENTRY_CHARGER_TYPES,
 )
 from .coordinator import SolarChargerCoordinator
@@ -71,30 +76,12 @@ class SolarChargerSensorStateEntity(SolarChargerSensorEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
+        starting_state: StateType | date | datetime | Decimal = None,
     ) -> None:
         """Initialise sensor."""
         super().__init__(config_item, subentry, entity_type, desc)
 
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-class SolarChargerSensorRunState(SolarChargerSensorEntity):
-    """Solar Charger run state sensor class."""
-
-    # _entity_key = ENTITY_KEY_RUN_STATE_SENSOR
-    _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = list(COORDINATOR_STATES)
-    # _attr_entity_registry_enabled_default = True
-
-    def __init__(
-        self,
-        config_item: str,
-        subentry: ConfigSubentry,
-        entity_type: SolarChargerEntityType,
-        desc: SensorEntityDescription,
-    ) -> None:
-        """Initialise sensor."""
-        super().__init__(config_item, subentry, entity_type, desc)
+        self._attr_native_value = starting_state
 
 
 # ----------------------------------------------------------------------------
@@ -112,15 +99,25 @@ class SolarChargerSensorLastCheck(SolarChargerSensorEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
+        starting_state: StateType | date | datetime | Decimal = None,
     ) -> None:
         """Initialise sensor."""
         super().__init__(config_item, subentry, entity_type, desc)
+
+        self._attr_native_value = starting_state
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 CONFIG_SENSOR_LIST: tuple[
-    tuple[str, Any, SolarChargerEntityType, SensorEntityDescription], ...
+    tuple[
+        str,
+        Any,
+        SolarChargerEntityType,
+        SensorEntityDescription,
+        StateType | date | datetime | Decimal,
+    ],
+    ...,
 ] = (
     #####################################
     # Sensor entities
@@ -135,15 +132,21 @@ CONFIG_SENSOR_LIST: tuple[
             device_class=SensorDeviceClass.ENUM,
             options=list(COORDINATOR_STATES),
         ),
+        COORDINATOR_STATE_STOPPED,
     ),
-    # (
-    #     SENSOR_RUN_STATE,
-    #     SolarChargerSensorRunState,
-    #     SolarChargerEntityType.TYPE_LOCAL,
-    #     SensorEntityDescription(
-    #         key=SENSOR_RUN_STATE,
-    #     ),
-    # ),
+    (
+        SENSOR_CONSUMED_POWER,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_CONSUMED_POWER,
+            device_class=SensorDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            suggested_display_precision=0,
+            state_class=SensorStateClass.MEASUREMENT,
+        ),
+        0,
+    ),
     (
         SENSOR_LAST_CHECK,
         SolarChargerSensorLastCheck,
@@ -151,6 +154,7 @@ CONFIG_SENSOR_LIST: tuple[
         SensorEntityDescription(
             key=SENSOR_LAST_CHECK,
         ),
+        STATE_UNKNOWN,
     ),
     #####################################
     # Diagnostic entities
@@ -165,19 +169,18 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
+        0,
     ),
     (
-        SENSOR_CONSUMED_POWER,
+        SENSOR_SHARE_ALLOCATION,
         SolarChargerSensorStateEntity,
         SolarChargerEntityType.TYPE_LOCAL,
         SensorEntityDescription(
-            key=SENSOR_CONSUMED_POWER,
-            device_class=SensorDeviceClass.POWER,
-            native_unit_of_measurement=UnitOfPower.WATT,
-            suggested_display_precision=0,
-            state_class=SensorStateClass.MEASUREMENT,
+            key=SENSOR_SHARE_ALLOCATION,
+            state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
+        1,
     ),
 )
 
@@ -203,6 +206,7 @@ async def async_setup_entry(
                 cls,
                 entity_type,
                 entity_description,
+                starting_state,
             ) in CONFIG_SENSOR_LIST:
                 if is_create_entity(subentry, entity_type):
                     sensors[config_item] = cls(
@@ -210,6 +214,7 @@ async def async_setup_entry(
                         subentry,
                         entity_type,
                         entity_description,
+                        starting_state,
                     )
 
             if len(sensors) > 0:

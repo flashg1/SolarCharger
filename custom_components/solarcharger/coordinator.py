@@ -26,6 +26,7 @@ from .const import (
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
+    SENSOR_SHARE_ALLOCATION,
     WEEKLY_CHARGE_ENDTIMES,
 )
 from .helpers.general import async_set_allocated_power
@@ -335,16 +336,18 @@ class SolarChargerCoordinator(ScOptionState):
     #     return allocation_pool
 
     # ----------------------------------------------------------------------------
-    def _get_total_allocation_pool(self) -> tuple[dict[str, float], int]:
+    def _get_total_allocation_pool(self) -> tuple[int, dict[str, float], float]:
         """Get allocation pool from options. Note allocation weight entity can be overriden."""
 
         allocation_pool: dict[str, float] = {}
+        total_weight = 0
         total_instance = 0
 
         for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
 
+            # Power allocation weight user configurable and can be overridden, so use indirection.
             allocation_weight = control.controller.option_get_entity_number(
                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
             )
@@ -352,13 +355,26 @@ class SolarChargerCoordinator(ScOptionState):
                 raise RuntimeError(
                     f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {control.config_name}"
                 )
-            allocation_pool[control.subentry_id] = (
-                allocation_weight * control.controller.charge_control.instance_count
+
+            # Participate in power allocation.
+            assert control.controller.charge_control.entities.sensors is not None
+            share_allocation = int(
+                control.controller.charge_control.entities.sensors[
+                    SENSOR_SHARE_ALLOCATION
+                ].state
             )
+
+            participation_weight = (
+                allocation_weight
+                * control.controller.charge_control.instance_count
+                * share_allocation
+            )
+            allocation_pool[control.subentry_id] = participation_weight
+            total_weight += participation_weight
 
             total_instance += control.controller.charge_control.instance_count
 
-        return (allocation_pool, total_instance)
+        return (total_instance, allocation_pool, total_weight)
 
     # ----------------------------------------------------------------------------
     async def _async_allocate_net_power(self) -> None:
@@ -369,10 +385,7 @@ class SolarChargerCoordinator(ScOptionState):
             _LOGGER.warning("Failed to get net power update. Try again next cycle.")
             return
 
-        pool, total_instance = self._get_total_allocation_pool()
-        total_weight = 0
-        for weight in pool.values():
-            total_weight += weight
+        total_instance, pool, total_weight = self._get_total_allocation_pool()
 
         if total_instance > 0:
             for control in self.device_controls.values():
@@ -383,9 +396,9 @@ class SolarChargerCoordinator(ScOptionState):
                     )
                     continue
 
-                allocation_weight = pool[control.subentry_id]
+                participation_weight = pool[control.subentry_id]
                 if total_weight > 0:
-                    allocated_power = net_power * allocation_weight / total_weight
+                    allocated_power = net_power * participation_weight / total_weight
                 else:
                     allocated_power = 0
 
@@ -398,7 +411,7 @@ class SolarChargerCoordinator(ScOptionState):
                     "%s: total_weight=%s, allocation_weight=%s, allocated_power=%s",
                     control.config_name,
                     total_weight,
-                    allocation_weight,
+                    participation_weight,
                     allocated_power,
                 )
         else:

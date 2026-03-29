@@ -39,7 +39,7 @@ def async_describe_events(
             old_val = data.get(EVENT_ATTR_OLD_VALUE)
             new_val = data.get(EVENT_ATTR_NEW_VALUE)
             message = (
-                f"changed from {old_val}A to {new_val}A"
+                f"changed from {old_val} to {new_val}A"
                 if old_val is not None
                 else f"set to {new_val}A"
             )
