@@ -39,8 +39,10 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    SENSOR_CONSUMED_POWER,
 )
 from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
+from ..model_charge_control import ControlEntities  # noqa: TID252
 from ..model_charge_stats import ChargeStats  # noqa: TID252
 from ..model_config import ConfigValueDict  # noqa: TID252
 from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge  # noqa: TID252
@@ -73,6 +75,7 @@ class SolarCharge(ScOptionState):
         entry: ConfigEntry,
         subentry: ConfigSubentry,
         tracker: Tracker,
+        entities: ControlEntities,
         charger: Any,
         chargeable: Any,
         # charger: Charger,
@@ -87,6 +90,7 @@ class SolarCharge(ScOptionState):
 
         self._tracker = tracker
         self._charger = charger
+        self._entities = entities
         self._chargeable = chargeable
         self._scheduler = ChargeScheduler(hass, entry, subentry)
 
@@ -538,10 +542,22 @@ class SolarCharge(ScOptionState):
         """Set charge current."""
 
         try:
-            await charger.async_set_charge_current(current)
+            old_charge_current = charger.get_charge_current()
+            new_charge_current = await charger.async_set_charge_current(current)
+
+            effective_voltage = self.option_get_entity_number_or_abort(
+                NUMBER_CHARGER_EFFECTIVE_VOLTAGE
+            )
+            if self._entities.sensors:
+                self._entities.sensors[SENSOR_CONSUMED_POWER].set_state(
+                    new_charge_current * effective_voltage
+                )
 
             self.emit_solarcharger_event(
-                self._device.id, EVENT_ACTION_NEW_CHARGE_CURRENT, current
+                self._device.id,
+                EVENT_ACTION_NEW_CHARGE_CURRENT,
+                new_charge_current,
+                old_charge_current,
             )
             await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 

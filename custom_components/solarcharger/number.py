@@ -561,7 +561,7 @@ async def async_setup_entry(
         if len(numbers) > 0:
             coordinator.device_controls[
                 subentry.subentry_id
-            ].controller.charge_control.numbers = numbers
+            ].controller.charge_control.entities.numbers = numbers
             async_add_entities(
                 numbers.values(),
                 update_before_add=False,

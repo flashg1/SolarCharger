@@ -190,7 +190,7 @@ async def async_setup_entry(
         if len(datetimes) > 0:
             coordinator.device_controls[
                 subentry.subentry_id
-            ].controller.charge_control.datetimes = datetimes
+            ].controller.charge_control.entities.datetimes = datetimes
             async_add_entities(
                 datetimes.values(),
                 update_before_add=False,

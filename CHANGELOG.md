@@ -4,6 +4,7 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
 ### Improvement
+- Added charger "Instance count" and "Consumed power" sensors.
 - Power allocation weight can be zero, ie. keep current power level and not get future power allocation/deallocation.
 - Power allocation weight and allocated power entities can be overriden in config.
 - Included brand icons for SolarCharger starting with HA 2026.3.

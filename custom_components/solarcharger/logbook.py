@@ -14,7 +14,8 @@ from .const import (
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     EVENT_ATTR_ACTION,
-    EVENT_ATTR_VALUE,
+    EVENT_ATTR_NEW_VALUE,
+    EVENT_ATTR_OLD_VALUE,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 
@@ -35,14 +36,19 @@ def async_describe_events(
         action = data.get(EVENT_ATTR_ACTION)
 
         if action == EVENT_ACTION_NEW_CHARGE_CURRENT:
-            new_current = data.get(EVENT_ATTR_VALUE, {})
-            message = f"charge current set to {new_current}A"
+            old_val = data.get(EVENT_ATTR_OLD_VALUE)
+            new_val = data.get(EVENT_ATTR_NEW_VALUE)
+            message = (
+                f"changed from {old_val}A to {new_val}A"
+                if old_val is not None
+                else f"set to {new_val}A"
+            )
         else:
             msg = f"Unknown action: {action}"
             raise ValueError(msg)
 
         return {
-            LOGBOOK_ENTRY_NAME: "Solar Charger",
+            LOGBOOK_ENTRY_NAME: "AMP:",
             LOGBOOK_ENTRY_MESSAGE: message,
             LOGBOOK_ENTRY_DOMAIN: DOMAIN,
         }

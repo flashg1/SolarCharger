@@ -21,7 +21,8 @@ from homeassistant.util.dt import as_local, utcnow
 from .const import (
     DATETIME,
     EVENT_ATTR_ACTION,
-    EVENT_ATTR_VALUE,
+    EVENT_ATTR_NEW_VALUE,
+    EVENT_ATTR_OLD_VALUE,
     HA_SUN_ENTITY,
     NUMBER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
@@ -437,20 +438,25 @@ class ScState:
 
     # ----------------------------------------------------------------------------
     def emit_solarcharger_event(
-        self, device_id: str, action: str, new_current: float
+        self, device_id: str, action: str, new_val: float, old_val: float | None = None
     ) -> None:
         """Emit an event to Home Assistant's device event log."""
-        self._hass.bus.async_fire(
-            SOLAR_CHARGER_COORDINATOR_EVENT,
-            {
-                ATTR_DEVICE_ID: device_id,
-                EVENT_ATTR_ACTION: action,
-                EVENT_ATTR_VALUE: new_current,
-            },
-        )
+
+        data: dict[str, Any] = {
+            ATTR_DEVICE_ID: device_id,
+            EVENT_ATTR_ACTION: action,
+            EVENT_ATTR_NEW_VALUE: new_val,
+        }
+        if old_val is not None:
+            data[EVENT_ATTR_OLD_VALUE] = old_val
+
+        self._hass.bus.async_fire(SOLAR_CHARGER_COORDINATOR_EVENT, data)
 
         _LOGGER.debug(
-            "Emitted SolarCharger event: action=%s, value=%s", action, new_current
+            "Emitted SolarCharger event: action=%s, new_value=%s, old_value=%s",
+            action,
+            new_val,
+            old_val,
         )
 
     # ----------------------------------------------------------------------------

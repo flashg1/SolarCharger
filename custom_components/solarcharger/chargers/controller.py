@@ -27,6 +27,8 @@ from ..const import (  # noqa: TID252
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
+    SENSOR_CONSUMED_POWER,
+    SENSOR_INSTANCE_COUNT,
     SENSOR_RUN_STATE,
     SWITCH_CHARGE,
 )
@@ -87,7 +89,13 @@ class ChargeController(ScOptionState):
         self._chargeable = chargeable
         self._tracker = Tracker(hass, entry, subentry, caller)
         self._solar_charge = SolarCharge(
-            hass, entry, subentry, self._tracker, charger, chargeable
+            hass,
+            entry,
+            subentry,
+            self._tracker,
+            self._control.entities,
+            charger,
+            chargeable,
         )
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
@@ -288,16 +296,16 @@ class ChargeController(ScOptionState):
 
         _LOGGER.info("%s: Device presence detected.")
 
-        with self._update_ha_task_semaphore:
-            if self._solar_charge.update_ha_task_count == 0:
+        if self._solar_charge.update_ha_task_count == 0:
+            with self._update_ha_task_semaphore:
                 self._hass.loop.create_task(
                     self._solar_charge.async_update_ha_with_latest_data()
                 )
-            else:
-                _LOGGER.warning(
-                    "%s: Update HA task triggered by presence detection already running.",
-                    self._caller,
-                )
+        else:
+            _LOGGER.warning(
+                "%s: Update HA task triggered by presence detection already running.",
+                self._caller,
+            )
 
     # ----------------------------------------------------------------------------
     async def async_handle_device_presence_event(
@@ -665,20 +673,29 @@ class ChargeController(ScOptionState):
                 control.instance_count = 0
                 # await async_set_allocated_power(control, 0)
 
-                if control.switches:
+                if control.entities.switches:
                     control.switch_charge = False
-                    control.switches[SWITCH_CHARGE].turn_off()
+                    control.entities.switches[SWITCH_CHARGE].turn_off()
 
-                if control.sensors:
-                    control.sensors[SENSOR_RUN_STATE].set_state(
+                if control.entities.sensors:
+                    control.entities.sensors[SENSOR_INSTANCE_COUNT].set_state(
+                        control.instance_count
+                    )
+                    control.entities.sensors[SENSOR_CONSUMED_POWER].set_state(0)
+                    control.entities.sensors[SENSOR_RUN_STATE].set_state(
                         COORDINATOR_STATE_STOPPED
                     )
 
-            if control.sensors:
-                control.sensors[SENSOR_RUN_STATE].set_state(COORDINATOR_STATE_CHARGING)
             control.charge_task = await self.async_start_charge()
             control.instance_count = 1
             control.charge_task.add_done_callback(_callback_on_charge_end)
+            if control.entities.sensors:
+                control.entities.sensors[SENSOR_INSTANCE_COUNT].set_state(
+                    control.instance_count
+                )
+                control.entities.sensors[SENSOR_RUN_STATE].set_state(
+                    COORDINATOR_STATE_CHARGING
+                )
 
     # ----------------------------------------------------------------------------
     async def async_stop_charger(self, control: ChargeControl) -> None:

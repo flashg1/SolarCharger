@@ -88,7 +88,7 @@ class Charger(ABC):
     @abstractmethod
     async def async_set_charge_current(
         self, charge_current: float, val_dict: ConfigValueDict | None = None
-    ) -> None:
+    ) -> float:
         """Set charger charge current in AMPS."""
 
     @abstractmethod

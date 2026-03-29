@@ -7,14 +7,19 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigSubentry
+from homeassistant.const import UnitOfPower
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
     COORDINATOR_STATES,
     DOMAIN,
     SENSOR,
+    SENSOR_CONSUMED_POWER,
+    SENSOR_INSTANCE_COUNT,
     SENSOR_LAST_CHECK,
     SENSOR_RUN_STATE,
     SUBENTRY_CHARGER_TYPES,
@@ -53,6 +58,22 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
         """Entity about to be added to hass. Restore state and subscribe for events here if needed."""
 
         await super().async_added_to_hass()
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class SolarChargerSensorStateEntity(SolarChargerSensorEntity):
+    """Solar Charger last check sensor class."""
+
+    def __init__(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
+        desc: SensorEntityDescription,
+    ) -> None:
+        """Initialise sensor."""
+        super().__init__(config_item, subentry, entity_type, desc)
 
 
 # ----------------------------------------------------------------------------
@@ -107,18 +128,55 @@ CONFIG_SENSOR_LIST: tuple[
     #####################################
     (
         SENSOR_RUN_STATE,
-        SolarChargerSensorRunState,
+        SolarChargerSensorStateEntity,
         SolarChargerEntityType.TYPE_LOCAL,
         SensorEntityDescription(
             key=SENSOR_RUN_STATE,
+            device_class=SensorDeviceClass.ENUM,
+            options=list(COORDINATOR_STATES),
         ),
     ),
+    # (
+    #     SENSOR_RUN_STATE,
+    #     SolarChargerSensorRunState,
+    #     SolarChargerEntityType.TYPE_LOCAL,
+    #     SensorEntityDescription(
+    #         key=SENSOR_RUN_STATE,
+    #     ),
+    # ),
     (
         SENSOR_LAST_CHECK,
         SolarChargerSensorLastCheck,
         SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN,
         SensorEntityDescription(
             key=SENSOR_LAST_CHECK,
+        ),
+    ),
+    #####################################
+    # Diagnostic entities
+    # entity_category=EntityCategory.DIAGNOSTIC
+    #####################################
+    (
+        SENSOR_INSTANCE_COUNT,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_INSTANCE_COUNT,
+            state_class=SensorStateClass.TOTAL,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ),
+    (
+        SENSOR_CONSUMED_POWER,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_CONSUMED_POWER,
+            device_class=SensorDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            suggested_display_precision=0,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
         ),
     ),
 )
@@ -157,7 +215,7 @@ async def async_setup_entry(
             if len(sensors) > 0:
                 coordinator.device_controls[
                     subentry.subentry_id
-                ].controller.charge_control.sensors = sensors
+                ].controller.charge_control.entities.sensors = sensors
                 async_add_entities(
                     sensors.values(),
                     update_before_add=False,

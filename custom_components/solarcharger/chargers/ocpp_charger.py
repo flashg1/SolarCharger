@@ -109,7 +109,7 @@ class OcppCharger(ChargerChargeableBase):
     # ----------------------------------------------------------------------------
     async def async_set_charge_current(
         self, charge_current: float, val_dict: ConfigValueDict | None = None
-    ) -> None:
+    ) -> float:
         """Set charger charge current."""
 
         # Only set charge current when charger is in OCPP_CHARGING_STATE.
@@ -120,9 +120,9 @@ class OcppCharger(ChargerChargeableBase):
                 self._caller,
                 state,
             )
-            return
+            return 0
 
-        new_charge_current = int(round(charge_current))
+        new_charge_current = round(charge_current)
 
         # Get charge profile id
         charge_profile_id = self.get_integer(self.ocpp_profile_id_entity_id)
@@ -169,6 +169,8 @@ class OcppCharger(ChargerChargeableBase):
         }
 
         await self.async_ha_call(DOMAIN_OCPP, service_name, service_data)
+
+        return new_charge_current
 
     # ----------------------------------------------------------------------------
     # async def async_set_charge_current(

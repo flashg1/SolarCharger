@@ -322,7 +322,7 @@ async def async_setup_entry(
         if len(switches) > 0:
             coordinator.device_controls[
                 subentry.subentry_id
-            ].controller.charge_control.switches = switches
+            ].controller.charge_control.entities.switches = switches
             async_add_entities(
                 switches.values(),
                 update_before_add=False,

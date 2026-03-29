@@ -38,20 +38,8 @@ if TYPE_CHECKING:
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 @dataclass
-class ChargeControl:
-    """Data structure for charger data."""
-
-    subentry_id: str
-    config_name: str
-    # Callbacks
-    # unsub_callbacks: dict[str, CALLBACK_TYPE]
-
-    charge_task: Task | None = None
-    instance_count: int = 0
-    end_charge_task: Task | None = None
-    # last_charger_target_update: tuple[float, int] | None = (
-    #     None  # (new_current, timestamp)
-    # )
+class ControlEntities:
+    """Data structure for control entities."""
 
     sensors: dict[str, "SolarChargerSensorEntity"] | None = None
     numbers: dict[str, "SolarChargerNumberConfigEntity"] | None = None
@@ -62,6 +50,27 @@ class ChargeControl:
 
     # Cannot get input_datetime to work, so input_times is not used.
     input_times: dict[str, "SolarChargerInputTimeConfigEntity"] | None = None
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+@dataclass
+class ChargeControl:
+    """Data structure for charger data."""
+
+    subentry_id: str
+    config_name: str
+    entities: ControlEntities
+
+    # Callbacks
+    # unsub_callbacks: dict[str, CALLBACK_TYPE]
+
+    charge_task: Task | None = None
+    instance_count: int = 0
+    end_charge_task: Task | None = None
+    # last_charger_target_update: tuple[float, int] | None = (
+    #     None  # (new_current, timestamp)
+    # )
 
     # Sensors
     sensor_last_check_timestamp: datetime | None = None

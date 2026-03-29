@@ -244,11 +244,15 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     async def async_set_charge_current(
         self, charge_current: float, val_dict: ConfigValueDict | None = None
-    ) -> None:
+    ) -> float:
         """Set charger charge current in AMPS."""
+
+        new_current = round(charge_current)
         await self.async_option_set_entity_integer(
-            OPTION_CHARGER_SET_CHARGE_CURRENT, round(charge_current), val_dict=val_dict
+            OPTION_CHARGER_SET_CHARGE_CURRENT, new_current, val_dict=val_dict
         )
+
+        return new_current
 
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:

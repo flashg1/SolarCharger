@@ -424,10 +424,10 @@ class SolarChargerCoordinator(ScOptionState):
         # TODO: Should remove last check sensor and following code since not used.
         # Update last check sensor
         for control in self.device_controls.values():
-            if control.controller.charge_control.sensors:
-                control.controller.charge_control.sensors[SENSOR_LAST_CHECK].set_state(
-                    datetime.now().astimezone()
-                )
+            if control.controller.charge_control.entities.sensors:
+                control.controller.charge_control.entities.sensors[
+                    SENSOR_LAST_CHECK
+                ].set_state(datetime.now().astimezone())
 
         # Check to see if need to reschedule charge.
         for control in self.device_controls.values():
@@ -500,8 +500,8 @@ class SolarChargerCoordinator(ScOptionState):
         if control:
             subentry = self._entry.subentries.get(control.subentry_id)
             if (
-                control.controller.charge_control.numbers
-                and control.controller.charge_control.times
+                control.controller.charge_control.entities.numbers
+                and control.controller.charge_control.entities.times
                 and subentry
             ):
                 _LOGGER.info(
@@ -527,7 +527,7 @@ class SolarChargerCoordinator(ScOptionState):
                         default_val is not None
                         and min_charge_limit <= default_val <= max_charge_limit
                     ):
-                        await control.controller.charge_control.numbers[
+                        await control.controller.charge_control.entities.numbers[
                             day_limit
                         ].async_set_native_value(default_val)
                     else:
@@ -542,6 +542,6 @@ class SolarChargerCoordinator(ScOptionState):
 
                 # Set charge end times
                 for day_endtime in WEEKLY_CHARGE_ENDTIMES:
-                    await control.controller.charge_control.times[
+                    await control.controller.charge_control.entities.times[
                         day_endtime
                     ].async_set_value(time.min)

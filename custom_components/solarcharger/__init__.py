@@ -26,7 +26,7 @@ from .const import (
     SUBENTRY_TYPE_DEFAULTS,
 )
 from .coordinator import SolarChargerCoordinator
-from .model_charge_control import ChargeControl
+from .model_charge_control import ChargeControl, ControlEntities
 from .model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
@@ -100,6 +100,7 @@ async def async_init_charger_subentry(
     charge_control = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
+        entities=ControlEntities(),
     )
     charger: Charger = await charger_factory(hass, entry, subentry, charger_device_id)
     chargeable: Chargeable = cast(Chargeable, charger)
@@ -147,6 +148,7 @@ async def async_init_global_defaults_subentry(
     charge_control = ChargeControl(
         subentry_id=subentry.subentry_id,
         config_name=subentry.unique_id,
+        entities=ControlEntities(),
     )
     controller = ChargeController(hass, entry, subentry, charge_control, None, None)
 

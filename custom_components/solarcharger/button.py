@@ -151,7 +151,7 @@ async def async_setup_entry(
         if len(buttons) > 0:
             coordinator.device_controls[
                 subentry.subentry_id
-            ].controller.charge_control.buttons = buttons
+            ].controller.charge_control.entities.buttons = buttons
             async_add_entities(
                 buttons.values(),
                 update_before_add=False,

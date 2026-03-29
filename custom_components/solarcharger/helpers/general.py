@@ -33,14 +33,14 @@ async def async_set_allocated_power(
     """Set allocated power number entity directly."""
     ok: bool = False
 
-    if control.numbers:
+    if control.entities.numbers:
         # Force update is enabled for allocated power so update is send even
         # if new value is same as old.
         # Ensure polling is disabled for the entity, otherwise will get updates twice,
         # ie. one from polling and one from push-pull.
-        await control.numbers[NUMBER_CHARGER_ALLOCATED_POWER].async_set_native_value(
-            allocated_power
-        )
+        await control.entities.numbers[
+            NUMBER_CHARGER_ALLOCATED_POWER
+        ].async_set_native_value(allocated_power)
         ok = True
 
     return ok

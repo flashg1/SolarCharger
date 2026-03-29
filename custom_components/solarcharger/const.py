@@ -164,6 +164,8 @@ ERROR_SINGLE_INSTANCE_ALLOWED = "single_instance_allowed"
 # Sensors
 SENSOR_LAST_CHECK = "last_check"
 SENSOR_RUN_STATE = "run_state"
+SENSOR_INSTANCE_COUNT = "instance_count"
+SENSOR_CONSUMED_POWER = "consumed_power"
 
 # Boolean switches
 # Global defaults
@@ -213,7 +215,8 @@ COORDINATOR_STATES: tuple[str, ...] = (
 SOLAR_CHARGER_COORDINATOR_EVENT = f"{DOMAIN}_coordinator_event"
 EVENT_ACTION_NEW_CHARGE_CURRENT = "new_charge_current"
 EVENT_ATTR_ACTION = "action"
-EVENT_ATTR_VALUE = "new_current"
+EVENT_ATTR_NEW_VALUE = "new_value"
+EVENT_ATTR_OLD_VALUE = "old_value"
 
 #######################################################
 # Option constants
