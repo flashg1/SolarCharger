@@ -434,16 +434,22 @@ class SolarChargerCoordinator(ScOptionState):
         #####################################
         await self._async_allocate_net_power()
 
-        # TODO: Should remove last check sensor and following code since not used.
+        # TODO: Should remove last check sensor since not used.
         # Update last check sensor
         for control in self.device_controls.values():
-            if control.controller.charge_control.entities.sensors:
-                control.controller.charge_control.entities.sensors[
-                    SENSOR_LAST_CHECK
-                ].set_state(datetime.now().astimezone())
+            if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
+                continue
+
+            assert control.controller.charge_control.entities.sensors is not None
+            control.controller.charge_control.entities.sensors[
+                SENSOR_LAST_CHECK
+            ].set_state(datetime.now().astimezone())
 
         # Check to see if need to reschedule charge.
         for control in self.device_controls.values():
+            if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
+                continue
+
             await control.controller.async_check_if_need_to_reschedule_charge()
 
     # ----------------------------------------------------------------------------

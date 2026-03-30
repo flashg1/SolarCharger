@@ -183,7 +183,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #####################################
     global_defaults_subentry = None
     device_controls: dict[str, DeviceControl] = {}
-    # charge_controllers: dict[str, ChargeController] = {}
     for subentry in entry.subentries.values():
         if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
             # Initialize charger

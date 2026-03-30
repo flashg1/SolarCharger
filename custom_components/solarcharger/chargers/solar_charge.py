@@ -89,8 +89,8 @@ class SolarCharge(ScOptionState):
         ScOptionState.__init__(self, hass, entry, subentry, caller)
 
         self._tracker = tracker
-        self._charger = charger
         self._entities = entities
+        self._charger = charger
         self._chargeable = chargeable
         self._scheduler = ChargeScheduler(hass, entry, subentry)
 
@@ -394,7 +394,7 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def is_connected(self, charger: Charger) -> bool:
-        """Is charger connected to chargeable device? Always return true if sensor not defined."""
+        """Is charger connected to chargeable device? Returns true if sensor is not defined."""
 
         config_item = OPTION_CHARGER_PLUGGED_IN_SENSOR
         val_dict = ConfigValueDict(config_item, {})
