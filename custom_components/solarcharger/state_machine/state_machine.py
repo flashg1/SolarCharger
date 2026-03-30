@@ -7,11 +7,15 @@ from abc import ABC, abstractmethod
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class ElectricDevice:
-    """The ElectricDevice class is the context. It should be initiated with a default state."""
+# Reference
+# https://auth0.com/blog/state-pattern-in-python/
+
+
+class StateMachine:
+    """The StateMachine class is the context. It should be initiated with a default state."""
 
     def __init__(self, state: DeviceState) -> None:
-        """Initialize the electric device with a state."""
+        """Initialize the state machine with a state."""
 
         self.set_state(state)
 
@@ -20,7 +24,7 @@ class ElectricDevice:
         """Method to change the state of the object."""
 
         self._state = state
-        self._state.electric_device = self
+        self._state.state_machine = self
 
     # ----------------------------------------------------------------------------
     def get_state_name(self) -> str:
@@ -52,14 +56,14 @@ class DeviceState(ABC):
 
     # ----------------------------------------------------------------------------
     @property
-    def electric_device(self) -> ElectricDevice:
-        """Get the electric device."""
-        return self._electric_device
+    def state_machine(self) -> StateMachine:
+        """Get the state machine."""
+        return self._state_machine
 
-    @electric_device.setter
-    def electric_device(self, device: ElectricDevice) -> None:
-        """Set the electric device."""
-        self._electric_device = device
+    @state_machine.setter
+    def state_machine(self, statemachine: StateMachine) -> None:
+        """Set the state machine."""
+        self._state_machine = statemachine
 
     # ----------------------------------------------------------------------------
     @abstractmethod
@@ -75,7 +79,7 @@ class StateInitialise(DeviceState):
     # ----------------------------------------------------------------------------
     def start(self) -> None:
         """Start initialising state."""
-        self.electric_device.set_state(StateCharge())
+        self.state_machine.set_state(StateCharge())
 
 
 # ----------------------------------------------------------------------------
@@ -86,7 +90,7 @@ class StateCharge(DeviceState):
     # ----------------------------------------------------------------------------
     def start(self) -> None:
         """Start charging state."""
-        self.electric_device.set_state(StateEnd())
+        self.state_machine.set_state(StateEnd())
 
 
 # ----------------------------------------------------------------------------
@@ -97,7 +101,7 @@ class StatePause(DeviceState):
     # ----------------------------------------------------------------------------
     def start(self) -> None:
         """Start pause state."""
-        self.electric_device.set_state(StateCharge())
+        self.state_machine.set_state(StateCharge())
 
 
 # ----------------------------------------------------------------------------
@@ -125,7 +129,7 @@ class StateAbort(DeviceState):
 if __name__ == "__main__":
     # The client code.
 
-    charger = ElectricDevice(StateInitialise())
+    charger = StateMachine(StateInitialise())
     charger.get_state_name()
 
     charger.start()
