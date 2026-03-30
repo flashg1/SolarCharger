@@ -614,7 +614,7 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # General utils
     # ----------------------------------------------------------------------------
-    async def _async_option_sleep(self, config_item: str) -> None:
+    async def async_option_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
         duration = self.option_get_entity_number_or_abort(config_item)
@@ -650,10 +650,10 @@ class ScOptionState(ScConfigState):
             NUMBER_SUNSET_ELEVATION_END_TRIGGER
         )
         sun_elevation: float = get_sun_attribute_or_abort(
-            self._caller, sun_state, "elevation"
+            self.caller, sun_state, "elevation"
         )
         sun_is_rising: bool = get_sun_attribute_or_abort(
-            self._caller, sun_state, "rising"
+            self.caller, sun_state, "rising"
         )
 
         if (sun_is_rising and sun_elevation >= sunrise_elevation_start_trigger) or (
@@ -677,10 +677,10 @@ class ScOptionState(ScConfigState):
             NUMBER_SUNSET_ELEVATION_END_TRIGGER
         )
         sun_elevation: float = get_sun_attribute_or_abort(
-            self._caller, sun_state, "elevation"
+            self.caller, sun_state, "elevation"
         )
         sun_is_rising: bool = get_sun_attribute_or_abort(
-            self._caller, sun_state, "rising"
+            self.caller, sun_state, "rising"
         )
 
         return sun_elevation < sunset_elevation_end_trigger and not sun_is_rising
@@ -694,10 +694,10 @@ class ScOptionState(ScConfigState):
             NUMBER_SUNSET_ELEVATION_END_TRIGGER
         )
         sun_elevation: float = get_sun_attribute_or_abort(
-            self._caller, sun_state, "elevation"
+            self.caller, sun_state, "elevation"
         )
         sun_is_rising: bool = get_sun_attribute_or_abort(
-            self._caller, sun_state, "rising"
+            self.caller, sun_state, "rising"
         )
 
         if sunset_elevation_end_trigger >= 0:

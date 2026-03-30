@@ -249,7 +249,7 @@ class SolarChargerCoordinator(ScOptionState):
             if not (min_charge_limit <= default_val <= max_charge_limit):
                 _LOGGER.error(
                     "%s: Invalid default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
-                    self._caller,
+                    self.caller,
                     default_val,
                     day_limit_default,
                     min_charge_limit,
@@ -552,7 +552,7 @@ class SolarChargerCoordinator(ScOptionState):
                     else:
                         _LOGGER.error(
                             "%s: Cannot set default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
-                            self._caller,
+                            self.caller,
                             default_val,
                             day_limit,
                             min_charge_limit,

@@ -41,7 +41,7 @@ class ScConfigState(ScState):
 
         config_str = self._entry.data.get(config_item)
         if config_str is None:
-            _LOGGER.error("%s: Config not found for '%s'", self._caller, config_item)
+            _LOGGER.error("%s: Config not found for '%s'", self.caller, config_item)
 
         return config_str
 
@@ -54,7 +54,7 @@ class ScConfigState(ScState):
 
         num = self._entry.data.get(config_item)
         if num is None:
-            raise SystemError(f"{self._caller}: {config_item}: Config not found")
+            raise SystemError(f"{self.caller}: {config_item}: Config not found")
 
         return num
 

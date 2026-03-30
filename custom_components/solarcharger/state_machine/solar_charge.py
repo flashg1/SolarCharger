@@ -92,24 +92,24 @@ class SolarCharge(ScOptionState):
             caller = __name__
         ScOptionState.__init__(self, hass, entry, subentry, caller)
 
-        self._tracker = tracker
+        self.tracker = tracker
         self._entities = entities
-        self._charger = charger
-        self._chargeable = chargeable
-        self._scheduler = ChargeScheduler(hass, entry, subentry)
+        self.charger = charger
+        self.chargeable = chargeable
+        self.scheduler = ChargeScheduler(hass, entry, subentry)
 
-        self._session_triggered_by_timer = False
-        self._starting_goal: ScheduleData
-        self._running_goal: ScheduleData
+        self.session_triggered_by_timer = False
+        self.starting_goal: ScheduleData
+        self.running_goal: ScheduleData
 
         self.update_ha_task_count = 0
-        self._started_calibrate_max_charge_speed = False
-        self._charge_current_updatetime: float = 0
-        self._soc_updates: list[StateOfCharge] = []
-        self._stats = ChargeStats()
+        self.started_calibrate_max_charge_speed = False
+        self.charge_current_updatetime: float = 0
+        self.soc_updates: list[StateOfCharge] = []
+        self.stats = ChargeStats()
 
-        # Set state machine starting state.
-        # self.set_state(state)
+        # Initialise state machine self._state variable.
+        self.set_state(StateInitialise())
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -120,34 +120,36 @@ class SolarCharge(ScOptionState):
             identifiers={(DOMAIN, self._subentry.subentry_id)}
         )
         if device is None:
-            raise RuntimeError(f"{self._caller} device entry not found.")
+            raise RuntimeError(f"{self.caller} device entry not found.")
         return device
 
     # ----------------------------------------------------------------------------
     @property
     def is_chargeable(self) -> bool:
         """Return True if the charger is chargeable."""
-        return isinstance(self._charger, Chargeable)
+        return isinstance(self.charger, Chargeable)
 
     @property
     def get_chargee(self) -> Chargeable | None:
         """Return the chargeable device if applicable."""
         if self.is_chargeable:
-            return self._charger  # type: ignore[return-value]
+            return self.charger  # type: ignore[return-value]
         return None
 
     # ----------------------------------------------------------------------------
-    def set_state(self, state: DeviceState):
+    # State machine methods
+    # ----------------------------------------------------------------------------
+    def set_state(self, state: SolarChargeState):
         """Method to change the state of the object."""
 
         self._state = state
-        self._state.state_machine = self
+        self._state.solarcharge = self
 
     # ----------------------------------------------------------------------------
     async def async_action_state(self):
         """Method for executing the device functionality. These depends on the current state of the object."""
 
-        await self._state.async_start()
+        await self._state.async_activate_state()
 
     # ----------------------------------------------------------------------------
     def get_state_name(self) -> str:
@@ -156,16 +158,37 @@ class SolarCharge(ScOptionState):
         return type(self._state).__name__
 
     # ----------------------------------------------------------------------------
+    # Local utils
+    # ----------------------------------------------------------------------------
+    async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
+        config_item = OPTION_CHARGEE_WAKE_UP_BUTTON
+        val_dict = ConfigValueDict(config_item, {})
+
+        await chargeable.async_wake_up(val_dict)
+        if val_dict.config_values[config_item].entity_id is not None:
+            await self.async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
+
+    # ----------------------------------------------------------------------------
+    async def _async_poll_charger_update(self, wait_after_update: bool) -> None:
+        """Poll charger for update using charger switch entity since every charger must have one."""
+
+        charger_entity = self.option_get_id(OPTION_CHARGER_ON_OFF_SWITCH)
+        if charger_entity:
+            await self.async_poll_entity_id(charger_entity)
+            if wait_after_update:
+                await self.async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+
+    # ----------------------------------------------------------------------------
     # Handle SOC update for calibrating max charge speed
     # ----------------------------------------------------------------------------
     async def async_stop_calibrate_max_charge_speed(self) -> None:
         """Stop tracking SOC and reset flag."""
 
-        self._tracker.untrack_soc_sensor()
-        self._started_calibrate_max_charge_speed = False
+        self.tracker.untrack_soc_sensor()
+        self.started_calibrate_max_charge_speed = False
 
     # ----------------------------------------------------------------------------
-    async def _async_turn_off_calibrate_max_charge_speed_switch(self) -> None:
+    async def async_turn_off_calibrate_max_charge_speed_switch(self) -> None:
         """Turn off switch if on."""
 
         if self.is_calibrate_max_charge_speed():
@@ -177,26 +200,7 @@ class SolarCharge(ScOptionState):
     # ----------------------------------------------------------------------------
     # Common code
     # ----------------------------------------------------------------------------
-    async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
-        config_item = OPTION_CHARGEE_WAKE_UP_BUTTON
-        val_dict = ConfigValueDict(config_item, {})
-
-        await chargeable.async_wake_up(val_dict)
-        if val_dict.config_values[config_item].entity_id is not None:
-            await self._async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
-
-    # ----------------------------------------------------------------------------
-    async def _async_poll_charger_update(self, wait_after_update: bool) -> None:
-        """Poll charger for update using charger switch entity since every charger must have one."""
-
-        charger_entity = self.option_get_id(OPTION_CHARGER_ON_OFF_SWITCH)
-        if charger_entity:
-            await self.async_poll_entity_id(charger_entity)
-            if wait_after_update:
-                await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
-
-    # ----------------------------------------------------------------------------
-    async def _async_update_ha(
+    async def async_update_ha(
         self, chargeable: Chargeable, wait_after_update: bool = True
     ) -> None:
         """Get third party integration to update HA with latest data."""
@@ -211,13 +215,13 @@ class SolarCharge(ScOptionState):
                 await chargeable.async_update_ha(val_dict)
                 if val_dict.config_values[config_item].entity_id is not None:
                     if wait_after_update:
-                        await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+                        await self.async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
         except Exception as e:
-            _LOGGER.exception("%s: Error updating HA: %s", self._caller, e)
+            _LOGGER.exception("%s: Error updating HA: %s", self.caller, e)
 
     # ----------------------------------------------------------------------------
-    def _is_at_location(self, chargeable: Chargeable) -> bool:
+    def is_at_location(self, chargeable: Chargeable) -> bool:
         """Is chargeable device at charger location? Always return true if sensor not defined."""
 
         config_item = OPTION_CHARGEE_LOCATION_SENSOR
@@ -253,23 +257,23 @@ class SolarCharge(ScOptionState):
         """Wake up device and update HA."""
 
         await self._async_wakeup_device(chargeable)
-        await self._async_update_ha(chargeable)
+        await self.async_update_ha(chargeable)
 
     # ----------------------------------------------------------------------------
-    async def _async_turn_charger_switch(self, charger: Charger, turn_on: bool) -> None:
+    async def async_turn_charger_switch(self, charger: Charger, turn_on: bool) -> None:
         """Turn charger switch on or off."""
 
         if turn_on:
             switched_on = charger.is_charger_switch_on()
             if not switched_on:
                 await charger.async_turn_charger_switch(turn_on)
-                await self._async_option_sleep(NUMBER_WAIT_CHARGER_ON)
+                await self.async_option_sleep(NUMBER_WAIT_CHARGER_ON)
         else:
             await charger.async_turn_charger_switch(turn_on)
-            await self._async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
+            await self.async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
-    async def _async_set_charge_current(self, charger: Charger, current: float) -> None:
+    async def async_set_charge_current(self, charger: Charger, current: float) -> None:
         """Set charge current."""
 
         try:
@@ -290,11 +294,11 @@ class SolarCharge(ScOptionState):
                 new_charge_current,
                 old_charge_current,
             )
-            await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+            await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(
-                "%s: Error setting charge current %s A: %s", self._caller, current, e
+                "%s: Error setting charge current %s A: %s", self.caller, current, e
             )
 
     # ----------------------------------------------------------------------------
@@ -303,8 +307,8 @@ class SolarCharge(ScOptionState):
     async def async_get_current_schedule_data(self) -> ScheduleData:
         """Get current schedule data."""
 
-        return await self._scheduler.async_get_schedule_data(
-            self._chargeable,
+        return await self.scheduler.async_get_schedule_data(
+            self.chargeable,
             include_tomorrow=True,
             started_calibration=False,
             msg="Schedule",
@@ -315,8 +319,8 @@ class SolarCharge(ScOptionState):
     def device_at_location_and_connected(self) -> bool:
         """Is device at location and charger connected?"""
 
-        is_at_location = self._is_at_location(self._chargeable)
-        is_connected = self.is_connected(self._charger)
+        is_at_location = self.is_at_location(self.chargeable)
+        is_connected = self.is_connected(self.charger)
 
         return is_at_location and is_connected
 
@@ -324,16 +328,16 @@ class SolarCharge(ScOptionState):
     async def async_retry_15_times_to_update_ha_until_charger_on(self) -> None:
         """Wake up device and retry 15 times to update HA until charger is on."""
 
-        await self._async_wakeup_device(self._chargeable)
+        await self._async_wakeup_device(self.chargeable)
 
         loop = 0
         charger_connected = False
         while loop < 15:
-            await self._async_update_ha(self._chargeable)
+            await self.async_update_ha(self.chargeable)
             if (
                 # Plug-in sensor might not be defined, so also check charger switch.
-                self.is_really_connected(self._charger)
-                or self._charger.is_charger_switch_on()
+                self.is_really_connected(self.charger)
+                or self.charger.is_charger_switch_on()
             ):
                 charger_connected = True
                 break
@@ -342,7 +346,7 @@ class SolarCharge(ScOptionState):
 
         _LOGGER.warning(
             "%s: Device presence detected: charger_connected=%s, loop=%s",
-            self._caller,
+            self.caller,
             charger_connected,
             loop,
         )
@@ -358,7 +362,7 @@ class SolarCharge(ScOptionState):
             except Exception as e:
                 _LOGGER.exception(
                     "%s: Error updating HA triggered by presence detection: %s",
-                    self._caller,
+                    self.caller,
                     e,
                 )
 
@@ -368,7 +372,7 @@ class SolarCharge(ScOptionState):
             # Should never be here.
             _LOGGER.error(
                 "%s: Update HA task triggered by presence detection already running.",
-                self._caller,
+                self.caller,
             )
 
     # ----------------------------------------------------------------------------
@@ -389,7 +393,7 @@ class SolarCharge(ScOptionState):
             self.set_state(StateInitialise())
             while True:
                 action_state = self.get_state_name()
-                _LOGGER.info("%s: Action state: %s", self._caller, action_state)
+                _LOGGER.info("%s: Action state: %s", self.caller, action_state)
                 if action_state == "StateEnd":
                     break
                 await self.async_action_state()
@@ -399,7 +403,7 @@ class SolarCharge(ScOptionState):
             # await self.async_tidy_up_on_exit(charger, chargeable)
 
         except Exception as e:
-            _LOGGER.exception("%s: Abort charge: %s", self._caller, e)
+            _LOGGER.exception("%s: Abort charge: %s", self.caller, e)
             self.set_state(StateTidyUp())
             await self.async_action_state()
 
@@ -408,34 +412,34 @@ class SolarCharge(ScOptionState):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class DeviceState(ABC):
+class SolarChargeState(ABC):
     """The common state interface for all the states."""
 
     # ----------------------------------------------------------------------------
     @property
-    def state_machine(self) -> SolarCharge:
-        """Get the state machine."""
-        return self._state_machine
+    def solarcharge(self) -> SolarCharge:
+        """Get the state machine context."""
+        return self._context
 
-    @state_machine.setter
-    def state_machine(self, statemachine: SolarCharge) -> None:
-        """Set the state machine."""
-        self._state_machine = statemachine
+    @solarcharge.setter
+    def solarcharge(self, context: SolarCharge) -> None:
+        """Set the state machine context."""
+        self._context = context
 
     # ----------------------------------------------------------------------------
     @abstractmethod
-    async def async_start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start state action."""
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StateInitialise(DeviceState):
+class StateInitialise(SolarChargeState):
     """Initialising state: wake up device, etc."""
 
     # ----------------------------------------------------------------------------
     def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
-        is_at_location = self.state_machine._is_at_location(chargeable)
+        is_at_location = self.solarcharge.is_at_location(chargeable)
         if not is_at_location:
             raise RuntimeError("Device not at charger location")
 
@@ -447,9 +451,9 @@ class StateInitialise(DeviceState):
         triggered_by_timer = False
         time_diff = timedelta(seconds=0)
 
-        charge_start_time = self.state_machine.get_local_datetime()
-        next_charge_time = self.state_machine.get_datetime(
-            self.state_machine.next_charge_time_trigger_entity_id
+        charge_start_time = self.solarcharge.get_local_datetime()
+        next_charge_time = self.solarcharge.get_datetime(
+            self.solarcharge.next_charge_time_trigger_entity_id
         )
         if next_charge_time is not None:
             if charge_start_time > next_charge_time:
@@ -461,7 +465,7 @@ class StateInitialise(DeviceState):
 
         _LOGGER.warning(
             "%s: charge_start_time=%s, next_charge_time=%s, time_diff=%s, triggered_by_timer=%s",
-            self.state_machine._caller,
+            self.solarcharge.caller,
             charge_start_time,
             next_charge_time,
             time_diff,
@@ -478,26 +482,26 @@ class StateInitialise(DeviceState):
         # Set up instance variables
         #####################################
         # Must run this first thing to estimate if session started by timer
-        self.state_machine._session_triggered_by_timer = (
+        self.solarcharge.session_triggered_by_timer = (
             self._is_session_triggered_by_timer()
         )
-        self.state_machine._started_calibrate_max_charge_speed = False
-        self.state_machine._stats = ChargeStats()
+        self.solarcharge.started_calibrate_max_charge_speed = False
+        self.solarcharge.stats = ChargeStats()
 
-        await self.state_machine.async_wake_up_and_update_ha(chargeable)
+        await self.solarcharge.async_wake_up_and_update_ha(chargeable)
         self._check_if_at_location_or_abort(chargeable)
 
     # ----------------------------------------------------------------------------
-    async def async_start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start initialising state."""
 
-        await self._async_init_device(self.state_machine._chargeable)
-        self.state_machine.set_state(StateCharge())
+        await self._async_init_device(self.solarcharge.chargeable)
+        self.solarcharge.set_state(StateCharge())
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StateCharge(DeviceState):
+class StateCharge(SolarChargeState):
     """Charging state: Turn on charger and start charging."""
 
     # ----------------------------------------------------------------------------
@@ -506,7 +510,7 @@ class StateCharge(DeviceState):
     def _subscribe_allocated_power_update(self) -> None:
         """Subscribe for allocated power update."""
 
-        self.state_machine._tracker.track_allocated_power_update(
+        self.solarcharge.tracker.track_allocated_power_update(
             self._async_handle_allocated_power_update
         )
 
@@ -517,19 +521,17 @@ class StateCharge(DeviceState):
         """Adjust charge current."""
 
         new_charge_current, old_charge_current = self._calc_current_change(
-            charger, chargeable, allocated_power, self.state_machine._running_goal
+            charger, chargeable, allocated_power, self.solarcharge.running_goal
         )
         if new_charge_current != old_charge_current:
             _LOGGER.info(
                 "%s: Update current from %s to %s",
-                self.state_machine._caller,
+                self.solarcharge.caller,
                 old_charge_current,
                 new_charge_current,
             )
-            await self.state_machine._async_set_charge_current(
-                charger, new_charge_current
-            )
-            self.state_machine._charge_current_updatetime = utcnow().timestamp()
+            await self.solarcharge.async_set_charge_current(charger, new_charge_current)
+            self.solarcharge.charge_current_updatetime = utcnow().timestamp()
 
         # No need to update status here because it is now done at the main loop.
         # Power update here is not garanteed because HA will not send the same value
@@ -557,13 +559,13 @@ class StateCharge(DeviceState):
         if new_state is not None:
             duration_since_last_change = (
                 new_state.last_changed_timestamp
-                - self.state_machine._charge_current_updatetime
+                - self.solarcharge.charge_current_updatetime
             )
 
             if old_state is not None:
                 _LOGGER.debug(
                     "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
-                    self.state_machine._caller,
+                    self.solarcharge.caller,
                     entity_id,
                     old_state.state,
                     new_state.state,
@@ -572,7 +574,7 @@ class StateCharge(DeviceState):
             else:
                 _LOGGER.debug(
                     "%s: entity_id=%s, new_state=%s, duration_since_last_change=%s",
-                    self.state_machine._caller,
+                    self.solarcharge.caller,
                     entity_id,
                     new_state.state,
                     duration_since_last_change,
@@ -582,14 +584,14 @@ class StateCharge(DeviceState):
             if duration_since_last_change >= MIN_TIME_BETWEEN_UPDATE:
                 try:
                     await self._async_adjust_charge_current(
-                        self.state_machine._charger,
-                        self.state_machine._chargeable,
+                        self.solarcharge.charger,
+                        self.solarcharge.chargeable,
                         float(new_state.state),
                     )
                 except Exception as e:
                     _LOGGER.exception(
                         "%s: Failed to adjust current for net power %s W: %s",
-                        self.state_machine._caller,
+                        self.solarcharge.caller,
                         new_state.state,
                         e,
                     )
@@ -603,7 +605,7 @@ class StateCharge(DeviceState):
         old_state: State | None = data["old_state"]
         new_state: State | None = data["new_state"]
 
-        self.state_machine._tracker.log_state_change(event)
+        self.solarcharge.tracker.log_state_change(event)
 
         if new_state is not None and old_state is not None:
             if (
@@ -616,50 +618,46 @@ class StateCharge(DeviceState):
                 try:
                     soc = float(new_state.state)
                     update_time = as_local(new_state.last_updated)
-                    self.state_machine._soc_updates.append(
-                        StateOfCharge(soc, update_time)
-                    )
+                    self.solarcharge.soc_updates.append(StateOfCharge(soc, update_time))
                     max_charge_speed = 0.0
 
                     _LOGGER.warning(
                         "%s: soc=%s %%, update_time=%s",
-                        self.state_machine._caller,
+                        self.solarcharge.caller,
                         soc,
                         update_time,
                     )
-                    if len(self.state_machine._soc_updates) > 1:
-                        soc_diff = (
-                            soc - self.state_machine._soc_updates[0].state_of_charge
-                        )
+                    if len(self.solarcharge.soc_updates) > 1:
+                        soc_diff = soc - self.solarcharge.soc_updates[0].state_of_charge
                         time_diff = (
-                            update_time - self.state_machine._soc_updates[0].update_time
+                            update_time - self.solarcharge.soc_updates[0].update_time
                         )
                         hour_diff = time_diff.total_seconds() / 3600.0
                         max_charge_speed = soc_diff / hour_diff
                         _LOGGER.warning(
                             "%s: max_charge_speed=%s %%/hr, %s",
-                            self.state_machine._caller,
+                            self.solarcharge.caller,
                             max_charge_speed,
-                            self.state_machine._soc_updates,
+                            self.solarcharge.soc_updates,
                         )
 
-                    if soc >= self.state_machine._scheduler.calibration_charge_limit:
+                    if soc >= self.solarcharge.scheduler.calibration_charge_limit:
                         if max_charge_speed > 0:
-                            await self.state_machine.async_option_set_entity_number(
+                            await self.solarcharge.async_option_set_entity_number(
                                 NUMBER_CHARGER_MAX_SPEED, max_charge_speed
                             )
                         else:
                             _LOGGER.error(
                                 "%s: Abort setting invalid max charge speed: %s %%/hr",
-                                self.state_machine._caller,
+                                self.solarcharge.caller,
                                 max_charge_speed,
                             )
-                        await self.state_machine._async_turn_off_calibrate_max_charge_speed_switch()
+                        await self.solarcharge.async_turn_off_calibrate_max_charge_speed_switch()
 
                 except (ValueError, TypeError) as e:
                     _LOGGER.error(
                         "%s: Failed to parse SOC state '%s': %s",
-                        self.state_machine._caller,
+                        self.solarcharge.caller,
                         new_state.state,
                         e,
                     )
@@ -673,7 +671,7 @@ class StateCharge(DeviceState):
         """Set charge limit."""
 
         await chargeable.async_set_charge_limit(charge_limit)
-        await self.state_machine._async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
+        await self.solarcharge.async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit_if_required(
@@ -684,7 +682,7 @@ class StateCharge(DeviceState):
         if charge_limit_changed := (goal.old_charge_limit != goal.new_charge_limit):
             _LOGGER.warning(
                 "%s: Changing charge limit from %.1f %% to %.1f %% for %s",
-                self.state_machine._caller,
+                self.solarcharge.caller,
                 goal.old_charge_limit,
                 goal.new_charge_limit,
                 # now_time.strftime("%A"),
@@ -716,25 +714,25 @@ class StateCharge(DeviceState):
                         "SOC %s %% is below charge limit %s %%, continuing charger %s",
                         soc,
                         charge_limit,
-                        self.state_machine._caller,
+                        self.solarcharge.caller,
                     )
                 else:
                     _LOGGER.info(
                         "SOC %s %% is at or above charge limit %s %%, stopping charger %s",
                         soc,
                         charge_limit,
-                        self.state_machine._caller,
+                        self.solarcharge.caller,
                     )
         except TimeoutError as e:
             _LOGGER.warning(
                 "%s: Timeout getting SOC or charge limit: %s",
-                self.state_machine._caller,
+                self.solarcharge.caller,
                 e,
             )
         except Exception as e:
             _LOGGER.exception(
                 "%s: Error getting SOC or charge limit: %s",
-                self.state_machine._caller,
+                self.solarcharge.caller,
                 e,
             )
 
@@ -759,7 +757,7 @@ class StateCharge(DeviceState):
 
     # ----------------------------------------------------------------------------
     def _is_use_secondary_power_source(self) -> bool:
-        return self.state_machine.is_fast_charge_mode()
+        return self.solarcharge.is_fast_charge_mode()
 
     # ----------------------------------------------------------------------------
     def _check_current(self, max_current: float, current: float) -> float:
@@ -803,8 +801,8 @@ class StateCharge(DeviceState):
         # Charge at max current if fast charge
         #####################################
         if (
-            self.state_machine.is_fast_charge_mode()
-            or self.state_machine.is_calibrate_max_charge_speed()
+            self.solarcharge.is_fast_charge_mode()
+            or self.solarcharge.is_calibrate_max_charge_speed()
         ):
             new_charge_current = charger_max_current
             return (new_charge_current, old_charge_current)
@@ -812,7 +810,7 @@ class StateCharge(DeviceState):
         #####################################
         # Set minimum charge current
         #####################################
-        config_min_current = self.state_machine.option_get_entity_number_or_abort(
+        config_min_current = self.solarcharge.option_get_entity_number_or_abort(
             NUMBER_CHARGER_MIN_CURRENT
         )
         config_min_current = self._check_current(
@@ -821,7 +819,7 @@ class StateCharge(DeviceState):
 
         charger_min_current = config_min_current
         if goal.use_charge_schedule:
-            if self.state_machine._scheduler.is_not_enough_time_to_complete_charge(
+            if self.solarcharge.scheduler.is_not_enough_time_to_complete_charge(
                 chargeable,
                 old_charge_current,
                 charger_max_current,
@@ -832,10 +830,8 @@ class StateCharge(DeviceState):
         #####################################
         # Calculate new current from allocated power
         #####################################
-        charger_effective_voltage = (
-            self.state_machine.option_get_entity_number_or_abort(
-                NUMBER_CHARGER_EFFECTIVE_VOLTAGE
-            )
+        charger_effective_voltage = self.solarcharge.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_EFFECTIVE_VOLTAGE
         )
         if charger_effective_voltage <= 0:
             raise ValueError(
@@ -858,7 +854,7 @@ class StateCharge(DeviceState):
         propose_new_charge_current = max([charger_min_current, propose_charge_current])
 
         charger_min_workable_current = (
-            self.state_machine.option_get_entity_number_or_abort(
+            self.solarcharge.option_get_entity_number_or_abort(
                 NUMBER_CHARGER_MIN_WORKABLE_CURRENT
             )
         )
@@ -873,7 +869,7 @@ class StateCharge(DeviceState):
             "all_power_net=%s, all_current_net=%s, propose_charge_current=%s, "
             "propose_new_charge_current=%s, charger_min_workable_current=%s, "
             "new_charge_current=%s ",
-            self.state_machine._caller,
+            self.solarcharge.caller,
             allocated_power,
             charger_effective_voltage,
             config_min_current,
@@ -900,7 +896,7 @@ class StateCharge(DeviceState):
     ) -> bool:
         """Check if to continue charging."""
 
-        is_connected = self.state_machine.is_connected(charger)
+        is_connected = self.solarcharge.is_connected(charger)
 
         # Device charge limit must have already been set before this check.
         is_below_charge_limit = self._is_below_charge_limit(chargeable)
@@ -908,14 +904,12 @@ class StateCharge(DeviceState):
         val_dict = ConfigValueDict(OPTION_CHARGER_CHARGING_SENSOR, {})
         is_charging = self._is_charging(charger, val_dict=val_dict)
 
-        is_sun_trigger = self.state_machine.is_sun_trigger()
+        is_sun_trigger = self.solarcharge.is_sun_trigger()
         (is_sun_above_start_end_elevations, elevation) = (
-            self.state_machine.is_sun_above_start_end_elevation_triggers()
+            self.solarcharge.is_sun_above_start_end_elevation_triggers()
         )
         is_use_secondary_power_source = self._is_use_secondary_power_source()
-        is_calibrate_max_charge_speed = (
-            self.state_machine.is_calibrate_max_charge_speed()
-        )
+        is_calibrate_max_charge_speed = self.solarcharge.is_calibrate_max_charge_speed()
 
         # Add 30 minutes grace period to avoid time drift stopping charge
         # and scheduling next session immediately.
@@ -952,7 +946,7 @@ class StateCharge(DeviceState):
                 "has_charge_endtime=%s, is_immediate_start=%s, "
                 "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s, "
                 "stats=%s",
-                self.state_machine._caller,
+                self.solarcharge.caller,
                 is_connected,
                 is_below_charge_limit,
                 is_charging,
@@ -981,9 +975,9 @@ class StateCharge(DeviceState):
 
         _LOGGER.warning(
             "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s (%s)",
-            self.state_machine._caller,
+            self.solarcharge.caller,
             msg,
-            self.state_machine.is_connected(charger),
+            self.solarcharge.is_connected(charger),
             charger.is_charger_switch_on(),
             is_charging,
             val_dict.config_values[OPTION_CHARGER_CHARGING_SENSOR].entity_value,
@@ -996,29 +990,29 @@ class StateCharge(DeviceState):
         """Start max charge speed calibration."""
 
         # Set the calibration charge limit
-        goal = await self.state_machine._scheduler.async_get_schedule_data(
+        goal = await self.solarcharge.scheduler.async_get_schedule_data(
             chargeable,
-            self.state_machine._session_triggered_by_timer,
-            self.state_machine._started_calibrate_max_charge_speed,
+            self.solarcharge.session_triggered_by_timer,
+            self.solarcharge.started_calibrate_max_charge_speed,
             msg="Calibration",
         )
-        if self.state_machine._scheduler.calibration_charge_limit == -1:
+        if self.solarcharge.scheduler.calibration_charge_limit == -1:
             raise EntityExceptionError("Charge limit not set")
 
         # Track SOC
-        self.state_machine._soc_updates = []
-        if self.state_machine._tracker.track_soc_sensor(self.async_handle_soc_update):
+        self.solarcharge.soc_updates = []
+        if self.solarcharge.tracker.track_soc_sensor(self.async_handle_soc_update):
             # Change charge limit if required
             await self._async_set_charge_limit_if_required(chargeable, goal)
             # Set max current
             charger_max_current = self._get_charger_max_current(charger)
-            await self.state_machine._async_set_charge_current(
+            await self.solarcharge.async_set_charge_current(
                 charger, charger_max_current
             )
         else:
             raise EntityExceptionError("Missing SOC sensor")
 
-        self.state_machine._scheduler.log_goal(goal, "Calibrate charge speed")
+        self.solarcharge.scheduler.log_goal(goal, "Calibrate charge speed")
 
     # ----------------------------------------------------------------------------
     async def _async_calibrate_max_charge_speed_if_required(
@@ -1026,22 +1020,22 @@ class StateCharge(DeviceState):
     ) -> None:
         """Check if calibration is required during charge."""
 
-        if self.state_machine.is_calibrate_max_charge_speed():
-            if not self.state_machine._started_calibrate_max_charge_speed:
+        if self.solarcharge.is_calibrate_max_charge_speed():
+            if not self.solarcharge.started_calibrate_max_charge_speed:
                 try:
                     await self._async_start_max_charge_speed_calibration(
                         charger, chargeable
                     )
 
-                    self.state_machine._started_calibrate_max_charge_speed = True
+                    self.solarcharge.started_calibrate_max_charge_speed = True
 
                 except EntityExceptionError as e:
                     _LOGGER.error(
                         "%s: Abort calibrate max charge speed: %s",
-                        self.state_machine._caller,
+                        self.solarcharge.caller,
                         e,
                     )
-                    await self.state_machine._async_turn_off_calibrate_max_charge_speed_switch()
+                    await self.solarcharge.async_turn_off_calibrate_max_charge_speed_switch()
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
@@ -1049,14 +1043,14 @@ class StateCharge(DeviceState):
     ) -> None:
         """Loop to charge device."""
 
-        wait_net_power_update = self.state_machine.config_get_number_or_abort(
+        wait_net_power_update = self.solarcharge.config_get_number_or_abort(
             CONFIG_WAIT_NET_POWER_UPDATE
         )
 
         while True:
             # Abort charge if exceeds MAX_CONSECUTIVE_FAILURE_COUNT
             if (
-                self.state_machine._stats.consecutive_failure_count
+                self.solarcharge.stats.consecutive_failure_count
                 > MAX_CONSECUTIVE_FAILURE_COUNT
             ):
                 raise RuntimeError(
@@ -1065,11 +1059,11 @@ class StateCharge(DeviceState):
 
             try:
                 # Get schedule data at start of each loop since schedule might change while charging.
-                self.state_machine._running_goal = (
-                    await self.state_machine._scheduler.async_get_schedule_data(
+                self.solarcharge.running_goal = (
+                    await self.solarcharge.scheduler.async_get_schedule_data(
                         chargeable,
-                        self.state_machine._session_triggered_by_timer,
-                        self.state_machine._started_calibrate_max_charge_speed,
+                        self.solarcharge.session_triggered_by_timer,
+                        self.solarcharge.started_calibrate_max_charge_speed,
                         msg="Loop",
                     )
                 )
@@ -1077,37 +1071,37 @@ class StateCharge(DeviceState):
                 # Set charge limit if required.
                 # Once set, the latest and correct state can be requested without calling _async_update_ha() first.
                 await self._async_set_charge_limit_if_required(
-                    chargeable, self.state_machine._running_goal
+                    chargeable, self.solarcharge.running_goal
                 )
 
                 # Check if continue charging or exit loop. Must run after setting charge limit.
                 if not self._is_continue_charge(
                     charger,
                     chargeable,
-                    self.state_machine._running_goal,
-                    self.state_machine._stats,
+                    self.solarcharge.running_goal,
+                    self.solarcharge.stats,
                 ):
                     break
 
                 # Turn on charger if looping for the first time.
-                if self.state_machine._stats.loop_success == 0:
-                    self.state_machine._starting_goal = self.state_machine._running_goal
-                    self.state_machine._scheduler.log_goal(
-                        self.state_machine._starting_goal, "Start session"
+                if self.solarcharge.stats.loop_success == 0:
+                    self.solarcharge.starting_goal = self.solarcharge.running_goal
+                    self.solarcharge.scheduler.log_goal(
+                        self.solarcharge.starting_goal, "Start session"
                     )
-                    await self.state_machine._async_turn_charger_switch(
+                    await self.solarcharge.async_turn_charger_switch(
                         charger, turn_on=True
                     )
-                    await self.state_machine._async_set_charge_current(
+                    await self.solarcharge.async_set_charge_current(
                         charger, INITIAL_CHARGE_CURRENT
                     )
-                    await self.state_machine._async_update_ha(chargeable)
+                    await self.solarcharge.async_update_ha(chargeable)
                     self._subscribe_allocated_power_update()
                     self._log_charging_status(charger, "Charger ON")
 
                 # Completed loop successfully at this point.
-                self.state_machine._stats.loop_success += 1
-                self.state_machine._stats.consecutive_failure_count = 0
+                self.solarcharge.stats.loop_success += 1
+                self.solarcharge.stats.consecutive_failure_count = 0
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
@@ -1115,63 +1109,61 @@ class StateCharge(DeviceState):
                 )
 
             except TimeoutError as e:
-                self.state_machine._stats.loop_failure += 1
-                self.state_machine._stats.consecutive_failure_count += 1
+                self.solarcharge.stats.loop_failure += 1
+                self.solarcharge.stats.consecutive_failure_count += 1
                 _LOGGER.warning(
-                    "%s: Timeout charging device: %s", self.state_machine._caller, e
+                    "%s: Timeout charging device: %s", self.solarcharge.caller, e
                 )
             except Exception as e:
-                self.state_machine._stats.loop_failure += 1
-                self.state_machine._stats.consecutive_failure_count += 1
+                self.solarcharge.stats.loop_failure += 1
+                self.solarcharge.stats.consecutive_failure_count += 1
                 _LOGGER.exception(
-                    "%s: Error charging device: %s", self.state_machine._caller, e
+                    "%s: Error charging device: %s", self.solarcharge.caller, e
                 )
 
             # Update status after turning on power, or at every interval.
             # This is either required here or after setting current.
             # It is better here since it is garanteed periodic.
             # Do not wait here. Depends on the main loop to wait.
-            await self.state_machine._async_update_ha(
-                chargeable, wait_after_update=False
-            )
+            await self.solarcharge.async_update_ha(chargeable, wait_after_update=False)
 
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
             # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
             await asyncio.sleep(wait_net_power_update)
-            self.state_machine._stats.loop_total += 1
+            self.solarcharge.stats.loop_total += 1
 
     # ----------------------------------------------------------------------------
-    async def async_start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start charging state."""
 
         await self._async_charge_device(
-            self.state_machine._charger, self.state_machine._chargeable
+            self.solarcharge.charger, self.solarcharge.chargeable
         )
-        self.state_machine.set_state(StateTidyUp())
+        self.solarcharge.set_state(StateTidyUp())
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StatePause(DeviceState):
+class StatePause(SolarChargeState):
     """Pause state: Turn off charger and wait for external trigger."""
 
     # ----------------------------------------------------------------------------
-    async def async_start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start pause state."""
-        self.state_machine.set_state(StateCharge())
+        self.solarcharge.set_state(StateCharge())
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StateTidyUp(DeviceState):
+class StateTidyUp(SolarChargeState):
     """Tidy up state: Turn off charger and indicate completion."""
 
     # ----------------------------------------------------------------------------
     def _unsubscribe_allocated_power_update(self) -> None:
         """Unsubscribe allocated power update."""
 
-        self.state_machine._tracker.untrack_allocated_power_update()
+        self.solarcharge.tracker.untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(
@@ -1181,57 +1173,55 @@ class StateTidyUp(DeviceState):
 
         try:
             self._unsubscribe_allocated_power_update()
-            await self.state_machine._async_turn_off_calibrate_max_charge_speed_switch()
+            await self.solarcharge.async_turn_off_calibrate_max_charge_speed_switch()
 
-            await self.state_machine._async_update_ha(chargeable)
+            await self.solarcharge.async_update_ha(chargeable)
 
             switched_on = charger.is_charger_switch_on()
             if switched_on:
-                await self.state_machine._async_set_charge_current(charger, 0)
-                await self.state_machine._async_turn_charger_switch(
-                    charger, turn_on=False
-                )
+                await self.solarcharge.async_set_charge_current(charger, 0)
+                await self.solarcharge.async_turn_charger_switch(charger, turn_on=False)
 
             # Only schedule next charge session if car is connected and at location.
-            if self.state_machine.is_connected(
+            if self.solarcharge.is_connected(
                 charger
-            ) and self.state_machine._is_at_location(chargeable):
-                await self.state_machine._scheduler.async_schedule_next_charge_session(
-                    chargeable, self.state_machine._started_calibrate_max_charge_speed
+            ) and self.solarcharge.is_at_location(chargeable):
+                await self.solarcharge.scheduler.async_schedule_next_charge_session(
+                    chargeable, self.solarcharge.started_calibrate_max_charge_speed
                 )
 
         except Exception as e:
             _LOGGER.error(
                 "%s: Failed to tidy up charge task on exit: %s",
-                self.state_machine._caller,
+                self.solarcharge.caller,
                 e,
             )
 
     # ----------------------------------------------------------------------------
-    async def async_start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start tidy up state."""
 
         await self.async_tidy_up_on_exit(
-            self.state_machine._charger, self.state_machine._chargeable
+            self.solarcharge.charger, self.solarcharge.chargeable
         )
-        self.state_machine.set_state(StateEnd())
+        self.solarcharge.set_state(StateEnd())
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StateAbort(DeviceState):
+class StateAbort(SolarChargeState):
     """Abort state: Abort charge."""
 
     # ----------------------------------------------------------------------------
-    async def async_start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start abort state."""
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StateEnd(DeviceState):
+class StateEnd(SolarChargeState):
     """End state: Exit task."""
 
     # ----------------------------------------------------------------------------
-    async def async_start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start end state."""

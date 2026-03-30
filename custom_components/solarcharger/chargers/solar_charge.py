@@ -113,7 +113,7 @@ class SolarCharge(ScOptionState):
             identifiers={(DOMAIN, self._subentry.subentry_id)}
         )
         if device is None:
-            raise RuntimeError(f"{self._caller} device entry not found.")
+            raise RuntimeError(f"{self.caller} device entry not found.")
         return device
 
     # ----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ class SolarCharge(ScOptionState):
 
                     _LOGGER.warning(
                         "%s: soc=%s %%, update_time=%s",
-                        self._caller,
+                        self.caller,
                         soc,
                         update_time,
                     )
@@ -202,7 +202,7 @@ class SolarCharge(ScOptionState):
                         max_charge_speed = soc_diff / hour_diff
                         _LOGGER.warning(
                             "%s: max_charge_speed=%s %%/hr, %s",
-                            self._caller,
+                            self.caller,
                             max_charge_speed,
                             self._soc_updates,
                         )
@@ -215,7 +215,7 @@ class SolarCharge(ScOptionState):
                         else:
                             _LOGGER.error(
                                 "%s: Abort setting invalid max charge speed: %s %%/hr",
-                                self._caller,
+                                self.caller,
                                 max_charge_speed,
                             )
                         await self._async_turn_off_calibrate_max_charge_speed_switch()
@@ -223,7 +223,7 @@ class SolarCharge(ScOptionState):
                 except (ValueError, TypeError) as e:
                     _LOGGER.error(
                         "%s: Failed to parse SOC state '%s': %s",
-                        self._caller,
+                        self.caller,
                         new_state.state,
                         e,
                     )
@@ -273,7 +273,7 @@ class SolarCharge(ScOptionState):
 
         _LOGGER.warning(
             "%s: Device presence detected: charger_connected=%s, loop=%s",
-            self._caller,
+            self.caller,
             charger_connected,
             loop,
         )
@@ -289,7 +289,7 @@ class SolarCharge(ScOptionState):
             except Exception as e:
                 _LOGGER.exception(
                     "%s: Error updating HA triggered by presence detection: %s",
-                    self._caller,
+                    self.caller,
                     e,
                 )
 
@@ -299,7 +299,7 @@ class SolarCharge(ScOptionState):
             # Should never be here.
             _LOGGER.error(
                 "%s: Update HA task triggered by presence detection already running.",
-                self._caller,
+                self.caller,
             )
 
     # ----------------------------------------------------------------------------
@@ -324,7 +324,7 @@ class SolarCharge(ScOptionState):
 
         _LOGGER.warning(
             "%s: charge_start_time=%s, next_charge_time=%s, time_diff=%s, triggered_by_timer=%s",
-            self._caller,
+            self.caller,
             charge_start_time,
             next_charge_time,
             time_diff,
@@ -340,7 +340,7 @@ class SolarCharge(ScOptionState):
 
         await chargeable.async_wake_up(val_dict)
         if val_dict.config_values[config_item].entity_id is not None:
-            await self._async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
+            await self.async_option_sleep(NUMBER_WAIT_CHARGEE_WAKEUP)
 
     # ----------------------------------------------------------------------------
     async def _async_poll_charger_update(self, wait_after_update: bool) -> None:
@@ -350,7 +350,7 @@ class SolarCharge(ScOptionState):
         if charger_entity:
             await self.async_poll_entity_id(charger_entity)
             if wait_after_update:
-                await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+                await self.async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
     # ----------------------------------------------------------------------------
     async def _async_update_ha(
@@ -368,10 +368,10 @@ class SolarCharge(ScOptionState):
                 await chargeable.async_update_ha(val_dict)
                 if val_dict.config_values[config_item].entity_id is not None:
                     if wait_after_update:
-                        await self._async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
+                        await self.async_option_sleep(NUMBER_WAIT_CHARGEE_UPDATE_HA)
 
         except Exception as e:
-            _LOGGER.exception("%s: Error updating HA: %s", self._caller, e)
+            _LOGGER.exception("%s: Error updating HA: %s", self.caller, e)
 
     # ----------------------------------------------------------------------------
     def _is_at_location(self, chargeable: Chargeable) -> bool:
@@ -440,7 +440,7 @@ class SolarCharge(ScOptionState):
         """Set charge limit."""
 
         await chargeable.async_set_charge_limit(charge_limit)
-        await self._async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
+        await self.async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_limit_if_required(
@@ -451,7 +451,7 @@ class SolarCharge(ScOptionState):
         if charge_limit_changed := (goal.old_charge_limit != goal.new_charge_limit):
             _LOGGER.warning(
                 "%s: Changing charge limit from %.1f %% to %.1f %% for %s",
-                self._caller,
+                self.caller,
                 goal.old_charge_limit,
                 goal.new_charge_limit,
                 # now_time.strftime("%A"),
@@ -483,22 +483,22 @@ class SolarCharge(ScOptionState):
                         "SOC %s %% is below charge limit %s %%, continuing charger %s",
                         soc,
                         charge_limit,
-                        self._caller,
+                        self.caller,
                     )
                 else:
                     _LOGGER.info(
                         "SOC %s %% is at or above charge limit %s %%, stopping charger %s",
                         soc,
                         charge_limit,
-                        self._caller,
+                        self.caller,
                     )
         except TimeoutError as e:
             _LOGGER.warning(
-                "%s: Timeout getting SOC or charge limit: %s", self._caller, e
+                "%s: Timeout getting SOC or charge limit: %s", self.caller, e
             )
         except Exception as e:
             _LOGGER.exception(
-                "%s: Error getting SOC or charge limit: %s", self._caller, e
+                "%s: Error getting SOC or charge limit: %s", self.caller, e
             )
 
         return is_below_limit
@@ -532,10 +532,10 @@ class SolarCharge(ScOptionState):
             switched_on = charger.is_charger_switch_on()
             if not switched_on:
                 await charger.async_turn_charger_switch(turn_on)
-                await self._async_option_sleep(NUMBER_WAIT_CHARGER_ON)
+                await self.async_option_sleep(NUMBER_WAIT_CHARGER_ON)
         else:
             await charger.async_turn_charger_switch(turn_on)
-            await self._async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
+            await self.async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
     async def _async_set_charge_current(self, charger: Charger, current: float) -> None:
@@ -559,11 +559,11 @@ class SolarCharge(ScOptionState):
                 new_charge_current,
                 old_charge_current,
             )
-            await self._async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+            await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(
-                "%s: Error setting charge current %s A: %s", self._caller, current, e
+                "%s: Error setting charge current %s A: %s", self.caller, current, e
             )
 
     # ----------------------------------------------------------------------------
@@ -671,7 +671,7 @@ class SolarCharge(ScOptionState):
             "all_power_net=%s, all_current_net=%s, propose_charge_current=%s, "
             "propose_new_charge_current=%s, charger_min_workable_current=%s, "
             "new_charge_current=%s ",
-            self._caller,
+            self.caller,
             allocated_power,
             charger_effective_voltage,
             config_min_current,
@@ -700,7 +700,7 @@ class SolarCharge(ScOptionState):
         if new_charge_current != old_charge_current:
             _LOGGER.info(
                 "%s: Update current from %s to %s",
-                self._caller,
+                self.caller,
                 old_charge_current,
                 new_charge_current,
             )
@@ -738,7 +738,7 @@ class SolarCharge(ScOptionState):
             if old_state is not None:
                 _LOGGER.debug(
                     "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
-                    self._caller,
+                    self.caller,
                     entity_id,
                     old_state.state,
                     new_state.state,
@@ -747,7 +747,7 @@ class SolarCharge(ScOptionState):
             else:
                 _LOGGER.debug(
                     "%s: entity_id=%s, new_state=%s, duration_since_last_change=%s",
-                    self._caller,
+                    self.caller,
                     entity_id,
                     new_state.state,
                     duration_since_last_change,
@@ -762,7 +762,7 @@ class SolarCharge(ScOptionState):
                 except Exception as e:
                     _LOGGER.exception(
                         "%s: Failed to adjust current for net power %s W: %s",
-                        self._caller,
+                        self.caller,
                         new_state.state,
                         e,
                     )
@@ -827,7 +827,7 @@ class SolarCharge(ScOptionState):
                 "has_charge_endtime=%s, is_immediate_start=%s, "
                 "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s, "
                 "stats=%s",
-                self._caller,
+                self.caller,
                 is_connected,
                 is_below_charge_limit,
                 is_charging,
@@ -856,7 +856,7 @@ class SolarCharge(ScOptionState):
 
         _LOGGER.warning(
             "%s: %s: is_connected=%s, is_charger_switch_on=%s, is_charging=%s (%s)",
-            self._caller,
+            self.caller,
             msg,
             self.is_connected(charger),
             charger.is_charger_switch_on(),
@@ -911,7 +911,7 @@ class SolarCharge(ScOptionState):
                 except EntityExceptionError as e:
                     _LOGGER.error(
                         "%s: Abort calibrate max charge speed: %s",
-                        self._caller,
+                        self.caller,
                         e,
                     )
                     await self._async_turn_off_calibrate_max_charge_speed_switch()
@@ -978,11 +978,11 @@ class SolarCharge(ScOptionState):
             except TimeoutError as e:
                 self._stats.loop_failure += 1
                 self._stats.consecutive_failure_count += 1
-                _LOGGER.warning("%s: Timeout charging device: %s", self._caller, e)
+                _LOGGER.warning("%s: Timeout charging device: %s", self.caller, e)
             except Exception as e:
                 self._stats.loop_failure += 1
                 self._stats.consecutive_failure_count += 1
-                _LOGGER.exception("%s: Error charging device: %s", self._caller, e)
+                _LOGGER.exception("%s: Error charging device: %s", self.caller, e)
 
             # Update status after turning on power, or at every interval.
             # This is either required here or after setting current.
@@ -1021,7 +1021,7 @@ class SolarCharge(ScOptionState):
 
         except Exception as e:
             _LOGGER.error(
-                "%s: Failed to tidy up charge task on exit: %s", self._caller, e
+                "%s: Failed to tidy up charge task on exit: %s", self.caller, e
             )
 
     # ----------------------------------------------------------------------------
@@ -1042,5 +1042,5 @@ class SolarCharge(ScOptionState):
             await self.async_tidy_up_on_exit(charger, chargeable)
 
         except Exception as e:
-            _LOGGER.exception("%s: Abort charge: %s", self._caller, e)
+            _LOGGER.exception("%s: Abort charge: %s", self.caller, e)
             await self.async_tidy_up_on_exit(charger, chargeable)

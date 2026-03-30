@@ -98,7 +98,7 @@ class Tracker(ScOptionState):
     # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Async unload of the Tracker."""
-        remove_all_callback_subscriptions(self._caller, self._unsub_callbacks)
+        remove_all_callback_subscriptions(self.caller, self._unsub_callbacks)
 
     # ----------------------------------------------------------------------------
     # General utils
@@ -114,7 +114,7 @@ class Tracker(ScOptionState):
 
             _LOGGER.debug(
                 "%s: entity_id=%s, old_state=%s, new_state=%s",
-                self._caller,
+                self.caller,
                 entity_id,
                 old_state,
                 new_state,
@@ -125,7 +125,7 @@ class Tracker(ScOptionState):
         """Save callback."""
 
         save_callback_subscription(
-            self._caller, self._unsub_callbacks, callback_key, subscription
+            self.caller, self._unsub_callbacks, callback_key, subscription
         )
 
     # ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ class Tracker(ScOptionState):
         """Remove callback."""
 
         remove_callback_subscription(
-            self._caller, self._unsub_callbacks, callback_key, cancel_subscription
+            self.caller, self._unsub_callbacks, callback_key, cancel_subscription
         )
 
     # ----------------------------------------------------------------------------
@@ -165,7 +165,7 @@ class Tracker(ScOptionState):
 
             if ok:
                 _LOGGER.info(
-                    "%s: %s: Track entity: %s", self._caller, callback_id, entity_ids
+                    "%s: %s: Track entity: %s", self.caller, callback_id, entity_ids
                 )
                 subscription = async_track_state_change_event(
                     self._hass, entity_ids, action
@@ -176,7 +176,7 @@ class Tracker(ScOptionState):
 
         if not ok:
             _LOGGER.error(
-                "%s: %s: Invalid entity: %s", self._caller, callback_id, entity_ids
+                "%s: %s: Invalid entity: %s", self.caller, callback_id, entity_ids
             )
 
         return ok
@@ -208,7 +208,7 @@ class Tracker(ScOptionState):
         """Track event once."""
 
         _LOGGER.info(
-            "%s: %s: Track event once: %s", self._caller, callback_id, event_type
+            "%s: %s: Track event once: %s", self.caller, callback_id, event_type
         )
         subscription = self._hass.bus.async_listen_once(event_type, action)
         self.save_callback(callback_id, subscription)
@@ -352,7 +352,7 @@ class Tracker(ScOptionState):
             delay: timedelta = new_starttime - local_time
             _LOGGER.info(
                 "%s: Scheduling charger to start at %s (after delay %s)",
-                self._caller,
+                self.caller,
                 new_starttime,
                 delay,
             )
