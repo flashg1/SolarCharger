@@ -384,6 +384,8 @@ class SolarCharge(ScOptionState):
         # Start charge session
         #####################################
         try:
+            # Reference
+            # https://auth0.com/blog/state-pattern-in-python/
             self.set_state(StateInitialise())
             while True:
                 action_state = self.get_state_name()
