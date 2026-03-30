@@ -34,6 +34,9 @@ from ..const import (  # noqa: TID252
 )
 from ..model_charge_control import ChargeControl  # noqa: TID252
 from ..sc_option_state import ScOptionState  # noqa: TID252
+
+# from .solar_charge import SolarCharge
+from ..state_machine.solar_charge import SolarCharge
 from ..utils import (  # noqa: TID252
     get_is_sun_rising,
     get_sun_elevation,
@@ -42,7 +45,6 @@ from ..utils import (  # noqa: TID252
 from .chargeable import Chargeable
 from .charger import Charger
 from .scheduler import ScheduleData
-from .solar_charge import SolarCharge
 from .tracker import Tracker
 
 # ----------------------------------------------------------------------------
