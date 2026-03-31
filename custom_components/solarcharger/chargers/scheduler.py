@@ -195,7 +195,7 @@ class ChargeScheduler(ScOptionState):
             "battery_soc=%.1f %%, "
             "charger_max_charge_speed=%.1f %%/hr, "
             "one_percent_charge_duration=%.2f sec, ",
-            self._caller,
+            self.caller,
             charge_limit,
             battery_soc,
             charger_max_charge_speed,
@@ -212,14 +212,14 @@ class ChargeScheduler(ScOptionState):
             if goal.battery_soc is None:
                 _LOGGER.info(
                     "%s: Unable to get battery SOC, cannot schedule next charge session",
-                    self._caller,
+                    self.caller,
                 )
                 return
 
             if goal.battery_soc >= goal.new_charge_limit:
                 _LOGGER.info(
                     "%s: Battery SOC %.1f %% is at or above charge limit %.1f %%, no need to schedule next charge session",
-                    self._caller,
+                    self.caller,
                     goal.battery_soc,
                     goal.new_charge_limit,
                 )
@@ -286,14 +286,14 @@ class ChargeScheduler(ScOptionState):
 
             except EntityExceptionError as e:
                 _LOGGER.error(
-                    "%s: Cannot calibrate max charge speed: %s", self._caller, e
+                    "%s: Cannot calibrate max charge speed: %s", self.caller, e
                 )
 
     # ----------------------------------------------------------------------------
     def log_goal(self, goal: ScheduleData, msg: str = "") -> None:
         """Log schedule data."""
 
-        _LOGGER.warning("%s: %s: ScheduleData: %s", self._caller, msg, goal)
+        _LOGGER.warning("%s: %s: ScheduleData: %s", self.caller, msg, goal)
 
     # ----------------------------------------------------------------------------
     # use_charge_schedule and has_charge_endtime are always set and correct.
@@ -330,7 +330,7 @@ class ChargeScheduler(ScOptionState):
         goal.new_charge_limit = goal.old_charge_limit
 
         sun_state = self.get_sun_state_or_abort()
-        goal.sun_elevation = get_sun_elevation(self._caller, sun_state)
+        goal.sun_elevation = get_sun_elevation(self.caller, sun_state)
 
         # Normal schedule
         if self.is_schedule_charge():
@@ -424,7 +424,7 @@ class ChargeScheduler(ScOptionState):
 
         sun_state = self.get_sun_state_or_abort()
         sec_per_degree_sunrise: float = get_sec_per_degree_sun_elevation(
-            self._caller, sun_state
+            self.caller, sun_state
         )
         elevation_start_trigger = self.option_get_entity_number_or_abort(
             NUMBER_SUNRISE_ELEVATION_START_TRIGGER
@@ -437,7 +437,7 @@ class ChargeScheduler(ScOptionState):
         )
 
         now_time = self.get_local_datetime()
-        next_sunrise = get_next_sunrise_time(self._caller, sun_state)
+        next_sunrise = get_next_sunrise_time(self.caller, sun_state)
 
         # Get today sunrise time
         next_start_elevation_trigger_time = (
@@ -493,7 +493,7 @@ class ChargeScheduler(ScOptionState):
                     _LOGGER.warning(
                         "%s: is_sun_trigger=%s, set_next_charge_time=%s, next_starttime=%s, "
                         "next_start_elevation_trigger_time=%s",
-                        self._caller,
+                        self.caller,
                         is_sun_trigger,
                         set_next_charge_time,
                         next_starttime,

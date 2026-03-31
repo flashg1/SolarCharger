@@ -1,4 +1,4 @@
-# ruff: noqa: TRY401
+# ruff: noqa: TRY401, TID252
 """Module to manage the charging process and entity subscriptions."""
 
 import asyncio
@@ -23,7 +23,7 @@ from homeassistant.core import (
 )
 from homeassistant.helpers.typing import NoEventData
 
-from ..const import (  # noqa: TID252
+from ..const import (
     COORDINATOR_STATE_CHARGING,
     COORDINATOR_STATE_STOPPED,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
@@ -32,17 +32,15 @@ from ..const import (  # noqa: TID252
     SENSOR_RUN_STATE,
     SWITCH_CHARGE,
 )
-from ..model_charge_control import ChargeControl  # noqa: TID252
-from ..sc_option_state import ScOptionState  # noqa: TID252
-from ..utils import (  # noqa: TID252
-    get_is_sun_rising,
-    get_sun_elevation,
-    log_is_event_loop,
-)
+from ..model_charge_control import ChargeControl
+from ..sc_option_state import ScOptionState
+
+# from .solar_charge import SolarCharge
+from ..state_machine.solar_charge import SolarCharge
+from ..utils import get_is_sun_rising, get_sun_elevation, log_is_event_loop
 from .chargeable import Chargeable
 from .charger import Charger
 from .scheduler import ScheduleData
-from .solar_charge import SolarCharge
 from .tracker import Tracker
 
 # ----------------------------------------------------------------------------
@@ -174,7 +172,7 @@ class ChargeController(ScOptionState):
             try:
                 _LOGGER.info(
                     "%s: Checking if need to reschedule charge due to schedule update",
-                    self._caller,
+                    self.caller,
                 )
                 if (
                     self.charge_control.instance_count == 0
@@ -196,14 +194,14 @@ class ChargeController(ScOptionState):
                         if self._solar_charge.device_at_location_and_connected():
                             _LOGGER.warning(
                                 "%s: Rescheduling charge due to schedule update",
-                                self._caller,
+                                self.caller,
                             )
                             self._turn_charger_switch(turn_on=True)
 
             except Exception as e:
                 _LOGGER.exception(
                     "%s: Failed to check if need to reschedule charge: %s",
-                    self._caller,
+                    self.caller,
                     e,
                 )
 
@@ -233,17 +231,13 @@ class ChargeController(ScOptionState):
                         NUMBER_SUNRISE_ELEVATION_START_TRIGGER
                     )
 
-                    is_sun_rising: bool = get_is_sun_rising(self._caller, old_sun_state)
-                    old_elevation: float = get_sun_elevation(
-                        self._caller, old_sun_state
-                    )
-                    new_elevation: float = get_sun_elevation(
-                        self._caller, new_sun_state
-                    )
+                    is_sun_rising: bool = get_is_sun_rising(self.caller, old_sun_state)
+                    old_elevation: float = get_sun_elevation(self.caller, old_sun_state)
+                    new_elevation: float = get_sun_elevation(self.caller, new_sun_state)
 
                     _LOGGER.debug(
                         "%s: is_sun_rising=%s, old_elevation=%s, new_elevation=%s",
-                        self._caller,
+                        self.caller,
                         is_sun_rising,
                         old_elevation,
                         new_elevation,
@@ -304,7 +298,7 @@ class ChargeController(ScOptionState):
         else:
             _LOGGER.warning(
                 "%s: Update HA task triggered by presence detection already running.",
-                self._caller,
+                self.caller,
             )
 
     # ----------------------------------------------------------------------------
@@ -442,7 +436,7 @@ class ChargeController(ScOptionState):
     async def _async_switch_schedule_charge(self, turn_on: bool) -> None:
         """Action schedule charge switch."""
 
-        _LOGGER.info("%s: Schedule charge: %s", self._caller, turn_on)
+        _LOGGER.info("%s: Schedule charge: %s", self.caller, turn_on)
         if turn_on:
             # Trigger is lost on restart, so reschedule next charge session if applicable.
             next_charge_time = self.get_datetime(
@@ -463,7 +457,7 @@ class ChargeController(ScOptionState):
     async def _async_switch_plugin_trigger(self, turn_on: bool) -> None:
         """Action plug-in trigger switch."""
 
-        _LOGGER.info("%s: Plugin trigger: %s", self._caller, turn_on)
+        _LOGGER.info("%s: Plugin trigger: %s", self.caller, turn_on)
         if turn_on:
             ok = self._tracker.track_charger_plugged_in_sensor(
                 self.async_handle_plug_in_charger_event
@@ -477,7 +471,7 @@ class ChargeController(ScOptionState):
     async def _async_switch_presence_trigger(self, turn_on: bool) -> None:
         """Action presence trigger switch."""
 
-        _LOGGER.info("%s: Presence trigger: %s", self._caller, turn_on)
+        _LOGGER.info("%s: Presence trigger: %s", self.caller, turn_on)
         if turn_on:
             ok = self._tracker.track_device_presence_sensor(
                 self.async_handle_device_presence_event
@@ -491,7 +485,7 @@ class ChargeController(ScOptionState):
     async def _async_switch_sun_elevation_trigger(self, turn_on: bool) -> None:
         """Action sun elevation trigger switch."""
 
-        _LOGGER.info("%s: Sun elevation trigger: %s", self._caller, turn_on)
+        _LOGGER.info("%s: Sun elevation trigger: %s", self.caller, turn_on)
         if turn_on:
             self._tracker.track_sun_elevation(self.async_handle_sun_elevation_update)
         else:
@@ -501,7 +495,7 @@ class ChargeController(ScOptionState):
     async def _async_switch_calibrate_max_charge_speed(self, turn_on: bool) -> None:
         """Action calibrate max charge speed switch."""
 
-        _LOGGER.info("%s: Calibrate max charge speed: %s", self._caller, turn_on)
+        _LOGGER.info("%s: Calibrate max charge speed: %s", self.caller, turn_on)
         if turn_on:
             if self._charge_task is None or self._charge_task.done():
                 self._turn_charger_switch(turn_on=True)
@@ -530,10 +524,10 @@ class ChargeController(ScOptionState):
             _LOGGER.warning("Task %s already running", self._charge_task.get_name())
             return self._charge_task
 
-        _LOGGER.info("%s: Starting charge task", self._caller)
+        _LOGGER.info("%s: Starting charge task", self.caller)
         self._charge_task = self._hass.async_create_task(
             self._async_start_charge(self._charger, self._chargeable),
-            f"{self._caller} charge",
+            f"{self.caller} charge",
         )
         return self._charge_task
 
@@ -553,19 +547,19 @@ class ChargeController(ScOptionState):
                 except asyncio.CancelledError:
                     _LOGGER.warning(
                         "%s: Aborted charge task",
-                        self._caller,
+                        self.caller,
                     )
                 except Exception as e:
                     _LOGGER.exception(
                         "%s: Error aborting charge task: %s",
-                        self._caller,
+                        self.caller,
                         e,
                     )
 
             else:
                 _LOGGER.info(
                     "%s: Charge task already completed",
-                    self._caller,
+                    self.caller,
                 )
 
     # ----------------------------------------------------------------------------
@@ -596,7 +590,7 @@ class ChargeController(ScOptionState):
                 except Exception as e:
                     _LOGGER.exception(
                         "%s: Error stopping charge task: %s",
-                        self._caller,
+                        self.caller,
                         e,
                     )
 
@@ -624,16 +618,16 @@ class ChargeController(ScOptionState):
                         )
                         return self._end_charge_task
 
-                _LOGGER.info("%s: Ending charge task", self._caller)
+                _LOGGER.info("%s: Ending charge task", self.caller)
                 self._end_charge_task = self._hass.async_create_task(
                     self._async_stop_charge(self._charger, self._chargeable),
-                    f"{self._caller} end charge",
+                    f"{self.caller} end charge",
                 )
                 return self._end_charge_task
 
             _LOGGER.info("Task %s already completed", self._charge_task.get_name())
         else:
-            _LOGGER.info("%s: No running charge task to stop", self._caller)
+            _LOGGER.info("%s: No running charge task to stop", self.caller)
         return None
 
     # ----------------------------------------------------------------------------

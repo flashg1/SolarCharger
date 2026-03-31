@@ -117,7 +117,7 @@ class OcppCharger(ChargerChargeableBase):
         if state != OCPP_CHARGING_STATE:
             _LOGGER.warning(
                 "%s: Cannot set current due to charger in state %s",
-                self._caller,
+                self.caller,
                 state,
             )
             return 0

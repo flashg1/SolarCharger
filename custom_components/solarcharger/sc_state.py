@@ -48,7 +48,7 @@ class ScState:
         """Initialize the HaState instance."""
 
         self._hass = hass
-        self._caller = caller
+        self.caller = caller
 
     # ----------------------------------------------------------------------------
     def get_ha(self) -> HomeAssistant:
@@ -177,12 +177,12 @@ class ScState:
         except ValueError as e:
             _LOGGER.debug(
                 "%s: Failed to get state string for entity '%s': '%s'",
-                self._caller,
+                self.caller,
                 entity_id,
                 e,
             )
 
-        _LOGGER.debug("%s: '%s' = '%s'", self._caller, entity_id, state_str)
+        _LOGGER.debug("%s: '%s' = '%s'", self.caller, entity_id, state_str)
 
         return state_str
 
@@ -194,7 +194,7 @@ class ScState:
         if state_str is None or state_str in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             _LOGGER.warning(
                 "%s: Cannot get number: entity='%s', value='%s'",
-                self._caller,
+                self.caller,
                 entity_id,
                 state_str,
             )
@@ -205,7 +205,7 @@ class ScState:
         except (ValueError, TypeError) as e:
             _LOGGER.warning(
                 "%s: Failed to parse state '%s' for entity '%s': %s",
-                self._caller,
+                self.caller,
                 state_str,
                 entity_id,
                 e,
@@ -230,7 +230,7 @@ class ScState:
         if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get string for entity '%s'",
-                self._caller,
+                self.caller,
                 entity_id,
             )
             return None
@@ -245,7 +245,7 @@ class ScState:
         if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get boolean for entity '%s'",
-                self._caller,
+                self.caller,
                 entity_id,
             )
             return None
@@ -270,7 +270,7 @@ class ScState:
         if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get datetime for entity '%s'",
-                self._caller,
+                self.caller,
                 entity_id,
             )
             return None
@@ -280,7 +280,7 @@ class ScState:
         except (ValueError, TypeError) as e:
             _LOGGER.warning(
                 "%s: Failed to parse state '%s' for entity '%s': %s",
-                self._caller,
+                self.caller,
                 state_str,
                 entity_id,
                 e,
@@ -295,7 +295,7 @@ class ScState:
         if state_str is None:
             _LOGGER.warning(
                 "%s: Cannot get time for entity '%s'",
-                self._caller,
+                self.caller,
                 entity_id,
             )
             return None
@@ -305,7 +305,7 @@ class ScState:
         except (ValueError, TypeError) as e:
             _LOGGER.warning(
                 "%s: Failed to parse state '%s' for entity '%s': %s",
-                self._caller,
+                self.caller,
                 state_str,
                 entity_id,
                 e,
@@ -336,7 +336,7 @@ class ScState:
         except (ValueError, RuntimeError, TimeoutError) as e:
             _LOGGER.warning(
                 "%s: Failed %s %s: data='%s': %s",
-                self._caller,
+                self.caller,
                 domain_name,
                 service_name,
                 service_data,
@@ -411,8 +411,8 @@ class ScState:
         """Get sun state or abort."""
         sun_state: State | None = self._get_entity_state(HA_SUN_ENTITY)
         if sun_state is None:
-            raise ValueError(f"{self._caller}: Failed to get sun state")
-        _LOGGER.debug("%s: Sun state: %s", self._caller, sun_state)
+            raise ValueError(f"{self.caller}: Failed to get sun state")
+        _LOGGER.debug("%s: Sun state: %s", self.caller, sun_state)
 
         return sun_state
 
@@ -421,8 +421,8 @@ class ScState:
         """Return true if within daylight hours."""
 
         sun_state = self.get_sun_state_or_abort()
-        next_sunrise = get_next_sunrise_time(self._caller, sun_state)
-        next_sunset = get_next_sunset_time(self._caller, sun_state)
+        next_sunrise = get_next_sunrise_time(self.caller, sun_state)
+        next_sunset = get_next_sunset_time(self.caller, sun_state)
         return next_sunrise > next_sunset
 
     # ----------------------------------------------------------------------------
@@ -430,7 +430,7 @@ class ScState:
         """Time between sunset and mid-night is considered to be tomorrow."""
 
         sun_state = self.get_sun_state_or_abort()
-        next_sunset = get_next_sunset_time(self._caller, sun_state)
+        next_sunset = get_next_sunset_time(self.caller, sun_state)
         now_time = self.get_local_datetime()
         today_sunset = self.combine_local_date_time(now_time.date(), next_sunset.time())
 
