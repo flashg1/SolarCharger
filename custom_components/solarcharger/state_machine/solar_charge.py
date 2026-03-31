@@ -64,7 +64,6 @@ class SolarCharge(ScOptionState):
         chargeable: Any,
         # charger: Charger,
         # chargeable: Chargeable,
-        # state: DeviceState,
     ) -> None:
         """Initialize the SolarCharge state machine instance."""
 
@@ -128,7 +127,7 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def async_action_state(self):
-        """Method for executing the device functionality. These depends on the current state of the object."""
+        """Method for executing device functionality depending on current state of the object."""
 
         await self._state.async_activate_state()
 

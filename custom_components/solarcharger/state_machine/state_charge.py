@@ -50,14 +50,6 @@ class StateCharge(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
-    def _subscribe_allocated_power_update(self) -> None:
-        """Subscribe for allocated power update."""
-
-        self.solarcharge.tracker.track_allocated_power_update(
-            self._async_handle_allocated_power_update
-        )
-
-    # ----------------------------------------------------------------------------
     async def _async_adjust_charge_current(
         self, charger: Charger, chargeable: Chargeable, allocated_power: float
     ) -> None:
@@ -138,6 +130,14 @@ class StateCharge(SolarChargeState):
                         new_state.state,
                         e,
                     )
+
+    # ----------------------------------------------------------------------------
+    def _subscribe_allocated_power_update(self) -> None:
+        """Subscribe for allocated power update."""
+
+        self.solarcharge.tracker.track_allocated_power_update(
+            self._async_handle_allocated_power_update
+        )
 
     # ----------------------------------------------------------------------------
     async def async_handle_soc_update(
