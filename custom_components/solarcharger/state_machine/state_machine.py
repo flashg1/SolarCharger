@@ -1,8 +1,13 @@
-"""State machine context."""
+"""State machine implementation."""
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import logging
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+_LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -32,20 +37,20 @@ class StateMachine:
         return type(self._state).__name__
 
     # ----------------------------------------------------------------------------
-    def start(self):
+    async def async_action_state(self):
         """Method for executing the device functionality. These depends on the current state of the object."""
 
-        self._state.start()
+        await self._state.async_activate_state()
 
     # ----------------------------------------------------------------------------
-    # if both the buttons are pushed at a time, nothing should happen
     def pushUpAndDownBtns(self) -> None:
-        print("Oops.. you should press one button at a time")
+        """If both the buttons are pushed at a time, nothing should happen."""
+        _LOGGER.info("Oops.. you should press one button at a time")
 
     # ----------------------------------------------------------------------------
-    # if no button was pushed, it should just wait open for guests
     def noBtnPushed(self) -> None:
-        print("Press any button. Up or Down")
+        """If no button was pushed, it should just wait open for guests."""
+        _LOGGER.info("Press any button. Up or Down")
 
 
 # ----------------------------------------------------------------------------
@@ -57,16 +62,16 @@ class DeviceState(ABC):
     @property
     def state_machine(self) -> StateMachine:
         """Get the state machine."""
-        return self._state_machine
+        return self._context
 
     @state_machine.setter
-    def state_machine(self, statemachine: StateMachine) -> None:
+    def state_machine(self, context: StateMachine) -> None:
         """Set the state machine."""
-        self._state_machine = statemachine
+        self._context = context
 
     # ----------------------------------------------------------------------------
     @abstractmethod
-    def start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start state action."""
 
 
@@ -76,7 +81,7 @@ class StateInitialise(DeviceState):
     """Initialising state: wake up device, etc."""
 
     # ----------------------------------------------------------------------------
-    def start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start initialising state."""
         self.state_machine.set_state(StateCharge())
 
@@ -87,8 +92,19 @@ class StateCharge(DeviceState):
     """Charging state: Turn on charger and start charging."""
 
     # ----------------------------------------------------------------------------
-    def start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start charging state."""
+        self.state_machine.set_state(StateTidyUp())
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class StateTidyUp(DeviceState):
+    """Tidy up state: Turn off charger."""
+
+    # ----------------------------------------------------------------------------
+    async def async_activate_state(self) -> None:
+        """Start tidy up state."""
         self.state_machine.set_state(StateEnd())
 
 
@@ -98,19 +114,9 @@ class StatePause(DeviceState):
     """Pause state: Turn off charger and wait for external trigger."""
 
     # ----------------------------------------------------------------------------
-    def start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start pause state."""
         self.state_machine.set_state(StateCharge())
-
-
-# ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
-class StateEnd(DeviceState):
-    """End state: Turn off charger and indicate completion."""
-
-    # ----------------------------------------------------------------------------
-    def start(self) -> None:
-        """Start end state."""
 
 
 # ----------------------------------------------------------------------------
@@ -119,16 +125,32 @@ class StateAbort(DeviceState):
     """Abort state: Abort charge."""
 
     # ----------------------------------------------------------------------------
-    def start(self) -> None:
+    async def async_activate_state(self) -> None:
         """Start abort state."""
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-if __name__ == "__main__":
+class StateEnd(DeviceState):
+    """End state: Signal completion."""
+
+    # ----------------------------------------------------------------------------
+    async def async_activate_state(self) -> None:
+        """Start end state."""
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+async def main() -> None:
+    """The main function."""
+
+    # if __name__ == "__main__":
     # The client code.
 
     charger = StateMachine(StateInitialise())
-    charger.get_state_name()
-
-    charger.start()
+    while True:
+        action_state = charger.get_state_name()
+        _LOGGER.info("Action state: %s", action_state)
+        if action_state == "StateEnd":
+            break
+        await charger.async_action_state()
