@@ -1,10 +1,7 @@
-# ruff: noqa: TID252
 """State machine state."""
 
 import logging
 
-from ..chargers.chargeable import Chargeable
-from ..chargers.charger import Charger
 from .solar_charge_state import SolarChargeState
 
 # ----------------------------------------------------------------------------
