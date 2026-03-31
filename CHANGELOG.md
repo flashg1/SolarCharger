@@ -4,6 +4,7 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
 ### Improvement
+- Refactored to use state machine to manage charging process.
 - Added charger "Instance count", "Share allocation" and "Consumed power" sensors.
 - SolarCharge class now has direct access to control entities.
 - Power allocation weight can be zero, ie. keep current power level and not get future power allocation/deallocation.
