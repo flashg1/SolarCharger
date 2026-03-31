@@ -582,11 +582,13 @@ class ChargeController(ScOptionState):
 
                 try:
                     await self._charge_task
+
                 except asyncio.CancelledError:
                     _LOGGER.info(
                         "Task %s cancelled successfully", self._charge_task.get_name()
                     )
-                    await self._solar_charge.async_tidy_up_on_exit(charger, chargeable)
+                    await self._solar_charge.async_tidy_up()
+
                 except Exception as e:
                     _LOGGER.exception(
                         "%s: Error stopping charge task: %s",

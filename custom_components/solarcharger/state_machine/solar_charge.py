@@ -357,6 +357,13 @@ class SolarCharge(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
+    async def async_tidy_up(self) -> None:
+        """Tidy up."""
+
+        self.set_state(StateTidyUp())
+        await self.async_action_state()
+
+    # ----------------------------------------------------------------------------
     async def async_start_charge_task(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
@@ -379,13 +386,6 @@ class SolarCharge(ScOptionState):
                     break
                 await self.async_action_state()
 
-            # await self._async_init_device(chargeable)
-            # await self._async_charge_device(charger, chargeable)
-            # await self.async_tidy_up_on_exit(charger, chargeable)
-
         except Exception as e:
             _LOGGER.exception("%s: Abort charge: %s", self.caller, e)
-            self.set_state(StateTidyUp())
-            await self.async_action_state()
-
-            # await self.async_tidy_up_on_exit(charger, chargeable)
+            await self.async_tidy_up()
