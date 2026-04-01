@@ -30,6 +30,7 @@ from .const import (
     WEEKLY_CHARGE_ENDTIMES,
 )
 from .helpers.general import async_set_allocated_power
+from .model_allocation import PowerAllocation
 from .model_charge_control import ChargeControl
 from .model_device_control import DeviceControl
 from .sc_option_state import ScOptionState
@@ -336,12 +337,15 @@ class SolarChargerCoordinator(ScOptionState):
     #     return allocation_pool
 
     # ----------------------------------------------------------------------------
-    def _get_total_allocation_pool(self) -> tuple[int, dict[str, float], float]:
+    def _get_total_allocation_pool(
+        self,
+    ) -> tuple[int, float, float, dict[str, PowerAllocation]]:
         """Get allocation pool from options. Note allocation weight entity can be overriden."""
 
-        allocation_pool: dict[str, float] = {}
-        total_weight = 0
         total_instance = 0
+        plan_total_weight = 0
+        final_total_weight = 0
+        allocations: dict[str, PowerAllocation] = {}
 
         for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
@@ -364,17 +368,27 @@ class SolarChargerCoordinator(ScOptionState):
                 ].state
             )
 
-            participation_weight = (
-                allocation_weight
-                * control.controller.charge_control.instance_count
-                * share_allocation
+            allocation = PowerAllocation(
+                subentry_id=control.subentry_id,
+                consumed_power=0,
+                max_power=0,
+                allocation_weight=allocation_weight,
+                share_allocation=share_allocation,
             )
-            allocation_pool[control.subentry_id] = participation_weight
-            total_weight += participation_weight
+
+            allocation.plan_weight = (
+                allocation_weight * control.controller.charge_control.instance_count
+            )
+            plan_total_weight += allocation.plan_weight
+
+            allocation.final_weight = allocation.plan_weight * share_allocation
+            final_total_weight += allocation.final_weight
+
+            allocations[control.subentry_id] = allocation
 
             total_instance += control.controller.charge_control.instance_count
 
-        return (total_instance, allocation_pool, total_weight)
+        return (total_instance, plan_total_weight, final_total_weight, allocations)
 
     # ----------------------------------------------------------------------------
     async def _async_allocate_net_power(self) -> None:
@@ -385,7 +399,9 @@ class SolarChargerCoordinator(ScOptionState):
             _LOGGER.warning("Failed to get net power update. Try again next cycle.")
             return
 
-        total_instance, pool, total_weight = self._get_total_allocation_pool()
+        (total_instance, plan_total_weight, final_total_weight, allocations) = (
+            self._get_total_allocation_pool()
+        )
 
         if total_instance > 0:
             for control in self.device_controls.values():
@@ -396,23 +412,36 @@ class SolarChargerCoordinator(ScOptionState):
                     )
                     continue
 
-                participation_weight = pool[control.subentry_id]
-                if total_weight > 0:
-                    allocated_power = net_power * participation_weight / total_weight
+                allocation = allocations[control.subentry_id]
+                if final_total_weight > 0:
+                    allocation.final_power = (
+                        net_power * allocation.final_weight / final_total_weight
+                    )
                 else:
-                    allocated_power = 0
+                    allocation.final_power = 0
+
+                if plan_total_weight > 0:
+                    allocation.plan_power = (
+                        net_power * allocation.plan_weight / plan_total_weight
+                    )
+                else:
+                    allocation.plan_power = 0
 
                 # Writer will set entity value directly. Reader will get value via entity ID in options which can be overridden.
+                # Paticipants in power sharing will use final_power, non-participants will use plan_power as indication of possible available power.
                 await async_set_allocated_power(
-                    control.controller.charge_control, allocated_power
+                    control.controller.charge_control,
+                    allocation.final_power
+                    if allocation.share_allocation > 0
+                    else allocation.plan_power,
                 )
 
                 _LOGGER.debug(
-                    "%s: total_weight=%s, allocation_weight=%s, allocated_power=%s",
+                    "%s: plan_total_weight=%s, final_total_weight=%s, allocation=%s",
                     control.config_name,
-                    total_weight,
-                    participation_weight,
-                    allocated_power,
+                    plan_total_weight,
+                    final_total_weight,
+                    allocation,
                 )
         else:
             _LOGGER.debug(
