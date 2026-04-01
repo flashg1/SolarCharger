@@ -20,15 +20,19 @@ from ..const import (
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_POWER_MONITOR_DURATION,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGER_CHARGING_SENSOR,
+    SENSOR_CONSUMED_POWER,
+    ChargeStatus,
 )
 from ..exceptions.entity_exception import EntityExceptionError
 from ..model_charge_stats import ChargeStats
 from ..model_config import ConfigValueDict
 from ..sc_option_state import ScheduleData, StateOfCharge
 from .solar_charge_state import SolarChargeState
+from .state_pause import StatePause
 from .state_tidyup import StateTidyUp
 
 # ----------------------------------------------------------------------------
@@ -118,11 +122,40 @@ class StateCharge(SolarChargeState):
             # Make sure we don't change the charge current too often
             if duration_since_last_change >= MIN_TIME_BETWEEN_UPDATE:
                 try:
-                    await self._async_adjust_charge_current(
-                        self.solarcharge.charger,
-                        self.solarcharge.chargeable,
-                        float(new_state.state),
-                    )
+                    allocated_power = float(new_state.state)
+
+                    # Save allocated power to calculate moving average.
+                    if self.solarcharge.max_allocation_count > 0:
+                        if (
+                            self.solarcharge.is_calibrate_max_charge_speed()
+                            or self.solarcharge.is_fast_charge_mode()
+                            or self.solarcharge.running_goal.has_charge_endtime
+                        ):
+                            self.solarcharge.power_allocations = []
+                        elif (
+                            len(self.solarcharge.power_allocations)
+                            >= self.solarcharge.max_allocation_count
+                        ):
+                            self.solarcharge.power_allocations.pop(0)
+
+                        assert self.solarcharge.entities.sensors is not None
+                        consumed_power = float(
+                            self.solarcharge.entities.sensors[
+                                SENSOR_CONSUMED_POWER
+                            ].state
+                        )
+                        self.solarcharge.power_allocations.append(
+                            allocated_power - consumed_power
+                        )
+
+                    # Only adjust charge current if we are still in charging state
+                    if self.solarcharge.get_state_name() == "StateCharge":
+                        await self._async_adjust_charge_current(
+                            self.solarcharge.charger,
+                            self.solarcharge.chargeable,
+                            allocated_power,
+                        )
+
                 except Exception as e:
                     _LOGGER.exception(
                         "%s: Failed to adjust current for net power %s W: %s",
@@ -430,14 +463,17 @@ class StateCharge(SolarChargeState):
         return (new_charge_current, old_charge_current)
 
     # ----------------------------------------------------------------------------
-    def _is_continue_charge(
+    def _get_charge_status(
         self,
         charger: Charger,
         chargeable: Chargeable,
         goal: ScheduleData,
+        max_allocation_count: int,
+        power_allocations: list[float],
         stats: ChargeStats,
-    ) -> bool:
+    ) -> ChargeStatus:
         """Check if to continue charging."""
+        charge_status: ChargeStatus = ChargeStatus.CHARGE_EXIT
 
         is_connected = self.solarcharge.is_connected(charger)
 
@@ -480,9 +516,18 @@ class StateCharge(SolarChargeState):
             )
         )
 
-        if not continue_charge:
+        if continue_charge:
+            charge_status = ChargeStatus.CHARGE_CONTINUE
+            if max_allocation_count > 0:
+                is_enough_power = self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
+                    max_allocation_count, power_allocations
+                )
+                if is_enough_power is not None and not is_enough_power:
+                    charge_status = ChargeStatus.CHARGE_PAUSE
+
+        if charge_status != ChargeStatus.CHARGE_CONTINUE:
             _LOGGER.warning(
-                "%s: Stopping charge: "
+                "%s: Stopping charge: charge_status=%s, "
                 "is_connected=%s, is_below_charge_limit=%s, is_charging=%s (%s), "
                 "is_sun_trigger=%s, is_sun_above_start_end_elevations=%s, elevation=%s, "
                 "is_use_secondary_power_source=%s, is_calibrate_max_charge_speed=%s, "
@@ -490,6 +535,7 @@ class StateCharge(SolarChargeState):
                 "propose_charge_starttime=%s, current_time_with_grace=%s, is_immediate_start_with_grace=%s, "
                 "stats=%s",
                 self.solarcharge.caller,
+                charge_status,
                 is_connected,
                 is_below_charge_limit,
                 is_charging,
@@ -507,7 +553,7 @@ class StateCharge(SolarChargeState):
                 stats,
             )
 
-        return continue_charge
+        return charge_status
 
     # ----------------------------------------------------------------------------
     def _log_charging_status(self, charger: Charger, msg: str) -> None:
@@ -581,14 +627,33 @@ class StateCharge(SolarChargeState):
                     await self.solarcharge.async_turn_off_calibrate_max_charge_speed_switch()
 
     # ----------------------------------------------------------------------------
+    def _set_max_allocation_count(self, wait_net_power_update: float) -> None:
+        """Initialize max allocation count."""
+
+        monitor_duration = self.solarcharge.option_get_entity_number_or_abort(
+            NUMBER_POWER_MONITOR_DURATION
+        )
+        monitor_duration_seconds = monitor_duration * 60
+
+        if monitor_duration > 0 and monitor_duration_seconds > wait_net_power_update:
+            self.solarcharge.max_allocation_count = int(
+                monitor_duration_seconds / wait_net_power_update
+            )
+        else:
+            self.solarcharge.max_allocation_count = 0
+
+    # ----------------------------------------------------------------------------
     async def _async_charge_device(
         self, charger: Charger, chargeable: Chargeable
-    ) -> None:
+    ) -> ChargeStatus:
         """Loop to charge device."""
+        charge_status: ChargeStatus = ChargeStatus.CHARGE_EXIT
 
-        wait_net_power_update = self.solarcharge.config_get_number_or_abort(
-            CONFIG_WAIT_NET_POWER_UPDATE
+        self.solarcharge.wait_net_power_update = (
+            self.solarcharge.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
         )
+        self._set_max_allocation_count(self.solarcharge.wait_net_power_update)
+        self.solarcharge.power_allocations = []
 
         while True:
             # Abort charge if exceeds MAX_CONSECUTIVE_FAILURE_COUNT
@@ -618,12 +683,16 @@ class StateCharge(SolarChargeState):
                 )
 
                 # Check if continue charging or exit loop. Must run after setting charge limit.
-                if not self._is_continue_charge(
-                    charger,
-                    chargeable,
-                    self.solarcharge.running_goal,
-                    self.solarcharge.stats,
-                ):
+                if (
+                    charge_status := self._get_charge_status(
+                        charger,
+                        chargeable,
+                        self.solarcharge.running_goal,
+                        self.solarcharge.max_allocation_count,
+                        self.solarcharge.power_allocations,
+                        self.solarcharge.stats,
+                    )
+                ) != ChargeStatus.CHARGE_CONTINUE:
                     break
 
                 # Turn on charger if looping for the first time.
@@ -673,14 +742,20 @@ class StateCharge(SolarChargeState):
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
             # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
-            await asyncio.sleep(wait_net_power_update)
+            await asyncio.sleep(self.solarcharge.wait_net_power_update)
             self.solarcharge.stats.loop_total += 1
+
+        return charge_status
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
         """Start charging state."""
 
-        await self._async_charge_device(
+        charge_status = await self._async_charge_device(
             self.solarcharge.charger, self.solarcharge.chargeable
         )
-        self.solarcharge.set_state(StateTidyUp())
+
+        if charge_status == ChargeStatus.CHARGE_PAUSE:
+            self.solarcharge.set_state(StatePause())
+        else:
+            self.solarcharge.set_state(StateTidyUp())

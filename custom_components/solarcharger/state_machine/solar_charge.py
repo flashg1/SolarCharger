@@ -22,6 +22,7 @@ from ..const import (
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
@@ -73,7 +74,7 @@ class SolarCharge(ScOptionState):
         ScOptionState.__init__(self, hass, entry, subentry, caller)
 
         self.tracker = tracker
-        self._entities = entities
+        self.entities = entities
         self.charger = charger
         self.chargeable = chargeable
         self.scheduler = ChargeScheduler(hass, entry, subentry)
@@ -82,10 +83,13 @@ class SolarCharge(ScOptionState):
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
 
+        self.wait_net_power_update: float = 60
         self.update_ha_task_count = 0
         self.started_calibrate_max_charge_speed = False
         self.charge_current_updatetime: float = 0
         self.soc_updates: list[StateOfCharge] = []
+        self.power_allocations: list[float] = []
+        self.max_allocation_count = 0
         self.stats = ChargeStats()
 
         # Initialise state machine self._state variable.
@@ -263,8 +267,8 @@ class SolarCharge(ScOptionState):
             effective_voltage = self.option_get_entity_number_or_abort(
                 NUMBER_CHARGER_EFFECTIVE_VOLTAGE
             )
-            if self._entities.sensors:
-                self._entities.sensors[SENSOR_CONSUMED_POWER].set_state(
+            if self.entities.sensors:
+                self.entities.sensors[SENSOR_CONSUMED_POWER].set_state(
                     new_charge_current * effective_voltage
                 )
 
@@ -356,6 +360,46 @@ class SolarCharge(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
+    def is_average_allocated_power_more_than_min_workable_power(
+        self,
+        max_allocation_count: int,
+        power_allocations: list[float],
+    ) -> bool | None:
+        """Is average allocated power more than minimum workable power? None=not enough data."""
+        is_enough_power = None
+
+        if max_allocation_count > 0 and len(power_allocations) >= max_allocation_count:
+            average_allocated_power = sum(power_allocations) / len(power_allocations)
+
+            charger_min_workable_current = self.option_get_entity_number_or_abort(
+                NUMBER_CHARGER_MIN_WORKABLE_CURRENT
+            )
+            charger_effective_voltage = self.option_get_entity_number_or_abort(
+                NUMBER_CHARGER_EFFECTIVE_VOLTAGE
+            )
+            min_workable_power = (
+                charger_min_workable_current * charger_effective_voltage * -1
+            )
+
+            # Note surplus power is negative.
+            is_enough_power = average_allocated_power <= min_workable_power
+
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(
+                    "%s: average_allocated_power=%s W, min_workable_power=%s W, is_enough_power=%s, "
+                    "max_allocation_count=%s, power_allocations_count=%s, power_allocations=%s",
+                    self.caller,
+                    average_allocated_power,
+                    min_workable_power,
+                    is_enough_power,
+                    max_allocation_count,
+                    len(power_allocations),
+                    power_allocations,
+                )
+
+        return is_enough_power
+
+    # ----------------------------------------------------------------------------
     async def async_tidy_up(self) -> None:
         """Tidy up."""
 
@@ -380,7 +424,7 @@ class SolarCharge(ScOptionState):
             self.set_state(StateInitialise())
             while True:
                 action_state = self.get_state_name()
-                _LOGGER.info("%s: Action state: %s", self.caller, action_state)
+                _LOGGER.warning("%s: Action state: %s", self.caller, action_state)
                 if action_state == "StateEnd":
                     break
                 await self.async_action_state()

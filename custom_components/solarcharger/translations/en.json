@@ -128,6 +128,7 @@
                     "charge_endtime_sunday": "Sunday charge end time",
                     "sunrise_elevation_start_trigger": "Sunrise elevation start trigger (degrees)",
                     "sunset_elevation_end_trigger": "Sunset elevation end trigger (degrees)",
+                    "power_monitor_duration": "Power monitor duration (minutes)",
                     "wait_chargee_wakeup": "Wait device wakeup (seconds)",
                     "wait_chargee_update_ha": "Wait device update HA (seconds)",
                     "wait_chargee_limit_change": "Wait device charge limit change (seconds)",
@@ -188,6 +189,9 @@
                     "error": "Error"
                 }
             },
+            "charger_allocated_power": {
+                "name": "Allocated power"
+            },
             "consumed_power": {
                 "name": "Consumed power"
             },
@@ -230,9 +234,6 @@
             }
         },
         "number": {
-            "charger_allocated_power": {
-                "name": "Allocated power"
-            },
             "chargee_charge_limit": {
                 "name": "Charge limit"
             },
@@ -265,6 +266,9 @@
             },
             "sunset_elevation_end_trigger": {
                 "name": "Sunset elevation end trigger"
+            },
+            "power_monitor_duration": {
+                "name": "Power monitor duration"
             },
             "ocpp_profile_id": {
                 "name": "Charge profile ID"

@@ -44,10 +44,10 @@ from ..const import (  # noqa: TID252
     CALLBACK_SOC_UPDATE,
     CALLBACK_SUN_ELEVATION_UPDATE,
     HA_SUN_ENTITY,
-    NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_DEVICE_PRESENCE_SENSOR,
+    SENSOR_CHARGER_ALLOCATED_POWER,
 )
 from ..sc_option_state import ScOptionState  # noqa: TID252
 from ..utils import (  # noqa: TID252
@@ -390,7 +390,7 @@ class Tracker(ScOptionState):
         # So need both to see all events?
         #     self._async_handle_allocated_power_update,
         self._track_config_item_state(
-            NUMBER_CHARGER_ALLOCATED_POWER, CALLBACK_ALLOCATE_POWER, action
+            SENSOR_CHARGER_ALLOCATED_POWER, CALLBACK_ALLOCATE_POWER, action
         )
 
     # ----------------------------------------------------------------------------

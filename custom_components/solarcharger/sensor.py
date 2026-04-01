@@ -22,6 +22,7 @@ from .const import (
     COORDINATOR_STATES,
     DOMAIN,
     SENSOR,
+    SENSOR_CHARGER_ALLOCATED_POWER,
     SENSOR_CONSUMED_POWER,
     SENSOR_INSTANCE_COUNT,
     SENSOR_LAST_CHECK,
@@ -135,6 +136,21 @@ CONFIG_SENSOR_LIST: tuple[
         COORDINATOR_STATE_STOPPED,
     ),
     (
+        SENSOR_CHARGER_ALLOCATED_POWER,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL_GLOBAL,
+        SensorEntityDescription(
+            key=SENSOR_CHARGER_ALLOCATED_POWER,
+            device_class=SensorDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            suggested_display_precision=0,
+            state_class=SensorStateClass.MEASUREMENT,
+            # Always force update when setting value even if value is same.
+            force_update=True,
+        ),
+        0,
+    ),
+    (
         SENSOR_CONSUMED_POWER,
         SolarChargerSensorStateEntity,
         SolarChargerEntityType.TYPE_LOCAL,
@@ -198,34 +214,36 @@ async def async_setup_entry(
 
     for subentry in config_entry.subentries.values():
         # For charger subentries only
-        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
-            sensors: dict[str, SolarChargerSensorEntity] = {}
+        # if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
 
-            for (
-                config_item,
-                cls,
-                entity_type,
-                entity_description,
-                starting_state,
-            ) in CONFIG_SENSOR_LIST:
-                if is_create_entity(subentry, entity_type):
-                    sensors[config_item] = cls(
-                        config_item,
-                        subentry,
-                        entity_type,
-                        entity_description,
-                        starting_state,
-                    )
+        # For both global default and charger subentries
+        sensors: dict[str, SolarChargerSensorEntity] = {}
 
-            if len(sensors) > 0:
-                coordinator.device_controls[
-                    subentry.subentry_id
-                ].controller.charge_control.entities.sensors = sensors
-                async_add_entities(
-                    sensors.values(),
-                    update_before_add=False,
-                    config_subentry_id=subentry.subentry_id,
+        for (
+            config_item,
+            cls,
+            entity_type,
+            entity_description,
+            starting_state,
+        ) in CONFIG_SENSOR_LIST:
+            if is_create_entity(subentry, entity_type):
+                sensors[config_item] = cls(
+                    config_item,
+                    subentry,
+                    entity_type,
+                    entity_description,
+                    starting_state,
                 )
-                # await coordinator.init_sensors(
-                #     coordinator.charge_controls[subentry.subentry_id]
-                # )
+
+        if len(sensors) > 0:
+            coordinator.device_controls[
+                subentry.subentry_id
+            ].controller.charge_control.entities.sensors = sensors
+            async_add_entities(
+                sensors.values(),
+                update_before_add=False,
+                config_subentry_id=subentry.subentry_id,
+            )
+            # await coordinator.init_sensors(
+            #     coordinator.charge_controls[subentry.subentry_id]
+            # )

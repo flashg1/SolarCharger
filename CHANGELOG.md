@@ -1,14 +1,16 @@
 # Changelog
 
-## v0.4.4 2026-03-23
+## v0.5.0 2026-03-23
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
+- Changed "Allocated power" from number to sensor. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+### New feature
+- Added "Power monitor duration" to turn off charger if average power in duration drops below "Min workable current".
 ### Improvement
 - Refactored to use state machine to manage charging process.
 - Added charger "Instance count", "Share allocation" and "Consumed power" sensors.
 - SolarCharge class now has direct access to control entities.
-- Power allocation weight can be zero, ie. keep current power level and not get future power allocation/deallocation.
-- Power allocation weight and allocated power entities can be overriden in config.
+- "Power allocation weight" can be zero, ie. keep current power level and not get future power allocation/deallocation.
+- "Power allocation weight" and "Allocated power" entities can now be overriden in config.
 - Included brand icons for SolarCharger starting with HA 2026.3.
 - Included sun integration as dependency in manifest.json.
 

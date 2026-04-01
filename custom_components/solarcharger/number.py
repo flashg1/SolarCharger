@@ -16,7 +16,6 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
-    UnitOfPower,
     UnitOfTime,
 )
 from homeassistant.helpers.entity import EntityCategory
@@ -35,7 +34,6 @@ from .const import (
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-    NUMBER_CHARGER_ALLOCATED_POWER,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_MIN_CURRENT,
@@ -43,6 +41,7 @@ from .const import (
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
+    NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
@@ -212,19 +211,6 @@ CONFIG_NUMBER_LIST: tuple[
     # entity_category=EntityCategory.CONFIG
     #####################################
     (
-        NUMBER_CHARGER_ALLOCATED_POWER,
-        SolarChargerEntityType.TYPE_LOCAL_GLOBAL,
-        NumberEntityDescription(
-            key=NUMBER_CHARGER_ALLOCATED_POWER,
-            device_class=NumberDeviceClass.POWER,
-            native_unit_of_measurement=UnitOfPower.WATT,
-            native_min_value=-23000.0,
-            native_max_value=+23000.0,
-            # Always force update when setting value even if value is same.
-            force_update=True,
-        ),
-    ),
-    (
         NUMBER_CHARGER_MAX_SPEED,
         SolarChargerEntityType.TYPE_LOCAL,
         NumberEntityDescription(
@@ -382,6 +368,21 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+        ),
+    ),
+    #####################################
+    # Charger configs
+    #####################################
+    (
+        NUMBER_POWER_MONITOR_DURATION,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_POWER_MONITOR_DURATION,
+            entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.MINUTES,
+            native_min_value=0,
+            native_max_value=60,
         ),
     ),
     #####################################

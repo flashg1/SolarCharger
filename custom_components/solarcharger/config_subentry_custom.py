@@ -27,10 +27,10 @@ from .const import (
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_SELECT_CHARGER,
     ERROR_SUBENTRY_CREATED,
-    NUMBER,
-    NUMBER_CHARGER_ALLOCATED_POWER,
     OPTION_CHARGER_NAME,
     OPTION_GLOBAL_DEFAULTS_ID,
+    SENSOR,
+    SENSOR_CHARGER_ALLOCATED_POWER,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -148,7 +148,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                     )
 
                 global_defaults_allocated_power = compose_entity_id(
-                    NUMBER, OPTION_GLOBAL_DEFAULTS_ID, NUMBER_CHARGER_ALLOCATED_POWER
+                    SENSOR, OPTION_GLOBAL_DEFAULTS_ID, SENSOR_CHARGER_ALLOCATED_POWER
                 )
                 global_defaults_device_entry: DeviceEntry | None = (
                     self.get_device_entry(global_defaults_allocated_power)

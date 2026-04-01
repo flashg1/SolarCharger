@@ -1,12 +1,20 @@
-# ruff: noqa: TID252
+# ruff: noqa: TRY401, TID252
 """State machine state."""
 
+import asyncio
 import logging
 
+# WL: Cannot get this to work. Got following error,
+# ModuleNotFoundError: No module named 'state_initialise'
+#
+# Import Modules, Not Classes: Instead of from machine import StateA, use
+# import machine and refer to machine.StateA. This breaks the cycle because
+# Python only needs to locate the module, not resolve its contents immediately.
+# import state_initialise as machine_state
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
+from ..const import SENSOR_SHARE_ALLOCATION
 from .solar_charge_state import SolarChargeState
-from .state_charge import StateCharge
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -19,6 +27,60 @@ class StatePause(SolarChargeState):
     """Pause state: Turn off charger and wait for external trigger."""
 
     # ----------------------------------------------------------------------------
+    async def _async_pause_charge(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        """Pause charge and wait for external trigger to continue. Let device sleep."""
+
+        assert self.solarcharge.entities.sensors is not None
+        self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(0)
+
+        try:
+            await self.solarcharge.async_set_charge_current(charger, 0)
+            await self.solarcharge.async_turn_charger_switch(charger, turn_on=False)
+            await self.solarcharge.async_update_ha(chargeable)
+
+            self.solarcharge.power_allocations = []
+
+            while True:
+                is_enough_power = self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
+                    self.solarcharge.max_allocation_count,
+                    self.solarcharge.power_allocations,
+                )
+
+                if (
+                    (is_enough_power is not None and is_enough_power)
+                    or self.solarcharge.is_calibrate_max_charge_speed()
+                    or self.solarcharge.is_fast_charge_mode()
+                    # Can't do this for now since running goal is not running!
+                    # or self.solarcharge.running_goal.has_charge_endtime
+                    or self.solarcharge.max_allocation_count == 0
+                ):
+                    break
+
+                await asyncio.sleep(self.solarcharge.wait_net_power_update)
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to pause charge: %s", self.solarcharge.caller, e
+            )
+
+        self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(1)
+
+    # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
         """Start pause state."""
-        self.solarcharge.set_state(StateCharge())
+
+        await self._async_pause_charge(
+            self.solarcharge.charger, self.solarcharge.chargeable
+        )
+
+        # WL: Cannot get this to work.
+        # Import Modules, Not Classes
+        # self.solarcharge.set_state(machine_state.StateInitialise())
+
+        # Local Imports (Lazy Loading): Move from state_a import StateA inside
+        # the handle method of StateB. This delays the import until the method runs.
+        from .state_initialise import StateInitialise  # noqa: PLC0415
+
+        self.solarcharge.set_state(StateInitialise())

@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """General helpers."""
 
 # pylint: disable=relative-beyond-top-level
@@ -6,8 +7,8 @@ from typing import Any
 
 from homeassistant.core import State
 
-from ..const import NUMBER_CHARGER_ALLOCATED_POWER  # noqa: TID252
-from ..model_charge_control import ChargeControl  # noqa: TID252
+from ..const import SENSOR_CHARGER_ALLOCATED_POWER
+from ..model_charge_control import ChargeControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -33,14 +34,14 @@ async def async_set_allocated_power(
     """Set allocated power number entity directly."""
     ok: bool = False
 
-    if control.entities.numbers:
+    if control.entities.sensors:
         # Force update is enabled for allocated power so update is send even
         # if new value is same as old.
         # Ensure polling is disabled for the entity, otherwise will get updates twice,
         # ie. one from polling and one from push-pull.
-        await control.entities.numbers[
-            NUMBER_CHARGER_ALLOCATED_POWER
-        ].async_set_native_value(allocated_power)
+        control.entities.sensors[SENSOR_CHARGER_ALLOCATED_POWER].set_state(
+            allocated_power
+        )
         ok = True
 
     return ok

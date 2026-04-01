@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import uuid4
 
 import voluptuous as vol
@@ -63,12 +63,12 @@ from .const import (
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-    NUMBER_CHARGER_ALLOCATED_POWER,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
@@ -100,6 +100,7 @@ from .const import (
     OPTION_ID,
     OPTION_NAME,
     OPTION_SELECT_SETTINGS,
+    SENSOR_CHARGER_ALLOCATED_POWER,
     SUBENTRY_CHARGER_TYPES,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     TIME_CHARGE_ENDTIME_FRIDAY,
@@ -318,6 +319,12 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, NUMBER_WAIT_CHARGER_AMP_CHANGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
+            #####################################
+            # Charger configs
+            #####################################
+            self._optional(
+                subentry, NUMBER_POWER_MONITOR_DURATION, use_default
+            ): NUMBER_ENTITY_SELECTOR,
         }
 
     # ----------------------------------------------------------------------------
@@ -369,10 +376,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
-                subentry, NUMBER_CHARGER_ALLOCATED_POWER, use_default
+                subentry, SENSOR_CHARGER_ALLOCATED_POWER, use_default
             ): choose_selector(
                 api_entities,
-                NUMBER_CHARGER_ALLOCATED_POWER,
+                SENSOR_CHARGER_ALLOCATED_POWER,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,
