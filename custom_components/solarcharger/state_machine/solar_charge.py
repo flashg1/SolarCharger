@@ -465,13 +465,19 @@ class SolarCharge(ScOptionState):
         # https://auth0.com/blog/state-pattern-in-python/
         self.set_machine_state(state)
         while True:
-            action_state = self.get_state_classname()
-            _LOGGER.warning("%s: Action state: %s", self.caller, action_state)
-            await self.async_action_state()
+            _LOGGER.warning(
+                "%s: Action state: %s", self.caller, self.get_state_classname()
+            )
 
-            # Run the last state.
-            if self.machine_state.state_name == RunState.STATE_ENDED.value:
-                await self.async_action_state()
+            current_state = self.machine_state.state_name
+            await self.async_action_state()
+            next_state = self.machine_state.state_name
+
+            if (
+                next_state == current_state
+                and current_state == RunState.STATE_ENDED.value
+            ):
+                # Completed "Ended" state. No more states to run.
                 break
 
     # ----------------------------------------------------------------------------
