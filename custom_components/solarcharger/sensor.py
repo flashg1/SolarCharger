@@ -18,9 +18,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from .const import (
-    COORDINATOR_STATE_STOPPED,
-    COORDINATOR_STATES,
     DOMAIN,
+    RUN_STATE_LIST,
     SENSOR,
     SENSOR_CHARGER_ALLOCATED_POWER,
     SENSOR_CONSUMED_POWER,
@@ -28,7 +27,7 @@ from .const import (
     SENSOR_LAST_CHECK,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
-    SUBENTRY_CHARGER_TYPES,
+    RunState,
 )
 from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -131,9 +130,9 @@ CONFIG_SENSOR_LIST: tuple[
         SensorEntityDescription(
             key=SENSOR_RUN_STATE,
             device_class=SensorDeviceClass.ENUM,
-            options=list(COORDINATOR_STATES),
+            options=RUN_STATE_LIST,
         ),
-        COORDINATOR_STATE_STOPPED,
+        RunState.STATE_ENDED.value,
     ),
     (
         SENSOR_CHARGER_ALLOCATED_POWER,

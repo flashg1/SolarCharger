@@ -5,6 +5,7 @@ from datetime import timedelta
 import logging
 
 from ..chargers.chargeable import Chargeable
+from ..const import RunState
 from ..model_charge_stats import ChargeStats
 from .solar_charge_state import SolarChargeState
 from .state_charge import StateCharge
@@ -18,6 +19,12 @@ _LOGGER = logging.getLogger(__name__)
 # ----------------------------------------------------------------------------
 class StateInitialise(SolarChargeState):
     """Initialising state: wake up device, etc."""
+
+    def __init__(
+        self,
+    ) -> None:
+        """Initialise machine state."""
+        self.state_name = RunState.STATE_INITIALISING.value
 
     # ----------------------------------------------------------------------------
     def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
@@ -77,5 +84,6 @@ class StateInitialise(SolarChargeState):
     async def async_activate_state(self) -> None:
         """Start initialising state."""
 
+        self.solarcharge.set_run_state(self.state_name)
         await self._async_init_device(self.solarcharge.chargeable)
         self.solarcharge.set_state(StateCharge())

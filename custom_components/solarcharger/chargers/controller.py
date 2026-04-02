@@ -24,8 +24,6 @@ from homeassistant.core import (
 from homeassistant.helpers.typing import NoEventData
 
 from ..const import (
-    COORDINATOR_STATE_CHARGING,
-    COORDINATOR_STATE_STOPPED,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     SENSOR_CONSUMED_POWER,
     SENSOR_INSTANCE_COUNT,
@@ -678,9 +676,6 @@ class ChargeController(ScOptionState):
                         control.instance_count
                     )
                     control.entities.sensors[SENSOR_CONSUMED_POWER].set_state(0)
-                    control.entities.sensors[SENSOR_RUN_STATE].set_state(
-                        COORDINATOR_STATE_STOPPED
-                    )
 
             control.charge_task = await self.async_start_charge()
             control.instance_count = 1
@@ -688,9 +683,6 @@ class ChargeController(ScOptionState):
             if control.entities.sensors:
                 control.entities.sensors[SENSOR_INSTANCE_COUNT].set_state(
                     control.instance_count
-                )
-                control.entities.sensors[SENSOR_RUN_STATE].set_state(
-                    COORDINATOR_STATE_CHARGING
                 )
 
     # ----------------------------------------------------------------------------

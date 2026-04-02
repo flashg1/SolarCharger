@@ -205,12 +205,12 @@ TIME_DEFAULT_STR = "00:00:00"
 # Make sure the entity key names are unique.
 #######################################################
 
-COORDINATOR_STATE_STOPPED = "stopped"
-COORDINATOR_STATE_CHARGING = "charging"
-COORDINATOR_STATES: tuple[str, ...] = (
-    COORDINATOR_STATE_STOPPED,
-    COORDINATOR_STATE_CHARGING,
-)
+# COORDINATOR_STATE_STOPPED = "stopped"
+# COORDINATOR_STATE_CHARGING = "charging"
+# COORDINATOR_STATES: tuple[str, ...] = (
+#     COORDINATOR_STATE_STOPPED,
+#     COORDINATOR_STATE_CHARGING,
+# )
 
 # Event constants
 SOLAR_CHARGER_COORDINATOR_EVENT = f"{DOMAIN}_coordinator_event"
@@ -459,8 +459,9 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
 }
 
 OCPP_DEFAULT_VALUES: dict[str, Any] = {
-    NUMBER_CHARGER_MIN_CURRENT: 0,
+    NUMBER_CHARGER_MIN_CURRENT: 6,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: 6,
+    NUMBER_POWER_MONITOR_DURATION: 10,
     NUMBER_OCPP_PROFILE_ID: 1,
     NUMBER_OCPP_PROFILE_STACK_LEVEL: 0,
 }
@@ -830,6 +831,21 @@ class ChargeStatus(Enum):
     CHARGE_CONTINUE = "charge_continue"
     CHARGE_PAUSE = "charge_pause"
     CHARGE_EXIT = "charge_exit"
+
+
+class RunState(Enum):
+    """Enumeration of machine states."""
+
+    STATE_UNDEFINED = "Undefined"
+    STATE_INITIALISING = "Initialising"
+    STATE_CHARGING = "Charging"
+    STATE_PAUSED = "Paused"
+    STATE_ABORTING = "Aborting"
+    STATE_ENDING = "Ending"
+    STATE_ENDED = "Ended"
+
+
+RUN_STATE_LIST: list[str] = [state.value for state in RunState]
 
 
 class ChargeControlApi(Enum):

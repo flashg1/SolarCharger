@@ -34,6 +34,8 @@ from ..const import (
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     SENSOR_CONSUMED_POWER,
+    SENSOR_RUN_STATE,
+    RunState,
 )
 from ..model_charge_control import ControlEntities
 from ..model_charge_stats import ChargeStats
@@ -136,10 +138,17 @@ class SolarCharge(ScOptionState):
         await self._state.async_activate_state()
 
     # ----------------------------------------------------------------------------
-    def get_state_name(self) -> str:
+    def get_state_classname(self) -> str:
         """Get current state name of object."""
 
         return type(self._state).__name__
+
+    # ----------------------------------------------------------------------------
+    def set_run_state(self, state: str) -> None:
+        """Set the run state of the object."""
+
+        assert self.entities.sensors is not None
+        self.entities.sensors[SENSOR_RUN_STATE].set_state(state)
 
     # ----------------------------------------------------------------------------
     # Local utils
@@ -400,11 +409,29 @@ class SolarCharge(ScOptionState):
         return is_enough_power
 
     # ----------------------------------------------------------------------------
+    async def async_start_state_machine(self, state: SolarChargeState) -> None:
+        """Async state machine."""
+
+        # Reference
+        # https://auth0.com/blog/state-pattern-in-python/
+        self.set_state(state)
+        while True:
+            action_state = self.get_state_classname()
+            _LOGGER.warning("%s: Action state: %s", self.caller, action_state)
+            await self.async_action_state()
+
+            # Run the last state.
+            if self._state.state_name == RunState.STATE_ENDED.value:
+                await self.async_action_state()
+                break
+
+    # ----------------------------------------------------------------------------
+    # TODO: Look at where to handle exceptions.
+
     async def async_tidy_up(self) -> None:
         """Tidy up."""
 
-        self.set_state(StateTidyUp())
-        await self.async_action_state()
+        await self.async_start_state_machine(StateTidyUp())
 
     # ----------------------------------------------------------------------------
     async def async_start_charge_task(
@@ -419,15 +446,7 @@ class SolarCharge(ScOptionState):
         # Start charge session
         #####################################
         try:
-            # Reference
-            # https://auth0.com/blog/state-pattern-in-python/
-            self.set_state(StateInitialise())
-            while True:
-                action_state = self.get_state_name()
-                _LOGGER.warning("%s: Action state: %s", self.caller, action_state)
-                if action_state == "StateEnd":
-                    break
-                await self.async_action_state()
+            await self.async_start_state_machine(StateInitialise())
 
         except Exception as e:
             _LOGGER.exception("%s: Abort charge: %s", self.caller, e)

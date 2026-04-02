@@ -16,8 +16,6 @@ from .config_utils import get_saved_option_value, get_subentry_id
 from .const import (
     CONFIG_NET_POWER,
     CONFIG_WAIT_NET_POWER_UPDATE,
-    COORDINATOR_STATE_CHARGING,
-    COORDINATOR_STATE_STOPPED,
     DEFAULT_CHARGE_LIMIT_MAP,
     DOMAIN,
     ERROR_DEFAULT_CHARGE_LIMIT,
@@ -87,19 +85,6 @@ class SolarChargerCoordinator(ScOptionState):
     def get_last_check_timestamp(self) -> datetime | None:
         """Get the timestamp of the last check cycle."""
         return self._last_check_timestamp
-
-    # @property
-    # def get_run_state(self, charger: ChargerData) -> str:
-    #     """Get the current run state."""
-    #     if charger.is_running:
-    #         return COORDINATOR_STATE_CHARGING
-    #     return COORDINATOR_STATE_STOPPED
-
-    def get_run_state(self, control: ChargeControl) -> str:
-        """Get charger run state."""
-        if control.switch_charge:
-            return COORDINATOR_STATE_CHARGING
-        return COORDINATOR_STATE_STOPPED
 
     def is_charging(self, control: ChargeControl) -> bool | None:
         """Return if the charger is currently charging."""

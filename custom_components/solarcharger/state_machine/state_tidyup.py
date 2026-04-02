@@ -5,6 +5,7 @@ import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
+from ..const import RunState
 from .solar_charge_state import SolarChargeState
 from .state_end import StateEnd
 
@@ -17,6 +18,12 @@ _LOGGER = logging.getLogger(__name__)
 # ----------------------------------------------------------------------------
 class StateTidyUp(SolarChargeState):
     """Tidy up state: Turn off charger."""
+
+    def __init__(
+        self,
+    ) -> None:
+        """Initialise machine state."""
+        self.state_name = RunState.STATE_ENDING.value
 
     # ----------------------------------------------------------------------------
     def _unsubscribe_allocated_power_update(self) -> None:
@@ -60,6 +67,7 @@ class StateTidyUp(SolarChargeState):
     async def async_activate_state(self) -> None:
         """Start tidy up state."""
 
+        self.solarcharge.set_run_state(self.state_name)
         await self.async_tidy_up_on_exit(
             self.solarcharge.charger, self.solarcharge.chargeable
         )

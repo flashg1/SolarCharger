@@ -3,8 +3,7 @@
 
 import logging
 
-from ..chargers.chargeable import Chargeable
-from ..chargers.charger import Charger
+from ..const import RunState
 from .solar_charge_state import SolarChargeState
 
 # ----------------------------------------------------------------------------
@@ -17,6 +16,14 @@ _LOGGER = logging.getLogger(__name__)
 class StateAbort(SolarChargeState):
     """Abort state: Abort charge."""
 
+    def __init__(
+        self,
+    ) -> None:
+        """Initialise machine state."""
+        self.state_name = RunState.STATE_ABORTING.value
+
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
         """Start abort state."""
+
+        self.solarcharge.set_run_state(self.state_name)

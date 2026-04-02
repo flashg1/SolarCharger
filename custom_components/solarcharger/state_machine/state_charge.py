@@ -26,6 +26,7 @@ from ..const import (
     OPTION_CHARGER_CHARGING_SENSOR,
     SENSOR_CONSUMED_POWER,
     ChargeStatus,
+    RunState,
 )
 from ..exceptions.entity_exception import EntityExceptionError
 from ..model_charge_stats import ChargeStats
@@ -50,6 +51,12 @@ MAX_CONSECUTIVE_FAILURE_COUNT = (
 # ----------------------------------------------------------------------------
 class StateCharge(SolarChargeState):
     """Charging state: Turn on charger and start charging."""
+
+    def __init__(
+        self,
+    ) -> None:
+        """Initialise machine state."""
+        self.state_name = RunState.STATE_CHARGING.value
 
     # ----------------------------------------------------------------------------
     # Subscriptions
@@ -149,7 +156,7 @@ class StateCharge(SolarChargeState):
                         )
 
                     # Only adjust charge current if we are still in charging state
-                    if self.solarcharge.get_state_name() == "StateCharge":
+                    if self.solarcharge.get_state_classname() == "StateCharge":
                         await self._async_adjust_charge_current(
                             self.solarcharge.charger,
                             self.solarcharge.chargeable,
@@ -751,6 +758,7 @@ class StateCharge(SolarChargeState):
     async def async_activate_state(self) -> None:
         """Start charging state."""
 
+        self.solarcharge.set_run_state(self.state_name)
         charge_status = await self._async_charge_device(
             self.solarcharge.charger, self.solarcharge.chargeable
         )
