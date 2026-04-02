@@ -376,6 +376,8 @@ class SolarChargerCoordinator(ScOptionState):
         return (total_instance, plan_total_weight, final_total_weight, allocations)
 
     # ----------------------------------------------------------------------------
+    # TODO: Need to take into consideration already allocated power and max power of chargers.
+
     async def _async_allocate_net_power(self) -> None:
         """Calculate power allocation. Power allocation weight can be 0."""
 
