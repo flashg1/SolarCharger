@@ -31,8 +31,10 @@ from ..const import (
     OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_UPDATE_HA_BUTTON,
     OPTION_CHARGEE_WAKE_UP_BUTTON,
+    OPTION_CHARGER_GET_CHARGE_CURRENT,
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
+    OPTION_CHARGER_SET_CHARGE_CURRENT,
     SENSOR_CONSUMED_POWER,
     SENSOR_RUN_STATE,
     RunState,
@@ -95,7 +97,7 @@ class SolarCharge(ScOptionState):
         self.stats = ChargeStats()
 
         # Initialise state machine self._state variable.
-        self.set_state(StateInitialise())
+        self.set_machine_state(StateInitialise())
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -122,26 +124,31 @@ class SolarCharge(ScOptionState):
             return self.charger  # type: ignore[return-value]
         return None
 
+    @property
+    def machine_state(self) -> SolarChargeState:
+        """Return the current state of the machine."""
+        return self._machine_state
+
     # ----------------------------------------------------------------------------
     # State machine methods
     # ----------------------------------------------------------------------------
-    def set_state(self, state: SolarChargeState):
+    def set_machine_state(self, state: SolarChargeState):
         """Method to change the state of the object."""
 
-        self._state = state
-        self._state.solarcharge = self
+        self._machine_state = state
+        self._machine_state.solarcharge = self
 
     # ----------------------------------------------------------------------------
     async def async_action_state(self):
         """Method for executing device functionality depending on current state of the object."""
 
-        await self._state.async_activate_state()
+        await self.machine_state.async_activate_state()
 
     # ----------------------------------------------------------------------------
     def get_state_classname(self) -> str:
         """Get current state name of object."""
 
-        return type(self._state).__name__
+        return type(self.machine_state).__name__
 
     # ----------------------------------------------------------------------------
     def set_run_state(self, state: str) -> None:
@@ -266,28 +273,70 @@ class SolarCharge(ScOptionState):
             await self.async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
+    def get_charger_max_current(self, charger: Charger) -> float:
+        """Get charger max current."""
+
+        charger_max_current = charger.get_max_charge_current()
+        if charger_max_current is None or charger_max_current <= 0:
+            raise ValueError("Failed to get charger max current")
+
+        return charger_max_current
+
+    # ----------------------------------------------------------------------------
+    def get_charge_current(self, charger: Charger, val_dict: ConfigValueDict) -> float:
+        """Get device charge current."""
+
+        charge_current = charger.get_charge_current(val_dict)
+        if val_dict.config_values[OPTION_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
+            # So we can't get the current, ie. a resistive load.
+            # All devices must have max charge current configured.
+            charge_current = self.get_charger_max_current(charger)
+
+        if charge_current is None:
+            raise ValueError("Failed to get device charge current")
+
+        return charge_current
+
+    # ----------------------------------------------------------------------------
     async def async_set_charge_current(self, charger: Charger, current: float) -> None:
         """Set charge current."""
 
+        config_item = OPTION_CHARGER_GET_CHARGE_CURRENT
+        val_dict = ConfigValueDict(config_item, {})
+        can_set_current = True
+
         try:
-            old_charge_current = charger.get_charge_current()
-            new_charge_current = await charger.async_set_charge_current(current)
+            # Get old charge current.
+            old_charge_current = self.get_charge_current(charger, val_dict)
+
+            # Set new charge current.
+            config_item = OPTION_CHARGER_SET_CHARGE_CURRENT
+            new_charge_current = await charger.async_set_charge_current(
+                current, val_dict
+            )
+            if val_dict.config_values[config_item].entity_id is None:
+                # So we can't set the current, ie. a resistive load.
+                new_charge_current = old_charge_current
+                can_set_current = False
 
             effective_voltage = self.option_get_entity_number_or_abort(
                 NUMBER_CHARGER_EFFECTIVE_VOLTAGE
             )
-            if self.entities.sensors:
+
+            if new_charge_current is not None:
+                assert self.entities.sensors is not None
                 self.entities.sensors[SENSOR_CONSUMED_POWER].set_state(
                     new_charge_current * effective_voltage
                 )
 
-            self.emit_solarcharger_event(
-                self._device.id,
-                EVENT_ACTION_NEW_CHARGE_CURRENT,
-                new_charge_current,
-                old_charge_current,
-            )
-            await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+                if can_set_current:
+                    self.emit_solarcharger_event(
+                        self._device.id,
+                        EVENT_ACTION_NEW_CHARGE_CURRENT,
+                        new_charge_current,
+                        old_charge_current,
+                    )
+                    await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(
@@ -414,14 +463,14 @@ class SolarCharge(ScOptionState):
 
         # Reference
         # https://auth0.com/blog/state-pattern-in-python/
-        self.set_state(state)
+        self.set_machine_state(state)
         while True:
             action_state = self.get_state_classname()
             _LOGGER.warning("%s: Action state: %s", self.caller, action_state)
             await self.async_action_state()
 
             # Run the last state.
-            if self._state.state_name == RunState.STATE_ENDED.value:
+            if self.machine_state.state_name == RunState.STATE_ENDED.value:
                 await self.async_action_state()
                 break
 

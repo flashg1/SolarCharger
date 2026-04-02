@@ -71,4 +71,4 @@ class StateTidyUp(SolarChargeState):
         await self.async_tidy_up_on_exit(
             self.solarcharge.charger, self.solarcharge.chargeable
         )
-        self.solarcharge.set_state(StateEnd())
+        self.solarcharge.set_machine_state(StateEnd())

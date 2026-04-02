@@ -87,4 +87,4 @@ class StatePause(SolarChargeState):
         # self.solarcharge.set_state(StateInitialise())
 
         # Import Modules, Not Classes
-        self.solarcharge.set_state(state_initialise.StateInitialise())
+        self.solarcharge.set_machine_state(state_initialise.StateInitialise())

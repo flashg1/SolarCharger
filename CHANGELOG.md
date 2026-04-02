@@ -6,6 +6,8 @@
 ### New feature
 - Added "Power monitor duration" to turn off charger if average power in duration drops below "Min workable current".
 ### Improvement
+- The minimum requirement for a custom charger is the charger on/off switch entity.
+- Updated run state sensor to reflect state machine states.
 - Refactored to use state machine to manage charging process.
 - Added charger "Instance count", "Share allocation" and "Consumed power" sensors.
 - SolarCharge class now has direct access to control entities.

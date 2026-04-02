@@ -24,6 +24,7 @@ from ..const import (
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGER_CHARGING_SENSOR,
+    OPTION_CHARGER_GET_CHARGE_CURRENT,
     SENSOR_CONSUMED_POWER,
     ChargeStatus,
     RunState,
@@ -156,7 +157,10 @@ class StateCharge(SolarChargeState):
                         )
 
                     # Only adjust charge current if we are still in charging state
-                    if self.solarcharge.get_state_classname() == "StateCharge":
+                    if (
+                        self.solarcharge.machine_state.state_name
+                        == RunState.STATE_CHARGING.value
+                    ):
                         await self._async_adjust_charge_current(
                             self.solarcharge.charger,
                             self.solarcharge.chargeable,
@@ -352,16 +356,6 @@ class StateCharge(SolarChargeState):
         return current
 
     # ----------------------------------------------------------------------------
-    def _get_charger_max_current(self, charger) -> float:
-        """Get charger max current."""
-
-        charger_max_current = charger.get_max_charge_current()
-        if charger_max_current is None or charger_max_current <= 0:
-            raise ValueError("Failed to get charger max current")
-
-        return charger_max_current
-
-    # ----------------------------------------------------------------------------
     def _calc_current_change(
         self,
         charger: Charger,
@@ -371,9 +365,18 @@ class StateCharge(SolarChargeState):
     ) -> tuple[float, float]:
         """Calculate new charge current based on allocated power."""
 
-        charger_max_current = self._get_charger_max_current(charger)
+        charger_max_current = self.solarcharge.get_charger_max_current(charger)
 
-        battery_charge_current = charger.get_charge_current()
+        config_item = OPTION_CHARGER_GET_CHARGE_CURRENT
+        val_dict = ConfigValueDict(config_item, {})
+        battery_charge_current = self.solarcharge.get_charge_current(charger, val_dict)
+        if val_dict.config_values[OPTION_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
+            # So we can't get the current, ie. a resistive load.
+            # All devices must have max charge current configured.
+            new_charge_current = charger_max_current
+            old_charge_current = charger_max_current
+            return (new_charge_current, old_charge_current)
+
         if battery_charge_current is None:
             raise ValueError("Failed to get charge current")
         old_charge_current = self._check_current(
@@ -601,7 +604,7 @@ class StateCharge(SolarChargeState):
             # Change charge limit if required
             await self._async_set_charge_limit_if_required(chargeable, goal)
             # Set max current
-            charger_max_current = self._get_charger_max_current(charger)
+            charger_max_current = self.solarcharge.get_charger_max_current(charger)
             await self.solarcharge.async_set_charge_current(
                 charger, charger_max_current
             )
@@ -764,6 +767,6 @@ class StateCharge(SolarChargeState):
         )
 
         if charge_status == ChargeStatus.CHARGE_PAUSE:
-            self.solarcharge.set_state(StatePause())
+            self.solarcharge.set_machine_state(StatePause())
         else:
-            self.solarcharge.set_state(StateTidyUp())
+            self.solarcharge.set_machine_state(StateTidyUp())

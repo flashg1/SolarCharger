@@ -16,11 +16,12 @@ from ..const import (  # noqa: TID252
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     OCPP_CHARGING_STATE,
     OPTION_CHARGER_CHARGING_SENSOR,
+    OPTION_CHARGER_SET_CHARGE_CURRENT,
     OPTION_OCPP_CHARGER_ID,
     OPTION_OCPP_TRANSACTION_ID,
 )
 from ..entity import compose_entity_id  # noqa: TID252
-from ..model_config import ConfigValueDict  # noqa: TID252
+from ..model_config import ConfigValue, ConfigValueDict  # noqa: TID252
 from .charger_chargeable_base import ChargerChargeableBase
 
 # ----------------------------------------------------------------------------
@@ -111,6 +112,14 @@ class OcppCharger(ChargerChargeableBase):
         self, charge_current: float, val_dict: ConfigValueDict | None = None
     ) -> float:
         """Set charger charge current."""
+
+        # Fake the entity ID since there is no such entity for OCPP charger.
+        if val_dict is not None:
+            entity_id = compose_entity_id(
+                NUMBER, self._subentry.unique_id, "fake_set_charge_current"
+            )
+            config_val = ConfigValue(OPTION_CHARGER_SET_CHARGE_CURRENT, entity_id, None)
+            val_dict.config_values[OPTION_CHARGER_SET_CHARGE_CURRENT] = config_val
 
         # Only set charge current when charger is in OCPP_CHARGING_STATE.
         state = self.option_get_entity_string(OPTION_CHARGER_CHARGING_SENSOR)

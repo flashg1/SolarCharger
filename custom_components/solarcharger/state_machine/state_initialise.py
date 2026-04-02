@@ -86,4 +86,4 @@ class StateInitialise(SolarChargeState):
 
         self.solarcharge.set_run_state(self.state_name)
         await self._async_init_device(self.solarcharge.chargeable)
-        self.solarcharge.set_state(StateCharge())
+        self.solarcharge.set_machine_state(StateCharge())
