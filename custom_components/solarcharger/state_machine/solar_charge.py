@@ -22,6 +22,7 @@ from ..const import (
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
@@ -273,6 +274,26 @@ class SolarCharge(ScOptionState):
             await self.async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
+    def validate_current(self, max_current: float, current: float) -> float:
+        """Validate charge current is within charger supported range."""
+
+        if current < 0:
+            current = 0
+        elif current > max_current:
+            current = max_current
+
+        return current
+
+    # ----------------------------------------------------------------------------
+    def get_charger_min_current(self, charger_max_current: float) -> float:
+        """Get charger min current."""
+
+        config_min_current = self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_MIN_CURRENT
+        )
+        return self.validate_current(charger_max_current, config_min_current)
+
+    # ----------------------------------------------------------------------------
     def get_charger_max_current(self, charger: Charger) -> float:
         """Get charger max current."""
 
@@ -281,6 +302,28 @@ class SolarCharge(ScOptionState):
             raise ValueError("Failed to get charger max current")
 
         return charger_max_current
+
+    # ----------------------------------------------------------------------------
+    def get_charger_min_workable_current(self) -> float:
+        """Get charger minimum workable current."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_MIN_WORKABLE_CURRENT
+        )
+
+    # ----------------------------------------------------------------------------
+    def get_charger_effective_voltage(self) -> float:
+        """Get charger effective voltage."""
+
+        charger_effective_voltage = self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_EFFECTIVE_VOLTAGE
+        )
+        if charger_effective_voltage <= 0:
+            raise ValueError(
+                f"Invalid charger effective voltage {charger_effective_voltage}"
+            )
+
+        return charger_effective_voltage
 
     # ----------------------------------------------------------------------------
     def get_charge_current(self, charger: Charger, val_dict: ConfigValueDict) -> float:
@@ -319,10 +362,7 @@ class SolarCharge(ScOptionState):
                 new_charge_current = old_charge_current
                 can_set_current = False
 
-            effective_voltage = self.option_get_entity_number_or_abort(
-                NUMBER_CHARGER_EFFECTIVE_VOLTAGE
-            )
-
+            effective_voltage = self.get_charger_effective_voltage()
             if new_charge_current is not None:
                 assert self.entities.sensors is not None
                 self.entities.sensors[SENSOR_CONSUMED_POWER].set_state(
@@ -418,23 +458,44 @@ class SolarCharge(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
+    def is_monitor_available_power(self) -> bool:
+        """Is monitor available power option enabled?"""
+        need_to_monitor = False
+
+        if self.max_allocation_count > 0:
+            # Yes, monitor config switched on.
+            need_to_monitor = True
+
+            max_current = self.get_charger_max_current(self.charger)
+            min_current = self.get_charger_min_current(max_current)
+
+            if (
+                self.is_calibrate_max_charge_speed()
+                or self.is_fast_charge_mode()
+                # Time-based min current using template helper.
+                or min_current == max_current
+                # Note running goal is stale when state machine is in paused state.
+                or self.running_goal.has_charge_endtime
+            ):
+                need_to_monitor = False
+
+        return need_to_monitor
+
+    # ----------------------------------------------------------------------------
     def is_average_allocated_power_more_than_min_workable_power(
         self,
         max_allocation_count: int,
         power_allocations: list[float],
-    ) -> bool | None:
+    ) -> tuple[bool | None, float, int]:
         """Is average allocated power more than minimum workable power? None=not enough data."""
         is_enough_power = None
+        average_allocated_power = 0
 
         if max_allocation_count > 0 and len(power_allocations) >= max_allocation_count:
             average_allocated_power = sum(power_allocations) / len(power_allocations)
 
-            charger_min_workable_current = self.option_get_entity_number_or_abort(
-                NUMBER_CHARGER_MIN_WORKABLE_CURRENT
-            )
-            charger_effective_voltage = self.option_get_entity_number_or_abort(
-                NUMBER_CHARGER_EFFECTIVE_VOLTAGE
-            )
+            charger_min_workable_current = self.get_charger_min_workable_current()
+            charger_effective_voltage = self.get_charger_effective_voltage()
             min_workable_power = (
                 charger_min_workable_current * charger_effective_voltage * -1
             )
@@ -455,7 +516,7 @@ class SolarCharge(ScOptionState):
                     power_allocations,
                 )
 
-        return is_enough_power
+        return (is_enough_power, average_allocated_power, len(power_allocations))
 
     # ----------------------------------------------------------------------------
     async def async_start_state_machine(self, state: SolarChargeState) -> None:

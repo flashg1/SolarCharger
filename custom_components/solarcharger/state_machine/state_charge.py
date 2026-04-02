@@ -16,10 +16,7 @@ from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import (
     CONFIG_WAIT_NET_POWER_UPDATE,
-    NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MAX_SPEED,
-    NUMBER_CHARGER_MIN_CURRENT,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     OPTION_CHARGEE_SOC_SENSOR,
@@ -134,11 +131,7 @@ class StateCharge(SolarChargeState):
 
                     # Save allocated power to calculate moving average.
                     if self.solarcharge.max_allocation_count > 0:
-                        if (
-                            self.solarcharge.is_calibrate_max_charge_speed()
-                            or self.solarcharge.is_fast_charge_mode()
-                            or self.solarcharge.running_goal.has_charge_endtime
-                        ):
+                        if not self.solarcharge.is_monitor_available_power():
                             self.solarcharge.power_allocations = []
                         elif (
                             len(self.solarcharge.power_allocations)
@@ -156,6 +149,7 @@ class StateCharge(SolarChargeState):
                             allocated_power - consumed_power
                         )
 
+                    # This callback is still running in paused state.
                     # Only adjust charge current if we are still in charging state
                     if (
                         self.solarcharge.machine_state.state_name
@@ -347,15 +341,6 @@ class StateCharge(SolarChargeState):
         return self.solarcharge.is_fast_charge_mode()
 
     # ----------------------------------------------------------------------------
-    def _check_current(self, max_current: float, current: float) -> float:
-        if current < 0:
-            current = 0
-        elif current > max_current:
-            current = max_current
-
-        return current
-
-    # ----------------------------------------------------------------------------
     def _calc_current_change(
         self,
         charger: Charger,
@@ -379,7 +364,7 @@ class StateCharge(SolarChargeState):
 
         if battery_charge_current is None:
             raise ValueError("Failed to get charge current")
-        old_charge_current = self._check_current(
+        old_charge_current = self.solarcharge.validate_current(
             charger_max_current, battery_charge_current
         )
 
@@ -396,11 +381,8 @@ class StateCharge(SolarChargeState):
         #####################################
         # Set minimum charge current
         #####################################
-        config_min_current = self.solarcharge.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_MIN_CURRENT
-        )
-        config_min_current = self._check_current(
-            charger_max_current, config_min_current
+        config_min_current = self.solarcharge.get_charger_min_current(
+            charger_max_current
         )
 
         charger_min_current = config_min_current
@@ -416,14 +398,7 @@ class StateCharge(SolarChargeState):
         #####################################
         # Calculate new current from allocated power
         #####################################
-        charger_effective_voltage = self.solarcharge.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_EFFECTIVE_VOLTAGE
-        )
-        if charger_effective_voltage <= 0:
-            raise ValueError(
-                f"Invalid charger effective voltage {charger_effective_voltage}"
-            )
-
+        charger_effective_voltage = self.solarcharge.get_charger_effective_voltage()
         one_amp_watt_step = charger_effective_voltage * 1
         power_offset = 0
         all_power_net = allocated_power + (one_amp_watt_step * 0.3) + power_offset
@@ -440,9 +415,7 @@ class StateCharge(SolarChargeState):
         propose_new_charge_current = max([charger_min_current, propose_charge_current])
 
         charger_min_workable_current = (
-            self.solarcharge.option_get_entity_number_or_abort(
-                NUMBER_CHARGER_MIN_WORKABLE_CURRENT
-            )
+            self.solarcharge.get_charger_min_workable_current()
         )
         if propose_new_charge_current < charger_min_workable_current:
             new_charge_current = 0
@@ -526,18 +499,24 @@ class StateCharge(SolarChargeState):
             )
         )
 
+        is_enough_power = None
+        average_allocated_power = 0
+        data_points = 0
+
         if continue_charge:
             charge_status = ChargeStatus.CHARGE_CONTINUE
             if max_allocation_count > 0:
-                is_enough_power = self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
-                    max_allocation_count, power_allocations
+                is_enough_power, average_allocated_power, data_points = (
+                    self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
+                        max_allocation_count, power_allocations
+                    )
                 )
                 if is_enough_power is not None and not is_enough_power:
                     charge_status = ChargeStatus.CHARGE_PAUSE
 
         if charge_status != ChargeStatus.CHARGE_CONTINUE:
             _LOGGER.warning(
-                "%s: Stopping charge: charge_status=%s, "
+                "%s: Stopping charge: charge_status=%s (is_enough_power=%s, average_allocated_power=%s, data_points=%s), "
                 "is_connected=%s, is_below_charge_limit=%s, is_charging=%s (%s), "
                 "is_sun_trigger=%s, is_sun_above_start_end_elevations=%s, elevation=%s, "
                 "is_use_secondary_power_source=%s, is_calibrate_max_charge_speed=%s, "
@@ -546,6 +525,9 @@ class StateCharge(SolarChargeState):
                 "stats=%s",
                 self.solarcharge.caller,
                 charge_status,
+                is_enough_power,
+                average_allocated_power,
+                data_points,
                 is_connected,
                 is_below_charge_limit,
                 is_charging,

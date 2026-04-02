@@ -36,6 +36,11 @@ class StatePause(SolarChargeState):
     ) -> None:
         """Pause charge and wait for external trigger to continue. Let device sleep."""
 
+        start_time = self.solarcharge.get_local_datetime()
+        is_enough_power = None
+        average_allocated_power = 0
+        data_points = 0
+
         assert self.solarcharge.entities.sensors is not None
         self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(0)
 
@@ -47,19 +52,16 @@ class StatePause(SolarChargeState):
             self.solarcharge.power_allocations = []
 
             while True:
-                is_enough_power = self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
-                    self.solarcharge.max_allocation_count,
-                    self.solarcharge.power_allocations,
+                is_enough_power, average_allocated_power, data_points = (
+                    self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
+                        self.solarcharge.max_allocation_count,
+                        self.solarcharge.power_allocations,
+                    )
                 )
 
                 if (
-                    (is_enough_power is not None and is_enough_power)
-                    or self.solarcharge.is_calibrate_max_charge_speed()
-                    or self.solarcharge.is_fast_charge_mode()
-                    # Can't do this for now since running goal is not running!
-                    # or self.solarcharge.running_goal.has_charge_endtime
-                    or self.solarcharge.max_allocation_count == 0
-                ):
+                    is_enough_power is not None and is_enough_power
+                ) or not self.solarcharge.is_monitor_available_power():
                     break
 
                 await asyncio.sleep(self.solarcharge.wait_net_power_update)
@@ -70,6 +72,17 @@ class StatePause(SolarChargeState):
             )
 
         self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(1)
+
+        end_time = self.solarcharge.get_local_datetime()
+        duration = end_time - start_time
+        _LOGGER.warning(
+            "%s: paused=%s, is_enough_power=%s, average_allocated_power=%s, data_points=%s",
+            self.solarcharge.caller,
+            duration,
+            is_enough_power,
+            average_allocated_power,
+            data_points,
+        )
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
