@@ -486,8 +486,13 @@ class SolarCharge(ScOptionState):
         self,
         max_allocation_count: int,
         power_allocations: list[float],
+        raise_the_bar: bool = False,
     ) -> tuple[bool | None, float, int]:
-        """Is average allocated power more than minimum workable power? None=not enough data."""
+        """Is average allocated power more than minimum workable power? None=not enough data.
+
+        raise_the_bar: Raise the bar to make it easier to get below the threshold, or harder to get above it.
+        Should be used to make it harder to switch on the charger.
+        """
         is_enough_power = None
         average_allocated_power = 0
 
@@ -499,6 +504,9 @@ class SolarCharge(ScOptionState):
             min_workable_power = (
                 charger_min_workable_current * charger_effective_voltage * -1
             )
+            if raise_the_bar:
+                # Raise the bar by 10% to avoid borderline cases where the charger might keep switching on and off.
+                min_workable_power *= 1.10
 
             # Note surplus power is negative.
             is_enough_power = average_allocated_power <= min_workable_power

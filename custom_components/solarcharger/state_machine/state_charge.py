@@ -506,6 +506,8 @@ class StateCharge(SolarChargeState):
         if continue_charge:
             charge_status = ChargeStatus.CHARGE_CONTINUE
             if max_allocation_count > 0:
+                # Data points managed in _async_handle_allocated_power_update()and checks is_monitor_available_power().
+                # So no need to check here again.
                 is_enough_power, average_allocated_power, data_points = (
                     self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
                         max_allocation_count, power_allocations

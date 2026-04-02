@@ -56,6 +56,7 @@ class StatePause(SolarChargeState):
                     self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
                         self.solarcharge.max_allocation_count,
                         self.solarcharge.power_allocations,
+                        raise_the_bar=True,
                     )
                 )
 
