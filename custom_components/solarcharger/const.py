@@ -238,7 +238,7 @@ OPTION_LAST_CHARGER_ID = "last_charger_id"
 NUMBER_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # No defaults
 NUMBER_CHARGER_MAX_SPEED = "charger_max_speed"  # 6.1448 %/hr
 NUMBER_CHARGER_MIN_CURRENT = "charger_min_current"  # 1 Amps
-NUMBER_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"  # 0 Amps
+NUMBER_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"  # 1 Amps
 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT = "charger_power_allocation_weight"  # 1
 NUMBER_CHARGEE_MIN_CHARGE_LIMIT = "chargee_min_charge_limit"
 NUMBER_CHARGEE_MAX_CHARGE_LIMIT = "chargee_max_charge_limit"
@@ -255,7 +255,7 @@ NUMBER_WAIT_CHARGER_OFF = "wait_charger_off"  # 5 seconds
 NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 second
 
 # 0 minutes=disabled, suggest 15 minutes to capture allocated power and turn off if average is below min power.
-NUMBER_POWER_MONITOR_DURATION = "power_monitor_duration"  # 0 minutes
+NUMBER_POWER_MONITOR_DURATION = "power_monitor_duration"  # 10 minutes
 
 #####################################
 # Charger control entities
@@ -429,7 +429,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Global defaults: Charger configs
     #####################################
-    NUMBER_POWER_MONITOR_DURATION: 0,
+    NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
     #####################################
     # Local device required defaults
     #####################################
@@ -459,9 +459,8 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
 }
 
 OCPP_DEFAULT_VALUES: dict[str, Any] = {
-    NUMBER_CHARGER_MIN_CURRENT: 6,
+    NUMBER_CHARGER_MIN_CURRENT: 0,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: 6,
-    NUMBER_POWER_MONITOR_DURATION: 10,
     NUMBER_OCPP_PROFILE_ID: 1,
     NUMBER_OCPP_PROFILE_STACK_LEVEL: 0,
 }
