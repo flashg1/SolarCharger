@@ -48,8 +48,9 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 - Support skew to shift the power export/import curve left or right to achieve your minimal power import. (TODO)
 - Configurable return codes for comparison with connect trigger states, connected states and charging states returned by your EV or charger specific API. These states are used to determine the stages of the charging process.
 - Use EV specific API to control a EV for charging, and/or use OCPP to control an OCPP compliant charger to charge a EV. Only tested with [OCPP simulator](https://github.com/lewei50/iammeter-simulator) and Tesla car. OCPP and Tesla Fleet API support in beta testing phase.
-- Use Ping ICMP to detect car presence and retry updating HA for 15 minutes until car is connected.
-- User can customise control of the "Charge" switch and "Min current" without interference from SolarCharger.
+- Use [Ping ICMP to detect car presence](https://github.com/flashg1/SolarCharger/wiki/User-guide#use-ping-to-detect-car-and-update-ha-to-get-latest-status) and retry updating HA for 15 minutes until car is connected.
+- User can [customise control of the "Charge" switch and "Min current"](https://github.com/flashg1/SolarCharger/wiki/Configuration#to-charge-at-maximum-current-between-specific-times) without interference from SolarCharger.
+- Uses [power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) to determine whether or not to pause or resume charging. Charger is switched off when paused.
 
 **💡 Tip:** Please :star: this project if you find it useful, and may be also buy me a coffee!
 
