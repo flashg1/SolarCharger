@@ -4,7 +4,7 @@
 ### Breaking change
 - Changed "Allocated power" from number to sensor. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature
-- Added "Power monitor duration" to turn off charger if average power in duration drops below "Min workable current".
+- Added "Power monitor duration" to turn off charger if average power in duration drops below "Min workable current". Requires "Min workable current" to be a non-zero value.
 ### Improvement
 - The minimum requirement for a custom charger is the charger on/off switch entity.
 - Updated run state sensor to reflect state machine states.
