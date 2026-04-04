@@ -4,6 +4,7 @@
 import asyncio
 import inspect
 import logging
+import threading
 from typing import Any
 
 from propcache.api import cached_property
@@ -89,13 +90,16 @@ class SolarCharge(ScOptionState):
         self.running_goal: ScheduleData
 
         self.wait_net_power_update: float = 60
-        self.update_ha_task_count = 0
         self.started_calibrate_max_charge_speed = False
         self.charge_current_updatetime: float = 0
         self.soc_updates: list[StateOfCharge] = []
         self.power_allocations: list[float] = []
         self.max_allocation_count = 0
         self.stats = ChargeStats()
+
+        # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
+        self.semaphore_update_ha_task = threading.Semaphore(value=1)
+        self.semaphore_update_ha_task_count = 0
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateInitialise())
@@ -434,28 +438,20 @@ class SolarCharge(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
-    async def async_update_ha_with_latest_data(self) -> None:
-        """Wake up device and retry 15 times to update HA until charger is on."""
+    async def async_semaphore_wakeup_and_update_ha(self) -> None:
+        """Task created in semphore on device presence detection to wake up device and update HA."""
 
-        if self.update_ha_task_count == 0:
-            self.update_ha_task_count = 1
-            try:
-                await self.async_retry_15_times_to_update_ha_until_charger_on()
-            except Exception as e:
-                _LOGGER.exception(
-                    "%s: Error updating HA triggered by presence detection: %s",
-                    self.caller,
-                    e,
-                )
-
-            self.update_ha_task_count = 0
-
-        else:
-            # Should never be here.
-            _LOGGER.error(
-                "%s: Update HA task triggered by presence detection already running.",
+        try:
+            await self.async_retry_15_times_to_update_ha_until_charger_on()
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Error updating HA triggered by presence detection: %s",
                 self.caller,
+                e,
             )
+
+        # This is the only place where update_ha_task_count is set to 0.
+        self.semaphore_update_ha_task_count = 0
 
     # ----------------------------------------------------------------------------
     def is_monitor_available_power(self) -> bool:

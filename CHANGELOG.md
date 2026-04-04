@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1 2026-04-04
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
+### Improvement
+- Improved semaphore code to wake up and update HA on device presence detection.
+
 ## v0.5.0 2026-03-23
 ### Breaking change
 - Changed "Allocated power" from number to sensor. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).

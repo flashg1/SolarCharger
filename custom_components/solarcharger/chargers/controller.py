@@ -7,7 +7,6 @@ from collections.abc import Callable, Coroutine
 from datetime import datetime
 import inspect
 import logging
-import threading
 from typing import Any
 
 from propcache.api import cached_property
@@ -92,9 +91,6 @@ class ChargeController(ScOptionState):
         )
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
-
-        # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
-        self._update_ha_task_semaphore = threading.Semaphore(value=1)
 
         self._is_updated_today_tomorrow_schedule = False
 
@@ -281,14 +277,19 @@ class ChargeController(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _run_device_presence_detected_task(self) -> None:
-        """Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running."""
+        """Use semaphore to ensure that only one thread can update task count and only one task running."""
 
         _LOGGER.info("%s: Device presence detected.")
 
-        if self._solar_charge.update_ha_task_count == 0:
-            with self._update_ha_task_semaphore:
+        # Use semaphore to create only one async_semaphore_wakeup_and_update_ha() task.
+        if self._solar_charge.semaphore_update_ha_task_count == 0:
+            with self._solar_charge.semaphore_update_ha_task:
+                # This is the only place where update_ha_task_count is set to 1.
+                # Count is reset on task completion.
+                self._solar_charge.semaphore_update_ha_task_count = 1
+
                 self._hass.loop.create_task(
-                    self._solar_charge.async_update_ha_with_latest_data()
+                    self._solar_charge.async_semaphore_wakeup_and_update_ha()
                 )
         else:
             _LOGGER.warning(
