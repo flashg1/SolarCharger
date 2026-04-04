@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """OCPP charger implementation."""
 
 import logging
@@ -9,7 +10,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant, ServiceResponse
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import (  # noqa: TID252
+from ..const import (
     DOMAIN_OCPP,
     NUMBER,
     NUMBER_OCPP_PROFILE_ID,
@@ -20,8 +21,8 @@ from ..const import (  # noqa: TID252
     OPTION_OCPP_CHARGER_ID,
     OPTION_OCPP_TRANSACTION_ID,
 )
-from ..entity import compose_entity_id  # noqa: TID252
-from ..model_config import ConfigValue, ConfigValueDict  # noqa: TID252
+from ..entity import compose_entity_id
+from ..model_config import ConfigValue, ConfigValueDict
 from .charger_chargeable_base import ChargerChargeableBase
 
 # ----------------------------------------------------------------------------

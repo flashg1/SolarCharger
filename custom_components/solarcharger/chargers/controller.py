@@ -2,7 +2,7 @@
 """Module to manage the charging process and entity subscriptions."""
 
 import asyncio
-from asyncio import Task, timeout
+from asyncio import Task
 from collections.abc import Callable, Coroutine
 from datetime import datetime
 import inspect

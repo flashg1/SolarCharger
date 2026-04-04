@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Base Chargeable Class."""
 
 from abc import ABC, abstractmethod
@@ -6,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..model_config import ConfigValueDict  # noqa: TID252
+from ..model_config import ConfigValueDict
 
 
 # ----------------------------------------------------------------------------

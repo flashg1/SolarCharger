@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Charger and Chargeable base class implementation."""
 
 import logging
@@ -7,7 +8,7 @@ from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import (  # noqa: TID252
+from ..const import (
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     OPTION_CHARGEE_GET_CHARGE_LIMIT,
@@ -26,9 +27,9 @@ from ..const import (  # noqa: TID252
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
 )
-from ..ha_device import HaDevice  # noqa: TID252
-from ..model_config import ConfigValueDict  # noqa: TID252
-from ..sc_option_state import ScOptionState  # noqa: TID252
+from ..ha_device import HaDevice
+from ..model_config import ConfigValueDict
+from ..sc_option_state import ScOptionState
 from .chargeable import Chargeable
 from .charger import Charger
 

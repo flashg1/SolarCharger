@@ -2,15 +2,12 @@
 
 from collections.abc import Callable
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.entity_registry import RegistryEntry
-
-if TYPE_CHECKING:
-    pass
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

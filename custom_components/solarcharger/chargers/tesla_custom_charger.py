@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Tesla Custom charger implementation."""
 
 import logging
@@ -6,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import DOMAIN_TESLA_CUSTOM  # noqa: TID252
+from ..const import DOMAIN_TESLA_CUSTOM
 from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)

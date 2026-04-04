@@ -15,7 +15,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .config_utils import get_device_config_default_value
 from .const import (
     DOMAIN,
-    RESTORE_ON_START_FALSE,
+    # RESTORE_ON_START_FALSE,
     RESTORE_ON_START_TRUE,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,

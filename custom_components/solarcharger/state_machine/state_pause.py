@@ -53,7 +53,7 @@ class StatePause(SolarChargeState):
 
             while True:
                 is_sun_trigger = self.solarcharge.is_sun_trigger()
-                (is_sun_above_start_end_elevations, elevation) = (
+                (is_sun_above_start_end_elevations, _) = (
                     self.solarcharge.is_sun_above_start_end_elevation_triggers()
                 )
 

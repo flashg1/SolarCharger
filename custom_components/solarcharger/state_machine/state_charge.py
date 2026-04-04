@@ -7,9 +7,6 @@ import logging
 
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, EventStateChangedData, State
-
-# Might be of help in the future.
-# from homeassistant.helpers.sun import get_astral_event_next
 from homeassistant.util.dt import as_local, utcnow
 
 from ..chargers.chargeable import Chargeable

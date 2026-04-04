@@ -1,8 +1,9 @@
 """SolarCharger datetime platform."""
 
-from datetime import UTC, datetime, timezone
+# from datetime import timezone
+# from zoneinfo import ZoneInfo
+from datetime import UTC, datetime
 import logging
-from zoneinfo import ZoneInfo
 
 from homeassistant import config_entries, core
 from homeassistant.components.datetime import DateTimeEntity, DateTimeEntityDescription

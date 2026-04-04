@@ -5,8 +5,8 @@ from __future__ import annotations
 from copy import deepcopy
 import logging
 from typing import Any
-from uuid import uuid4
 
+# from uuid import uuid4
 import voluptuous as vol
 
 from homeassistant.config_entries import (
@@ -15,7 +15,8 @@ from homeassistant.config_entries import (
     ConfigSubentry,
     OptionsFlow,
 )
-from homeassistant.data_entry_flow import section
+
+# from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from .config_utils import (

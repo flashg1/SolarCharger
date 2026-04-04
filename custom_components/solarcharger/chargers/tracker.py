@@ -1,7 +1,8 @@
+# ruff: noqa: TID252
 """Module to track entity updates."""
 
 from collections.abc import Callable, Coroutine, Iterable
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, timedelta
 import logging
 from typing import Any
 
@@ -13,9 +14,7 @@ from homeassistant.core import (
     EventStateChangedData,
     HomeAssistant,
     State,
-    callback,
 )
-from homeassistant.helpers import device_registry as dr
 
 # async_call_at,
 # async_call_later,
@@ -31,7 +30,7 @@ from homeassistant.util.event_type import EventType
 
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
-from ..const import (  # noqa: TID252
+from ..const import (
     CALLBACK_ALLOCATE_POWER,
     CALLBACK_CHARGE_ENDTIME_UPDATE,
     CALLBACK_CHARGE_LIMIT_UPDATE,
@@ -49,8 +48,8 @@ from ..const import (  # noqa: TID252
     OPTION_DEVICE_PRESENCE_SENSOR,
     SENSOR_CHARGER_ALLOCATED_POWER,
 )
-from ..sc_option_state import ScOptionState  # noqa: TID252
-from ..utils import (  # noqa: TID252
+from ..sc_option_state import ScOptionState
+from ..utils import (
     remove_all_callback_subscriptions,
     remove_callback_subscription,
     save_callback_subscription,

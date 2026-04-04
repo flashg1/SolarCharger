@@ -59,7 +59,7 @@ def validate_charger_selection(
 ) -> dict[str, Any]:
     """Validate user input for charger selection step."""
     if not data.get(SUBENTRY_CHARGER_DEVICE_NAME):
-        raise ValidationExceptionError("base", ERROR_SELECT_CHARGER)  # noqa: EM101
+        raise ValidationExceptionError("base", ERROR_SELECT_CHARGER)
 
     return data
 

@@ -1,25 +1,22 @@
+# ruff: noqa: TID252
 """Module to manage charge scheduling."""
 
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time, timedelta
 import logging
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 
-from ..const import (  # noqa: TID252
+from ..const import (
     CALIBRATE_MAX_SOC,
     CALIBRATE_SOC_INCREASE,
     CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
 )
-from ..exceptions.entity_exception import EntityExceptionError  # noqa: TID252
-from ..sc_option_state import (  # noqa: TID252
-    ChargeSchedule,
-    ScheduleData,
-    ScOptionState,
-)
-from ..utils import (  # noqa: TID252  # noqa: TID252
+from ..exceptions.entity_exception import EntityExceptionError
+from ..sc_option_state import ChargeSchedule, ScheduleData, ScOptionState
+from ..utils import (
     get_next_sunrise_time,
     get_sec_per_degree_sun_elevation,
     get_sun_elevation,

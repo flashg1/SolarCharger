@@ -17,9 +17,7 @@ from homeassistant.config_entries import (
 )
 
 # import homeassistant.helpers.config_validation as cv
-from homeassistant.const import __version__ as ha_version
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import section
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.selector import (
@@ -105,7 +103,7 @@ def validate_charger_selection(
 ) -> dict[str, Any]:
     """Validate user input for charger selection step."""
     if not data.get(SUBENTRY_CHARGER_DEVICE_ID):
-        raise ValidationExceptionError("base", ERROR_SELECT_CHARGER)  # noqa: EM101
+        raise ValidationExceptionError("base", ERROR_SELECT_CHARGER)
 
     return data
 

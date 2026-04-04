@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Teslemetry charger implementation."""
 
 import logging
@@ -6,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import DOMAIN_TESLEMETRY  # noqa: TID252
+from ..const import DOMAIN_TESLEMETRY
 from .charger_chargeable_base import ChargerChargeableBase
 
 _LOGGER = logging.getLogger(__name__)
