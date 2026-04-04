@@ -52,6 +52,11 @@ class StatePause(SolarChargeState):
             self.solarcharge.power_allocations = []
 
             while True:
+                is_sun_trigger = self.solarcharge.is_sun_trigger()
+                (is_sun_above_start_end_elevations, elevation) = (
+                    self.solarcharge.is_sun_above_start_end_elevation_triggers()
+                )
+
                 is_enough_power, average_allocated_power, data_points = (
                     self.solarcharge.is_average_allocated_power_more_than_min_workable_power(
                         self.solarcharge.max_allocation_count,
@@ -61,8 +66,10 @@ class StatePause(SolarChargeState):
                 )
 
                 if (
-                    is_enough_power is not None and is_enough_power
-                ) or not self.solarcharge.is_monitor_available_power():
+                    (is_sun_trigger and not is_sun_above_start_end_elevations)
+                    or (is_enough_power is not None and is_enough_power)
+                    or not self.solarcharge.is_monitor_available_power()
+                ):
                     break
 
                 await asyncio.sleep(self.solarcharge.wait_net_power_update)
@@ -75,11 +82,11 @@ class StatePause(SolarChargeState):
         self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(1)
 
         end_time = self.solarcharge.get_local_datetime()
-        duration = end_time - start_time
+        paused_duration = end_time - start_time
         _LOGGER.warning(
-            "%s: paused=%s, is_enough_power=%s, average_allocated_power=%s, data_points=%s",
+            "%s: paused_duration=%s (is_enough_power=%s, average_allocated_power=%s, data_points=%s)",
             self.solarcharge.caller,
-            duration,
+            paused_duration,
             is_enough_power,
             average_allocated_power,
             data_points,
