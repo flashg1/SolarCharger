@@ -29,5 +29,9 @@ If applicable, add screenshots to help explain your problem.
  - Charger API name:
  - Charger API version:
 
+**Which method used to create the device?**
+ - "Add charger device": 
+ - "Add custom device": 
+
 **Additional context**
 Add any other context about the problem here.
