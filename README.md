@@ -76,6 +76,7 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 
 If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch and read/set charge current are required as a minimum) > Submit
 
+Please also update [poll](https://github.com/flashg1/SolarCharger/discussions/8) and [config](https://github.com/flashg1/SolarCharger/discussions/9) threads to help the community.
 
 ## Installation
 ### Install via HACS (Recommended)
