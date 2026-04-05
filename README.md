@@ -74,8 +74,9 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [Tessie](https://www.home-assistant.io/integrations/tessie)
 - [Teslemetry](https://www.home-assistant.io/integrations/teslemetry/) beta release.
 
-If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch and read/set charge current are required as a minimum) > Submit
+If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch is required as a minimum) > Submit
 
+Once you have your system working with SolarCharger, please update [poll](https://github.com/flashg1/SolarCharger/discussions/8) and [config](https://github.com/flashg1/SolarCharger/discussions/9) threads to help the community. Thanks.
 
 ## Installation
 ### Install via HACS (Recommended)
