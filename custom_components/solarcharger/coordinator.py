@@ -174,44 +174,7 @@ class SolarChargerCoordinator(ScOptionState):
         self._unsub.clear()
 
     # ----------------------------------------------------------------------------
-    # ----------------------------------------------------------------------------
-    # def validate_default_charge_limits(
-    #     self, subentry: ConfigSubentry, data: dict[str, Any]
-    # ) -> bool:
-    #     """Validate default charge limits."""
-    #     ok = True
-
-    #     min_charge_limit = self.option_get_entity_number_or_abort(
-    #         NUMBER_CHARGEE_MIN_CHARGE_LIMIT, subentry
-    #     )
-    #     max_charge_limit = self.option_get_entity_number_or_abort(
-    #         NUMBER_CHARGEE_MAX_CHARGE_LIMIT, subentry
-    #     )
-
-    #     # Check default charge limits
-    #     for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
-    #         default_val = data.get(day_limit_default)
-    #         if default_val is None:
-    #             continue
-
-    #         if not (min_charge_limit <= default_val <= max_charge_limit):
-    #             _LOGGER.error(
-    #                 "%s: Invalid default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
-    #                 self._caller,
-    #                 default_val,
-    #                 day_limit_default,
-    #                 min_charge_limit,
-    #                 max_charge_limit,
-    #             )
-    #             ok = False
-    #             break
-
-    #             # Do no raise exception inside the coordinator as it breaks the coordinator loop.
-    #             # Raise exception at source of call instead.
-    #             # raise ValidationExceptionError("base", "invalid_default_charge_limit")
-
-    #     return ok
-
+    # Config flow functions
     # ----------------------------------------------------------------------------
     def validate_default_charge_limits(
         self, control: DeviceControl, data: dict[str, Any]
@@ -251,20 +214,6 @@ class SolarChargerCoordinator(ScOptionState):
         return ok
 
     # ----------------------------------------------------------------------------
-    # def validate_config_options(self, config_name: str, data: dict[str, Any]) -> str:
-    #     """Validate configuration options."""
-    #     error_code = ""
-
-    #     subentry_id = get_subentry_id(self._entry, config_name)
-    #     if subentry_id:
-    #         subentry = self._entry.subentries.get(subentry_id)
-    #         if subentry:
-    #             if not self.validate_default_charge_limits(subentry, data):
-    #                 error_code = ERROR_DEFAULT_CHARGE_LIMIT
-
-    #     return error_code
-
-    # ----------------------------------------------------------------------------
     def validate_config_options(self, config_name: str, data: dict[str, Any]) -> str:
         """Validate configuration options."""
         error_code = ""
@@ -290,38 +239,6 @@ class SolarChargerCoordinator(ScOptionState):
         return self.config_get_entity_number(CONFIG_NET_POWER)
 
     # ----------------------------------------------------------------------------
-    # def _get_total_allocation_pool(self) -> dict[str, float]:
-    #     """Get allocation pool direct from numbers."""
-
-    #     allocation_pool: dict[str, float] = {}
-
-    #     for control in self.device_controls.values():
-    #         if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
-    #             continue
-
-    #         # Power allocation weight is local only.
-    #         if control.controller.charge_control.numbers is not None:
-    #             allocation_weight = control.controller.charge_control.numbers[
-    #                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
-    #             ].native_value
-    #             if allocation_weight is None:
-    #                 raise RuntimeError(
-    #                     f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {control.config_name}"
-    #                 )
-    #             allocation_pool[control.subentry_id] = (
-    #                 allocation_weight * control.controller.charge_control.instance_count
-    #             )
-    #         else:
-    #             # TODO: Need to remove stale control
-    #             allocation_pool[control.subentry_id] = 0
-    #             _LOGGER.error(
-    #                 "%s: Cannot get power allocation weight: Missing all number entities",
-    #                 control.config_name,
-    #             )
-
-    #     return allocation_pool
-
-    # ----------------------------------------------------------------------------
     def _get_total_allocation_pool(
         self,
     ) -> tuple[int, float, float, dict[str, PowerAllocation]]:
@@ -337,13 +254,9 @@ class SolarChargerCoordinator(ScOptionState):
                 continue
 
             # Power allocation weight user configurable and can be overridden, so use indirection.
-            allocation_weight = control.controller.option_get_entity_number(
+            allocation_weight = control.controller.option_get_entity_number_or_abort(
                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
             )
-            if allocation_weight is None:
-                raise RuntimeError(
-                    f"Cannot get {NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT} for {control.config_name}"
-                )
 
             # Participate in power allocation.
             assert control.controller.charge_control.entities.sensors is not None
@@ -450,8 +363,10 @@ class SolarChargerCoordinator(ScOptionState):
         #####################################
         await self._async_allocate_net_power()
 
+        #####################################
         # TODO: Should remove last check sensor since not used.
         # Update last check sensor
+        #####################################
         for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
@@ -461,7 +376,9 @@ class SolarChargerCoordinator(ScOptionState):
                 SENSOR_LAST_CHECK
             ].set_state(datetime.now().astimezone())
 
+        #####################################
         # Check to see if need to reschedule charge.
+        #####################################
         for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
