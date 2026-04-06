@@ -34,7 +34,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 
 ## Features
 
-- Charge from excess solar adjusting car charging current according to feedback loop value "Net Power". The "Net Power" sensor expresses negative value in Watts for power exported to grid, or positive value for power imported from grid.
+- Charge from excess solar adjusting car charging current according to feedback loop value "Net Power".  The "Net Power" sensor expresses negative value in Watts for power exported to grid, or positive value for power imported from grid.
 - Support multi-day solar charging using [sun elevation triggers](https://github.com/flashg1/SolarCharger/wiki/User-guide#sun-trigger) to start and stop.
 - Compatible with off-peak night time charging.
 - Configurable [7 days charge limit schedule](https://github.com/flashg1/SolarCharger/wiki/User-guide#charge-limit-7-days-schedule).  Default is to use existing charge limit already set in car.
