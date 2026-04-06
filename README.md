@@ -35,10 +35,10 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 ## Features
 
 - Charge from excess solar adjusting car charging current according to feedback loop value "Main Power Net".  The "Main Power Net" sensor expresses negative value in Watts for available power for charging car, or positive value for consumed power.
-- Support multi-day solar charging using sun elevation triggers to start and stop.
+- Support multi-day solar charging using [sun elevation triggers](https://github.com/flashg1/SolarCharger/wiki/User-guide#sun-trigger) to start and stop.
 - Compatible with off-peak night time charging.
 - Configurable [7 days charge limit schedule](https://github.com/flashg1/SolarCharger/wiki/User-guide#charge-limit-7-days-schedule).  Default is to use existing charge limit already set in car.
-- Support just-in-time schedule charging to required charge limit using solar and grid if charge completion time is set for the day.
+- Support [just-in-time schedule charging](https://github.com/flashg1/SolarCharger/wiki/User-guide#next-charge-time) to required charge limit using solar and grid if charge end time is set for the day.
 - [Automatically charge more today](https://github.com/flashg1/SolarCharger/wiki/User-guide#reduce-charge-limit-difference) if today has no charge completion time and next 3 days have higher charge limit.
 - Automatically adjust to the highest charge limit set within a rainy forecast period.  The highest charge limit is selected from the 7 days charge limit settings that are within the forecast period taking into account the charge limit on bad weather setting.  The objective is to charge more before a rainy period.  Default disabled. (TODO)
 - Might be possible to prolong car battery life by setting daily charge limit to 60%, and only charge more before a rainy period by enabling option to adjust daily car charge limit based on weather. (TODO)
