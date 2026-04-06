@@ -30,8 +30,8 @@ If applicable, add screenshots to help explain your problem.
  - Charger API version:
 
 **Which method used to create the device?**
- - "Add charger device": 
- - "Add custom device": 
+ - "Add charger device" button: 
+ - "Add custom device" button: 
 
 **Additional context**
 Add any other context about the problem here.
