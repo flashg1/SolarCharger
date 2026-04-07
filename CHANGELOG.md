@@ -5,6 +5,7 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
 ### Fix
 ### Improvement
+- Added "Pause count" and "Pause average duration" sensors for pause stats per charge session.
 - Cleaned up code.
 
 ## v0.5.1 2026-04-04

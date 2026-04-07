@@ -12,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigSubentry
-from homeassistant.const import STATE_UNKNOWN, UnitOfPower
+from homeassistant.const import STATE_UNKNOWN, UnitOfPower, UnitOfTime
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -25,6 +25,8 @@ from .const import (
     SENSOR_CONSUMED_POWER,
     SENSOR_INSTANCE_COUNT,
     SENSOR_LAST_CHECK,
+    SENSOR_PAUSE_AVG_DURATION,
+    SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
     RunState,
@@ -196,6 +198,31 @@ CONFIG_SENSOR_LIST: tuple[
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         1,
+    ),
+    (
+        SENSOR_PAUSE_COUNT,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_PAUSE_COUNT,
+            state_class=SensorStateClass.TOTAL,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        0,
+    ),
+    (
+        SENSOR_PAUSE_AVG_DURATION,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_PAUSE_AVG_DURATION,
+            state_class=SensorStateClass.MEASUREMENT,
+            device_class=SensorDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.MINUTES,
+            suggested_display_precision=2,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        0,
     ),
 )
 

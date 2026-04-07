@@ -175,18 +175,14 @@
     },
     "entity": {
         "sensor": {
-            "instance_count": {
-                "name": "Instance count"
-            },
-            "share_allocation": {
-                "name": "Share allocation"
-            },
             "run_state": {
                 "name": "Run state",
                 "state": {
-                    "stopped": "Stopped",
-                    "charging": "Charging",
-                    "error": "Error"
+                    "Initialising": "Initialising",
+                    "Charging": "Charging",
+                    "Paused": "Paused",
+                    "Ending": "Ending",
+                    "Ended": "Ended"
                 }
             },
             "charger_allocated_power": {
@@ -194,6 +190,18 @@
             },
             "consumed_power": {
                 "name": "Consumed power"
+            },
+            "instance_count": {
+                "name": "Instance count"
+            },
+            "share_allocation": {
+                "name": "Share allocation"
+            },
+            "pause_count": {
+                "name": "Pause count"
+            },
+            "pause_average_duration": {
+                "name": "Pause average duration"
             },
             "last_check": {
                 "name": "Last check"

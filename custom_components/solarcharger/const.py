@@ -162,10 +162,16 @@ ERROR_SINGLE_INSTANCE_ALLOWED = "single_instance_allowed"
 # Internal entities
 #####################################
 # Sensors
+SENSOR_RUN_STATE = "run_state"
+
+# Sensor trigger: Allocated power = Net power * (Allocation weight / Total weight)
+SENSOR_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
+
+SENSOR_CONSUMED_POWER = "consumed_power"
 SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
 SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
-SENSOR_CONSUMED_POWER = "consumed_power"
-SENSOR_RUN_STATE = "run_state"
+SENSOR_PAUSE_COUNT = "pause_count"  # Pause count per session
+SENSOR_PAUSE_AVG_DURATION = "pause_average_duration"  # Pause avg duration per session
 SENSOR_LAST_CHECK = "last_check"
 
 # Boolean switches
@@ -190,10 +196,6 @@ BUTTON_RESET_CHARGE_LIMIT_AND_TIME = "reset_charge_limit_and_time"
 # Datetime triggers
 # Schedule time for next charge session
 DATETIME_NEXT_CHARGE_TIME = "next_charge_time"
-
-# Sensor triggers
-# Allocated power = Net power * (Allocation weight / Total weight)
-SENSOR_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
 
 # Calibrate max charge speed configs
 CALIBRATE_MAX_SOC = 91

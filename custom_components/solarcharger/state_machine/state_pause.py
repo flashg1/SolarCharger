@@ -2,11 +2,13 @@
 """State machine state."""
 
 import asyncio
+from datetime import timedelta
 import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import SENSOR_SHARE_ALLOCATION, RunState
+from ..model_charge_stats import ChargeStats
 
 # Import Modules, Not Classes: Instead of from machine import StateA, use
 # import machine and refer to machine.StateA. This breaks the cycle because
@@ -31,12 +33,29 @@ class StatePause(SolarChargeState):
         self.state_name = RunState.STATE_PAUSED.value
 
     # ----------------------------------------------------------------------------
+    def _update_pause_stats(
+        self, stats: ChargeStats, paused_duration: timedelta
+    ) -> None:
+        """Update pause stats."""
+
+        stats.pause_total_duration += paused_duration
+        stats.pause_total_count += 1
+        stats.pause_average_duration = timedelta(
+            seconds=(
+                stats.pause_total_duration.total_seconds() / stats.pause_total_count
+            )
+        )
+
+        self.solarcharge.set_pause_stats(stats)
+
+    # ----------------------------------------------------------------------------
     async def _async_pause_charge(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Pause charge and wait for external trigger to continue. Let device sleep."""
 
         start_time = self.solarcharge.get_local_datetime()
+
         is_enough_power = None
         average_allocated_power = 0
         data_points = 0
@@ -83,6 +102,11 @@ class StatePause(SolarChargeState):
 
         end_time = self.solarcharge.get_local_datetime()
         paused_duration = end_time - start_time
+
+        # Only update stats when exit pause state is due to having enough power.
+        if is_enough_power is not None and is_enough_power:
+            self._update_pause_stats(self.solarcharge.stats, paused_duration)
+
         _LOGGER.warning(
             "%s: paused_duration=%s (is_enough_power=%s, average_allocated_power=%s, data_points=%s)",
             self.solarcharge.caller,

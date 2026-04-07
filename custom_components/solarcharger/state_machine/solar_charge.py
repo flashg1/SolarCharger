@@ -38,6 +38,8 @@ from ..const import (
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
     SENSOR_CONSUMED_POWER,
+    SENSOR_PAUSE_AVG_DURATION,
+    SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     RunState,
 )
@@ -454,6 +456,16 @@ class SolarCharge(ScOptionState):
         self.semaphore_update_ha_task_count = 0
 
     # ----------------------------------------------------------------------------
+    def set_pause_stats(self, stats: ChargeStats) -> None:
+        """Set pause stats."""
+
+        assert self.entities.sensors is not None
+        self.entities.sensors[SENSOR_PAUSE_COUNT].set_state(stats.pause_total_count)
+        self.entities.sensors[SENSOR_PAUSE_AVG_DURATION].set_state(
+            stats.pause_average_duration.total_seconds() / 60
+        )
+
+    # ----------------------------------------------------------------------------
     def is_monitor_available_power(self) -> bool:
         """Is monitor available power option enabled?"""
         need_to_monitor = False
@@ -566,6 +578,10 @@ class SolarCharge(ScOptionState):
         # Start charge session
         #####################################
         try:
+            # Init stats
+            self.stats = ChargeStats()
+            self.set_pause_stats(self.stats)
+
             await self.async_start_state_machine(StateInitialise())
 
         except Exception as e:

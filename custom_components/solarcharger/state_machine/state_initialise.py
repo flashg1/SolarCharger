@@ -6,7 +6,6 @@ import logging
 
 from ..chargers.chargeable import Chargeable
 from ..const import RunState
-from ..model_charge_stats import ChargeStats
 from .solar_charge_state import SolarChargeState
 from .state_charge import StateCharge
 
@@ -75,7 +74,6 @@ class StateInitialise(SolarChargeState):
             self._is_session_triggered_by_timer()
         )
         self.solarcharge.started_calibrate_max_charge_speed = False
-        self.solarcharge.stats = ChargeStats()
 
         await self.solarcharge.async_wake_up_and_update_ha(chargeable)
         self._check_if_at_location_or_abort(chargeable)
