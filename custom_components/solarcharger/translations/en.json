@@ -178,11 +178,11 @@
             "run_state": {
                 "name": "Run state",
                 "state": {
-                    "Initialising": "Initialising",
-                    "Charging": "Charging",
-                    "Paused": "Paused",
-                    "Ending": "Ending",
-                    "Ended": "Ended"
+                    "initialising": "Initialising",
+                    "charging": "Charging",
+                    "paused": "Paused",
+                    "ending": "Ending",
+                    "ended": "Ended"
                 }
             },
             "charger_allocated_power": {
