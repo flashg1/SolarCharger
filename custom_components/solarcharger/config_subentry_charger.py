@@ -1,7 +1,5 @@
 """Config subentry flow to create charger using supported integrations."""
 
-from __future__ import annotations
-
 # from collections.abc import Mapping
 import logging
 from types import MappingProxyType

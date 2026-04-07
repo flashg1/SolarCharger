@@ -636,7 +636,7 @@ class StateCharge(SolarChargeState):
                 )
             else:
                 _LOGGER.error(
-                    "%s: Power monitor duration (%s minutes) must be at least 2 times longer than net power update interval (%s seconds)",
+                    "%s: Power monitor duration (%s minutes) must be more than 2 times longer than net power update interval (%s seconds)",
                     self.solarcharge.caller,
                     monitor_duration,
                     wait_net_power_update,

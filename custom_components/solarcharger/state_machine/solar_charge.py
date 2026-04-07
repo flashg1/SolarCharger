@@ -460,9 +460,12 @@ class SolarCharge(ScOptionState):
         """Set pause stats."""
 
         assert self.entities.sensors is not None
+
         self.entities.sensors[SENSOR_PAUSE_COUNT].set_state(stats.pause_total_count)
+
+        # native_unit_of_measurement=UnitOfTime.HOURS
         self.entities.sensors[SENSOR_PAUSE_AVG_DURATION].set_state(
-            stats.pause_average_duration.total_seconds() / 60
+            stats.pause_average_duration.total_seconds() / 3600
         )
 
     # ----------------------------------------------------------------------------
