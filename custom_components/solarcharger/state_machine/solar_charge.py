@@ -524,6 +524,7 @@ class SolarCharge(ScOptionState):
                     data.power_allocations,
                     raise_the_bar=False,
                 )
+
                 if data.is_enough_power is not None and not data.is_enough_power:
                     data.charge_status = ChargeStatus.CHARGE_PAUSE
                     data.is_continue_state = False
@@ -545,7 +546,6 @@ class SolarCharge(ScOptionState):
         )
 
         if continue_loop:
-            data.charge_status = ChargeStatus.CHARGE_PAUSE
             if self.is_monitor_available_power():
                 # Data points managed in _async_handle_allocated_power_update().
                 (
@@ -557,9 +557,14 @@ class SolarCharge(ScOptionState):
                     data.power_allocations,
                     raise_the_bar=True,
                 )
+
                 if data.is_enough_power is not None and data.is_enough_power:
                     data.charge_status = ChargeStatus.CHARGE_CONTINUE
                     data.is_continue_state = False
+                else:
+                    data.charge_status = ChargeStatus.CHARGE_PAUSE
+            else:
+                data.is_continue_state = False
         else:
             data.is_continue_state = False
 
