@@ -60,8 +60,11 @@ PLATFORMS: list[Platform | str] = [
     # INPUT_TIME,
 ]
 
-# PLATFORM_OCPP = "ocpp"
-# PLATFORM_USER_CUSTOM = "user_custom"
+#######################################################
+# Constants
+#######################################################
+# Max number of allowable consecutive failures in charge loop
+MAX_CONSECUTIVE_FAILURE_COUNT = 10
 
 #######################################################
 # Subentry constants
@@ -170,8 +173,11 @@ SENSOR_CHARGER_ALLOCATED_POWER = "charger_allocated_power"
 SENSOR_CONSUMED_POWER = "consumed_power"
 SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
 SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
-SENSOR_PAUSE_COUNT = "pause_count"  # Pause count per session
-SENSOR_PAUSE_AVG_DURATION = "pause_average_duration"  # Pause avg duration per session
+# Pause count per session
+SENSOR_PAUSE_COUNT = "pause_count"
+# Pause avg duration per session
+SENSOR_AVERAGE_PAUSE_DURATION = "average_pause_duration"
+SENSOR_LAST_PAUSE_DURATION = "last_pause_duration"
 SENSOR_LAST_CHECK = "last_check"
 
 # Boolean switches
@@ -579,6 +585,8 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     OPTION_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}status_connector",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing"]',
+    # Uncomment and reinstall for testing with iammeter-simulator.
+    # OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing"]',
     OPTION_CHARGER_ON_OFF_SWITCH: f"{SWITCH}.{DEVICE_NAME_MARKER}charge_control",
     OPTION_CHARGER_CHARGING_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}status_connector",
@@ -831,7 +839,7 @@ class ChargeStatus(Enum):
 
     CHARGE_CONTINUE = "charge_continue"
     CHARGE_PAUSE = "charge_pause"
-    CHARGE_EXIT = "charge_exit"
+    CHARGE_END = "charge_end"
 
 
 class RunState(Enum):

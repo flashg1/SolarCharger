@@ -4,8 +4,10 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
 ### Fix
+- Fixed issue with SolarCharger not stopping when unplugged charger in paused state.
 ### Improvement
-- Added "Pause count" and "Pause average duration" sensors for pause stats per charge session.
+- Refactored SolarCharge to handle both charging and paused states.
+- Added "Pause count", "Average pause duration" and "Last pause duration" sensors for pause stats per charge session.
 - Cleaned up code.
 
 ## v0.5.1 2026-04-04

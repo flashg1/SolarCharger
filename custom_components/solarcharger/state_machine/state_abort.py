@@ -20,10 +20,10 @@ class StateAbort(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state_name = RunState.STATE_ABORTING.value
+        self.state = RunState.STATE_ABORTING
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
         """Start abort state."""
 
-        self.solarcharge.set_run_state(self.state_name)
+        self.solarcharge.set_run_state(self.state)

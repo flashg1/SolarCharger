@@ -23,7 +23,7 @@ class StateInitialise(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state_name = RunState.STATE_INITIALISING.value
+        self.state = RunState.STATE_INITIALISING
 
     # ----------------------------------------------------------------------------
     def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
@@ -82,6 +82,6 @@ class StateInitialise(SolarChargeState):
     async def async_activate_state(self) -> None:
         """Start initialising state."""
 
-        self.solarcharge.set_run_state(self.state_name)
+        self.solarcharge.set_run_state(self.state)
         await self._async_init_device(self.solarcharge.chargeable)
         self.solarcharge.set_machine_state(StateCharge())

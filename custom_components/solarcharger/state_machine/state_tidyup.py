@@ -23,7 +23,7 @@ class StateTidyUp(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state_name = RunState.STATE_ENDING.value
+        self.state = RunState.STATE_ENDING
 
     # ----------------------------------------------------------------------------
     def _unsubscribe_allocated_power_update(self) -> None:
@@ -67,7 +67,7 @@ class StateTidyUp(SolarChargeState):
     async def async_activate_state(self) -> None:
         """Start tidy up state."""
 
-        self.solarcharge.set_run_state(self.state_name)
+        self.solarcharge.set_run_state(self.state)
         await self.async_tidy_up_on_exit(
             self.solarcharge.charger, self.solarcharge.chargeable
         )

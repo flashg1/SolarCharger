@@ -200,8 +200,11 @@
             "pause_count": {
                 "name": "Pause count"
             },
-            "pause_average_duration": {
-                "name": "Pause average duration"
+            "average_pause_duration": {
+                "name": "Average pause duration"
+            },
+            "last_pause_duration": {
+                "name": "Last pause duration"
             },
             "last_check": {
                 "name": "Last check"

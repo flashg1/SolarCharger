@@ -11,19 +11,19 @@ class ChargeStats:
     """Data structure for charge stats. Spans multiple machine states."""
 
     #####################################
-    # Charge stats
+    # Loop stats
     #####################################
-    # Charge loop success count. **MUST** start from 0 when starting charge state.
-    charge_loop_success_count: int = 0
+    # Loop success count. **MUST** start from 0 when starting state.
+    loop_success_count: int = 0
 
-    # Charge loop consecutive fail count. **MUST** start from 0 when starting charge state.
-    charge_loop_consecutive_fail_count: int = 0
+    # Loop consecutive fail count. **MUST** start from 0 when starting state.
+    loop_consecutive_fail_count: int = 0
 
-    # Charge loop total fail count
-    charge_loop_total_fail_count: int = 0
+    # Loop total fail count
+    loop_total_fail_count: int = 0
 
-    # Charge loop total count
-    charge_loop_total_count: int = 0
+    # Loop total count
+    loop_total_count: int = 0
 
     #####################################
     # Pause stats
@@ -37,15 +37,19 @@ class ChargeStats:
     # Pause average duration
     pause_average_duration: timedelta = timedelta(seconds=0)
 
+    # Pause last duration
+    pause_last_duration: timedelta = timedelta(seconds=0)
+
     def __repr__(self) -> str:
-        """Return string representation of ScheduleData."""
+        """Return string representation of ChargeStats."""
         return (
-            f"charge_loop_success_count={self.charge_loop_success_count}, "
-            f"charge_loop_consecutive_fail_count={self.charge_loop_consecutive_fail_count}, "
-            f"charge_loop_total_fail_count={self.charge_loop_total_fail_count}, "
-            f"charge_loop_total_success_count={self.charge_loop_total_count - self.charge_loop_total_fail_count}, "
-            f"charge_loop_total_count={self.charge_loop_total_count}, "
+            f"loop_success_count={self.loop_success_count}, "
+            f"loop_consecutive_fail_count={self.loop_consecutive_fail_count}, "
+            f"loop_total_fail_count={self.loop_total_fail_count}, "
+            f"loop_total_success_count={self.loop_total_count - self.loop_total_fail_count}, "
+            f"loop_total_count={self.loop_total_count}, "
             f"pause_total_count={self.pause_total_count}, "
             f"pause_total_duration={self.pause_total_duration}, "
-            f"pause_average_duration={self.pause_average_duration}"
+            f"pause_average_duration={self.pause_average_duration}, "
+            f"pause_last_duration={self.pause_last_duration}"
         )
