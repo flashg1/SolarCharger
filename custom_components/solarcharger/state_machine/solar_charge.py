@@ -527,6 +527,8 @@ class SolarCharge(ScOptionState):
                 if data.is_enough_power is not None and not data.is_enough_power:
                     data.charge_status = ChargeStatus.CHARGE_PAUSE
                     data.is_continue_state = False
+        else:
+            data.is_continue_state = False
 
     # ----------------------------------------------------------------------------
     def _is_continue_pause_state(self, data: StateData) -> None:
@@ -558,6 +560,8 @@ class SolarCharge(ScOptionState):
                 if data.is_enough_power is not None and data.is_enough_power:
                     data.charge_status = ChargeStatus.CHARGE_CONTINUE
                     data.is_continue_state = False
+        else:
+            data.is_continue_state = False
 
     # ----------------------------------------------------------------------------
     def is_continue_state(
