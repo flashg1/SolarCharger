@@ -65,7 +65,11 @@ class StatePause(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     async def _async_pause_charge(
-        self, charger: Charger, chargeable: Chargeable
+        self,
+        charger: Charger,
+        chargeable: Chargeable,
+        state: RunState,
+        stats: ChargeStats,
     ) -> None:
         """Pause charge and wait for external trigger to continue. Let device sleep."""
 
@@ -79,30 +83,30 @@ class StatePause(SolarChargeState):
         self.solarcharge.power_allocations = []
 
         # Initialise counts before starting loop
-        self.solarcharge.stats.loop_success_count = 0
-        self.solarcharge.stats.loop_consecutive_fail_count = 0
+        stats.loop_success_count = 0
+        stats.loop_consecutive_fail_count = 0
         while True:
             try:
                 self.solarcharge.abort_if_exceed_max_consecutive_failure()
 
-                charge_status = await self.solarcharge.async_get_loop_status(
-                    charger, chargeable, self.solarcharge.machine_state.state
+                next_step = await self.solarcharge.async_get_charge_status(
+                    charger, chargeable, state
                 )
-                if charge_status != ChargeStatus.CHARGE_PAUSE:
+                if next_step != ChargeStatus.CHARGE_PAUSE:
                     break
 
-                self.solarcharge.stats.loop_success_count += 1
-                self.solarcharge.stats.loop_consecutive_fail_count = 0
+                stats.loop_success_count += 1
+                stats.loop_consecutive_fail_count = 0
 
                 await asyncio.sleep(self.solarcharge.wait_net_power_update)
 
             except Exception as e:
-                self.solarcharge.stats.loop_consecutive_fail_count += 1
+                stats.loop_consecutive_fail_count += 1
                 _LOGGER.exception(
                     "%s: Failed to pause charge: %s", self.solarcharge.caller, e
                 )
 
-            self.solarcharge.stats.loop_total_count += 1
+            stats.loop_total_count += 1
 
         self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(1)
 
@@ -110,7 +114,7 @@ class StatePause(SolarChargeState):
         paused_duration = end_time - start_time
 
         # Only update stats when exiting pause state is due to having enough power.
-        if charge_status == ChargeStatus.CHARGE_CONTINUE:
+        if next_step == ChargeStatus.CHARGE_CONTINUE:
             self._update_pause_stats(self.solarcharge.stats, paused_duration)
 
     # ----------------------------------------------------------------------------
@@ -119,7 +123,10 @@ class StatePause(SolarChargeState):
 
         self.solarcharge.set_run_state(self.state)
         await self._async_pause_charge(
-            self.solarcharge.charger, self.solarcharge.chargeable
+            self.solarcharge.charger,
+            self.solarcharge.chargeable,
+            self.solarcharge.machine_state.state,
+            self.solarcharge.stats,
         )
 
         # WL: This also worked.

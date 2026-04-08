@@ -23,8 +23,8 @@ class StateData:
     stats: ChargeStats
 
     # Outputs
-    is_continue_state: bool = True
-    charge_status: ChargeStatus = ChargeStatus.CHARGE_END
+    is_continue_state: bool = False
+    next_step: ChargeStatus = ChargeStatus.CHARGE_END
     is_enough_power: bool | None = None
     average_allocated_power: float = 0
     data_points: int = 0
@@ -47,9 +47,9 @@ class StateData:
     def __repr__(self) -> str:
         """Return string representation of charger state data."""
         return (
-            f"is_continue_state={self.is_continue_state}, "
             f"state={self.state.value}, "
-            f"status={self.charge_status.value} ("
+            f"is_continue_state={self.is_continue_state}, "
+            f"next_step={self.next_step.value} ("
             f"is_enough_power={self.is_enough_power}, "
             f"average_allocated_power={self.average_allocated_power}, "
             f"data_points={self.data_points}), "

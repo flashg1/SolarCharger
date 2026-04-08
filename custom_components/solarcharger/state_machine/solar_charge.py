@@ -498,7 +498,10 @@ class SolarCharge(ScOptionState):
     def _is_continue_charge_state(self, data: StateData) -> None:
         """Is continue charge state?"""
 
-        continue_loop = (
+        data.next_step = ChargeStatus.CHARGE_CONTINUE
+        data.is_continue_state = True
+
+        continue_charge = (
             data.is_connected
             and data.is_below_charge_limit
             and (data.stats.loop_success_count == 0 or data.is_charging)
@@ -511,8 +514,7 @@ class SolarCharge(ScOptionState):
             )
         )
 
-        if continue_loop:
-            data.charge_status = ChargeStatus.CHARGE_CONTINUE
+        if continue_charge:
             if self.is_monitor_available_power():
                 # Data points managed in _async_handle_allocated_power_update().
                 (
@@ -526,16 +528,20 @@ class SolarCharge(ScOptionState):
                 )
 
                 if data.is_enough_power is not None and not data.is_enough_power:
-                    data.charge_status = ChargeStatus.CHARGE_PAUSE
+                    data.next_step = ChargeStatus.CHARGE_PAUSE
                     data.is_continue_state = False
         else:
+            data.next_step = ChargeStatus.CHARGE_END
             data.is_continue_state = False
 
     # ----------------------------------------------------------------------------
     def _is_continue_pause_state(self, data: StateData) -> None:
         """Is continue pause state?"""
 
-        continue_loop = (
+        data.next_step = ChargeStatus.CHARGE_CONTINUE
+        data.is_continue_state = False
+
+        continue_pause = (
             data.is_connected
             and (not data.is_sun_trigger or data.is_sun_above_start_end_elevations)
             and not data.is_use_secondary_power_source
@@ -545,7 +551,7 @@ class SolarCharge(ScOptionState):
             )
         )
 
-        if continue_loop:
+        if continue_pause:
             if self.is_monitor_available_power():
                 # Data points managed in _async_handle_allocated_power_update().
                 (
@@ -558,15 +564,9 @@ class SolarCharge(ScOptionState):
                     raise_the_bar=True,
                 )
 
-                if data.is_enough_power is not None and data.is_enough_power:
-                    data.charge_status = ChargeStatus.CHARGE_CONTINUE
-                    data.is_continue_state = False
-                else:
-                    data.charge_status = ChargeStatus.CHARGE_PAUSE
-            else:
-                data.is_continue_state = False
-        else:
-            data.is_continue_state = False
+                if data.is_enough_power is None or not data.is_enough_power:
+                    data.next_step = ChargeStatus.CHARGE_PAUSE
+                    data.is_continue_state = True
 
     # ----------------------------------------------------------------------------
     def is_continue_state(
@@ -623,10 +623,10 @@ class SolarCharge(ScOptionState):
         if not data.is_continue_state:
             _LOGGER.warning("%s: %s", self.caller, data)
 
-        return data.charge_status
+        return data.next_step
 
     # ----------------------------------------------------------------------------
-    async def async_get_loop_status(
+    async def async_get_charge_status(
         self, charger: Charger, chargeable: Chargeable, state: RunState
     ) -> ChargeStatus:
         """Get loop status."""

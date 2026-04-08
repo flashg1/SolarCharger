@@ -21,6 +21,7 @@ from ..const import (
     RunState,
 )
 from ..exceptions.entity_exception import EntityExceptionError
+from ..model_charge_stats import ChargeStats
 from ..model_config import ConfigValueDict
 from ..sc_option_state import ScheduleData, StateOfCharge
 from .solar_charge_state import SolarChargeState
@@ -451,12 +452,17 @@ class StateCharge(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     async def _async_charge_device(
-        self, charger: Charger, chargeable: Chargeable
+        self,
+        charger: Charger,
+        chargeable: Chargeable,
+        state: RunState,
+        stats: ChargeStats,
     ) -> ChargeStatus:
         """Loop to charge device."""
 
-        charge_status: ChargeStatus = ChargeStatus.CHARGE_END
+        next_step: ChargeStatus = ChargeStatus.CHARGE_END
 
+        # Init power monitor duration
         self.solarcharge.wait_net_power_update = (
             self.solarcharge.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
         )
@@ -464,26 +470,26 @@ class StateCharge(SolarChargeState):
         self.solarcharge.power_allocations = []
 
         # Initialise counts before starting loop
-        self.solarcharge.stats.loop_success_count = 0
-        self.solarcharge.stats.loop_consecutive_fail_count = 0
+        stats.loop_success_count = 0
+        stats.loop_consecutive_fail_count = 0
         while True:
             self.solarcharge.abort_if_exceed_max_consecutive_failure()
 
             try:
                 # Check if continue charging or exit loop.
-                charge_status = await self.solarcharge.async_get_loop_status(
-                    charger, chargeable, self.solarcharge.machine_state.state
+                next_step = await self.solarcharge.async_get_charge_status(
+                    charger, chargeable, state
                 )
-                if charge_status != ChargeStatus.CHARGE_CONTINUE:
+                if next_step != ChargeStatus.CHARGE_CONTINUE:
                     break
 
                 # Turn on charger if looping for the first time.
-                if self.solarcharge.stats.loop_success_count == 0:
+                if stats.loop_success_count == 0:
                     await self._switch_on_charger_and_set_current(charger, chargeable)
 
                 # Completed loop successfully at this point.
-                self.solarcharge.stats.loop_success_count += 1
-                self.solarcharge.stats.loop_consecutive_fail_count = 0
+                stats.loop_success_count += 1
+                stats.loop_consecutive_fail_count = 0
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
@@ -491,14 +497,14 @@ class StateCharge(SolarChargeState):
                 )
 
             except TimeoutError as e:
-                self.solarcharge.stats.loop_total_fail_count += 1
-                self.solarcharge.stats.loop_consecutive_fail_count += 1
+                stats.loop_total_fail_count += 1
+                stats.loop_consecutive_fail_count += 1
                 _LOGGER.warning(
                     "%s: Timeout charging device: %s", self.solarcharge.caller, e
                 )
             except Exception as e:
-                self.solarcharge.stats.loop_total_fail_count += 1
-                self.solarcharge.stats.loop_consecutive_fail_count += 1
+                stats.loop_total_fail_count += 1
+                stats.loop_consecutive_fail_count += 1
                 _LOGGER.exception(
                     "%s: Error charging device: %s", self.solarcharge.caller, e
                 )
@@ -513,9 +519,9 @@ class StateCharge(SolarChargeState):
             # Charging state must be "charging" for loop_count > 0.
             # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
             await asyncio.sleep(self.solarcharge.wait_net_power_update)
-            self.solarcharge.stats.loop_total_count += 1
+            stats.loop_total_count += 1
 
-        return charge_status
+        return next_step
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
@@ -523,11 +529,14 @@ class StateCharge(SolarChargeState):
 
         self.solarcharge.set_run_state(self.state)
 
-        charge_status = await self._async_charge_device(
-            self.solarcharge.charger, self.solarcharge.chargeable
+        next_step = await self._async_charge_device(
+            self.solarcharge.charger,
+            self.solarcharge.chargeable,
+            self.solarcharge.machine_state.state,
+            self.solarcharge.stats,
         )
 
-        if charge_status == ChargeStatus.CHARGE_PAUSE:
+        if next_step == ChargeStatus.CHARGE_PAUSE:
             self.solarcharge.set_machine_state(StatePause())
         else:
             self.solarcharge.set_machine_state(StateTidyUp())
