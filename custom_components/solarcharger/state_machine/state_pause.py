@@ -115,7 +115,7 @@ class StatePause(SolarChargeState):
 
         # Only update stats when exiting pause state is due to having enough power.
         if next_step == ChargeStatus.CHARGE_CONTINUE:
-            self._update_pause_stats(self.solarcharge.stats, paused_duration)
+            self._update_pause_stats(stats, paused_duration)
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:

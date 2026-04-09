@@ -53,7 +53,7 @@ from ..const import (
 from ..model_charge_control import ControlEntities
 from ..model_charge_stats import ChargeStats
 from ..model_config import ConfigValueDict
-from ..model_state_data import StateData
+from ..model_context_data import ContextData
 from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge
 from ..utils import log_is_event_loop
 from .solar_charge_state import SolarChargeState
@@ -495,81 +495,9 @@ class SolarCharge(ScOptionState):
         return self.is_fast_charge_mode()
 
     # ----------------------------------------------------------------------------
-    def _is_continue_charge_state(self, data: StateData) -> None:
-        """Is continue charge state?"""
-
-        data.next_step = ChargeStatus.CHARGE_CONTINUE
-        data.is_continue_state = True
-
-        continue_charge = (
-            data.is_connected
-            and data.is_below_charge_limit
-            and (data.stats.loop_success_count == 0 or data.is_charging)
-            and (
-                not data.is_sun_trigger  # Sun trigger off, continue.
-                or data.is_sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
-                or data.is_use_secondary_power_source
-                or data.is_calibrate_max_charge_speed
-                or (data.goal.has_charge_endtime and data.is_immediate_start_with_grace)
-            )
-        )
-
-        if continue_charge:
-            if self.is_monitor_available_power():
-                # Data points managed in _async_handle_allocated_power_update().
-                (
-                    data.is_enough_power,
-                    data.average_allocated_power,
-                    data.data_points,
-                ) = self.is_average_allocated_power_more_than_min_workable_power(
-                    data.max_allocation_count,
-                    data.power_allocations,
-                    raise_the_bar=False,
-                )
-
-                if data.is_enough_power is not None and not data.is_enough_power:
-                    data.next_step = ChargeStatus.CHARGE_PAUSE
-                    data.is_continue_state = False
-        else:
-            data.next_step = ChargeStatus.CHARGE_END
-            data.is_continue_state = False
-
+    # Machine state functions
     # ----------------------------------------------------------------------------
-    def _is_continue_pause_state(self, data: StateData) -> None:
-        """Is continue pause state?"""
-
-        data.next_step = ChargeStatus.CHARGE_CONTINUE
-        data.is_continue_state = False
-
-        continue_pause = (
-            data.is_connected
-            and (not data.is_sun_trigger or data.is_sun_above_start_end_elevations)
-            and not data.is_use_secondary_power_source
-            and not data.is_calibrate_max_charge_speed
-            and not (
-                data.goal.has_charge_endtime and data.is_immediate_start_with_grace
-            )
-        )
-
-        if continue_pause:
-            if self.is_monitor_available_power():
-                # Data points managed in _async_handle_allocated_power_update().
-                (
-                    data.is_enough_power,
-                    data.average_allocated_power,
-                    data.data_points,
-                ) = self.is_average_allocated_power_more_than_min_workable_power(
-                    data.max_allocation_count,
-                    data.power_allocations,
-                    raise_the_bar=True,
-                )
-
-                if data.is_enough_power is None or not data.is_enough_power:
-                    data.next_step = ChargeStatus.CHARGE_PAUSE
-                    data.is_continue_state = True
-
-    # ----------------------------------------------------------------------------
-    def is_continue_state(
+    def get_context(
         self,
         charger: Charger,
         chargeable: Chargeable,
@@ -578,58 +506,153 @@ class SolarCharge(ScOptionState):
         max_allocation_count: int,
         power_allocations: list[float],
         stats: ChargeStats,
-    ) -> ChargeStatus:
-        """Check if to continue state."""
+    ) -> ContextData:
+        """Get charging information context."""
 
         # Init variables
-        data = StateData(state, goal, max_allocation_count, power_allocations, stats)
+        context = ContextData(
+            charger,
+            chargeable,
+            state,
+            goal,
+            max_allocation_count,
+            power_allocations,
+            stats,
+        )
 
-        data.is_connected = self.is_connected(charger)
+        context.is_connected = self.is_connected(charger)
 
         # Device charge limit must have already been set before this check.
-        data.is_below_charge_limit = self.is_below_charge_limit(chargeable)
+        context.is_below_charge_limit = self.is_below_charge_limit(chargeable)
 
         val_dict = ConfigValueDict(OPTION_CHARGER_CHARGING_SENSOR, {})
-        data.is_charging = self.is_charging(charger, val_dict=val_dict)
-        data.charging_status = val_dict.config_values[
+        context.is_charging = self.is_charging(charger, val_dict=val_dict)
+        context.charging_status = val_dict.config_values[
             OPTION_CHARGER_CHARGING_SENSOR
         ].entity_value
 
-        data.is_sun_trigger = self.is_sun_trigger()
-        (data.is_sun_above_start_end_elevations, data.elevation) = (
+        context.is_sun_trigger = self.is_sun_trigger()
+        (context.is_sun_above_start_end_elevations, context.elevation) = (
             self.is_sun_above_start_end_elevation_triggers()
         )
-        data.is_use_secondary_power_source = self.is_use_secondary_power_source()
-        data.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
+        context.is_use_secondary_power_source = self.is_use_secondary_power_source()
+        context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
         # Add 30 minutes grace period to avoid time drift stopping charge
         # and scheduling next session immediately.
-        data.current_time_with_grace = goal.data_timestamp + timedelta(minutes=30)
+        context.current_time_with_grace = goal.data_timestamp + timedelta(minutes=30)
         if goal.has_charge_endtime and goal.propose_charge_starttime != datetime.min:
-            data.is_immediate_start_with_grace = (
-                goal.propose_charge_starttime <= data.current_time_with_grace
+            context.is_immediate_start_with_grace = (
+                goal.propose_charge_starttime <= context.current_time_with_grace
             )
         else:
-            data.is_immediate_start_with_grace = False
+            context.is_immediate_start_with_grace = False
+
+        return context
+
+    # ----------------------------------------------------------------------------
+    def _set_is_continue_charge_state(self, context: ContextData) -> None:
+        """Is continue charge state?"""
+
+        context.next_step = ChargeStatus.CHARGE_CONTINUE
+        context.is_continue_state = True
 
         # Charge just-in-time feature:
         # If end time is set, charge can still stop at end elevation trigger,
         # and then start again closer to end time to complete charge.
-        if state == RunState.STATE_CHARGING:
-            self._is_continue_charge_state(data)
-        elif state == RunState.STATE_PAUSED:
-            self._is_continue_pause_state(data)
+        continue_charge = (
+            context.is_connected
+            and context.is_below_charge_limit
+            and (context.stats.loop_success_count == 0 or context.is_charging)
+            and (
+                not context.is_sun_trigger  # Sun trigger off, continue.
+                or context.is_sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
+                or context.is_use_secondary_power_source
+                or context.is_calibrate_max_charge_speed
+                or (
+                    context.goal.has_charge_endtime
+                    and context.is_immediate_start_with_grace
+                )
+            )
+        )
 
-        if not data.is_continue_state:
-            _LOGGER.warning("%s: %s", self.caller, data)
+        if continue_charge:
+            if self.is_monitor_available_power():
+                # Data points managed in _async_handle_allocated_power_update().
+                (
+                    context.is_enough_power,
+                    context.average_allocated_power,
+                    context.data_points,
+                ) = self.is_average_allocated_power_more_than_min_workable_power(
+                    context.max_allocation_count,
+                    context.power_allocations,
+                    raise_the_bar=False,
+                )
 
-        return data.next_step
+                if context.is_enough_power is not None and not context.is_enough_power:
+                    context.next_step = ChargeStatus.CHARGE_PAUSE
+                    context.is_continue_state = False
+        else:
+            context.next_step = ChargeStatus.CHARGE_END
+            context.is_continue_state = False
+
+    # ----------------------------------------------------------------------------
+    def _set_is_continue_pause_state(self, context: ContextData) -> None:
+        """Is continue pause state?"""
+
+        context.next_step = ChargeStatus.CHARGE_CONTINUE
+        context.is_continue_state = False
+
+        continue_pause = (
+            context.is_connected
+            and (
+                not context.is_sun_trigger or context.is_sun_above_start_end_elevations
+            )
+            and not context.is_use_secondary_power_source
+            and not context.is_calibrate_max_charge_speed
+            and not (
+                context.goal.has_charge_endtime
+                and context.is_immediate_start_with_grace
+            )
+        )
+
+        if continue_pause:
+            if self.is_monitor_available_power():
+                # Data points managed in _async_handle_allocated_power_update().
+                (
+                    context.is_enough_power,
+                    context.average_allocated_power,
+                    context.data_points,
+                ) = self.is_average_allocated_power_more_than_min_workable_power(
+                    context.max_allocation_count,
+                    context.power_allocations,
+                    raise_the_bar=True,
+                )
+
+                if context.is_enough_power is None or not context.is_enough_power:
+                    context.next_step = ChargeStatus.CHARGE_PAUSE
+                    context.is_continue_state = True
+
+    # ----------------------------------------------------------------------------
+    def set_is_continue_state(
+        self,
+        context: ContextData,
+    ) -> None:
+        """Check if to continue state."""
+
+        if context.state == RunState.STATE_CHARGING:
+            self._set_is_continue_charge_state(context)
+        elif context.state == RunState.STATE_PAUSED:
+            self._set_is_continue_pause_state(context)
+
+        if not context.is_continue_state:
+            _LOGGER.warning("%s: %s", self.caller, context)
 
     # ----------------------------------------------------------------------------
     async def async_get_charge_status(
         self, charger: Charger, chargeable: Chargeable, state: RunState
     ) -> ChargeStatus:
-        """Get loop status."""
+        """Get latest context and determine next step."""
 
         # Get schedule data at start of each loop since schedule might change while charging.
         self.running_goal = await self.scheduler.async_get_schedule_data(
@@ -644,8 +667,7 @@ class SolarCharge(ScOptionState):
         if state == RunState.STATE_CHARGING:
             await self.async_set_charge_limit_if_required(chargeable, self.running_goal)
 
-        # Check if continue charging or exit loop. Must run after setting charge limit.
-        return self.is_continue_state(
+        context = self.get_context(
             charger,
             chargeable,
             state,
@@ -654,6 +676,11 @@ class SolarCharge(ScOptionState):
             self.power_allocations,
             self.stats,
         )
+
+        # Check if continue charging or exit loop. Must run after setting charge limit.
+        self.set_is_continue_state(context)
+
+        return context.next_step
 
     # ----------------------------------------------------------------------------
     def abort_if_exceed_max_consecutive_failure(self) -> None:

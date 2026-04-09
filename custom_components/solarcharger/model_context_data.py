@@ -1,9 +1,11 @@
-"""State data models."""
+"""Context data models."""
 
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from .chargers.chargeable import Chargeable
+from .chargers.charger import Charger
 from .const import ChargeStatus, RunState
 from .model_charge_stats import ChargeStats
 from .sc_option_state import ScheduleData
@@ -12,8 +14,11 @@ from .sc_option_state import ScheduleData
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 @dataclass
-class StateData:
-    """Charger state data."""
+class ContextData:
+    """Charging process conext data."""
+
+    charger: Charger
+    chargeable: Chargeable
 
     # Inputs
     state: RunState
@@ -23,7 +28,7 @@ class StateData:
     stats: ChargeStats
 
     # Outputs
-    is_continue_state: bool = False
+    is_continue_state: bool = False  # Continue current state
     next_step: ChargeStatus = ChargeStatus.CHARGE_END
     is_enough_power: bool | None = None
     average_allocated_power: float = 0
@@ -44,8 +49,11 @@ class StateData:
     current_time_with_grace: datetime = datetime.min
     is_immediate_start_with_grace: bool = False
 
+    # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
-        """Return string representation of charger state data."""
+        """Return string representation of charging process conext data."""
+
         return (
             f"state={self.state.value}, "
             f"is_continue_state={self.is_continue_state}, "
