@@ -41,12 +41,9 @@ class StateTidyUp(SolarChargeState):
             self._unsubscribe_allocated_power_update()
             await self.solarcharge.async_turn_off_calibrate_max_charge_speed_switch()
 
-            await self.solarcharge.async_update_ha(chargeable)
-
-            switched_on = charger.is_charger_switch_on()
-            if switched_on:
-                await self.solarcharge.async_set_charge_current(charger, 0)
-                await self.solarcharge.async_turn_charger_switch(charger, turn_on=False)
+            # async_update_ha() most likely not required here
+            # await self.solarcharge.async_update_ha(chargeable)
+            await self.solarcharge.async_turn_off_charger(charger, chargeable)
 
             # Only schedule next charge session if car is connected and at location.
             if self.solarcharge.is_connected(

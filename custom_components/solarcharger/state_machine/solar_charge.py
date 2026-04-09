@@ -398,6 +398,18 @@ class SolarCharge(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
+    async def async_turn_off_charger(
+        self, charger: Charger, chargeable: Chargeable
+    ) -> None:
+        """Turn off charger."""
+
+        switched_on = charger.is_charger_switch_on()
+        if switched_on:
+            await self.async_set_charge_current(charger, 0)
+            await self.async_turn_charger_switch(charger, turn_on=False)
+            await self.async_update_ha(chargeable)
+
+    # ----------------------------------------------------------------------------
     async def async_set_charge_limit(
         self, chargeable: Chargeable, charge_limit: float
     ) -> None:

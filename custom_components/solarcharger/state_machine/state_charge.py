@@ -472,6 +472,7 @@ class StateCharge(SolarChargeState):
         # Initialise counts before starting loop
         stats.loop_success_count = 0
         stats.loop_consecutive_fail_count = 0
+        done_switch_on_charger = False
         while True:
             self.solarcharge.abort_if_exceed_max_consecutive_failure()
 
@@ -484,17 +485,26 @@ class StateCharge(SolarChargeState):
                     break
 
                 # Turn on charger if looping for the first time.
-                if stats.loop_success_count == 0:
+                if not done_switch_on_charger:
                     await self._switch_on_charger_and_set_current(charger, chargeable)
-
-                # Completed loop successfully at this point.
-                stats.loop_success_count += 1
-                stats.loop_consecutive_fail_count = 0
+                    done_switch_on_charger = True
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
                     charger, chargeable
                 )
+
+                # Update status after turning on power, or at every interval.
+                # This is either required here or after setting current.
+                # It is better here since it is garanteed periodic.
+                # Do not wait here. Depends on the main loop to wait.
+                await self.solarcharge.async_update_ha(
+                    chargeable, wait_after_update=False
+                )
+
+                # Completed loop successfully at this point.
+                stats.loop_success_count += 1
+                stats.loop_consecutive_fail_count = 0
 
             except TimeoutError as e:
                 stats.loop_total_fail_count += 1
@@ -508,12 +518,6 @@ class StateCharge(SolarChargeState):
                 _LOGGER.exception(
                     "%s: Error charging device: %s", self.solarcharge.caller, e
                 )
-
-            # Update status after turning on power, or at every interval.
-            # This is either required here or after setting current.
-            # It is better here since it is garanteed periodic.
-            # Do not wait here. Depends on the main loop to wait.
-            await self.solarcharge.async_update_ha(chargeable, wait_after_update=False)
 
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
