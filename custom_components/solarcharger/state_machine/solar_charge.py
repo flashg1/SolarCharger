@@ -366,6 +366,14 @@ class SolarCharge(ScOptionState):
             # Get old charge current.
             old_charge_current = self.get_charge_current(charger, val_dict)
 
+            # How do we know the status of charger on/off switch is up-to-date?
+            # We can't unless do another poll. So just to set the current.
+            # Set current=0 if charger is switched off.
+            # eg. automatically switched off by car after reaching charge limit.
+            # switched_on = charger.is_charger_switch_on()
+            # if not switched_on:
+            #     current = 0
+
             # Set new charge current.
             config_item = OPTION_CHARGER_SET_CHARGE_CURRENT
             new_charge_current = await charger.async_set_charge_current(

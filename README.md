@@ -60,7 +60,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 ## My setup
 - [Home Assistant](https://www.home-assistant.io/)
 - [Enphase Envoy Integration](https://www.home-assistant.io/integrations/enphase_envoy) configured for 20 seconds update interval.
-- [Tesla Custom Integration](https://github.com/alandtse/tesla) v3.20.4 and above: To control charging Tesla via Tesla cloud.
+- [Tesla Custom Integration](https://github.com/alandtse/tesla)* v3.20.4 and above: To control charging Tesla via Tesla cloud.
 - Tesla UMC charger, 230V, max 15A.
 - Tesla Model 3.
 
@@ -70,9 +70,11 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [Tesla BLE MQTT docker](https://github.com/tesla-local-control/tesla_ble_mqtt_docker):  Local control using Tesla BLE (Bluetooth Low Energy) on MQTT docker device.
 - [ESPHome Tesla BLE](https://github.com/PedroKTFC/esphome-tesla-ble) v2026.2.1 and above:  Local control using Tesla BLE on Home Assistant ESPHome device.
 - [OCPP](https://github.com/lbbrhzn/ocpp):  Local control of an OCPP compliant charger.
-- [Tesla Fleet](https://www.home-assistant.io/integrations/tesla_fleet)
-- [Tessie](https://www.home-assistant.io/integrations/tessie)
-- [Teslemetry](https://www.home-assistant.io/integrations/teslemetry/) beta release.
+- [Tesla Fleet](https://www.home-assistant.io/integrations/tesla_fleet)*
+- [Tessie](https://www.home-assistant.io/integrations/tessie)*
+- [Teslemetry](https://www.home-assistant.io/integrations/teslemetry/)* beta release.
+
+Integration APIs requiring paid subscription are marked with *.  See note on [API polling interval](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-reconfigure-net-power-and-wait-net-power-update-interval).
 
 If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch is required as a minimum) > Submit
 
