@@ -46,7 +46,7 @@ class StateCharge(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.STATE_CHARGING
+        self.state = RunState.CHARGING
 
     # ----------------------------------------------------------------------------
     # Subscriptions
@@ -143,7 +143,7 @@ class StateCharge(SolarChargeState):
 
                     # This callback is still running in paused state.
                     # Only adjust charge current if we are still in charging state
-                    if self.solarcharge.machine_state.state == RunState.STATE_CHARGING:
+                    if self.solarcharge.machine_state.state == RunState.CHARGING:
                         await self._async_adjust_charge_current(
                             self.solarcharge.charger,
                             self.solarcharge.chargeable,
@@ -539,7 +539,7 @@ class StateCharge(SolarChargeState):
             self.solarcharge.stats,
         )
 
-        _LOGGER.warning("%s: %s", self.solarcharge.caller, context)
+        self.solarcharge.log_context(context)
 
         if context.next_step == ChargeStatus.CHARGE_PAUSE:
             self.solarcharge.set_machine_state(StatePause())

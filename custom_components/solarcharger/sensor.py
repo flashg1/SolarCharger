@@ -135,7 +135,7 @@ CONFIG_SENSOR_LIST: tuple[
             device_class=SensorDeviceClass.ENUM,
             options=RUN_STATE_LIST,
         ),
-        RunState.STATE_ENDED.value,
+        RunState.ENDED.value,
     ),
     (
         SENSOR_CHARGER_ALLOCATED_POWER,

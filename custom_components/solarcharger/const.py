@@ -846,13 +846,13 @@ class RunState(Enum):
     """Enumeration of machine states."""
 
     # Sensor state attributes must be lower case. Translation will display state in OS language.
-    STATE_UNDEFINED = "undefined"
-    STATE_INITIALISING = "initialising"
-    STATE_CHARGING = "charging"
-    STATE_PAUSED = "paused"
-    STATE_ABORTING = "aborting"
-    STATE_ENDING = "ending"
-    STATE_ENDED = "ended"
+    UNDEFINED = "undefined"
+    INITIALISING = "initialising"
+    CHARGING = "charging"
+    PAUSED = "paused"
+    ABORTING = "aborting"
+    ENDING = "ending"
+    ENDED = "ended"
 
 
 RUN_STATE_LIST: list[str] = [state.value for state in RunState]

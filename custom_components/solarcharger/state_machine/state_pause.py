@@ -31,7 +31,7 @@ class StatePause(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.STATE_PAUSED
+        self.state = RunState.PAUSED
 
     # ----------------------------------------------------------------------------
     def _update_pause_stats(
@@ -124,7 +124,7 @@ class StatePause(SolarChargeState):
             self.solarcharge.stats,
         )
 
-        _LOGGER.warning("%s: %s", self.solarcharge.caller, context)
+        self.solarcharge.log_context(context)
 
         # WL: This also worked.
         # Local Imports (Lazy Loading): Move from state_a import StateA inside

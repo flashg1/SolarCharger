@@ -517,6 +517,12 @@ class SolarCharge(ScOptionState):
     # ----------------------------------------------------------------------------
     # Machine state functions
     # ----------------------------------------------------------------------------
+    def log_context(self, context: ContextData) -> None:
+        """Log context data."""
+
+        _LOGGER.warning("%s: %s", self.caller, context)
+
+    # ----------------------------------------------------------------------------
     def get_context(
         self,
         charger: Charger,
@@ -660,9 +666,9 @@ class SolarCharge(ScOptionState):
     ) -> None:
         """Check if to continue state."""
 
-        if context.state == RunState.STATE_CHARGING:
+        if context.state == RunState.CHARGING:
             self._set_is_continue_charge_state(context)
-        elif context.state == RunState.STATE_PAUSED:
+        elif context.state == RunState.PAUSED:
             self._set_is_continue_pause_state(context)
 
     # ----------------------------------------------------------------------------
@@ -685,7 +691,7 @@ class SolarCharge(ScOptionState):
 
         # Only set charge limit when in charging state because it can turn on the charger.
         # Once set, the latest and correct state can be requested without calling _async_update_ha() first.
-        if state == RunState.STATE_CHARGING:
+        if state == RunState.CHARGING:
             await self.async_set_charge_limit_if_required(chargeable, self.running_goal)
 
         context = self.get_context(
@@ -889,7 +895,7 @@ class SolarCharge(ScOptionState):
             await self.async_action_state()
             next_state = self.machine_state.state
 
-            if next_state == current_state and current_state == RunState.STATE_ENDED:
+            if next_state == current_state and current_state == RunState.ENDED:
                 # Completed "Ended" state. No more states to run.
                 break
 
