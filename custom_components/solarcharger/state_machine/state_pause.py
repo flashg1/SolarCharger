@@ -9,6 +9,7 @@ from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import SENSOR_SHARE_ALLOCATION, ChargeStatus, RunState
 from ..model_charge_stats import ChargeStats
+from ..model_context_data import ContextData
 
 # Import Modules, Not Classes: Instead of from machine import StateA, use
 # import machine and refer to machine.StateA. This breaks the cycle because
@@ -56,7 +57,7 @@ class StatePause(SolarChargeState):
         chargeable: Chargeable,
         state: RunState,
         stats: ChargeStats,
-    ) -> None:
+    ) -> ContextData:
         """Pause charge and wait for external trigger to continue. Let device sleep."""
 
         start_time = self.solarcharge.get_local_datetime()
@@ -80,10 +81,10 @@ class StatePause(SolarChargeState):
                     await self.solarcharge.async_turn_off_charger(charger, chargeable)
                     done_switch_off_charger = True
 
-                next_step = await self.solarcharge.async_get_charge_status(
-                    charger, chargeable, state
+                context = await self.solarcharge.async_set_charge_status(
+                    charger, chargeable, state, stats
                 )
-                if next_step != ChargeStatus.CHARGE_PAUSE:
+                if context.next_step != ChargeStatus.CHARGE_PAUSE:
                     break
 
                 # Completed loop successfully at this point.
@@ -108,17 +109,22 @@ class StatePause(SolarChargeState):
         # if next_step == ChargeStatus.CHARGE_CONTINUE:
         self._update_pause_stats(stats, paused_duration)
 
+        return context
+
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
         """Start pause state."""
 
         self.solarcharge.set_run_state(self.state)
-        await self._async_pause_charge(
+
+        context = await self._async_pause_charge(
             self.solarcharge.charger,
             self.solarcharge.chargeable,
             self.solarcharge.machine_state.state,
             self.solarcharge.stats,
         )
+
+        _LOGGER.warning("%s: %s", self.solarcharge.caller, context)
 
         # WL: This also worked.
         # Local Imports (Lazy Loading): Move from state_a import StateA inside

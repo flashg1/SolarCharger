@@ -65,7 +65,9 @@ class StateTidyUp(SolarChargeState):
         """Start tidy up state."""
 
         self.solarcharge.set_run_state(self.state)
+
         await self.async_tidy_up_on_exit(
             self.solarcharge.charger, self.solarcharge.chargeable
         )
+
         self.solarcharge.set_machine_state(StateEnd())

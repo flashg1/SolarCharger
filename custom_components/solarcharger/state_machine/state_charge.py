@@ -23,6 +23,7 @@ from ..const import (
 from ..exceptions.entity_exception import EntityExceptionError
 from ..model_charge_stats import ChargeStats
 from ..model_config import ConfigValueDict
+from ..model_context_data import ContextData
 from ..sc_option_state import ScheduleData, StateOfCharge
 from .solar_charge_state import SolarChargeState
 from .state_pause import StatePause
@@ -457,10 +458,8 @@ class StateCharge(SolarChargeState):
         chargeable: Chargeable,
         state: RunState,
         stats: ChargeStats,
-    ) -> ChargeStatus:
+    ) -> ContextData:
         """Loop to charge device."""
-
-        next_step: ChargeStatus = ChargeStatus.CHARGE_END
 
         # Init power monitor duration
         self.solarcharge.wait_net_power_update = (
@@ -478,10 +477,10 @@ class StateCharge(SolarChargeState):
 
             try:
                 # Check if continue charging or exit loop.
-                next_step = await self.solarcharge.async_get_charge_status(
-                    charger, chargeable, state
+                context = await self.solarcharge.async_set_charge_status(
+                    charger, chargeable, state, stats
                 )
-                if next_step != ChargeStatus.CHARGE_CONTINUE:
+                if context.next_step != ChargeStatus.CHARGE_CONTINUE:
                     break
 
                 # Turn on charger if looping for the first time.
@@ -525,7 +524,7 @@ class StateCharge(SolarChargeState):
             await asyncio.sleep(self.solarcharge.wait_net_power_update)
             stats.loop_total_count += 1
 
-        return next_step
+        return context
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
@@ -533,14 +532,16 @@ class StateCharge(SolarChargeState):
 
         self.solarcharge.set_run_state(self.state)
 
-        next_step = await self._async_charge_device(
+        context = await self._async_charge_device(
             self.solarcharge.charger,
             self.solarcharge.chargeable,
             self.solarcharge.machine_state.state,
             self.solarcharge.stats,
         )
 
-        if next_step == ChargeStatus.CHARGE_PAUSE:
+        _LOGGER.warning("%s: %s", self.solarcharge.caller, context)
+
+        if context.next_step == ChargeStatus.CHARGE_PAUSE:
             self.solarcharge.set_machine_state(StatePause())
         else:
             self.solarcharge.set_machine_state(StateTidyUp())

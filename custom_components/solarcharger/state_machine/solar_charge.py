@@ -665,13 +665,14 @@ class SolarCharge(ScOptionState):
         elif context.state == RunState.STATE_PAUSED:
             self._set_is_continue_pause_state(context)
 
-        if not context.is_continue_state:
-            _LOGGER.warning("%s: %s", self.caller, context)
-
     # ----------------------------------------------------------------------------
-    async def async_get_charge_status(
-        self, charger: Charger, chargeable: Chargeable, state: RunState
-    ) -> ChargeStatus:
+    async def async_set_charge_status(
+        self,
+        charger: Charger,
+        chargeable: Chargeable,
+        state: RunState,
+        stats: ChargeStats,
+    ) -> ContextData:
         """Get latest context and determine next step."""
 
         # Get schedule data at start of each loop since schedule might change while charging.
@@ -694,13 +695,13 @@ class SolarCharge(ScOptionState):
             self.running_goal,
             self.max_allocation_count,
             self.power_allocations,
-            self.stats,
+            stats,
         )
 
         # Check if continue charging or exit loop. Must run after setting charge limit.
         self.set_is_continue_state(context)
 
-        return context.next_step
+        return context
 
     # ----------------------------------------------------------------------------
     def abort_if_exceed_max_consecutive_failure(self) -> None:

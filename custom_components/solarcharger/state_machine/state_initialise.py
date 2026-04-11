@@ -83,5 +83,7 @@ class StateInitialise(SolarChargeState):
         """Start initialising state."""
 
         self.solarcharge.set_run_state(self.state)
+
         await self._async_init_device(self.solarcharge.chargeable)
+
         self.solarcharge.set_machine_state(StateCharge())

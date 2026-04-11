@@ -5,7 +5,8 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
 ### Fix
 ### Improvement
-- Logged start of device detection.
+- Log pause duration on pause exit.
+- Log start of device detection.
 
 ## v0.5.2 2026-04-04
 ### Breaking change
