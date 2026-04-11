@@ -738,6 +738,11 @@ class SolarCharge(ScOptionState):
     async def async_retry_15_times_to_update_ha_until_charger_on(self) -> None:
         """Wake up device and retry 15 times to update HA until charger is on."""
 
+        _LOGGER.warning(
+            "%s: Device presence detected: Waiting for charger connection",
+            self.caller,
+        )
+
         await self._async_wakeup_device(self.chargeable)
 
         loop = 0

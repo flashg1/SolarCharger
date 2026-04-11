@@ -143,6 +143,7 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
 
         self._attr_has_entity_name = True
 
+        # Set default value if value is not set.
         if self.value is None:
             self._attr_native_value = default_val
             self.update_ha_state()
