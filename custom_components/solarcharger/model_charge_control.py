@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from .datetime import SolarChargerDateTimeConfigEntity
     from .input_datetime import SolarChargerInputTimeConfigEntity
     from .number import SolarChargerNumberConfigEntity
+    from .select import SolarChargerSelectEntity
     from .sensor import SolarChargerSensorEntity
     from .switch import SolarChargerSwitchEntity
     from .time import SolarChargerTimeConfigEntity
@@ -41,6 +42,7 @@ class ControlEntities:
 
     sensors: dict[str, "SolarChargerSensorEntity"] | None = None
     numbers: dict[str, "SolarChargerNumberConfigEntity"] | None = None
+    selects: dict[str, "SolarChargerSelectEntity"] | None = None
     switches: dict[str, "SolarChargerSwitchEntity"] | None = None
     buttons: dict[str, "SolarChargerButtonActionEntity"] | None = None
     times: dict[str, "SolarChargerTimeConfigEntity"] | None = None

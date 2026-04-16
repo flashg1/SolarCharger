@@ -45,7 +45,6 @@ from ..const import (
     HA_SUN_ENTITY,
     OPTION_CHARGEE_SOC_SENSOR,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
-    OPTION_DEVICE_PRESENCE_SENSOR,
     SENSOR_CHARGER_ALLOCATED_POWER,
 )
 from ..sc_option_state import ScOptionState
@@ -305,9 +304,8 @@ class Tracker(ScOptionState):
     def track_device_presence_sensor(self, action: STATE_CHANGE_CALLBACK) -> bool:
         """Track device presence event. Sensors that might not exist, so check return code."""
 
-        return self._track_config_item_state(
-            OPTION_DEVICE_PRESENCE_SENSOR, CALLBACK_DEVICE_PRESENCE, action
-        )
+        entity_id = self.get_string(self.device_presence_sensor_selector_entity_id)
+        return self._track_state_change(entity_id, CALLBACK_DEVICE_PRESENCE, action)
 
     # ----------------------------------------------------------------------------
     def untrack_device_presence_sensor(self) -> None:

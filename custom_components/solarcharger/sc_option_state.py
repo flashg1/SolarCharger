@@ -26,6 +26,8 @@ from .const import (
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    SELECT,
+    SELECT_DEVICE_PRESENCE_SENSOR,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_CHARGE,
@@ -218,6 +220,13 @@ class ScOptionState(ScConfigState):
         """Return the calibrate max charge speed switch entity ID."""
         return compose_entity_id(
             SWITCH, self._subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
+        )
+
+    @cached_property
+    def device_presence_sensor_selector_entity_id(self) -> str:
+        """Return the selector entity ID for the device presence sensor."""
+        return compose_entity_id(
+            SELECT, self._subentry.unique_id, SELECT_DEVICE_PRESENCE_SENSOR
         )
 
     # ----------------------------------------------------------------------------

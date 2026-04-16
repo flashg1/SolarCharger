@@ -2,21 +2,24 @@
   "domain": "solarcharger",
   "name": "SolarCharger",
   "after_dependencies": [
+    "binary_sensor",
     "button",
     "datetime",
+    "device_tracker",
     "number",
+    "select",
     "sensor",
     "switch",
     "time",
     "sun",
     "ping",
-    "ocpp",
-    "tesla_custom",
     "mqtt",
     "esphome",
+    "tesla_custom",
     "tesla_fleet",
     "tessie",
-    "teslemetry"
+    "teslemetry",
+    "ocpp"
   ],
   "codeowners": [
     "@flashg1"

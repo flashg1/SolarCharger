@@ -3,6 +3,7 @@
 ## v0.5.3 2026-04-11
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
+- Moved "Device presence sensor" config from settings to device configuration tab, and save config to database.
 ### Fix
 ### Improvement
 - Log pause duration on pause exit.

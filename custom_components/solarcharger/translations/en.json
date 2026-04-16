@@ -244,6 +244,11 @@
                 "name": "Calibrate max charge speed"
             }
         },
+        "select": {
+            "device_presence_sensor": {
+                "name": "Device presence sensor"
+            }
+        },
         "number": {
             "chargee_charge_limit": {
                 "name": "Charge limit"

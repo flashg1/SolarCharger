@@ -38,13 +38,13 @@ BUTTON = Platform.BUTTON
 DATETIME = Platform.DATETIME
 NUMBER = Platform.NUMBER
 SENSOR = Platform.SENSOR
+SELECT = Platform.SELECT
 SWITCH = Platform.SWITCH
 TIME = Platform.TIME
 # Entities not created by SolarCharger
 BINARY_SENSOR = Platform.BINARY_SENSOR
 DEVICE_TRACKER = Platform.DEVICE_TRACKER
 INPUT_TIME = "input_datetime"
-SELECT = Platform.SELECT
 
 # Platforms used by SolarCharger
 PLATFORMS: list[Platform | str] = [
@@ -52,6 +52,7 @@ PLATFORMS: list[Platform | str] = [
     Platform.DATETIME,
     Platform.NUMBER,
     Platform.SENSOR,
+    Platform.SELECT,
     Platform.SWITCH,
     Platform.TIME,
     # Cannot get input_datetime to work. Not sure how to create helper entities.
@@ -65,6 +66,7 @@ PLATFORMS: list[Platform | str] = [
 #######################################################
 # Max number of allowable consecutive failures in charge loop
 MAX_CONSECUTIVE_FAILURE_COUNT = 10
+SELECT_NONE = "None"
 
 #######################################################
 # Subentry constants
@@ -299,7 +301,7 @@ OPTION_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 #####################################
 # Other control entities
 #####################################
-OPTION_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
+SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 
 #####################################
 # Charge schedule entities
@@ -398,7 +400,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Global defaults: Environment defaults
     #####################################
-    NUMBER_CHARGER_EFFECTIVE_VOLTAGE: None,
+    NUMBER_CHARGER_EFFECTIVE_VOLTAGE: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     #####################################
     # Global defaults: Charge limit defaults
     #####################################
@@ -451,7 +453,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Local device optional defaults
     #####################################
-    OPTION_CHARGER_MAX_CURRENT: None,
+    OPTION_CHARGER_MAX_CURRENT: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     OPTION_CHARGEE_CHARGE_LIMIT: 70,
     #####################################
     # Local device switch defaults
@@ -464,7 +466,17 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     SWITCH_PRESENCE_TRIGGER: DEFAULT_OFF,
     SWITCH_SUN_TRIGGER: DEFAULT_ON,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED: DEFAULT_OFF,
+    #####################################
+    # Local device select defaults
+    #####################################
+    SELECT_DEVICE_PRESENCE_SENSOR: None,  # Also update CONFIG_WITH_NO_DEFAULTS
 }
+
+CONFIG_WITH_NO_DEFAULTS: list[str] = [
+    NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    OPTION_CHARGER_MAX_CURRENT,
+    SELECT_DEVICE_PRESENCE_SENSOR,
+]
 
 OCPP_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_CHARGER_MIN_CURRENT: 0,
@@ -614,7 +626,7 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MIN_WORKABLE_CURRENT}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_CHARGER_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CHARGER_ALLOCATED_POWER}",
-    OPTION_DEVICE_PRESENCE_SENSOR: None,
+    SELECT_DEVICE_PRESENCE_SENSOR: None,
     # Non-configurable entities: Local device internal control entities (not used here, FYI only)
     # DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
     # SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
@@ -649,7 +661,7 @@ TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MIN_WORKABLE_CURRENT}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_CHARGER_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CHARGER_ALLOCATED_POWER}",
-    OPTION_DEVICE_PRESENCE_SENSOR: None,
+    SELECT_DEVICE_PRESENCE_SENSOR: None,
     # Non-configurable entities: Local device internal control entities (not used here, FYI only)
     # DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
     # SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
@@ -685,7 +697,7 @@ TESLA_MQTTBLE_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MIN_WORKABLE_CURRENT}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_CHARGER_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CHARGER_ALLOCATED_POWER}",
-    OPTION_DEVICE_PRESENCE_SENSOR: None,
+    SELECT_DEVICE_PRESENCE_SENSOR: None,
     # Non-configurable entities: Local device internal control entities (not used here, FYI only)
     # DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
     # SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
@@ -722,7 +734,7 @@ TESLA_ESPBLE_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MIN_WORKABLE_CURRENT}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_CHARGER_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CHARGER_ALLOCATED_POWER}",
-    OPTION_DEVICE_PRESENCE_SENSOR: None,
+    SELECT_DEVICE_PRESENCE_SENSOR: None,
 }
 
 TESLA_FLEET_ENTITIES: dict[str, str | None] = {
@@ -750,7 +762,7 @@ TESLA_FLEET_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MIN_WORKABLE_CURRENT}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_CHARGER_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CHARGER_ALLOCATED_POWER}",
-    OPTION_DEVICE_PRESENCE_SENSOR: None,
+    SELECT_DEVICE_PRESENCE_SENSOR: None,
     # Non-configurable entities: Local device internal control entities (not used here, FYI only)
     # DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
     # SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
@@ -789,7 +801,7 @@ USER_CUSTOM_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MIN_WORKABLE_CURRENT}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_CHARGER_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CHARGER_ALLOCATED_POWER}",
-    OPTION_DEVICE_PRESENCE_SENSOR: None,
+    SELECT_DEVICE_PRESENCE_SENSOR: None,
     # Non-configurable entities: Local device internal control entities (not used here, FYI only)
     # DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
     # SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",

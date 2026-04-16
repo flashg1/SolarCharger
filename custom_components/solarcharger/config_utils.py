@@ -27,12 +27,11 @@ from .const import (
     CHARGE_API_DEFAULT_VALUES,
     CHARGE_API_ENTITIES,
     CONFIG_NAME_MARKER,
+    CONFIG_WITH_NO_DEFAULTS,
     DEVICE_NAME_MARKER,
     DOMAIN,
     DOMAIN_WITH_SUBDOMAINS,
     NON_ENTITY_CONFIGS,
-    NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
-    OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_NAME,
     OPTION_DELETE_ENTITY,
     OPTION_GLOBAL_DEFAULTS_ID,
@@ -331,10 +330,7 @@ def get_device_config_default_value(subentry: ConfigSubentry, config_item: str) 
     # Entities can have no default values, eg. charger effective voltage, charger max current.
     # This is for default value of the entity, ie. not for default entity name.
     if val is None:
-        if config_item not in [
-            NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
-            OPTION_CHARGER_MAX_CURRENT,
-        ]:
+        if config_item not in CONFIG_WITH_NO_DEFAULTS:
             raise SystemError(
                 f"No default value found for config item '{config_item}' in subentry ID '{subentry.unique_id}'"
             )

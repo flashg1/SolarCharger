@@ -93,7 +93,7 @@ from .const import (
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
-    OPTION_DEVICE_PRESENCE_SENSOR,
+    SELECT_DEVICE_PRESENCE_SENSOR,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_ID,
@@ -384,10 +384,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
-                subentry, OPTION_DEVICE_PRESENCE_SENSOR, use_default
+                subentry, SELECT_DEVICE_PRESENCE_SENSOR, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_DEVICE_PRESENCE_SENSOR,
+                SELECT_DEVICE_PRESENCE_SENSOR,
                 BINARY_SENSOR_ENTITY_SELECTOR_READ_ONLY,
                 BINARY_SENSOR_ENTITY_SELECTOR,
             ),
