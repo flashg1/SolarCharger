@@ -80,10 +80,13 @@ class SolarChargerSelectEntity(SolarChargerEntity, SelectEntity, RestoreEntity):
 
         await super().async_added_to_hass()
 
+        self._attr_current_option = self._default_val
         if self._is_restore_state:
             restored: State | None = await self.async_get_last_state()
             if restored is not None:
-                await self.async_select_option(restored.state)
+                self._attr_current_option = restored.state
+
+        self.update_ha_state()
 
     #     # Listen for registry changes to refresh the list
     #     self.async_on_remove(
@@ -106,7 +109,7 @@ class SolarChargerSelectEntity(SolarChargerEntity, SelectEntity, RestoreEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerSelectBinarySensorEntity(SolarChargerSelectEntity):
+class SolarChargerSelectPresenceSensorEntity(SolarChargerSelectEntity):
     """Representation of a SolarCharger switch."""
 
     def __init__(
@@ -194,7 +197,7 @@ async def async_setup_entry(
         #####################################
         (
             SELECT_DEVICE_PRESENCE_SENSOR,
-            SolarChargerSelectBinarySensorEntity,
+            SolarChargerSelectPresenceSensorEntity,
             RESTORE_ON_START_TRUE,
             SolarChargerEntityType.TYPE_LOCAL,
             SelectEntityDescription(
