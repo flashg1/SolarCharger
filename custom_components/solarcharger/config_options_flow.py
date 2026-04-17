@@ -18,8 +18,6 @@ from homeassistant.config_entries import (
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from .config_utils import (
-    BINARY_SENSOR_ENTITY_SELECTOR,
-    BINARY_SENSOR_ENTITY_SELECTOR_READ_ONLY,
     BUTTON_ENTITY_SELECTOR,
     BUTTON_ENTITY_SELECTOR_READ_ONLY,
     LOCATION_ENTITY_SELECTOR,
@@ -93,7 +91,6 @@ from .const import (
     OPTION_CHARGER_ON_OFF_SWITCH,
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
-    SELECT_DEVICE_PRESENCE_SENSOR,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_ID,
@@ -382,14 +379,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,
-            ),
-            self._optional(
-                subentry, SELECT_DEVICE_PRESENCE_SENSOR, use_default
-            ): choose_selector(
-                api_entities,
-                SELECT_DEVICE_PRESENCE_SENSOR,
-                BINARY_SENSOR_ENTITY_SELECTOR_READ_ONLY,
-                BINARY_SENSOR_ENTITY_SELECTOR,
             ),
             #####################################
             # Local device entities

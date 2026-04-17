@@ -95,7 +95,6 @@ async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
-    # async_add_entities: Callable,
 ) -> None:
     """Set up buttons based on config entry."""
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]

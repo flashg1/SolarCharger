@@ -321,8 +321,10 @@ def get_device_config_default_value(subentry: ConfigSubentry, config_item: str) 
     device_domain = get_device_domain(subentry)
 
     if device_domain is None:
+        # For global defaults subentry, get from global default dictionary only.
         val = _get_device_global_default_value(config_item)
     else:
+        # For device subentry, get from local default dictionary first, then global default dictionary if not found in local.
         val = _get_device_local_default_value(device_domain, config_item)
         if val is None:
             val = _get_device_global_default_value(config_item)

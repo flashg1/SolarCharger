@@ -1,4 +1,4 @@
-"""SolarCharger button platform."""
+"""SolarCharger select platform."""
 
 from typing import Any
 
@@ -110,7 +110,7 @@ class SolarChargerSelectEntity(SolarChargerEntity, SelectEntity, RestoreEntity):
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 class SolarChargerSelectPresenceSensorEntity(SolarChargerSelectEntity):
-    """Representation of a SolarCharger switch."""
+    """Representation of a SolarCharger presence sensor selector."""
 
     def __init__(
         self,
@@ -172,40 +172,42 @@ class SolarChargerSelectPresenceSensorEntity(SolarChargerSelectEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+CONFIG_SELECT_LIST: tuple[
+    tuple[
+        str,
+        Any,
+        bool,
+        SolarChargerEntityType,
+        SelectEntityDescription,
+    ],
+    ...,
+] = (
+    #####################################
+    # Control:  entity_category=None
+    # Config:   entity_category=EntityCategory.CONFIG
+    # Diagnostic: entity_category=EntityCategory.DIAGNOSTIC
+    #####################################
+    (
+        SELECT_DEVICE_PRESENCE_SENSOR,
+        SolarChargerSelectPresenceSensorEntity,
+        RESTORE_ON_START_TRUE,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SelectEntityDescription(
+            key=SELECT_DEVICE_PRESENCE_SENSOR,
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+)
+
+
+# ----------------------------------------------------------------------------
 async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
-    # async_add_entities: Callable,
 ) -> None:
-    """Set up buttons based on config entry."""
+    """Set up selects based on config entry."""
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
-
-    CONFIG_SELECT_LIST: tuple[
-        tuple[
-            str,
-            Any,
-            bool,
-            SolarChargerEntityType,
-            SelectEntityDescription,
-        ],
-        ...,
-    ] = (
-        #####################################
-        # Control:  entity_category=None
-        # Config:   entity_category=EntityCategory.CONFIG
-        #####################################
-        (
-            SELECT_DEVICE_PRESENCE_SENSOR,
-            SolarChargerSelectPresenceSensorEntity,
-            RESTORE_ON_START_TRUE,
-            SolarChargerEntityType.TYPE_LOCAL,
-            SelectEntityDescription(
-                key=SELECT_DEVICE_PRESENCE_SENSOR,
-                entity_category=EntityCategory.CONFIG,
-            ),
-        ),
-    )
 
     for subentry in config_entry.subentries.values():
         # For global defaults and charger subentries
