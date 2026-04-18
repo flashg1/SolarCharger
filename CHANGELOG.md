@@ -2,9 +2,8 @@
 
 ## v0.5.3 2026-04-11
 ### Breaking change
-- Moved "Device presence sensor" from settings (cog wheel) to device configuration section. Please set and turn on "Presence trigger" if required.
+- Moved "Device presence sensor" from settings (cog wheel) to device configuration section. Please reset "Device presence sensor" and turn on "Presence trigger" if required.
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
-### Fix
 ### Improvement
 - Log pause duration on pause exit.
 - Log start of device detection.
