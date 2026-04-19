@@ -149,7 +149,11 @@ class SolarChargerSelectPresenceSensorEntity(SolarChargerSelectEntity):
         #     if entry.domain == "binary_sensor"
         # ]
 
-        target_classes = {BinarySensorDeviceClass.CONNECTIVITY}
+        target_classes = {
+            BinarySensorDeviceClass.CONNECTIVITY,
+            BinarySensorDeviceClass.PLUG,
+            BinarySensorDeviceClass.PRESENCE,
+        }
         filtered_entities = []
 
         for entry in registry.entities.values():

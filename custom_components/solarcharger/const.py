@@ -12,7 +12,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json and README.md
-VERSION = "0.5.3"
+VERSION = "0.5.4"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
