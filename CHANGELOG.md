@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.5 2026-04-20
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
+### Improvement
+- Get latest data and immediately check status at beginning of charge loop.
+
 ## v0.5.4 2026-04-19
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
