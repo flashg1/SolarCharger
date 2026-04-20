@@ -139,6 +139,7 @@
                     "charger_max_speed": "Charger max speed (%/hour)",
                     "charger_min_current": "Charger min current (AMP)",
                     "charger_min_workable_current": "Charger min workable current (AMP, current=0A for anything below this limit)",
+                    "charger_priority": "Charger priority (0 = highest priority)",
                     "charger_power_allocation_weight": "Charger power allocation weight (allocation = weight / total weight)",
                     "charger_allocated_power": "Charger allocated power (W)",
                     "chargee_min_charge_limit": "Device min charge limit (%)",
@@ -266,6 +267,9 @@
             },
             "charger_min_workable_current": {
                 "name": "Min workable current"
+            },
+            "charger_priority": {
+                "name": "Priority"
             },
             "charger_power_allocation_weight": {
                 "name": "Power allocation weight"

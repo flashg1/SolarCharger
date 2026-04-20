@@ -39,6 +39,7 @@ from .const import (
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_PRIORITY,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_POWER_MONITOR_DURATION,
@@ -247,6 +248,15 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     # Control entity
+    (
+        NUMBER_CHARGER_PRIORITY,
+        SolarChargerEntityType.TYPE_LOCAL,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_PRIORITY,
+            native_min_value=0,
+            native_max_value=100,
+        ),
+    ),
     (
         NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
         SolarChargerEntityType.TYPE_LOCAL,

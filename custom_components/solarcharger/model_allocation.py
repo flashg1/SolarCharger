@@ -18,6 +18,8 @@ class PowerAllocation:
     max_power: float
 
     # Inputs:
+    # Charger priority (0 = highest priority)
+    priority: int
     # Allocation weight set by user
     allocation_weight: float
     # Set to 0 when charger is in paused state to stop charger from participating in real power allocation.

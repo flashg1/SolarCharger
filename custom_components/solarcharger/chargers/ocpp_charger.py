@@ -154,12 +154,9 @@ class OcppCharger(ChargerChargeableBase):
             charge_profile_stack_level = int(json_val)
 
         # Get OCPP transaction id
-        ocpp_charger_transaction_id = self.option_get_entity_integer(
+        ocpp_charger_transaction_id = self.option_get_entity_integer_or_abort(
             OPTION_OCPP_TRANSACTION_ID
         )
-        if ocpp_charger_transaction_id is None:
-            raise ValueError("Failed to get transaction id")
-
         service_name = "set_charge_rate"
         service_data: dict[str, Any] = {
             "custom_profile": {

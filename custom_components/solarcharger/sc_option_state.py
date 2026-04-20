@@ -461,6 +461,22 @@ class ScOptionState(ScConfigState):
         return entity_val
 
     # ----------------------------------------------------------------------------
+    def option_get_entity_integer_or_abort(
+        self,
+        config_item: str,
+        val_dict: ConfigValueDict | None = None,
+    ) -> int:
+        """Get entity ID from saved options, then get value for entity."""
+
+        entity_val = self.option_get_entity_integer(config_item, val_dict=val_dict)
+        if entity_val is None:
+            raise ValueError(
+                f"{self._subentry.unique_id}: {config_item}: Failed to get entity integer value"
+            )
+
+        return entity_val
+
+    # ----------------------------------------------------------------------------
     def option_get_entity_string(
         self,
         config_item: str,

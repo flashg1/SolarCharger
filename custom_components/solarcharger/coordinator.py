@@ -22,7 +22,9 @@ from .const import (
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_PRIORITY,
     OPTION_GLOBAL_DEFAULTS_ID,
+    SENSOR_CONSUMED_POWER,
     SENSOR_LAST_CHECK,
     SENSOR_SHARE_ALLOCATION,
     WEEKLY_CHARGE_ENDTIMES,
@@ -241,17 +243,22 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     def _get_total_allocation_pool(
         self,
-    ) -> tuple[int, float, float, dict[str, PowerAllocation]]:
+    ) -> tuple[int, float, float, int | None, dict[str, PowerAllocation]]:
         """Get allocation pool from options. Note allocation weight entity can be overriden."""
 
         total_instance = 0
         plan_total_weight = 0
         final_total_weight = 0
+        highest_priority = None
         allocations: dict[str, PowerAllocation] = {}
 
         for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
+
+            priority = control.controller.option_get_entity_integer_or_abort(
+                NUMBER_CHARGER_PRIORITY
+            )
 
             # Power allocation weight user configurable and can be overridden, so use indirection.
             allocation_weight = control.controller.option_get_entity_number_or_abort(
@@ -265,11 +272,17 @@ class SolarChargerCoordinator(ScOptionState):
                     SENSOR_SHARE_ALLOCATION
                 ].state
             )
+            consumed_power = float(
+                control.controller.charge_control.entities.sensors[
+                    SENSOR_CONSUMED_POWER
+                ].state
+            )
 
             allocation = PowerAllocation(
                 subentry_id=control.subentry_id,
-                consumed_power=0,
+                consumed_power=consumed_power,
                 max_power=0,
+                priority=priority,
                 allocation_weight=allocation_weight,
                 share_allocation=share_allocation,
             )
@@ -277,16 +290,42 @@ class SolarChargerCoordinator(ScOptionState):
             allocation.plan_weight = (
                 allocation_weight * control.controller.charge_control.instance_count
             )
-            plan_total_weight += allocation.plan_weight
-
             allocation.final_weight = allocation.plan_weight * share_allocation
-            final_total_weight += allocation.final_weight
+
+            # Find the highest priority level among running chargers. 0=highest priority.
+            if allocation.plan_weight > 0:
+                # Charger is running and has allocation weight > 0
+                if highest_priority is None or allocation.priority < highest_priority:
+                    highest_priority = allocation.priority
 
             allocations[control.subentry_id] = allocation
-
             total_instance += control.controller.charge_control.instance_count
 
-        return (total_instance, plan_total_weight, final_total_weight, allocations)
+        # Chargers with lower priority will not be allocated any power.
+        if highest_priority is not None:
+            for allocation in allocations.values():
+                if allocation.priority == highest_priority:
+                    plan_total_weight += allocation.plan_weight
+                    final_total_weight += allocation.final_weight
+                else:
+                    allocation.plan_weight = 0
+                    allocation.final_weight = 0
+
+        _LOGGER.debug(
+            "total_instance=%s, plan_total_weight=%s, final_total_weight=%s, highest_priority=%s",
+            total_instance,
+            plan_total_weight,
+            final_total_weight,
+            highest_priority,
+        )
+
+        return (
+            total_instance,
+            plan_total_weight,
+            final_total_weight,
+            highest_priority,
+            allocations,
+        )
 
     # ----------------------------------------------------------------------------
     # TODO: Need to take into consideration already allocated power and max power of chargers.
@@ -299,9 +338,13 @@ class SolarChargerCoordinator(ScOptionState):
             _LOGGER.warning("Failed to get net power update. Try again next cycle.")
             return
 
-        (total_instance, plan_total_weight, final_total_weight, allocations) = (
-            self._get_total_allocation_pool()
-        )
+        (
+            total_instance,
+            plan_total_weight,
+            final_total_weight,
+            highest_priority,
+            allocations,
+        ) = self._get_total_allocation_pool()
 
         if total_instance > 0:
             for control in self.device_controls.values():
@@ -313,19 +356,26 @@ class SolarChargerCoordinator(ScOptionState):
                     continue
 
                 allocation = allocations[control.subentry_id]
-                if final_total_weight > 0:
-                    allocation.final_power = (
-                        net_power * allocation.final_weight / final_total_weight
-                    )
-                else:
-                    allocation.final_power = 0
+                if highest_priority == allocation.priority:
+                    # Only allocate power to running chargers with the highest priority.
+                    if final_total_weight > 0:
+                        allocation.final_power = (
+                            net_power * allocation.final_weight / final_total_weight
+                        )
+                    else:
+                        allocation.final_power = 0
 
-                if plan_total_weight > 0:
-                    allocation.plan_power = (
-                        net_power * allocation.plan_weight / plan_total_weight
-                    )
+                    if plan_total_weight > 0:
+                        allocation.plan_power = (
+                            net_power * allocation.plan_weight / plan_total_weight
+                        )
+                    else:
+                        allocation.plan_power = 0
                 else:
-                    allocation.plan_power = 0
+                    # Try to get power back from lower priority chargers.
+                    # Not possible if charger is on charge schedule.
+                    allocation.plan_power = allocation.consumed_power
+                    allocation.final_power = allocation.consumed_power
 
                 # Writer will set entity value directly. Reader will get value via entity ID in options which can be overridden.
                 # Paticipants in power sharing will use final_power, non-participants will use plan_power as indication of possible available power.
@@ -337,10 +387,8 @@ class SolarChargerCoordinator(ScOptionState):
                 )
 
                 _LOGGER.debug(
-                    "%s: plan_total_weight=%s, final_total_weight=%s, allocation=%s",
+                    "%s: allocation=%s",
                     control.config_name,
-                    plan_total_weight,
-                    final_total_weight,
                     allocation,
                 )
         else:

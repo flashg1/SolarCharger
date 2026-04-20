@@ -65,6 +65,7 @@ from .const import (
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_PRIORITY,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
@@ -361,6 +362,15 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
+            ),
+            self._optional(
+                subentry, NUMBER_CHARGER_PRIORITY, use_default
+            ): choose_selector(
+                api_entities,
+                NUMBER_CHARGER_PRIORITY,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
