@@ -2,7 +2,7 @@
 
 ## v0.5.5 2026-04-20
 ### Breaking change
-- Added support charge priority. Charger with the highest priority will charge first. The easiest way is to [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration), or follow these instructions to manually make the change.
+- Supports charge priority. Charger with the highest priority will charge first. The easiest way is to [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration), or follow these instructions to manually make the change.
 ### Improvement
 - Get latest data and immediately check status at beginning of charge loop.
 
