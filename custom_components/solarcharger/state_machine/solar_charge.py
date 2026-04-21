@@ -790,15 +790,23 @@ class SolarCharge(ScOptionState):
         self.semaphore_update_ha_task_count = 0
 
     # ----------------------------------------------------------------------------
-    def set_pause_stats(self, stats: ChargeStats) -> None:
-        """Set pause stats."""
+    def set_last_pause_duration(self, last_pause_duration: timedelta) -> None:
+        """Set last pause duration."""
 
         assert self.entities.sensors is not None
 
         # native_unit_of_measurement=UnitOfTime.MINUTES
         self.entities.sensors[SENSOR_LAST_PAUSE_DURATION].set_state(
-            stats.pause_last_duration.total_seconds() / 60
+            last_pause_duration.total_seconds() / 60
         )
+
+    # ----------------------------------------------------------------------------
+    def set_pause_stats(self, stats: ChargeStats) -> None:
+        """Set pause stats."""
+
+        assert self.entities.sensors is not None
+
+        self.set_last_pause_duration(stats.pause_last_duration)
 
         self.entities.sensors[SENSOR_PAUSE_COUNT].set_state(stats.pause_total_count)
 

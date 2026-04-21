@@ -87,6 +87,11 @@ class StatePause(SolarChargeState):
                 if context.next_step != ChargeStatus.CHARGE_PAUSE:
                     break
 
+                # Show running pause duration.
+                self.solarcharge.set_last_pause_duration(
+                    self.solarcharge.get_local_datetime() - start_time
+                )
+
                 # Completed loop successfully at this point.
                 stats.loop_success_count += 1
                 stats.loop_consecutive_fail_count = 0
