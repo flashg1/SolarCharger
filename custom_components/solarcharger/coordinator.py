@@ -179,7 +179,8 @@ class SolarChargerCoordinator(ScOptionState):
     # Config flow functions
     # ----------------------------------------------------------------------------
     # Charge limit defaults are no longer set in config flow, so no need to check here.
-    # Code left here for reference only.
+    # Charge limit defaults are now checked when reset charge limit button is pressed.
+    # Code left here for reference only, and as example to how to check option values.
     def validate_default_charge_limits(
         self, control: DeviceControl, data: dict[str, Any]
     ) -> bool:
