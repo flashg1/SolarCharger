@@ -39,13 +39,13 @@ from .config_utils import (
     reset_api_entities,
 )
 from .const import (
-    DEFAULT_CHARGE_LIMIT_FRIDAY,
-    DEFAULT_CHARGE_LIMIT_MONDAY,
-    DEFAULT_CHARGE_LIMIT_SATURDAY,
-    DEFAULT_CHARGE_LIMIT_SUNDAY,
-    DEFAULT_CHARGE_LIMIT_THURSDAY,
-    DEFAULT_CHARGE_LIMIT_TUESDAY,
-    DEFAULT_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
     DOMAIN,
     ERROR_EMPTY_CHARGER_LIST,
     ERROR_NUMBER_FORMAT,
@@ -218,26 +218,26 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): NUMBER_ENTITY_SELECTOR,
             # Charge limit defaults
             self._optional(
-                subentry, DEFAULT_CHARGE_LIMIT_MONDAY, use_default
-            ): PERCENT_SELECTOR,
+                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, DEFAULT_CHARGE_LIMIT_TUESDAY, use_default
-            ): PERCENT_SELECTOR,
+                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, DEFAULT_CHARGE_LIMIT_WEDNESDAY, use_default
-            ): PERCENT_SELECTOR,
+                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, DEFAULT_CHARGE_LIMIT_THURSDAY, use_default
-            ): PERCENT_SELECTOR,
+                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, DEFAULT_CHARGE_LIMIT_FRIDAY, use_default
-            ): PERCENT_SELECTOR,
+                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, DEFAULT_CHARGE_LIMIT_SATURDAY, use_default
-            ): PERCENT_SELECTOR,
+                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
-                subentry, DEFAULT_CHARGE_LIMIT_SUNDAY, use_default
-            ): PERCENT_SELECTOR,
+                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             # Reduce charge limit between days
             self._optional(
                 subentry, SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE, use_default

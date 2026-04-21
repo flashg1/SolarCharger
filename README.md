@@ -13,7 +13,7 @@
 <!-- [total-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total -->
 [total-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.total
 <!-- [latest-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/latest/total -->
-[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.5.5']
+[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.6.0']
 [hacs-link]: https://hacs.xyz/
 
 
@@ -44,7 +44,7 @@ Home Assistant solar charger custom integration using OCPP and/or EV specific AP
 - Might be possible to prolong car battery life by setting daily charge limit to 60%, and only charge more before a rainy period by enabling option to adjust daily car charge limit based on weather. (TODO)
 - Allow manual top up from secondary power source (eg. grid, battery) if there is not enough solar during the day, or if required to charge during the night. Just need to set the power offset to specify the maximum power to draw from secondary power source. Also need to toggle on secondary power source if required to charge during the night. (TODO)
 - Support manually setting or [programming of minimum charge current](https://github.com/flashg1/SolarCharger/wiki/Configuration#to-charge-at-maximum-current-between-specific-times) according to your requirement.
-- Support [charging multiple cars](https://github.com/flashg1/SolarCharger/wiki/Configuration#charge-mutiple-evs-at-the-same-time-based-on-power-allocation-weighting-for-each-car) at the same time based on power allocation weighting for each car.
+- Support [charging multiple cars](https://github.com/flashg1/SolarCharger/wiki/Configuration#charge-mutiple-evs-at-the-same-time-based-on-power-allocation-weighting-for-each-car) at the same time based on priority and power allocation weighting for each car.
 - Support skew to shift the power export/import curve left or right to achieve your minimal power import. (TODO)
 - [Configurable return codes](https://github.com/flashg1/SolarCharger/wiki/Design#plug-in-your-own-custom-api-return-codes) for comparison with connect trigger states, connected states and charging states returned by your EV or charger specific API. These states are used to determine the stages of the charging process.
 - Use EV specific API to control a EV for charging, and/or use OCPP to control an OCPP compliant charger to charge a EV. Only tested with [OCPP simulator](https://github.com/lewei50/iammeter-simulator) and Tesla car. OCPP and Tesla Fleet API support in beta testing phase.

@@ -104,13 +104,13 @@
                 "description": "These are entities controlling charger behaviour with values defined in \"Configuration\" section. Replace with your own entities if required. Greyed-out entries are FYI only.\n\nTo delete an entity, add \".deleteme\" to the name, eg. sensor.deleteme",
                 "data": {
                     "charger_effective_voltage": "Charger effective voltage (V)",
-                    "default_charge_limit_monday": "Monday charge limit default",
-                    "default_charge_limit_tuesday": "Tuesday charge limit default",
-                    "default_charge_limit_wednesday": "Wednesday charge limit default",
-                    "default_charge_limit_thursday": "Thursday charge limit default",
-                    "default_charge_limit_friday": "Friday charge limit default",
-                    "default_charge_limit_saturday": "Saturday charge limit default",
-                    "default_charge_limit_sunday": "Sunday charge limit default",
+                    "default_charge_limit_monday": "Monday default charge limit (%)",
+                    "default_charge_limit_tuesday": "Tuesday default charge limit (%)",
+                    "default_charge_limit_wednesday": "Wednesday default charge limit (%)",
+                    "default_charge_limit_thursday": "Thursday default charge limit (%)",
+                    "default_charge_limit_friday": "Friday default charge limit (%)",
+                    "default_charge_limit_saturday": "Saturday default charge limit (%)",
+                    "default_charge_limit_sunday": "Sunday default charge limit (%)",
                     "reduce_charge_limit_difference": "Reduce charge limit difference",
                     "charge_limit_monday": "Monday charge limit (%)",
                     "charge_limit_tuesday": "Tuesday charge limit (%)",
@@ -312,6 +312,27 @@
             },
             "wait_charger_amp_change": {
                 "name": "Wait current change"
+            },
+            "default_charge_limit_monday": {
+                "name": "Monday default charge limit"
+            },
+            "default_charge_limit_tuesday": {
+                "name": "Tuesday default charge limit"
+            },
+            "default_charge_limit_wednesday": {
+                "name": "Wednesday default charge limit"
+            },
+            "default_charge_limit_thursday": {
+                "name": "Thursday default charge limit"
+            },
+            "default_charge_limit_friday": {
+                "name": "Friday default charge limit"
+            },
+            "default_charge_limit_saturday": {
+                "name": "Saturday default charge limit"
+            },
+            "default_charge_limit_sunday": {
+                "name": "Sunday default charge limit"
             },
             "charge_limit_monday": {
                 "name": "Monday charge limit"

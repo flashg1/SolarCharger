@@ -40,6 +40,13 @@ from .const import (
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_POWER_MONITOR_DURATION,
@@ -139,7 +146,7 @@ class SolarChargerNumberConfigEntity(SolarChargerNumberEntity):
         """Initialise number."""
         super().__init__(config_item, subentry, entity_type, desc)
 
-        self._attr_native_step = 1.0
+        # self._attr_native_step = 1.0
         self._attr_mode = NumberMode.BOX
 
         self._attr_has_entity_name = True
@@ -255,6 +262,7 @@ CONFIG_NUMBER_LIST: tuple[
             key=NUMBER_CHARGER_PRIORITY,
             native_min_value=0,
             native_max_value=100,
+            native_step=1,
         ),
     ),
     (
@@ -399,6 +407,7 @@ CONFIG_NUMBER_LIST: tuple[
     #####################################
     # Charge limits
     #####################################
+    # Max/min charge limit config.
     (
         NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
         SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
@@ -423,6 +432,92 @@ CONFIG_NUMBER_LIST: tuple[
             native_step=1,
         ),
     ),
+    # Default charge limit configs.
+    (
+        NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    (
+        NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    (
+        NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    (
+        NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    (
+        NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    (
+        NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    (
+        NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
+            entity_category=EntityCategory.CONFIG,
+            native_unit_of_measurement=PERCENTAGE,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    # Actual charge limit configs.
     (
         NUMBER_CHARGE_LIMIT_MONDAY,
         SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,

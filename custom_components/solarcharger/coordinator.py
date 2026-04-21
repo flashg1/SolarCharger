@@ -12,7 +12,7 @@ from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
 
-from .config_utils import get_saved_option_value, get_subentry_id
+from .config_utils import get_subentry_id
 from .const import (
     CONFIG_NET_POWER,
     CONFIG_WAIT_NET_POWER_UPDATE,
@@ -178,42 +178,48 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     # Config flow functions
     # ----------------------------------------------------------------------------
+    # Charge limit defaults are no longer set in config flow, so no need to check here.
+    # Code left here for reference only.
     def validate_default_charge_limits(
         self, control: DeviceControl, data: dict[str, Any]
     ) -> bool:
         """Validate default charge limits."""
-        ok = True
+        # ok = True
 
-        min_charge_limit = control.controller.option_get_entity_number_or_abort(
-            NUMBER_CHARGEE_MIN_CHARGE_LIMIT
-        )
-        max_charge_limit = control.controller.option_get_entity_number_or_abort(
-            NUMBER_CHARGEE_MAX_CHARGE_LIMIT
-        )
+        # min_charge_limit = control.controller.option_get_entity_number_or_abort(
+        #     NUMBER_CHARGEE_MIN_CHARGE_LIMIT
+        # )
+        # max_charge_limit = control.controller.option_get_entity_number_or_abort(
+        #     NUMBER_CHARGEE_MAX_CHARGE_LIMIT
+        # )
 
-        # Check default charge limits
-        for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
-            default_val = data.get(day_limit_default)
-            if default_val is None:
-                continue
+        # # Check default charge limits
+        # for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
+        #     # default_val = data.get(day_limit_default)
+        #     # if default_val is None:
+        #     #     continue
+        #     default_val = control.controller.option_get_entity_number_or_abort(
+        #         day_limit_default
+        #     )
 
-            if not (min_charge_limit <= default_val <= max_charge_limit):
-                _LOGGER.error(
-                    "%s: Invalid default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
-                    self.caller,
-                    default_val,
-                    day_limit_default,
-                    min_charge_limit,
-                    max_charge_limit,
-                )
-                ok = False
-                break
+        #     if not (min_charge_limit <= default_val <= max_charge_limit):
+        #         _LOGGER.error(
+        #             "%s: Invalid default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
+        #             self.caller,
+        #             default_val,
+        #             day_limit_default,
+        #             min_charge_limit,
+        #             max_charge_limit,
+        #         )
+        #         ok = False
+        #         break
 
-                # Do no raise exception inside the coordinator as it breaks the coordinator loop.
-                # Raise exception at source of call instead.
-                # raise ValidationExceptionError("base", "invalid_default_charge_limit")
+        #         # Do no raise exception inside the coordinator as it breaks the coordinator loop.
+        #         # Raise exception at source of call instead.
+        #         # raise ValidationExceptionError("base", "invalid_default_charge_limit")
 
-        return ok
+        # return ok
+        return True
 
     # ----------------------------------------------------------------------------
     def validate_config_options(self, config_name: str, data: dict[str, Any]) -> str:
@@ -518,8 +524,11 @@ class SolarChargerCoordinator(ScOptionState):
 
                 # Set charge limits
                 for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
-                    default_val = get_saved_option_value(
-                        self._entry, subentry, day_limit_default, True
+                    # default_val = get_saved_option_value(
+                    #     self._entry, subentry, day_limit_default, True
+                    # )
+                    default_val = self.option_get_entity_number_or_abort(
+                        day_limit_default
                     )
 
                     day_limit = DEFAULT_CHARGE_LIMIT_MAP[day_limit_default]
