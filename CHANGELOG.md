@@ -2,12 +2,12 @@
 
 ## v0.6.0 2026-04-20
 ### Breaking change
-- Moved "Default charge limits" from settings (cog wheel) to device configuration section. Please reset defaults if required.
+- Moved default charge limits from settings (cog wheel) to device configuration section for database persistence. Please reset defaults if required.
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature
 - Supports charge priority. Chargers with the highest priority will charge first.
 ### Improvement
-- Show running pause duration.
+- "Last pause duration" now shows the running pause duration.
 - Get latest data and immediately check status at beginning of charge loop.
 
 ## v0.5.4 2026-04-19
