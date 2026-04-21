@@ -7,6 +7,7 @@
 ### New feature
 - Supports charge priority. Chargers with the highest priority will charge first.
 ### Improvement
+- Show running pause duration.
 - Get latest data and immediately check status at beginning of charge loop.
 
 ## v0.5.4 2026-04-19
