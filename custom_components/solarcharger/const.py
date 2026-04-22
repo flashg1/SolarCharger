@@ -594,7 +594,7 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     OPTION_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}status_connector",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing"]',
-    # Uncomment and reinstall for testing with iammeter-simulator.
+    # Uncomment and **must reinstall** for testing with iammeter-simulator.
     # OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing"]',
     OPTION_CHARGER_ON_OFF_SWITCH: f"{SWITCH}.{DEVICE_NAME_MARKER}charge_control",
