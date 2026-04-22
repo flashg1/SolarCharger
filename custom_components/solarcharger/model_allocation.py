@@ -12,10 +12,10 @@ class PowerAllocation:
     subentry_id: str
 
     # Environment data:
-    # Power currently consumed by the charger.
-    consumed_power: float
     # Maximum power the charger can consume.
     max_power: float
+    # Power currently consumed by the charger.
+    consumed_power: float
 
     # Inputs:
     # Charger priority (0 = highest priority)
@@ -28,6 +28,10 @@ class PowerAllocation:
     share_allocation: int
 
     # Outputs:
+    # -ve value means device needs power, +ve value means device has excess power.
+    need_power: float = 0
+    lack_power: float = 0
+
     # Planned allocation as if all chargers are not paused.
     # plan_power is used by paused chargers to determine when to exit paused state.
     plan_weight: float = 0
@@ -37,3 +41,26 @@ class PowerAllocation:
     # final_power is used by running chargers to adjust current.
     final_weight: float = 0
     final_power: float = 0
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+@dataclass
+class PriorityAllocation:
+    """Power allocation result for a priority level."""
+
+    priority: int
+    allocations: list[PowerAllocation]
+
+    # +ve
+    total_max_power: float = 0
+    # +ve
+    total_consumed_power: float = 0
+    # -ve/+ve, total need power before allocation.
+    total_need_power: float = 0
+    # -ve/+ve, total lack power after allocation.
+    total_lack_power: float = 0
+
+    total_plan_weight: float = 0
+    total_final_weight: float = 0
+    total_instance: int = 0

@@ -97,8 +97,13 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     @cached_property
     def charge_control(self) -> ChargeControl:
-        """Return the charge control object if applicable."""
+        """Return the charge control object."""
         return self._control
+
+    @cached_property
+    def solar_charge(self) -> SolarCharge:
+        """Return the solar charge object."""
+        return self._solar_charge
 
     @property
     def is_updated_today_tomorrow_schedule(self) -> bool:
@@ -169,11 +174,11 @@ class ChargeController(ScOptionState):
                     self.charge_control.instance_count == 0
                     and self.is_schedule_charge()
                 ):
-                    await self._solar_charge.async_wake_up_and_update_ha(
+                    await self.solar_charge.async_wake_up_and_update_ha(
                         self._chargeable
                     )
                     goal: ScheduleData = (
-                        await self._solar_charge.async_get_current_schedule_data()
+                        await self.solar_charge.async_get_current_schedule_data()
                     )
                     if goal.use_charge_schedule and (
                         goal.has_charge_endtime
@@ -182,7 +187,7 @@ class ChargeController(ScOptionState):
                             and goal.battery_soc < goal.new_charge_limit
                         )
                     ):
-                        if self._solar_charge.device_at_location_and_connected():
+                        if self.solar_charge.device_at_location_and_connected():
                             _LOGGER.warning(
                                 "%s: Rescheduling charge due to schedule update",
                                 self.caller,
@@ -272,7 +277,7 @@ class ChargeController(ScOptionState):
                     and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
                     and new_state.state != old_state.state
                 ):
-                    if self._solar_charge.is_connected(self._charger):
+                    if self.solar_charge.is_connected(self._charger):
                         self._turn_charger_switch(turn_on=True)
 
     # ----------------------------------------------------------------------------
@@ -282,14 +287,14 @@ class ChargeController(ScOptionState):
         _LOGGER.info("%s: Device presence detected.")
 
         # Use semaphore to create only one async_semaphore_wakeup_and_update_ha() task.
-        if self._solar_charge.semaphore_update_ha_task_count == 0:
-            with self._solar_charge.semaphore_update_ha_task:
+        if self.solar_charge.semaphore_update_ha_task_count == 0:
+            with self.solar_charge.semaphore_update_ha_task:
                 # This is the only place where update_ha_task_count is set to 1.
                 # Count is reset on task completion.
-                self._solar_charge.semaphore_update_ha_task_count = 1
+                self.solar_charge.semaphore_update_ha_task_count = 1
 
                 self._hass.loop.create_task(
-                    self._solar_charge.async_semaphore_wakeup_and_update_ha()
+                    self.solar_charge.async_semaphore_wakeup_and_update_ha()
                 )
         else:
             _LOGGER.warning(
@@ -496,14 +501,14 @@ class ChargeController(ScOptionState):
             if self._charge_task is None or self._charge_task.done():
                 self._turn_charger_switch(turn_on=True)
         else:
-            await self._solar_charge.async_stop_calibrate_max_charge_speed()
+            await self.solar_charge.async_stop_calibrate_max_charge_speed()
 
     # ----------------------------------------------------------------------------
     async def _async_start_charge(
         self, charger: Charger, chargeable: Chargeable
     ) -> None:
         """Async task to start the charger."""
-        await self._solar_charge.async_start_charge_task(charger, chargeable)
+        await self.solar_charge.async_start_charge_task(charger, chargeable)
 
     # ----------------------------------------------------------------------------
     async def async_start_charge(self) -> Task:
@@ -583,7 +588,7 @@ class ChargeController(ScOptionState):
                     _LOGGER.info(
                         "Task %s cancelled successfully", self._charge_task.get_name()
                     )
-                    await self._solar_charge.async_tidy_up()
+                    await self.solar_charge.async_tidy_up()
 
                 except Exception as e:
                     _LOGGER.exception(

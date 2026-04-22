@@ -244,7 +244,7 @@ class StateCharge(SolarChargeState):
     ) -> tuple[float, float]:
         """Calculate new charge current based on allocated power."""
 
-        charger_max_current = self.solarcharge.get_charger_max_current(charger)
+        charger_max_current = self.solarcharge.get_charger_max_current()
 
         config_item = OPTION_CHARGER_GET_CHARGE_CURRENT
         val_dict = ConfigValueDict(config_item, {})
@@ -378,7 +378,7 @@ class StateCharge(SolarChargeState):
             # Change charge limit if required
             await self.solarcharge.async_set_charge_limit_if_required(chargeable, goal)
             # Set max current
-            charger_max_current = self.solarcharge.get_charger_max_current(charger)
+            charger_max_current = self.solarcharge.get_charger_max_current()
             await self.solarcharge.async_set_charge_current(
                 charger, charger_max_current
             )

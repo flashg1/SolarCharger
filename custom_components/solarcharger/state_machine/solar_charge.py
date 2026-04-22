@@ -27,6 +27,8 @@ from ..const import (
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_PRIORITY,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
@@ -173,6 +175,22 @@ class SolarCharge(ScOptionState):
         self.entities.sensors[SENSOR_RUN_STATE].set_state(state.value)
 
     # ----------------------------------------------------------------------------
+    # Global utils
+    # ----------------------------------------------------------------------------
+    def get_charger_priority(self) -> int:
+        """Get charger priority."""
+
+        return self.option_get_entity_integer_or_abort(NUMBER_CHARGER_PRIORITY)
+
+    # ----------------------------------------------------------------------------
+    def get_charger_power_allocation_weight(self) -> float:
+        """Get charger power allocation weight."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
+        )
+
+    # ----------------------------------------------------------------------------
     # Local utils
     # ----------------------------------------------------------------------------
     async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
@@ -308,10 +326,10 @@ class SolarCharge(ScOptionState):
         return self.validate_current(charger_max_current, config_min_current)
 
     # ----------------------------------------------------------------------------
-    def get_charger_max_current(self, charger: Charger) -> float:
+    def get_charger_max_current(self) -> float:
         """Get charger max current."""
 
-        charger_max_current = charger.get_max_charge_current()
+        charger_max_current = self.charger.get_max_charge_current()
         if charger_max_current is None or charger_max_current <= 0:
             raise ValueError("Failed to get charger max current")
 
@@ -347,7 +365,7 @@ class SolarCharge(ScOptionState):
         if val_dict.config_values[OPTION_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
             # So we can't get the current, ie. a resistive load.
             # All devices must have max charge current configured.
-            charge_current = self.get_charger_max_current(charger)
+            charge_current = self.get_charger_max_current()
 
         if charge_current is None:
             raise ValueError("Failed to get device charge current")
@@ -824,7 +842,7 @@ class SolarCharge(ScOptionState):
             # Yes, monitor config switched on.
             need_to_monitor = True
 
-            max_current = self.get_charger_max_current(self.charger)
+            max_current = self.get_charger_max_current()
             min_current = self.get_charger_min_current(max_current)
 
             if (
