@@ -29,7 +29,11 @@ class PowerAllocation:
 
     # Outputs:
     # -ve value means device needs power, +ve value means device has excess power.
+
+    # need_power and lack_power can be -ve or 0, but not +ve.
+    # Paused devices will have 0 need_power and 0 lack_power, as they are not participating in real power allocation.
     need_power: float = 0
+    # Resulting lack power after allocation.
     lack_power: float = 0
 
     # Planned allocation as if all chargers are not paused.
@@ -46,8 +50,8 @@ class PowerAllocation:
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 @dataclass
-class PriorityAllocation:
-    """Power allocation result for a priority level."""
+class AllocationGroup:
+    """Power allocation data for a priority level."""
 
     priority: int
     allocations: list[PowerAllocation]
@@ -56,6 +60,7 @@ class PriorityAllocation:
     total_max_power: float = 0
     # +ve
     total_consumed_power: float = 0
+
     # -ve/+ve, total need power before allocation.
     total_need_power: float = 0
     # -ve/+ve, total lack power after allocation.

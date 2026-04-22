@@ -28,7 +28,7 @@ from .const import (
     WEEKLY_CHARGE_ENDTIMES,
 )
 from .helpers.general import async_set_allocated_power
-from .model_allocation import PowerAllocation, PriorityAllocation
+from .model_allocation import AllocationGroup, PowerAllocation
 from .model_charge_control import ChargeControl
 from .model_device_control import DeviceControl
 from .sc_option_state import ScOptionState
@@ -409,11 +409,11 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     def _get_total_allocation_pool(
         self,
-    ) -> tuple[int, dict[int, PriorityAllocation]]:
+    ) -> tuple[int, dict[int, AllocationGroup]]:
         """Get allocation pool from options. Note allocation weight entity can be overriden."""
 
         total_instance = 0
-        allocation_map: dict[int, PriorityAllocation] = {}
+        allocation_map: dict[int, AllocationGroup] = {}
 
         for control in self.device_controls.values():
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
@@ -461,10 +461,13 @@ class SolarChargerCoordinator(ScOptionState):
             if allocation.final_weight > 0:
                 if consumed_power < max_power:
                     allocation.need_power = consumed_power - max_power
+            else:
+                # Paused device has need_power = lack_power = consumed_power = 0.
+                allocation.need_power = 0
 
             rung = allocation_map.get(allocation.priority)
             if rung is None:
-                rung = PriorityAllocation(priority=allocation.priority, allocations=[])
+                rung = AllocationGroup(priority=allocation.priority, allocations=[])
                 allocation_map[allocation.priority] = rung
 
             rung.allocations.append(allocation)
@@ -484,19 +487,17 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _sorted_list_of_priority_level(
-        self, allocation_ladder: dict[int, PriorityAllocation]
-    ) -> list[PriorityAllocation]:
-        """Get sorted list of priority level from allocation ladder."""
+        self, allocation_map: dict[int, AllocationGroup]
+    ) -> list[AllocationGroup]:
+        """Get sorted list of priority level from allocation map."""
 
-        return [
-            allocation_ladder[priority] for priority in sorted(allocation_ladder.keys())
-        ]
+        return [allocation_map[priority] for priority in sorted(allocation_map.keys())]
 
     # ----------------------------------------------------------------------------
-    def _allocate_power(self, rung: PriorityAllocation, net_power: float) -> float:
+    def _allocate_power(self, rung: AllocationGroup, net_power: float) -> float:
         """Allocate power to priority level.
 
-        net_power: -ve means have excess power to allocate, +ve means power to free up.
+        net_power: -ve = power to allocate, +ve = power to free up.
         """
 
         remain_power = net_power
@@ -513,11 +514,12 @@ class SolarChargerCoordinator(ScOptionState):
                 # allocated_power can be -ve or +ve.
                 # allocation.need_power can be -ve or 0, but not +ve.
                 if allocated_power <= allocation.need_power:
-                    # Enough power.
+                    # Enough power: allocated_power = 0 or -ve
+                    # For paused device, allocated_power = need_power = lack_power = 0.
                     allocation.final_power = allocation.need_power
                     allocation.lack_power = 0
                 else:
-                    # Not enough power.
+                    # Not enough power: allocated_power is -ve or +ve
                     if allocated_power < 0:
                         # Allocate power, ie. -ve
                         allocation.final_power = max(
@@ -555,11 +557,11 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     def _bottom_up_release_power(
         self,
-        allocation_ladder: list[PriorityAllocation],
+        allocation_ladder: list[AllocationGroup],
         net_power: float,  # ie. net_power is positive to free up power.
         end_rung: int = -1,  # inclusive, -1 means all the way to the top priority level.
     ) -> float:
-        """Release power from chargers with priority level lower than or equal to the given priority level."""
+        """Release power from lower to higher priority chargers up to and not including the end_rung priority level."""
 
         freeup_power = net_power
 
@@ -577,13 +579,14 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     def _top_down_allocate_power(
         self,
-        allocation_ladder: list[PriorityAllocation],
-        net_power: float,  # ie. net_power is negative for allocation.
+        allocation_ladder: list[AllocationGroup],
+        net_power: float,  # ie. net_power is negative to allocate power.
     ) -> float:
-        """Allocate power to higher priority chargers first when there is excess power.
+        """Allocate power from higher to lower priority chargers.
 
-        When higher priority charger is paused with no other charger on same priority,
-        then allocate power to lower priority chargers.
+        Allocate power from higher to lower priority chargers when there is enough power.
+        If higher priority chargers do not have enough power, free up power from lower to
+        higher priority chargers for next allocation.
         """
 
         surplus_power = net_power
