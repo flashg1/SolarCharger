@@ -6,6 +6,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
+from .const import CONFIG_NET_POWER, CONFIG_WAIT_NET_POWER_UPDATE
 from .sc_state import ScState
 
 # ----------------------------------------------------------------------------
@@ -84,8 +85,23 @@ class ScConfigState(ScState):
     # ----------------------------------------------------------------------------
     # General utils
     # ----------------------------------------------------------------------------
-    async def _async_config_sleep(self, config_item: str) -> None:
+    async def async_config_sleep(self, config_item: str) -> None:
         """Wait sleep time."""
 
         duration = self.config_get_number_or_abort(config_item)
         await asyncio.sleep(duration)
+
+    # ----------------------------------------------------------------------------
+    def get_wait_net_power_update(self) -> float:
+        """Get wait net power update time in seconds."""
+
+        return self.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def get_net_power(self) -> float | None:
+        """Get household net power."""
+
+        # PowerAllocator: Failed to parse state 'unavailable' for entity 'sensor.main_power_net':
+        # could not convert string to float: 'unavailable'
+
+        return self.config_get_entity_number(CONFIG_NET_POWER)

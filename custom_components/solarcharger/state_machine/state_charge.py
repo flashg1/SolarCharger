@@ -11,7 +11,6 @@ from homeassistant.util.dt import as_local, utcnow
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import (
-    CONFIG_WAIT_NET_POWER_UPDATE,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_POWER_MONITOR_DURATION,
     OPTION_CHARGER_CHARGING_SENSOR,
@@ -463,7 +462,7 @@ class StateCharge(SolarChargeState):
 
         # Init power monitor duration
         self.solarcharge.wait_net_power_update = (
-            self.solarcharge.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
+            self.solarcharge.get_wait_net_power_update()
         )
         self._set_max_allocation_count(self.solarcharge.wait_net_power_update)
         self.solarcharge.power_allocations = []
