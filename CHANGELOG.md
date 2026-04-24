@@ -2,6 +2,7 @@
 
 ## v0.6.0 2026-04-20
 ### Breaking change
+- Best to set max current locally in SolarCharger instead of reading from OCPP charger.
 - Moved default charge limits from settings (cog wheel) to device configuration section for database persistence. Please reset defaults if required.
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature

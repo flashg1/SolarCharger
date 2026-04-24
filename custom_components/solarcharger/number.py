@@ -200,7 +200,9 @@ CONFIG_NUMBER_LIST: tuple[
             native_step=1,
         ),
     ),
-    # Used as local device entity for all except for OCPP. OCPP comes with own entity.
+    # Used as local device entity.
+    # OCPP comes with own entity, but should also use this to avoid reading from OCPP.
+    # So will make this configurable.
     (
         OPTION_CHARGER_MAX_CURRENT,
         SolarChargerEntityType.TYPE_LOCALHIDDEN,
