@@ -86,11 +86,12 @@ class OcppCharger(ChargerChargeableBase):
     # 2025-11-03 11:53:39.376 INFO (MainThread) [ocpp] sn123456789: receive message [3,"3cf0a97a-6bd3-4ecd-b914-c9a57ec0b3be",
     # {"configurationKey":[{"key":"ChargeProfileMaxStackLevel","readonly":true,"value":"20"}]}]
 
-    async def _async_get_ocpp_max_stack_level(self) -> ServiceResponse:
+    async def _async_get_ocpp_max_stack_level(
+        self, ocpp_charger_id: str
+    ) -> ServiceResponse:
         """Get OCPP charge profile max stack level. This stack level will be used to override all others."""
         # ocpp_max_stack_level_map: dict[str, Any] = {}
 
-        ocpp_charger_id = self.option_get_entity_string(OPTION_OCPP_CHARGER_ID)
         # service_name = "ocpp.get_configuration"
         service_name = "get_configuration"
         service_data: dict[str, Any] = {
@@ -134,6 +135,9 @@ class OcppCharger(ChargerChargeableBase):
 
         new_charge_current = round(charge_current)
 
+        # Get OCPP charger ID
+        ocpp_charger_id = self.option_get_entity_string(OPTION_OCPP_CHARGER_ID)
+
         # Get charge profile id
         charge_profile_id = self.get_integer(self.ocpp_profile_id_entity_id)
 
@@ -145,7 +149,7 @@ class OcppCharger(ChargerChargeableBase):
         if charge_profile_stack_level is None or charge_profile_stack_level < 0:
             # Get the OCPP charge profile max stack level to override all other profiles.
             ocpp_max_stack_level_map: ServiceResponse = (
-                await self._async_get_ocpp_max_stack_level()
+                await self._async_get_ocpp_max_stack_level(ocpp_charger_id)
             )
             if ocpp_max_stack_level_map is None:
                 raise ValueError("Failed to get max stack level")
@@ -159,6 +163,7 @@ class OcppCharger(ChargerChargeableBase):
         )
         service_name = "set_charge_rate"
         service_data: dict[str, Any] = {
+            "devid": ocpp_charger_id,
             "custom_profile": {
                 "transactionId": ocpp_charger_transaction_id,
                 "chargingProfileId": charge_profile_id,

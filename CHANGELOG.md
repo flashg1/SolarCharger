@@ -5,7 +5,9 @@
 - Moved default charge limits from settings (cog wheel) to device configuration section for database persistence. Please reset defaults if required.
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature
-- Supports charge priority. Chargers with the highest priority will charge first.
+- Added support for [charge priority](https://github.com/flashg1/SolarCharger/wiki/User-guide#priority).
+### Fix
+- Fixed issue with missing OCPP devid required to set current when running multiple OCPP chargers.
 ### Improvement
 - "Last pause duration" now shows the running pause duration.
 - Get latest data and immediately check status at beginning of charge loop.
@@ -76,7 +78,7 @@
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
 ### New feature
-- Added support for ping ICMP to detect device presence.
+- Added support for [ping ICMP](https://github.com/flashg1/SolarCharger/wiki/User-guide#use-ping-to-detect-car-and-update-ha-to-get-latest-status) to detect device presence.
 ### Fix
 - Catch possible exception converting UTC min time to local time during restore, and just set to UTC min time without conversion.
 - Changed Tesla Fleet domain name from tesla to tesla_fleet.

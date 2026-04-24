@@ -278,7 +278,7 @@ class PowerAllocator:
                     allocation_ladder, net_power
                 )
 
-            _LOGGER.warning(
+            _LOGGER.info(
                 "After allocation: total_instance=%s, net_power=%s, remain_power=%s",
                 total_instance,
                 net_power,
@@ -291,7 +291,7 @@ class PowerAllocator:
             )
 
             for rung in allocation_ladder:
-                _LOGGER.warning(
+                _LOGGER.info(
                     "priority=%s, total_max_power=%s, total_consumed_power=%s, "
                     "total_need_power=%s, total_lack_power=%s, total_plan_weight=%s, "
                     "total_final_weight=%s, total_instance=%s",
@@ -318,8 +318,8 @@ class PowerAllocator:
                         else allocation.plan_power,
                     )
 
-                    _LOGGER.warning(
-                        "%s: allocation=%s",
+                    _LOGGER.info(
+                        "%s: %s",
                         control.config_name,
                         allocation,
                     )
