@@ -59,7 +59,7 @@ from ..model_context_data import ContextData
 from ..sc_option_state import ScheduleData, ScOptionState, StateOfCharge
 from ..utils import log_is_event_loop
 from .solar_charge_state import SolarChargeState
-from .state_initialise import StateInitialise
+from .state_start import StateStart
 from .state_tidyup import StateTidyUp
 
 # ----------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class SolarCharge(ScOptionState):
         self.semaphore_update_ha_task_count = 0
 
         # Initialise state machine self._state variable.
-        self.set_machine_state(StateInitialise())
+        self.set_machine_state(StateStart())
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -950,7 +950,7 @@ class SolarCharge(ScOptionState):
             self.stats = ChargeStats()
             self.set_pause_stats(self.stats)
 
-            await self.async_start_state_machine(StateInitialise())
+            await self.async_start_state_machine(StateStart())
 
         except Exception as e:
             _LOGGER.exception("%s: Abort charge: %s", self.caller, e)

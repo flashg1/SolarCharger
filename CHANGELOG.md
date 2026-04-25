@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.1 2026-04-26
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.5.4 or prior.
+### Improvement
+- Added starting state to set variables once per charging session.
+
 ## v0.6.0 2026-04-20
 ### Breaking change
 - Best to set max current locally in SolarCharger instead of reading from OCPP charger.

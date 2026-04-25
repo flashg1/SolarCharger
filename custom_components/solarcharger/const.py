@@ -12,7 +12,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json and README.md
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -830,6 +830,7 @@ class RunState(Enum):
 
     # Sensor state attributes must be lower case. Translation will display state in OS language.
     UNDEFINED = "undefined"
+    STARTING = "starting"
     INITIALISING = "initialising"
     CHARGING = "charging"
     PAUSED = "paused"

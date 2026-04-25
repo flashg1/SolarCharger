@@ -178,6 +178,7 @@
             "run_state": {
                 "name": "Run state",
                 "state": {
+                    "starting": "Starting",
                     "initialising": "Initialising",
                     "charging": "Charging",
                     "paused": "Paused",
