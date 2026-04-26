@@ -62,13 +62,26 @@ class ScheduleData:
     # Include tomorrow for scheduling?
     include_tomorrow: bool = False
 
-    # Is charge to start immediately at max current?
-    # If charge end time is set, immediate start is true if:
+    # Current charge session
+    # ======================
+    # Is charge at max current now to avoid drift?
+    # If charge end time is set, then set this to true if:
     # - there is not enough time to meet charge end time goal, or
     # - session is triggered by timer and it is night time.
+    # Added 30-minute grace period to avoid time drift stopping charge while charging.
     # This means charging can still pause during the day, but not at night.
-    max_charge_now: bool = False
+    max_charge_now_avoid_drift: bool = False
 
+    # Next charge session
+    # ===================
+    # Schedule next session to start immediately at max current?
+    # Only used when scheduling next charge session on completion of current session.
+    # Actual proposed charge start time is required.
+    # If charge end time is set, then set this to true if:
+    # - there is not enough time to meet charge end time goal.
+    start_next_session_now: bool = False
+
+    # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of ScheduleData."""
         return (
@@ -76,7 +89,9 @@ class ScheduleData:
             f"use_charge_schedule={self.use_charge_schedule}, "
             f"has_charge_endtime={self.has_charge_endtime}, charge_endtime={self.charge_endtime}, "
             f"propose_charge_starttime={self.propose_charge_starttime}, need_charge_duration={self.need_charge_duration}, "
-            f"timer_session={self.timer_session}, include_tomorrow={self.include_tomorrow}, max_charge_now={self.max_charge_now}, "
+            f"timer_session={self.timer_session}, include_tomorrow={self.include_tomorrow}, "
+            f"max_charge_now_avoid_drift={self.max_charge_now_avoid_drift}, "
+            f"start_next_session_now={self.start_next_session_now}, "
             f"battery_soc={self.battery_soc}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "

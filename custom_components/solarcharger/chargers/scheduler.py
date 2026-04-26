@@ -237,15 +237,24 @@ class ChargeScheduler(ScOptionState):
                 goal.charge_endtime - goal.need_charge_duration
             )
 
+            # Current charge session.
             if (
-                # Not enough time to charge.
-                goal.propose_charge_starttime <= goal.data_timestamp
+                # Add 30 minutes grace period to avoid time drift stopping charge while charging.
+                goal.propose_charge_starttime - timedelta(minutes=30)
+                <= goal.data_timestamp
                 or (
                     # Session started by timer and sun is below start and end elevations.
                     goal.timer_session and not goal.sun_above_start_end_elevations
                 )
             ):
-                goal.max_charge_now = True
+                goal.max_charge_now_avoid_drift = True
+
+            # Next charge session.
+            if (
+                # Next session does not have enough time to charge.
+                goal.propose_charge_starttime <= goal.data_timestamp
+            ):
+                goal.start_next_session_now = True
 
     # ----------------------------------------------------------------------------
     def _get_soc_for_max_charge_speed_calibration(
@@ -489,7 +498,7 @@ class ChargeScheduler(ScOptionState):
 
             if next_goal.has_charge_endtime:
                 if next_goal.propose_charge_starttime != datetime.min:
-                    if next_goal.max_charge_now:
+                    if next_goal.start_next_session_now:
                         now_time = self.get_local_datetime()
                         next_starttime = now_time + timedelta(minutes=2)
                     else:

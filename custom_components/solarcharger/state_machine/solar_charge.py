@@ -552,7 +552,7 @@ class SolarCharge(ScOptionState):
                 # Note running goal is updated in both charging and paused states.
                 or (
                     self.running_goal.has_charge_endtime
-                    and self.running_goal.max_charge_now
+                    and self.running_goal.max_charge_now_avoid_drift
                 )
                 or self.is_fast_charge_mode()
                 or self.is_calibrate_max_charge_speed()
@@ -608,16 +608,6 @@ class SolarCharge(ScOptionState):
         context.is_use_secondary_power_source = self.is_use_secondary_power_source()
         context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
-        # Add 30 minutes grace period to avoid time drift stopping charge
-        # and scheduling next session immediately.
-        # context.current_time_with_grace = goal.data_timestamp + timedelta(minutes=30)
-        # if goal.has_charge_endtime and goal.propose_charge_starttime != datetime.min:
-        #     context.immediate_start_with_grace = (
-        #         goal.propose_charge_starttime <= context.current_time_with_grace
-        #     )
-        # else:
-        #     context.immediate_start_with_grace = False
-
         return context
 
     # ----------------------------------------------------------------------------
@@ -640,8 +630,8 @@ class SolarCharge(ScOptionState):
                 or context.is_use_secondary_power_source
                 or context.is_calibrate_max_charge_speed
                 or (
-                    context.goal.has_charge_endtime and context.goal.max_charge_now
-                    # and context.immediate_start_with_grace
+                    context.goal.has_charge_endtime
+                    and context.goal.max_charge_now_avoid_drift
                 )
             )
         )
@@ -682,8 +672,8 @@ class SolarCharge(ScOptionState):
             and not context.is_use_secondary_power_source
             and not context.is_calibrate_max_charge_speed
             and not (
-                context.goal.has_charge_endtime and context.goal.max_charge_now
-                # and context.immediate_start_with_grace
+                context.goal.has_charge_endtime
+                and context.goal.max_charge_now_avoid_drift
             )
         )
 

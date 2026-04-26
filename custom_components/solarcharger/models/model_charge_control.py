@@ -41,16 +41,29 @@ if TYPE_CHECKING:
 class ControlEntities:
     """Data structure for control entities."""
 
-    sensors: dict[str, "SolarChargerSensorEntity"] | None = None
-    numbers: dict[str, "SolarChargerNumberConfigEntity"] | None = None
-    selects: dict[str, "SolarChargerSelectEntity"] | None = None
-    switches: dict[str, "SolarChargerSwitchEntity"] | None = None
-    buttons: dict[str, "SolarChargerButtonActionEntity"] | None = None
-    times: dict[str, "SolarChargerTimeConfigEntity"] | None = None
-    datetimes: dict[str, "SolarChargerDateTimeConfigEntity"] | None = None
+    # quoted-annotation (UP037)
+    # Checks for the presence of unnecessary quotes in type annotations.
+    # Why is this bad?
+    # - In Python, type annotations can be quoted to avoid forward references.
+    # - However, if from __future__ import annotations is present, Python will
+    # always evaluate type annotations in a deferred manner, making the quotes
+    # unnecessary.
+    # - Similarly, if the annotation is located in a typing-only context and
+    # won't be evaluated by Python at runtime, the quotes will also be considered
+    # unnecessary. For example, Python does not evaluate type annotations on
+    # assignments in function bodies.
+    # sensors: dict[str, "SolarChargerSensorEntity"] | None = None
+
+    sensors: dict[str, SolarChargerSensorEntity] | None = None
+    numbers: dict[str, SolarChargerNumberConfigEntity] | None = None
+    selects: dict[str, SolarChargerSelectEntity] | None = None
+    switches: dict[str, SolarChargerSwitchEntity] | None = None
+    buttons: dict[str, SolarChargerButtonActionEntity] | None = None
+    times: dict[str, SolarChargerTimeConfigEntity] | None = None
+    datetimes: dict[str, SolarChargerDateTimeConfigEntity] | None = None
 
     # Cannot get input_datetime to work, so input_times is not used.
-    input_times: dict[str, "SolarChargerInputTimeConfigEntity"] | None = None
+    input_times: dict[str, SolarChargerInputTimeConfigEntity] | None = None
 
 
 # ----------------------------------------------------------------------------

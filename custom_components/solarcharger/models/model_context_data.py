@@ -45,10 +45,6 @@ class ContextData:
     is_use_secondary_power_source: bool = False
     is_calibrate_max_charge_speed: bool = False
 
-    # Goal
-    # current_time_with_grace: datetime = datetime.min
-    # immediate_start_with_grace: bool = False
-
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -72,8 +68,6 @@ class ContextData:
             f"is_calibrate_max_charge_speed={self.is_calibrate_max_charge_speed}, "
             f"timer_session={self.goal.timer_session}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "
-            f"max_charge_now={self.goal.max_charge_now}, "
-            # f"current_time_with_grace={self.current_time_with_grace}, "
-            # f"immediate_start_with_grace={self.immediate_start_with_grace}, "
+            f"max_charge_now_avoid_drift={self.goal.max_charge_now_avoid_drift}, "
             f"{self.stats}"
         )

@@ -268,7 +268,7 @@ class StateCharge(SolarChargeState):
         if (
             self.solarcharge.is_fast_charge_mode()
             or self.solarcharge.is_calibrate_max_charge_speed()
-            or (goal.has_charge_endtime and goal.max_charge_now)
+            or (goal.has_charge_endtime and goal.max_charge_now_avoid_drift)
         ):
             new_charge_current = charger_max_current
             return (new_charge_current, old_charge_current)
