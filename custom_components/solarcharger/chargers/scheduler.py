@@ -195,7 +195,7 @@ class ChargeScheduler(ScOptionState):
             "%s: charge_limit=%.1f %%, "
             "battery_soc=%.1f %%, "
             "charger_max_charge_speed=%.1f %%/hr, "
-            "one_percent_charge_duration=%.2f sec, ",
+            "one_percent_charge_duration=%.2f sec",
             self.caller,
             charge_limit,
             battery_soc,
@@ -236,9 +236,13 @@ class ChargeScheduler(ScOptionState):
                 goal.charge_endtime - goal.need_charge_duration
             )
 
-            if goal.propose_charge_starttime <= goal.data_timestamp or (
-                goal.timer_session  # Session started by timer.
-                and not goal.sun_above_start_end_elevations  # ie. night time.
+            if (
+                # Not enough time to charge.
+                goal.propose_charge_starttime <= goal.data_timestamp
+                or (
+                    # Session started by timer and night time.
+                    goal.timer_session and not goal.sun_above_start_end_elevations
+                )
             ):
                 goal.max_charge_now = True
 

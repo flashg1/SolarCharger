@@ -70,7 +70,6 @@ class ContextData:
             f"is_use_secondary_power_source={self.is_use_secondary_power_source}, "
             f"is_calibrate_max_charge_speed={self.is_calibrate_max_charge_speed}, "
             f"timer_session={self.goal.timer_session}, "
-            f"include_tomorrow={self.goal.include_tomorrow}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "
             f"max_charge_now={self.goal.max_charge_now}, "
             # f"current_time_with_grace={self.current_time_with_grace}, "
