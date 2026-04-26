@@ -267,6 +267,7 @@ class StateCharge(SolarChargeState):
         if (
             self.solarcharge.is_fast_charge_mode()
             or self.solarcharge.is_calibrate_max_charge_speed()
+            or (goal.has_charge_endtime and goal.max_charge_now)
         ):
             new_charge_current = charger_max_current
             return (new_charge_current, old_charge_current)
@@ -279,14 +280,14 @@ class StateCharge(SolarChargeState):
         )
 
         charger_min_current = config_min_current
-        if goal.use_charge_schedule:
-            if self.solarcharge.scheduler.is_not_enough_time_to_complete_charge(
-                chargeable,
-                old_charge_current,
-                charger_max_current,
-                goal,
-            ):
-                charger_min_current = charger_max_current
+        # if goal.use_charge_schedule:
+        #     if self.solarcharge.scheduler.is_not_enough_time_to_complete_charge(
+        #         chargeable,
+        #         old_charge_current,
+        #         charger_max_current,
+        #         goal,
+        #     ):
+        #         charger_min_current = charger_max_current
 
         #####################################
         # Calculate new current from allocated power

@@ -1,7 +1,8 @@
 """Context data models."""
 
 from dataclasses import dataclass
-from datetime import datetime
+
+# from datetime import datetime
 from typing import Any
 
 from .chargers.chargeable import Chargeable
@@ -44,8 +45,8 @@ class ContextData:
     is_calibrate_max_charge_speed: bool = False
 
     # Goal
-    current_time_with_grace: datetime = datetime.min
-    immediate_start_with_grace: bool = False
+    # current_time_with_grace: datetime = datetime.min
+    # immediate_start_with_grace: bool = False
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
@@ -71,8 +72,8 @@ class ContextData:
             f"timer_session={self.goal.timer_session}, "
             f"include_tomorrow={self.goal.include_tomorrow}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "
-            f"immediate_start={self.goal.immediate_start}, "
-            f"current_time_with_grace={self.current_time_with_grace}, "
-            f"immediate_start_with_grace={self.immediate_start_with_grace}, "
+            f"max_charge_now={self.goal.max_charge_now}, "
+            # f"current_time_with_grace={self.current_time_with_grace}, "
+            # f"immediate_start_with_grace={self.immediate_start_with_grace}, "
             f"{self.stats}"
         )

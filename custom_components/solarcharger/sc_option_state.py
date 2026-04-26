@@ -83,7 +83,7 @@ class ScheduleData:
     data_timestamp: datetime = datetime.min
 
     # Sun elevation
-    sun_above_start_end_elevations: bool = True
+    sun_above_start_end_elevations: bool = False
     sun_elevation: float = 0
 
     # Current device charge limit
@@ -116,7 +116,7 @@ class ScheduleData:
     # - there is not enough time to meet charge end time goal, or
     # - session is triggered by timer and it is night time.
     # This means charging can still pause during the day, but not at night.
-    immediate_start: bool = False
+    max_charge_now: bool = False
 
     def __repr__(self) -> str:
         """Return string representation of ScheduleData."""
@@ -125,7 +125,7 @@ class ScheduleData:
             f"use_charge_schedule={self.use_charge_schedule}, "
             f"has_charge_endtime={self.has_charge_endtime}, charge_endtime={self.charge_endtime}, "
             f"propose_charge_starttime={self.propose_charge_starttime}, need_charge_duration={self.need_charge_duration}, "
-            f"timer_session={self.timer_session}, include_tomorrow={self.include_tomorrow}, immediate_start={self.immediate_start}, "
+            f"timer_session={self.timer_session}, include_tomorrow={self.include_tomorrow}, max_charge_now={self.max_charge_now}, "
             f"battery_soc={self.battery_soc}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "

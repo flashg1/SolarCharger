@@ -66,61 +66,61 @@ class ChargeScheduler(ScOptionState):
     # ----------------------------------------------------------------------------
     # Check if enough time to complete charge
     # ----------------------------------------------------------------------------
-    def is_not_enough_time_to_complete_charge(
-        self,
-        chargeable: Chargeable,
-        old_charge_current: float,
-        charger_max_current: float,
-        goal: ScheduleData,
-    ) -> bool:
-        """Is there not enough time to complete charging before scheduled end time?"""
-        is_not_enough_time = False
+    # def is_not_enough_time_to_complete_charge(
+    #     self,
+    #     chargeable: Chargeable,
+    #     old_charge_current: float,
+    #     charger_max_current: float,
+    #     goal: ScheduleData,
+    # ) -> bool:
+    #     """Is there not enough time to complete charging before scheduled end time?"""
+    #     is_not_enough_time = False
 
-        if goal.has_charge_endtime:
-            if goal.timer_session and not goal.sun_above_start_end_elevations:
-                # If session is triggered by timer and it is night time, then charge at max current.
-                return True
+    #     if goal.has_charge_endtime:
+    #         if goal.timer_session and not goal.sun_above_start_end_elevations:
+    #             # If session is triggered by timer and it is night time, then charge at max current.
+    #             return True
 
-            now_time = self.get_local_datetime()
-            available_charge_duration = goal.charge_endtime - now_time
+    #         now_time = self.get_local_datetime()
+    #         available_charge_duration = goal.charge_endtime - now_time
 
-            battery_soc = chargeable.get_state_of_charge()
-            if battery_soc is None:
-                return False
+    #         battery_soc = chargeable.get_state_of_charge()
+    #         if battery_soc is None:
+    #             return False
 
-            charge_limit = chargeable.get_charge_limit()
-            if charge_limit is None:
-                return False
+    #         charge_limit = chargeable.get_charge_limit()
+    #         if charge_limit is None:
+    #             return False
 
-            need_charge_duration = self._calculate_need_charge_duration(
-                battery_soc, charge_limit
-            )
+    #         need_charge_duration = self._calculate_need_charge_duration(
+    #             battery_soc, charge_limit
+    #         )
 
-            charger_max_charge_speed = self.option_get_entity_number_or_abort(
-                NUMBER_CHARGER_MAX_SPEED
-            )
-            # Duration in seconds to increase battery level by 1%
-            one_percent_charge_duration = timedelta(
-                seconds=60 * 60 / charger_max_charge_speed
-            )
+    #         charger_max_charge_speed = self.option_get_entity_number_or_abort(
+    #             NUMBER_CHARGER_MAX_SPEED
+    #         )
+    #         # Duration in seconds to increase battery level by 1%
+    #         one_percent_charge_duration = timedelta(
+    #             seconds=60 * 60 / charger_max_charge_speed
+    #         )
 
-            # Maximise minimum charge current if charge end time is set and it is night time or
-            # there is not enough time to charge, but only before charge end time.
-            # chargerMinCurrent might bounce between 0 and chargerMaxCurrent due to
-            # battery level not up-to-date or decimal inaccuracy, so stablise it to chargerMaxCurrent
-            # if current is already at chargerMaxCurrent and needChargeDuration is only
-            # slightly less than availableChargeDuration.
-            is_not_enough_time = available_charge_duration.total_seconds() > 0 and (
-                (self.is_sun_trigger() and not self.is_daytime())
-                or need_charge_duration >= available_charge_duration
-                or (
-                    (need_charge_duration + one_percent_charge_duration)
-                    >= available_charge_duration
-                    and round(old_charge_current) == round(charger_max_current)
-                )
-            )
+    #         # Maximise minimum charge current if charge end time is set and it is night time or
+    #         # there is not enough time to charge, but only before charge end time.
+    #         # chargerMinCurrent might bounce between 0 and chargerMaxCurrent due to
+    #         # battery level not up-to-date or decimal inaccuracy, so stablise it to chargerMaxCurrent
+    #         # if current is already at chargerMaxCurrent and needChargeDuration is only
+    #         # slightly less than availableChargeDuration.
+    #         is_not_enough_time = available_charge_duration.total_seconds() > 0 and (
+    #             (self.is_sun_trigger() and not self.is_daytime())
+    #             or need_charge_duration >= available_charge_duration
+    #             or (
+    #                 (need_charge_duration + one_percent_charge_duration)
+    #                 >= available_charge_duration
+    #                 and round(old_charge_current) == round(charger_max_current)
+    #             )
+    #         )
 
-        return is_not_enough_time
+    #     return is_not_enough_time
 
     # ----------------------------------------------------------------------------
     # Get schedule data
@@ -240,7 +240,7 @@ class ChargeScheduler(ScOptionState):
                 goal.timer_session  # Session started by timer.
                 and not goal.sun_above_start_end_elevations  # ie. night time.
             ):
-                goal.immediate_start = True
+                goal.max_charge_now = True
 
     # ----------------------------------------------------------------------------
     def _get_soc_for_max_charge_speed_calibration(
@@ -484,7 +484,7 @@ class ChargeScheduler(ScOptionState):
 
             if next_goal.has_charge_endtime:
                 if next_goal.propose_charge_starttime != datetime.min:
-                    if next_goal.is_immediate_start:
+                    if next_goal.max_charge_now:
                         now_time = self.get_local_datetime()
                         next_starttime = now_time + timedelta(minutes=2)
                     else:
