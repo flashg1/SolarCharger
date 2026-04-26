@@ -24,10 +24,10 @@ from .const import (
     SENSOR_LAST_CHECK,
     WEEKLY_CHARGE_ENDTIMES,
 )
-from .model_charge_control import ChargeControl
-from .model_device_control import DeviceControl
+from .helpers.utils import log_is_event_loop
+from .models.model_charge_control import ChargeControl
+from .models.model_device_control import DeviceControl
 from .sc_option_state import ScOptionState
-from .utils import log_is_event_loop
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

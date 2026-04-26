@@ -10,8 +10,8 @@ from .const import (
     SENSOR_SHARE_ALLOCATION,
 )
 from .helpers.general import async_set_allocated_power
-from .model_allocation import AllocationGroup, PowerAllocation
-from .model_device_control import DeviceControl
+from .models.model_allocation import AllocationGroup, PowerAllocation
+from .models.model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

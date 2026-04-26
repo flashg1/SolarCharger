@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..model_config import ConfigValueDict
+from ..models.model_config import ConfigValueDict
 
 
 # ----------------------------------------------------------------------------

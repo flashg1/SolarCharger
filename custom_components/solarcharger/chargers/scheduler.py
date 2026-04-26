@@ -15,12 +15,13 @@ from ..const import (
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
 )
 from ..exceptions.entity_exception import EntityExceptionError
-from ..sc_option_state import ChargeSchedule, ScheduleData, ScOptionState
-from ..utils import (
+from ..helpers.utils import (
     get_next_sunrise_time,
     get_sec_per_degree_sun_elevation,
     get_sun_elevation,
 )
+from ..models.model_schedule_data import ChargeSchedule, ScheduleData
+from ..sc_option_state import ScOptionState
 from .chargeable import Chargeable
 
 # ----------------------------------------------------------------------------
@@ -240,7 +241,7 @@ class ChargeScheduler(ScOptionState):
                 # Not enough time to charge.
                 goal.propose_charge_starttime <= goal.data_timestamp
                 or (
-                    # Session started by timer and night time.
+                    # Session started by timer and sun is below start and end elevations.
                     goal.timer_session and not goal.sun_above_start_end_elevations
                 )
             ):

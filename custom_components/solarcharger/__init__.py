@@ -26,8 +26,8 @@ from .const import (
     SUBENTRY_TYPE_DEFAULTS,
 )
 from .coordinator import SolarChargerCoordinator
-from .model_charge_control import ChargeControl, ControlEntities
-from .model_device_control import DeviceControl
+from .models.model_charge_control import ChargeControl, ControlEntities
+from .models.model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

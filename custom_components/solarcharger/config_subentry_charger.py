@@ -54,7 +54,7 @@ from .const import (
     SUPPORTED_CHARGER_DOMAIN_LIST,
 )
 from .exceptions.validation_exception import ValidationExceptionError
-from .utils import compose_subdomain
+from .helpers.utils import compose_subdomain
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

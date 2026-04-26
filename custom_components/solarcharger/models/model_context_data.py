@@ -1,22 +1,23 @@
-"""Context data models."""
+# ruff: noqa: TID252
+"""State machine context data model."""
 
 from dataclasses import dataclass
 
 # from datetime import datetime
 from typing import Any
 
-from .chargers.chargeable import Chargeable
-from .chargers.charger import Charger
-from .const import ChargeStatus, RunState
+from ..chargers.chargeable import Chargeable
+from ..chargers.charger import Charger
+from ..const import ChargeStatus, RunState
 from .model_charge_stats import ChargeStats
-from .sc_option_state import ScheduleData
+from .model_schedule_data import ScheduleData
 
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 @dataclass
 class ContextData:
-    """Charging process conext data."""
+    """Charging process context data."""
 
     charger: Charger
     chargeable: Chargeable

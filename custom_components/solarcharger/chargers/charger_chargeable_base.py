@@ -28,7 +28,7 @@ from ..const import (
     OPTION_CHARGER_SET_CHARGE_CURRENT,
 )
 from ..ha_device import HaDevice
-from ..model_config import ConfigValueDict
+from ..models.model_config import ConfigValueDict
 from ..sc_option_state import ScOptionState
 from .chargeable import Chargeable
 from .charger import Charger

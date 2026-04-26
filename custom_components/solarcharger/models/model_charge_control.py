@@ -1,4 +1,5 @@
-"""Data models."""
+# ruff: noqa: TID252
+"""Charge control data model."""
 
 from asyncio import Task
 from dataclasses import dataclass
@@ -24,14 +25,14 @@ from typing import TYPE_CHECKING
 #   You still need to use string literals for forward references if the type isn't available at runtime.
 #######################################################
 if TYPE_CHECKING:
-    from .button import SolarChargerButtonActionEntity
-    from .datetime import SolarChargerDateTimeConfigEntity
-    from .input_datetime import SolarChargerInputTimeConfigEntity
-    from .number import SolarChargerNumberConfigEntity
-    from .select import SolarChargerSelectEntity
-    from .sensor import SolarChargerSensorEntity
-    from .switch import SolarChargerSwitchEntity
-    from .time import SolarChargerTimeConfigEntity
+    from ..button import SolarChargerButtonActionEntity
+    from ..datetime import SolarChargerDateTimeConfigEntity
+    from ..input_datetime import SolarChargerInputTimeConfigEntity
+    from ..number import SolarChargerNumberConfigEntity
+    from ..select import SolarChargerSelectEntity
+    from ..sensor import SolarChargerSensorEntity
+    from ..switch import SolarChargerSwitchEntity
+    from ..time import SolarChargerTimeConfigEntity
 
 
 # ----------------------------------------------------------------------------

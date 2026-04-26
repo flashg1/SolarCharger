@@ -28,7 +28,7 @@ from .const import (
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
 from .exceptions.entity_exception import EntityExceptionError
-from .utils import get_next_sunrise_time, get_next_sunset_time
+from .helpers.utils import get_next_sunrise_time, get_next_sunset_time
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

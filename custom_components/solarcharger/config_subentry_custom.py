@@ -37,7 +37,7 @@ from .const import (
 )
 from .entity import compose_entity_id
 from .exceptions.validation_exception import ValidationExceptionError
-from .utils import compose_subdomain
+from .helpers.utils import compose_subdomain
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

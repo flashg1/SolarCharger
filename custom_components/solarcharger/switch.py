@@ -29,7 +29,7 @@ from .const import (
     SWITCH_SUN_TRIGGER,
 )
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
-from .model_device_control import DeviceControl
+from .models.model_device_control import DeviceControl
 
 type SWITCH_ACTION_TYPE = Callable[[DeviceControl, bool], Coroutine[Any, Any, None]]
 

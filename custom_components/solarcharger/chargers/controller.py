@@ -28,13 +28,13 @@ from ..const import (
     SENSOR_INSTANCE_COUNT,
     SWITCH_CHARGE,
 )
-from ..model_charge_control import ChargeControl
+from ..helpers.utils import get_is_sun_rising, get_sun_elevation, log_is_event_loop
+from ..models.model_charge_control import ChargeControl
+from ..models.model_schedule_data import ScheduleData
 from ..sc_option_state import ScOptionState
 from ..state_machine.solar_charge import SolarCharge
-from ..utils import get_is_sun_rising, get_sun_elevation, log_is_event_loop
 from .chargeable import Chargeable
 from .charger import Charger
-from .scheduler import ScheduleData
 from .tracker import Tracker
 
 # ----------------------------------------------------------------------------

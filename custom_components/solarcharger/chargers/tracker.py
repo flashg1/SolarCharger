@@ -47,12 +47,12 @@ from ..const import (
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     SENSOR_CHARGER_ALLOCATED_POWER,
 )
-from ..sc_option_state import ScOptionState
-from ..utils import (
+from ..helpers.utils import (
     remove_all_callback_subscriptions,
     remove_callback_subscription,
     save_callback_subscription,
 )
+from ..sc_option_state import ScOptionState
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

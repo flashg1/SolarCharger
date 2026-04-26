@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.core import State
 
 from ..const import SENSOR_CHARGER_ALLOCATED_POWER
-from ..model_charge_control import ChargeControl
+from ..models.model_charge_control import ChargeControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

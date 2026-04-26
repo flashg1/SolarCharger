@@ -22,7 +22,7 @@ from ..const import (
     OPTION_OCPP_TRANSACTION_ID,
 )
 from ..entity import compose_entity_id
-from ..model_config import ConfigValue, ConfigValueDict
+from ..models.model_config import ConfigValue, ConfigValueDict
 from .charger_chargeable_base import ChargerChargeableBase
 
 # ----------------------------------------------------------------------------

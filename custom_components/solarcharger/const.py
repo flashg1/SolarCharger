@@ -5,7 +5,7 @@ from typing import Any
 
 from homeassistant.const import Platform, __version__ as HA_VERSION
 
-from .utils import compose_subdomain
+from .helpers.utils import compose_subdomain
 
 MANUFACTURER = "FlashG"
 NAME = "Solar Charger"

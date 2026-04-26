@@ -20,10 +20,11 @@ from ..const import (
     RunState,
 )
 from ..exceptions.entity_exception import EntityExceptionError
-from ..model_charge_stats import ChargeStats
-from ..model_config import ConfigValueDict
-from ..model_context_data import ContextData
-from ..sc_option_state import ScheduleData, StateOfCharge
+from ..models.model_charge_stats import ChargeStats
+from ..models.model_config import ConfigValueDict
+from ..models.model_context_data import ContextData
+from ..models.model_schedule_data import ScheduleData
+from ..models.model_state_of_charge import StateOfCharge
 from .solar_charge_state import SolarChargeState
 from .state_pause import StatePause
 from .state_tidyup import StateTidyUp

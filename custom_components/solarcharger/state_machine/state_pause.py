@@ -8,8 +8,8 @@ import logging
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import SENSOR_SHARE_ALLOCATION, ChargeStatus, RunState
-from ..model_charge_stats import ChargeStats
-from ..model_context_data import ContextData
+from ..models.model_charge_stats import ChargeStats
+from ..models.model_context_data import ContextData
 
 # Import Modules, Not Classes: Instead of from machine import StateA, use
 # import machine and refer to machine.StateA. This breaks the cycle because
