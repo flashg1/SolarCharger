@@ -77,6 +77,10 @@ class ChargeScheduler(ScOptionState):
         is_not_enough_time = False
 
         if goal.has_charge_endtime:
+            if goal.timer_session and not goal.sun_above_start_end_elevations:
+                # If session is triggered by timer and it is night time, then charge at max current.
+                return True
+
             now_time = self.get_local_datetime()
             available_charge_duration = goal.charge_endtime - now_time
 
@@ -232,8 +236,11 @@ class ChargeScheduler(ScOptionState):
                 goal.charge_endtime - goal.need_charge_duration
             )
 
-            if goal.propose_charge_starttime <= goal.data_timestamp:
-                goal.is_immediate_start = True
+            if goal.propose_charge_starttime <= goal.data_timestamp or (
+                goal.timer_session  # Session started by timer.
+                and not goal.sun_above_start_end_elevations  # ie. night time.
+            ):
+                goal.immediate_start = True
 
     # ----------------------------------------------------------------------------
     def _get_soc_for_max_charge_speed_calibration(
@@ -304,6 +311,7 @@ class ChargeScheduler(ScOptionState):
     async def async_get_schedule_data(
         self,
         chargeable: Chargeable,
+        timer_session: bool,
         include_tomorrow: bool,
         started_calibration: bool,
         msg: str = "",
@@ -311,11 +319,17 @@ class ChargeScheduler(ScOptionState):
     ) -> ScheduleData:
         """Calculate charge schedule data for today or tomorrow if session is started by timer."""
 
-        goal = ScheduleData(weekly_schedule=[])
-
         # Ensure time is in local timezone
         now_time = self.get_local_datetime()
+        goal = ScheduleData(weekly_schedule=[])
         goal.data_timestamp = now_time
+        goal.timer_session = timer_session
+        goal.include_tomorrow = include_tomorrow
+
+        # Sun trigger might be off but should be ok.
+        (goal.sun_above_start_end_elevations, goal.sun_elevation) = (
+            self.is_sun_above_start_end_elevation_triggers()
+        )
 
         #####################################
         # Good place to throws exception in the charging loop if device is not ready and will try again in the next loop.
@@ -326,8 +340,8 @@ class ChargeScheduler(ScOptionState):
         goal.old_charge_limit = self._get_charge_limit_or_abort(chargeable)
         goal.new_charge_limit = goal.old_charge_limit
 
-        sun_state = self.get_sun_state_or_abort()
-        goal.sun_elevation = get_sun_elevation(self.caller, sun_state)
+        # sun_state = self.get_sun_state_or_abort()
+        # goal.sun_elevation = get_sun_elevation(self.caller, sun_state)
 
         # Normal schedule
         if self.is_schedule_charge():
@@ -365,7 +379,7 @@ class ChargeScheduler(ScOptionState):
                 # Ending session: Called to calculate next trigger time, so include_tomorrow=True
                 if (
                     # Use tomorrow's charge limit if time is between end elevation trigger and midnight, or include_tomorrow is true.
-                    include_tomorrow
+                    goal.include_tomorrow
                     # or self._is_sun_between_end_elevation_trigger_and_sunset()
                     # or self.is_time_between_sunset_and_midnight()
                 ):
@@ -459,6 +473,7 @@ class ChargeScheduler(ScOptionState):
 
         next_goal = await self.async_get_schedule_data(
             chargeable,
+            timer_session=False,
             include_tomorrow=True,
             started_calibration=started_calibration,
             msg="Next session",

@@ -533,6 +533,33 @@ class SolarCharge(ScOptionState):
         return self.is_fast_charge_mode()
 
     # ----------------------------------------------------------------------------
+    def is_monitor_available_power(self) -> bool:
+        """Is monitor available power option enabled?"""
+        need_to_monitor = False
+
+        if self.max_allocation_count > 0:
+            # Yes, monitor config switched on.
+            need_to_monitor = True
+
+            max_current = self.get_charger_max_current()
+            min_current = self.get_charger_min_current(max_current)
+
+            if (
+                # Time-based min current using template helper.
+                min_current == max_current
+                # Note running goal is updated in both charging and paused states.
+                or (
+                    self.running_goal.has_charge_endtime
+                    and self.running_goal.immediate_start
+                )
+                or self.is_fast_charge_mode()
+                or self.is_calibrate_max_charge_speed()
+            ):
+                need_to_monitor = False
+
+        return need_to_monitor
+
+    # ----------------------------------------------------------------------------
     # Machine state functions
     # ----------------------------------------------------------------------------
     def log_context(self, context: ContextData) -> None:
@@ -576,9 +603,6 @@ class SolarCharge(ScOptionState):
         ].entity_value
 
         context.is_sun_trigger = self.is_sun_trigger()
-        (context.is_sun_above_start_end_elevations, context.elevation) = (
-            self.is_sun_above_start_end_elevation_triggers()
-        )
         context.is_use_secondary_power_source = self.is_use_secondary_power_source()
         context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
@@ -586,11 +610,11 @@ class SolarCharge(ScOptionState):
         # and scheduling next session immediately.
         context.current_time_with_grace = goal.data_timestamp + timedelta(minutes=30)
         if goal.has_charge_endtime and goal.propose_charge_starttime != datetime.min:
-            context.is_immediate_start_with_grace = (
+            context.immediate_start_with_grace = (
                 goal.propose_charge_starttime <= context.current_time_with_grace
             )
         else:
-            context.is_immediate_start_with_grace = False
+            context.immediate_start_with_grace = False
 
         return context
 
@@ -610,12 +634,12 @@ class SolarCharge(ScOptionState):
             and (context.stats.loop_success_count == 0 or context.is_charging)
             and (
                 not context.is_sun_trigger  # Sun trigger off, continue.
-                or context.is_sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
+                or context.goal.sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
                 or context.is_use_secondary_power_source
                 or context.is_calibrate_max_charge_speed
                 or (
                     context.goal.has_charge_endtime
-                    and context.is_immediate_start_with_grace
+                    and context.immediate_start_with_grace
                 )
             )
         )
@@ -650,13 +674,13 @@ class SolarCharge(ScOptionState):
         continue_pause = (
             context.is_connected
             and (
-                not context.is_sun_trigger or context.is_sun_above_start_end_elevations
+                not context.is_sun_trigger
+                or context.goal.sun_above_start_end_elevations
             )
             and not context.is_use_secondary_power_source
             and not context.is_calibrate_max_charge_speed
             and not (
-                context.goal.has_charge_endtime
-                and context.is_immediate_start_with_grace
+                context.goal.has_charge_endtime and context.immediate_start_with_grace
             )
         )
 
@@ -702,8 +726,9 @@ class SolarCharge(ScOptionState):
         # Get schedule data at start of each loop since schedule might change while charging.
         self.running_goal = await self.scheduler.async_get_schedule_data(
             chargeable,
-            self.session_triggered_by_timer,
-            self.started_calibrate_max_charge_speed,
+            timer_session=self.session_triggered_by_timer,
+            include_tomorrow=self.session_triggered_by_timer,
+            started_calibration=self.started_calibrate_max_charge_speed,
             msg=state.value,
         )
 
@@ -744,6 +769,7 @@ class SolarCharge(ScOptionState):
 
         return await self.scheduler.async_get_schedule_data(
             self.chargeable,
+            timer_session=False,
             include_tomorrow=True,
             started_calibration=False,
             msg="Schedule",
@@ -832,33 +858,6 @@ class SolarCharge(ScOptionState):
         self.entities.sensors[SENSOR_AVERAGE_PAUSE_DURATION].set_state(
             stats.pause_average_duration.total_seconds() / 60
         )
-
-    # ----------------------------------------------------------------------------
-    def is_monitor_available_power(self) -> bool:
-        """Is monitor available power option enabled?"""
-        need_to_monitor = False
-
-        if self.max_allocation_count > 0:
-            # Yes, monitor config switched on.
-            need_to_monitor = True
-
-            max_current = self.get_charger_max_current()
-            min_current = self.get_charger_min_current(max_current)
-
-            if (
-                # Time-based min current using template helper.
-                min_current == max_current
-                # Note running goal is updated in both charging and paused states.
-                or (
-                    self.running_goal.has_charge_endtime
-                    and self.running_goal.is_immediate_start
-                )
-                or self.is_fast_charge_mode()
-                or self.is_calibrate_max_charge_speed()
-            ):
-                need_to_monitor = False
-
-        return need_to_monitor
 
     # ----------------------------------------------------------------------------
     def is_average_allocated_power_more_than_min_workable_power(

@@ -364,8 +364,9 @@ class StateCharge(SolarChargeState):
         # Set the calibration charge limit
         goal = await self.solarcharge.scheduler.async_get_schedule_data(
             chargeable,
-            self.solarcharge.session_triggered_by_timer,
-            self.solarcharge.started_calibrate_max_charge_speed,
+            timer_session=self.solarcharge.session_triggered_by_timer,
+            include_tomorrow=self.solarcharge.session_triggered_by_timer,
+            started_calibration=self.solarcharge.started_calibrate_max_charge_speed,
             msg="Calibration",
         )
         if self.solarcharge.scheduler.calibration_charge_limit == -1:

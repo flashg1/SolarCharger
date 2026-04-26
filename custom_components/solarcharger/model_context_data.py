@@ -40,14 +40,12 @@ class ContextData:
     is_charging: bool = False
     charging_status: Any = ""
     is_sun_trigger: bool = False
-    is_sun_above_start_end_elevations: bool = False
-    elevation: float = 0
     is_use_secondary_power_source: bool = False
     is_calibrate_max_charge_speed: bool = False
 
     # Goal
     current_time_with_grace: datetime = datetime.min
-    is_immediate_start_with_grace: bool = False
+    immediate_start_with_grace: bool = False
 
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
@@ -66,13 +64,15 @@ class ContextData:
             f"is_charging={self.is_charging} ("
             f"{self.charging_status}), "
             f"is_sun_trigger={self.is_sun_trigger}, "
-            f"is_sun_above_start_end_elevations={self.is_sun_above_start_end_elevations}, "
-            f"elevation={self.elevation}, "
+            f"is_sun_above_start_end_elevations={self.goal.sun_above_start_end_elevations}, "
+            f"elevation={self.goal.sun_elevation}, "
             f"is_use_secondary_power_source={self.is_use_secondary_power_source}, "
             f"is_calibrate_max_charge_speed={self.is_calibrate_max_charge_speed}, "
+            f"timer_session={self.goal.timer_session}, "
+            f"include_tomorrow={self.goal.include_tomorrow}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "
-            f"is_immediate_start={self.goal.is_immediate_start}, "
+            f"immediate_start={self.goal.immediate_start}, "
             f"current_time_with_grace={self.current_time_with_grace}, "
-            f"is_immediate_start_with_grace={self.is_immediate_start_with_grace}, "
+            f"immediate_start_with_grace={self.immediate_start_with_grace}, "
             f"{self.stats}"
         )

@@ -83,6 +83,7 @@ class ScheduleData:
     data_timestamp: datetime = datetime.min
 
     # Sun elevation
+    sun_above_start_end_elevations: bool = True
     sun_elevation: float = 0
 
     # Current device charge limit
@@ -104,8 +105,18 @@ class ScheduleData:
     # Must check has_charge_endtime and propose_charge_starttime before use.
     propose_charge_starttime: datetime = datetime.min
 
-    # Is charge to start immediately?
-    is_immediate_start: bool = False
+    # Is session started by timer?
+    timer_session: bool = False
+
+    # Include tomorrow for scheduling?
+    include_tomorrow: bool = False
+
+    # Is charge to start immediately at max current?
+    # If charge end time is set, immediate start is true if:
+    # - there is not enough time to meet charge end time goal, or
+    # - session is triggered by timer and it is night time.
+    # This means charging can still pause during the day, but not at night.
+    immediate_start: bool = False
 
     def __repr__(self) -> str:
         """Return string representation of ScheduleData."""
@@ -114,11 +125,12 @@ class ScheduleData:
             f"use_charge_schedule={self.use_charge_schedule}, "
             f"has_charge_endtime={self.has_charge_endtime}, charge_endtime={self.charge_endtime}, "
             f"propose_charge_starttime={self.propose_charge_starttime}, need_charge_duration={self.need_charge_duration}, "
-            f"is_immediate_start={self.is_immediate_start}, "
+            f"timer_session={self.timer_session}, include_tomorrow={self.include_tomorrow}, immediate_start={self.immediate_start}, "
             f"battery_soc={self.battery_soc}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "
-            f"sun_elevation={self.sun_elevation}, data_timestamp={self.data_timestamp}, "
+            f"sun_elevation={self.sun_elevation}, sun_above_start_end_elevations={self.sun_above_start_end_elevations}, "
+            f"data_timestamp={self.data_timestamp}, "
             f"{self.weekly_schedule}"
         )
 

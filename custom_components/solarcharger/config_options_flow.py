@@ -476,8 +476,8 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): choose_selector(
                 api_entities,
                 OPTION_CHARGEE_SOC_SENSOR,
-                SENSOR_ENTITY_SELECTOR_READ_ONLY,
-                SENSOR_ENTITY_SELECTOR,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
             ),
             self._optional(
                 subentry, OPTION_CHARGEE_GET_CHARGE_LIMIT, use_default
