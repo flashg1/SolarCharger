@@ -2,7 +2,7 @@
 """Solar charge state machine implementation to manage solar charging."""
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 import inspect
 import logging
 import threading
