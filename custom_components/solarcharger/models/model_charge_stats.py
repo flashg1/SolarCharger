@@ -8,7 +8,7 @@ from datetime import timedelta
 # ----------------------------------------------------------------------------
 @dataclass
 class ChargeStats:
-    """Data structure for charge stats. Spans multiple machine states."""
+    """Data structure for charge stats. Persistent data across states."""
 
     #####################################
     # Loop stats

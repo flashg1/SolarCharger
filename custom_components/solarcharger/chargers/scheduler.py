@@ -69,7 +69,6 @@ class ChargeScheduler(ScOptionState):
     # ----------------------------------------------------------------------------
     # def is_not_enough_time_to_complete_charge(
     #     self,
-    #     chargeable: Chargeable,
     #     old_charge_current: float,
     #     charger_max_current: float,
     #     goal: ScheduleData,
@@ -82,40 +81,19 @@ class ChargeScheduler(ScOptionState):
     #             # If session is triggered by timer and it is night time, then charge at max current.
     #             return True
 
-    #         now_time = self.get_local_datetime()
-    #         available_charge_duration = goal.charge_endtime - now_time
-
-    #         battery_soc = chargeable.get_state_of_charge()
-    #         if battery_soc is None:
-    #             return False
-
-    #         charge_limit = chargeable.get_charge_limit()
-    #         if charge_limit is None:
-    #             return False
-
-    #         need_charge_duration = self._calculate_need_charge_duration(
-    #             battery_soc, charge_limit
-    #         )
-
-    #         charger_max_charge_speed = self.option_get_entity_number_or_abort(
-    #             NUMBER_CHARGER_MAX_SPEED
-    #         )
-    #         # Duration in seconds to increase battery level by 1%
-    #         one_percent_charge_duration = timedelta(
-    #             seconds=60 * 60 / charger_max_charge_speed
-    #         )
-
     #         # Maximise minimum charge current if charge end time is set and it is night time or
     #         # there is not enough time to charge, but only before charge end time.
     #         # chargerMinCurrent might bounce between 0 and chargerMaxCurrent due to
     #         # battery level not up-to-date or decimal inaccuracy, so stablise it to chargerMaxCurrent
     #         # if current is already at chargerMaxCurrent and needChargeDuration is only
     #         # slightly less than availableChargeDuration.
+    #         available_charge_duration = goal.charge_endtime - goal.data_timestamp
     #         is_not_enough_time = available_charge_duration.total_seconds() > 0 and (
-    #             (self.is_sun_trigger() and not self.is_daytime())
-    #             or need_charge_duration >= available_charge_duration
+    #             # (self.is_sun_trigger() and not self.is_daytime())
+    #             (self.is_sun_trigger() and not goal.sun_above_start_end_elevations)
+    #             or goal.need_charge_duration >= available_charge_duration
     #             or (
-    #                 (need_charge_duration + one_percent_charge_duration)
+    #                 (goal.need_charge_duration + goal.one_percent_charge_duration)
     #                 >= available_charge_duration
     #                 and round(old_charge_current) == round(charger_max_current)
     #             )
@@ -169,16 +147,23 @@ class ChargeScheduler(ScOptionState):
                 goal.new_charge_limit = look_ahead_charge_limit
 
     # ----------------------------------------------------------------------------
-    def _calculate_need_charge_duration(
-        self, battery_soc: float, charge_limit: float
-    ) -> timedelta:
-        """Calculate needed charge duration to reach charge limit."""
+    def _get_one_percent_charge_duration(self) -> float:
+        """Get duration in seconds to increase battery level by 1%."""
 
         charger_max_charge_speed = self.option_get_entity_number_or_abort(
             NUMBER_CHARGER_MAX_SPEED
         )
-        # Duration in seconds to increase battery level by 1%
-        one_percent_charge_duration = 60 * 60 / charger_max_charge_speed
+
+        return 60 * 60 / charger_max_charge_speed
+
+    # ----------------------------------------------------------------------------
+    def _calculate_need_charge_duration(
+        self,
+        battery_soc: float,
+        charge_limit: float,
+        one_percent_charge_duration: float,
+    ) -> timedelta:
+        """Calculate needed charge duration to reach charge limit."""
 
         # SOC can be incorrect by 6% (approx. 1 hour) if required to charge to 100%
         extra_seconds = 0
@@ -195,12 +180,12 @@ class ChargeScheduler(ScOptionState):
         _LOGGER.info(
             "%s: charge_limit=%.1f %%, "
             "battery_soc=%.1f %%, "
-            "charger_max_charge_speed=%.1f %%/hr, "
+            # "charger_max_charge_speed=%.1f %%/hr, "
             "one_percent_charge_duration=%.2f sec",
             self.caller,
             charge_limit,
             battery_soc,
-            charger_max_charge_speed,
+            # charger_max_charge_speed,
             one_percent_charge_duration,
         )
 
@@ -211,6 +196,8 @@ class ChargeScheduler(ScOptionState):
         """Calculate charge start time required to reach charge limit at charge end time."""
 
         if goal.has_charge_endtime:
+            # goal.available_charge_duration = goal.charge_endtime - goal.data_timestamp
+
             if goal.battery_soc is None:
                 _LOGGER.info(
                     "%s: Unable to get battery SOC, cannot schedule next charge session",
@@ -229,8 +216,11 @@ class ChargeScheduler(ScOptionState):
 
             # Must check propose_charge_starttime before use due to return above, otherwise will get following exception when comparing times:
             # tesla_custom_tesla23m3: Abort charge: can't compare offset-naive and offset-aware datetimes
+            goal.one_percent_charge_duration = self._get_one_percent_charge_duration()
             goal.need_charge_duration = self._calculate_need_charge_duration(
-                goal.battery_soc, goal.new_charge_limit
+                goal.battery_soc,
+                goal.new_charge_limit,
+                goal.one_percent_charge_duration,
             )
 
             goal.propose_charge_starttime = (
@@ -239,15 +229,17 @@ class ChargeScheduler(ScOptionState):
 
             # Current charge session.
             if (
-                # Add 30 minutes grace period to avoid time drift stopping charge while charging.
-                goal.propose_charge_starttime - timedelta(minutes=30)
+                # Check if not enough time to charge.
+                # Once started charging at max current, add 30 minutes grace period to avoid time drift stopping charge while charging.
+                goal.propose_charge_starttime
+                - timedelta(minutes=30 * goal.started_max_charge)
                 <= goal.data_timestamp
                 or (
                     # Session started by timer and sun is below start and end elevations.
                     goal.timer_session and not goal.sun_above_start_end_elevations
                 )
             ):
-                goal.max_charge_now_avoid_drift = True
+                goal.max_charge_now = True
 
             # Next charge session.
             if (
@@ -328,6 +320,7 @@ class ChargeScheduler(ScOptionState):
         timer_session: bool,
         include_tomorrow: bool,
         started_calibration: bool,
+        started_max_charge: int,
         msg: str = "",
         log_it: bool = False,
     ) -> ScheduleData:
@@ -339,6 +332,7 @@ class ChargeScheduler(ScOptionState):
         goal.data_timestamp = now_time
         goal.timer_session = timer_session
         goal.include_tomorrow = include_tomorrow
+        goal.started_max_charge = started_max_charge
 
         # Sun trigger might be off but should be ok.
         (goal.sun_above_start_end_elevations, goal.sun_elevation) = (
@@ -490,6 +484,7 @@ class ChargeScheduler(ScOptionState):
             timer_session=False,
             include_tomorrow=True,
             started_calibration=started_calibration,
+            started_max_charge=0,
             msg="Next session",
             log_it=True,
         )

@@ -110,6 +110,7 @@ class SolarCharge(ScOptionState):
         self.power_allocations: list[float] = []
         self.max_allocation_count = 0
         self.stats = ChargeStats()
+        self.started_max_charge: int = 0
 
         # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
         self.semaphore_update_ha_task = threading.Semaphore(value=1)
@@ -552,7 +553,7 @@ class SolarCharge(ScOptionState):
                 # Note running goal is updated in both charging and paused states.
                 or (
                     self.running_goal.has_charge_endtime
-                    and self.running_goal.max_charge_now_avoid_drift
+                    and self.running_goal.max_charge_now
                 )
                 or self.is_fast_charge_mode()
                 or self.is_calibrate_max_charge_speed()
@@ -629,10 +630,7 @@ class SolarCharge(ScOptionState):
                 or context.goal.sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
                 or context.is_use_secondary_power_source
                 or context.is_calibrate_max_charge_speed
-                or (
-                    context.goal.has_charge_endtime
-                    and context.goal.max_charge_now_avoid_drift
-                )
+                or (context.goal.has_charge_endtime and context.goal.max_charge_now)
             )
         )
 
@@ -671,10 +669,7 @@ class SolarCharge(ScOptionState):
             )
             and not context.is_use_secondary_power_source
             and not context.is_calibrate_max_charge_speed
-            and not (
-                context.goal.has_charge_endtime
-                and context.goal.max_charge_now_avoid_drift
-            )
+            and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
         )
 
         if continue_pause:
@@ -722,8 +717,12 @@ class SolarCharge(ScOptionState):
             timer_session=self.session_triggered_by_timer,
             include_tomorrow=self.session_triggered_by_timer,
             started_calibration=self.started_calibrate_max_charge_speed,
+            started_max_charge=self.started_max_charge,
             msg=state.value,
         )
+
+        if self.running_goal.max_charge_now:
+            self.started_max_charge = 1
 
         # Only set charge limit when in charging state because it can turn on the charger.
         # Once set, the latest and correct state can be requested without calling _async_update_ha() first.
@@ -765,6 +764,7 @@ class SolarCharge(ScOptionState):
             timer_session=False,
             include_tomorrow=True,
             started_calibration=False,
+            started_max_charge=0,
             msg="Schedule",
             log_it=False,
         )

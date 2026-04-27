@@ -68,6 +68,7 @@ class ContextData:
             f"is_calibrate_max_charge_speed={self.is_calibrate_max_charge_speed}, "
             f"timer_session={self.goal.timer_session}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "
-            f"max_charge_now_avoid_drift={self.goal.max_charge_now_avoid_drift}, "
+            f"started_max_charge={self.goal.started_max_charge}, "
+            f"max_charge_now={self.goal.max_charge_now}, "
             f"{self.stats}"
         )
