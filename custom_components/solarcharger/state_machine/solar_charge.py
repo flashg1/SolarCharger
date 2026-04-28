@@ -721,7 +721,7 @@ class SolarCharge(ScOptionState):
             msg=state.value,
         )
 
-        if self.running_goal.max_charge_now:
+        if self.running_goal.max_charge_now and self.started_max_charge == 0:
             self.started_max_charge = 1
 
         # Only set charge limit when in charging state because it can turn on the charger.

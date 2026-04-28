@@ -66,6 +66,7 @@ class StateStart(SolarChargeState):
         self.solarcharge.session_triggered_by_timer = (
             self._is_session_triggered_by_timer()
         )
+        self.solarcharge.started_max_charge = 0
         self.solarcharge.started_calibrate_max_charge_speed = False
 
     # ----------------------------------------------------------------------------
