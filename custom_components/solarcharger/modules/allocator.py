@@ -1,17 +1,18 @@
+# ruff: noqa: TID252
 """Power allocator implementation."""
 
 import logging
 
 from homeassistant.config_entries import ConfigSubentry
 
-from .const import (
+from ..const import (
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_CONSUMED_POWER,
     SENSOR_SHARE_ALLOCATION,
 )
-from .helpers.general import async_set_allocated_power
-from .models.model_allocation import AllocationGroup, PowerAllocation
-from .models.model_device_control import DeviceControl
+from ..helpers.general import async_set_allocated_power
+from ..models.model_allocation import AllocationGroup, PowerAllocation
+from ..models.model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

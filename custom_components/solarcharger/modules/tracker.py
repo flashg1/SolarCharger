@@ -28,6 +28,8 @@ from homeassistant.helpers.event import async_call_later, async_track_state_chan
 from homeassistant.helpers.typing import NoEventData
 from homeassistant.util.event_type import EventType
 
+from ..chargers.sc_option_state import ScOptionState
+
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
 from ..const import (
@@ -52,7 +54,6 @@ from ..helpers.utils import (
     remove_callback_subscription,
     save_callback_subscription,
 )
-from ..sc_option_state import ScOptionState
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

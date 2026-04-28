@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """SolarCharger entity state using config from config_entry.options and config_subentry."""
 
 import asyncio
@@ -11,8 +12,8 @@ from propcache.api import cached_property
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant, State
 
-from .config_utils import get_saved_option_value
-from .const import (
+from ..config.config_utils import get_saved_option_value
+from ..const import (
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
     NUMBER_CHARGE_LIMIT_FRIDAY,
@@ -48,10 +49,10 @@ from .const import (
     WEEKLY_CHARGE_LIMITS,
     WEEKLY_DAY_NAMES,
 )
-from .entity import compose_entity_id
-from .helpers.utils import get_sun_attribute_or_abort
-from .models.model_config import ConfigValue, ConfigValueDict
-from .models.model_schedule_data import ChargeSchedule
+from ..entity import compose_entity_id
+from ..helpers.utils import get_sun_attribute_or_abort
+from ..models.model_config import ConfigValue, ConfigValueDict
+from ..models.model_schedule_data import ChargeSchedule
 from .sc_config_state import ScConfigState
 
 # ----------------------------------------------------------------------------

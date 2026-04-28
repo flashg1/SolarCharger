@@ -69,19 +69,19 @@ class ScheduleData:
 
     # Current charge session
     # ======================
-    # Is charge at max current now to avoid drift?
+    # Is charge at max current now?
     # If charge end time is set, then set this to true if:
     # - there is not enough time to meet charge end time goal, or
     # - session is triggered by timer and it is night time.
+    # This means charging can still pause during the day, but not at night.
     # Once started charging at max current, it will add 30-minute grace period to
     # avoid time drift stopping charge while charging.
-    # This means charging can still pause during the day, but not at night.
     max_charge_now: bool = False
 
     # Next charge session
     # ===================
     # Schedule next session to start immediately at max current?
-    # Only used when scheduling next charge session on completion of current session.
+    # This is only used when scheduling next session on completion of current session.
     # Actual proposed charge start time is required.
     # If charge end time is set, then set this to true if:
     # - there is not enough time to meet charge end time goal.

@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Solar charger coordinator."""
 
 from datetime import datetime, time, timedelta
@@ -12,9 +13,9 @@ from homeassistant.core import CALLBACK_TYPE, HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
 
-from .allocator import PowerAllocator
-from .config_utils import get_subentry_id
-from .const import (
+from ..chargers.sc_option_state import ScOptionState
+from ..config.config_utils import get_subentry_id
+from ..const import (
     DEFAULT_CHARGE_LIMIT_MAP,
     DOMAIN,
     ERROR_DEFAULT_CHARGE_LIMIT,
@@ -24,10 +25,10 @@ from .const import (
     SENSOR_LAST_CHECK,
     WEEKLY_CHARGE_ENDTIMES,
 )
-from .helpers.utils import log_is_event_loop
-from .models.model_charge_control import ChargeControl
-from .models.model_device_control import DeviceControl
-from .sc_option_state import ScOptionState
+from ..helpers.utils import log_is_event_loop
+from ..models.model_charge_control import ChargeControl
+from ..models.model_device_control import DeviceControl
+from .allocator import PowerAllocator
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

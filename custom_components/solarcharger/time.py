@@ -24,8 +24,8 @@ from .const import (
     TIME_CHARGE_ENDTIME_TUESDAY,
     TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
-from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .modules.coordinator import SolarChargerCoordinator
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

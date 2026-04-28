@@ -18,8 +18,7 @@ from homeassistant.helpers import device_registry as dr
 # from homeassistant.helpers.sun import get_astral_event_next
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..chargers.scheduler import ChargeScheduler
-from ..chargers.tracker import Tracker
+from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     DOMAIN,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
@@ -59,7 +58,8 @@ from ..models.model_config import ConfigValueDict
 from ..models.model_context_data import ContextData
 from ..models.model_schedule_data import ScheduleData
 from ..models.model_state_of_charge import StateOfCharge
-from ..sc_option_state import ScOptionState
+from ..modules.tracker import Tracker
+from .scheduler import ChargeScheduler
 from .solar_charge_state import SolarChargeState
 from .state_start import StateStart
 from .state_tidyup import StateTidyUp

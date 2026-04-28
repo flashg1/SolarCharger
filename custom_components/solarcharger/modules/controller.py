@@ -22,6 +22,9 @@ from homeassistant.core import (
 )
 from homeassistant.helpers.typing import NoEventData
 
+from ..chargers.chargeable import Chargeable
+from ..chargers.charger import Charger
+from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     SENSOR_CONSUMED_POWER,
@@ -31,10 +34,7 @@ from ..const import (
 from ..helpers.utils import get_is_sun_rising, get_sun_elevation, log_is_event_loop
 from ..models.model_charge_control import ChargeControl
 from ..models.model_schedule_data import ScheduleData
-from ..sc_option_state import ScOptionState
 from ..state_machine.solar_charge import SolarCharge
-from .chargeable import Chargeable
-from .charger import Charger
 from .tracker import Tracker
 
 # ----------------------------------------------------------------------------

@@ -27,11 +27,11 @@ from ..const import (
     OPTION_CHARGER_PLUGGED_IN_SENSOR,
     OPTION_CHARGER_SET_CHARGE_CURRENT,
 )
-from ..ha_device import HaDevice
 from ..models.model_config import ConfigValueDict
-from ..sc_option_state import ScOptionState
 from .chargeable import Chargeable
 from .charger import Charger
+from .ha_device import HaDevice
+from .sc_option_state import ScOptionState
 
 _LOGGER = logging.getLogger(__name__)
 

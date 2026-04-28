@@ -16,8 +16,8 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util.dt import as_local
 
 from .const import DATETIME, DATETIME_NEXT_CHARGE_TIME, DOMAIN
-from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .modules.coordinator import SolarChargerCoordinator
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

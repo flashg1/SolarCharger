@@ -21,7 +21,7 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .config_utils import get_device_config_default_value
+from .config.config_utils import get_device_config_default_value
 from .const import (
     DOMAIN,
     NUMBER,
@@ -61,13 +61,13 @@ from .const import (
     OPTION_CHARGEE_CHARGE_LIMIT,
     OPTION_CHARGER_MAX_CURRENT,
 )
-from .coordinator import SolarChargerCoordinator
 from .entity import (
     SolarChargerEntity,
     SolarChargerEntityType,
     get_single_entity_type,
     is_create_entity,
 )
+from .modules.coordinator import SolarChargerCoordinator
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

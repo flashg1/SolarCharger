@@ -16,7 +16,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .config_utils import get_device_config_default_value
+from .config.config_utils import get_device_config_default_value
 from .const import (
     DOMAIN,
     # RESTORE_ON_START_FALSE,
@@ -25,8 +25,8 @@ from .const import (
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_NONE,
 )
-from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .modules.coordinator import SolarChargerCoordinator
 
 
 # ----------------------------------------------------------------------------

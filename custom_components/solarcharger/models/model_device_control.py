@@ -3,7 +3,7 @@
 
 from dataclasses import dataclass
 
-from ..chargers.controller import ChargeController
+from ..modules.controller import ChargeController
 
 
 # ----------------------------------------------------------------------------

@@ -32,8 +32,8 @@ from .const import (
     SENSOR_SHARE_ALLOCATION,
     RunState,
 )
-from .coordinator import SolarChargerCoordinator
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .modules.coordinator import SolarChargerCoordinator
 
 
 # ----------------------------------------------------------------------------

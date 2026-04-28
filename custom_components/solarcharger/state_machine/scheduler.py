@@ -7,6 +7,8 @@ import logging
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 
+from ..chargers.chargeable import Chargeable
+from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     CALIBRATE_MAX_SOC,
     CALIBRATE_SOC_INCREASE,
@@ -21,8 +23,6 @@ from ..helpers.utils import (
     get_sun_elevation,
 )
 from ..models.model_schedule_data import ChargeSchedule, ScheduleData
-from ..sc_option_state import ScOptionState
-from .chargeable import Chargeable
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -196,8 +196,6 @@ class ChargeScheduler(ScOptionState):
         """Calculate charge start time required to reach charge limit at charge end time."""
 
         if goal.has_charge_endtime:
-            # goal.available_charge_duration = goal.charge_endtime - goal.data_timestamp
-
             if goal.battery_soc is None:
                 _LOGGER.info(
                     "%s: Unable to get battery SOC, cannot schedule next charge session",

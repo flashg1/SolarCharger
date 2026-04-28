@@ -17,10 +17,10 @@ from homeassistant.config_entries import (
 from homeassistant.const import __version__ as ha_version
 from homeassistant.core import HomeAssistant, callback
 
-from .config_options_flow import ConfigOptionsFlowHandler
-from .config_subentry_charger import AddChargerSubEntryFlowHandler
-from .config_subentry_custom import AddCustomSubEntryFlowHandler
-from .config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
+from .config.config_options_flow import ConfigOptionsFlowHandler
+from .config.config_subentry_charger import AddChargerSubEntryFlowHandler
+from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
+from .config.config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
 from .const import (
     CONFIG_NET_POWER,
     CONFIG_WAIT_NET_POWER_UPDATE,

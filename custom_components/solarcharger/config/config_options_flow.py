@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Config flow for the solarcharger integration."""
 
 from copy import deepcopy
@@ -17,27 +18,7 @@ from homeassistant.config_entries import (
 # from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
-from .config_utils import (
-    BUTTON_ENTITY_SELECTOR,
-    BUTTON_ENTITY_SELECTOR_READ_ONLY,
-    LOCATION_ENTITY_SELECTOR,
-    LOCATION_ENTITY_SELECTOR_READ_ONLY,
-    NUMBER_ENTITY_SELECTOR,
-    NUMBER_ENTITY_SELECTOR_READ_ONLY,
-    SENSOR_ENTITY_SELECTOR,
-    SENSOR_ENTITY_SELECTOR_READ_ONLY,
-    SWITCH_ENTITY_SELECTOR,
-    SWITCH_ENTITY_SELECTOR_READ_ONLY,
-    TEXT_SELECTOR,
-    TEXT_SELECTOR_READ_ONLY,
-    TIME_ENTITY_SELECTOR,
-    choose_selector,
-    get_device_api_entities,
-    get_saved_option_value,
-    get_subentry_id,
-    reset_api_entities,
-)
-from .const import (
+from ..const import (
     DOMAIN,
     ERROR_EMPTY_CHARGER_LIST,
     ERROR_NUMBER_FORMAT,
@@ -107,8 +88,28 @@ from .const import (
     TIME_CHARGE_ENDTIME_TUESDAY,
     TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
-from .coordinator import SolarChargerCoordinator
-from .exceptions.validation_exception import ValidationExceptionError
+from ..exceptions.validation_exception import ValidationExceptionError
+from ..modules.coordinator import SolarChargerCoordinator
+from .config_utils import (
+    BUTTON_ENTITY_SELECTOR,
+    BUTTON_ENTITY_SELECTOR_READ_ONLY,
+    LOCATION_ENTITY_SELECTOR,
+    LOCATION_ENTITY_SELECTOR_READ_ONLY,
+    NUMBER_ENTITY_SELECTOR,
+    NUMBER_ENTITY_SELECTOR_READ_ONLY,
+    SENSOR_ENTITY_SELECTOR,
+    SENSOR_ENTITY_SELECTOR_READ_ONLY,
+    SWITCH_ENTITY_SELECTOR,
+    SWITCH_ENTITY_SELECTOR_READ_ONLY,
+    TEXT_SELECTOR,
+    TEXT_SELECTOR_READ_ONLY,
+    TIME_ENTITY_SELECTOR,
+    choose_selector,
+    get_device_api_entities,
+    get_saved_option_value,
+    get_subentry_id,
+    reset_api_entities,
+)
 
 # if TYPE_CHECKING:
 #     from homeassistant.core import HomeAssistant

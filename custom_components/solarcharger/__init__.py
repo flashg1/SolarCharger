@@ -11,8 +11,7 @@ from homeassistant.helpers import config_validation as cv
 
 from .chargers import Charger, charger_factory
 from .chargers.chargeable import Chargeable
-from .chargers.controller import ChargeController
-from .config_utils import get_subentry
+from .config.config_utils import get_subentry
 from .const import (
     DOMAIN,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
@@ -25,9 +24,10 @@ from .const import (
     SUBENTRY_CHARGER_TYPES,
     SUBENTRY_TYPE_DEFAULTS,
 )
-from .coordinator import SolarChargerCoordinator
 from .models.model_charge_control import ChargeControl, ControlEntities
 from .models.model_device_control import DeviceControl
+from .modules.controller import ChargeController
+from .modules.coordinator import SolarChargerCoordinator
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

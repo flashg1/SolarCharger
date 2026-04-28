@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Config subentry flow to create user custom charger."""
 
 # from collections.abc import Mapping
@@ -18,9 +19,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.util import slugify
 
-from .config_options_flow import reset_api_entities
-from .config_utils import TEXT_SELECTOR, get_subentry_id
-from .const import (
+from ..const import (
     DOMAIN,
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_SELECT_CHARGER,
@@ -35,9 +34,11 @@ from .const import (
     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
     SUBENTRY_TYPE_CUSTOM,
 )
-from .entity import compose_entity_id
-from .exceptions.validation_exception import ValidationExceptionError
-from .helpers.utils import compose_subdomain
+from ..entity import compose_entity_id
+from ..exceptions.validation_exception import ValidationExceptionError
+from ..helpers.utils import compose_subdomain
+from .config_options_flow import reset_api_entities
+from .config_utils import TEXT_SELECTOR, get_subentry_id
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

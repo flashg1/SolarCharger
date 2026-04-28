@@ -8,7 +8,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import slugify
 
-from .config_utils import get_device_domain, is_api_defined_solarcharger_entity
+from .config.config_utils import get_device_domain, is_api_defined_solarcharger_entity
 from .const import (
     CONFIG_NAME_GLOBAL_DEFAULTS,
     CONFIG_URL,

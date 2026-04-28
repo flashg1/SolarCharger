@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """SolarCharger entity state using config from config_entry.data."""
 
 import asyncio
@@ -6,7 +7,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONFIG_NET_POWER, CONFIG_WAIT_NET_POWER_UPDATE
+from ..const import CONFIG_NET_POWER, CONFIG_WAIT_NET_POWER_UPDATE
 from .sc_state import ScState
 
 # ----------------------------------------------------------------------------

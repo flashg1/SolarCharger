@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Support basic HA state requests."""
 
 from collections.abc import Callable
@@ -18,7 +19,7 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.helpers.entity_registry import RegistryEntry
 from homeassistant.util.dt import as_local, utcnow
 
-from .const import (
+from ..const import (
     DATETIME,
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_VALUE,
@@ -27,8 +28,8 @@ from .const import (
     NUMBER,
     SOLAR_CHARGER_COORDINATOR_EVENT,
 )
-from .exceptions.entity_exception import EntityExceptionError
-from .helpers.utils import get_next_sunrise_time, get_next_sunset_time
+from ..exceptions.entity_exception import EntityExceptionError
+from ..helpers.utils import get_next_sunrise_time, get_next_sunset_time
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

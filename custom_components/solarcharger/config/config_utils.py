@@ -1,3 +1,4 @@
+# ruff: noqa: TID252
 """Common config utils."""
 
 import logging
@@ -23,7 +24,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.util import slugify
 
-from .const import (
+from ..const import (
     CHARGE_API_DEFAULT_VALUES,
     CHARGE_API_ENTITIES,
     CONFIG_NAME_MARKER,

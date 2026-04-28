@@ -12,7 +12,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .config_utils import get_device_config_default_value
+from .config.config_utils import get_device_config_default_value
 from .const import (
     DOMAIN,
     # RESTORE_ON_START_FALSE,
@@ -34,7 +34,7 @@ from .models.model_device_control import DeviceControl
 type SWITCH_ACTION_TYPE = Callable[[DeviceControl, bool], Coroutine[Any, Any, None]]
 
 if TYPE_CHECKING:
-    from .coordinator import SolarChargerCoordinator
+    from .modules.coordinator import SolarChargerCoordinator
 
 # Examples:
 # homeassistant/components/netgear/switch.py
