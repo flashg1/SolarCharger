@@ -4,8 +4,8 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.5.4 or prior.
 ### Improvement
-- Refactored max_charge_now to avoid pausing during the night and less likely to time drift during the day.
-- Refactored data models and moved to models directory.
+- Refactored data models and reorganised directory structure.
+- Refactored max_charge_now to avoid pausing during the night and less likely to time-drift reducing charge rate during the day.
 - For scheduled night-time charging, always charge at max current without pause.
 - For scheduled day-time charging, it is possible to pause and not always charge at max current.
 - Added starting state to set variables once per charging session.
