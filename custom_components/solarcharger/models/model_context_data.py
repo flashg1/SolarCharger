@@ -32,7 +32,7 @@ class ContextData:
     # Outputs
     is_continue_state: bool = False  # Continue current state
     next_step: ChargeStatus = ChargeStatus.CHARGE_END
-    is_enough_power: bool | None = None
+    is_enough_power: bool | None = None  # None=not enough data points.
     average_allocated_power: float = 0
     data_points: int = 0
 
