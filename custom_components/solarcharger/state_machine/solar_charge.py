@@ -20,7 +20,18 @@ from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
 from ..const import (
+    CONFIG_ENTITY_LIST,
+    CONFIG_OPTION_LIST,
     DOMAIN,
+    ENTITY_CHARGEE_LOCATION_SENSOR,
+    ENTITY_CHARGEE_SOC_SENSOR,
+    ENTITY_CHARGEE_UPDATE_HA_BUTTON,
+    ENTITY_CHARGEE_WAKE_UP_BUTTON,
+    ENTITY_CHARGER_CHARGING_SENSOR,
+    ENTITY_CHARGER_GET_CHARGE_CURRENT,
+    ENTITY_CHARGER_ON_OFF_SWITCH,
+    ENTITY_CHARGER_PLUGGED_IN_SENSOR,
+    ENTITY_CHARGER_SET_CHARGE_CURRENT,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     MAX_CONSECUTIVE_FAILURE_COUNT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
@@ -34,15 +45,6 @@ from ..const import (
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
-    OPTION_CHARGEE_LOCATION_SENSOR,
-    OPTION_CHARGEE_SOC_SENSOR,
-    OPTION_CHARGEE_UPDATE_HA_BUTTON,
-    OPTION_CHARGEE_WAKE_UP_BUTTON,
-    OPTION_CHARGER_CHARGING_SENSOR,
-    OPTION_CHARGER_GET_CHARGE_CURRENT,
-    OPTION_CHARGER_ON_OFF_SWITCH,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR,
-    OPTION_CHARGER_SET_CHARGE_CURRENT,
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
@@ -197,7 +199,7 @@ class SolarCharge(ScOptionState):
     # Local utils
     # ----------------------------------------------------------------------------
     async def _async_wakeup_device(self, chargeable: Chargeable) -> None:
-        config_item = OPTION_CHARGEE_WAKE_UP_BUTTON
+        config_item = ENTITY_CHARGEE_WAKE_UP_BUTTON
         val_dict = ConfigValueDict(config_item, {})
 
         await chargeable.async_wake_up(val_dict)
@@ -208,7 +210,7 @@ class SolarCharge(ScOptionState):
     async def _async_poll_charger_update(self, wait_after_update: bool) -> None:
         """Poll charger for update using charger switch entity since every charger must have one."""
 
-        charger_entity = self.option_get_id(OPTION_CHARGER_ON_OFF_SWITCH)
+        charger_entity = self.option_get_id(ENTITY_CHARGER_ON_OFF_SWITCH)
         if charger_entity:
             await self.async_poll_entity_id(charger_entity)
             if wait_after_update:
@@ -234,6 +236,36 @@ class SolarCharge(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
+    # Log configuration for debugging
+    # ----------------------------------------------------------------------------
+    def _log_config_entities(self, entity_list: list[str]) -> None:
+        """Log config entity values."""
+
+        val_dict = ConfigValueDict("Config entities", {})
+        for config_item in entity_list:
+            self.option_get_entity_string(config_item, val_dict)
+
+        _LOGGER.debug("%s: %s", self.caller, val_dict)
+
+    # ----------------------------------------------------------------------------
+    def _log_config_options(self, option_list: list[str]) -> None:
+        """Log config option values."""
+
+        val_dict = ConfigValueDict("Config options", {})
+        for config_item in option_list:
+            self.option_get_string(config_item, val_dict)
+
+        _LOGGER.debug("%s: %s", self.caller, val_dict)
+
+    # ----------------------------------------------------------------------------
+    def log_configuration(self) -> None:
+        """Log power allocations."""
+
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            self._log_config_entities(CONFIG_ENTITY_LIST)
+            self._log_config_options(CONFIG_OPTION_LIST)
+
+    # ----------------------------------------------------------------------------
     # Common code
     # ----------------------------------------------------------------------------
     async def async_update_ha(
@@ -245,7 +277,7 @@ class SolarCharge(ScOptionState):
             if self.is_poll_charger_update():
                 await self._async_poll_charger_update(wait_after_update)
             else:
-                config_item = OPTION_CHARGEE_UPDATE_HA_BUTTON
+                config_item = ENTITY_CHARGEE_UPDATE_HA_BUTTON
                 val_dict = ConfigValueDict(config_item, {})
 
                 await chargeable.async_update_ha(val_dict)
@@ -260,7 +292,7 @@ class SolarCharge(ScOptionState):
     def is_at_location(self, chargeable: Chargeable) -> bool:
         """Is chargeable device at charger location? Always return true if sensor not defined."""
 
-        config_item = OPTION_CHARGEE_LOCATION_SENSOR
+        config_item = ENTITY_CHARGEE_LOCATION_SENSOR
         val_dict = ConfigValueDict(config_item, {})
 
         is_at_location = chargeable.is_at_location(val_dict)
@@ -279,7 +311,7 @@ class SolarCharge(ScOptionState):
     def is_connected(self, charger: Charger) -> bool:
         """Is charger connected to chargeable device? Returns true if sensor is not defined."""
 
-        config_item = OPTION_CHARGER_PLUGGED_IN_SENSOR
+        config_item = ENTITY_CHARGER_PLUGGED_IN_SENSOR
         val_dict = ConfigValueDict(config_item, {})
 
         is_connected = charger.is_connected(val_dict)
@@ -365,7 +397,7 @@ class SolarCharge(ScOptionState):
         """Get device charge current."""
 
         charge_current = charger.get_charge_current(val_dict)
-        if val_dict.config_values[OPTION_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
+        if val_dict.config_values[ENTITY_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
             # So we can't get the current, ie. a resistive load.
             # All devices must have max charge current configured.
             charge_current = self.get_charger_max_current()
@@ -379,7 +411,7 @@ class SolarCharge(ScOptionState):
     async def async_set_charge_current(self, charger: Charger, current: float) -> None:
         """Set charge current."""
 
-        config_item = OPTION_CHARGER_GET_CHARGE_CURRENT
+        config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
         val_dict = ConfigValueDict(config_item, {})
         can_set_current = True
 
@@ -396,7 +428,7 @@ class SolarCharge(ScOptionState):
             #     current = 0
 
             # Set new charge current.
-            config_item = OPTION_CHARGER_SET_CHARGE_CURRENT
+            config_item = ENTITY_CHARGER_SET_CHARGE_CURRENT
             new_charge_current = await charger.async_set_charge_current(
                 current, val_dict
             )
@@ -475,7 +507,7 @@ class SolarCharge(ScOptionState):
         try:
             charge_limit = chargeable.get_charge_limit()
 
-            config_item = OPTION_CHARGEE_SOC_SENSOR
+            config_item = ENTITY_CHARGEE_SOC_SENSOR
             val_dict = ConfigValueDict(config_item, {})
             soc = chargeable.get_state_of_charge(val_dict)
             if val_dict.config_values[config_item].entity_id is None:
@@ -483,20 +515,21 @@ class SolarCharge(ScOptionState):
 
             if soc is not None and charge_limit is not None:
                 is_below_limit = soc < charge_limit
-                if is_below_limit:
-                    _LOGGER.debug(
-                        "SOC %s %% is below charge limit %s %%, continuing charger %s",
-                        soc,
-                        charge_limit,
-                        self.caller,
-                    )
-                else:
-                    _LOGGER.info(
-                        "SOC %s %% is at or above charge limit %s %%, stopping charger %s",
-                        soc,
-                        charge_limit,
-                        self.caller,
-                    )
+                # if not is_below_limit:
+                #     _LOGGER.info(
+                #         "SOC %s %% is at or above charge limit %s %%, stopping charger %s",
+                #         soc,
+                #         charge_limit,
+                #         self.caller,
+                #     )
+                # else:
+                #     _LOGGER.debug(
+                #         "SOC %s %% is below charge limit %s %%, continuing charger %s",
+                #         soc,
+                #         charge_limit,
+                #         self.caller,
+                #     )
+
         except TimeoutError as e:
             _LOGGER.warning(
                 "%s: Timeout getting SOC or charge limit: %s",
@@ -518,7 +551,7 @@ class SolarCharge(ScOptionState):
     ) -> bool:
         """Is charger currently charging? Always return false in case of error."""
 
-        config_item = OPTION_CHARGER_CHARGING_SENSOR
+        config_item = ENTITY_CHARGER_CHARGING_SENSOR
         val_dict = ConfigValueDict(config_item, {}) if val_dict is None else val_dict
         is_charging = charger.is_charging(val_dict=val_dict)
 
@@ -599,10 +632,10 @@ class SolarCharge(ScOptionState):
         # Device charge limit must have already been set before this check.
         context.is_below_charge_limit = self.is_below_charge_limit(chargeable)
 
-        val_dict = ConfigValueDict(OPTION_CHARGER_CHARGING_SENSOR, {})
+        val_dict = ConfigValueDict(ENTITY_CHARGER_CHARGING_SENSOR, {})
         context.is_charging = self.is_charging(charger, val_dict=val_dict)
         context.charging_status = val_dict.config_values[
-            OPTION_CHARGER_CHARGING_SENSOR
+            ENTITY_CHARGER_CHARGING_SENSOR
         ].entity_value
 
         context.is_sun_trigger = self.is_sun_trigger()

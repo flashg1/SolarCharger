@@ -44,9 +44,9 @@ from ..const import (
     CALLBACK_PLUG_IN_CHARGER,
     CALLBACK_SOC_UPDATE,
     CALLBACK_SUN_ELEVATION_UPDATE,
+    ENTITY_CHARGEE_SOC_SENSOR,
+    ENTITY_CHARGER_PLUGGED_IN_SENSOR,
     HA_SUN_ENTITY,
-    OPTION_CHARGEE_SOC_SENSOR,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR,
     SENSOR_CHARGER_ALLOCATED_POWER,
 )
 from ..helpers.utils import (
@@ -292,7 +292,7 @@ class Tracker(ScOptionState):
         """Track charger plug-in event. Sensors that might not exist, so check return code."""
 
         return self._track_config_item_state(
-            OPTION_CHARGER_PLUGGED_IN_SENSOR, CALLBACK_PLUG_IN_CHARGER, action
+            ENTITY_CHARGER_PLUGGED_IN_SENSOR, CALLBACK_PLUG_IN_CHARGER, action
         )
 
     # ----------------------------------------------------------------------------
@@ -319,7 +319,7 @@ class Tracker(ScOptionState):
         """Track SOC update events."""
 
         return self._track_config_item_state(
-            OPTION_CHARGEE_SOC_SENSOR, CALLBACK_SOC_UPDATE, action
+            ENTITY_CHARGEE_SOC_SENSOR, CALLBACK_SOC_UPDATE, action
         )
 
     # ----------------------------------------------------------------------------

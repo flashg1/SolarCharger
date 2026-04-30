@@ -144,7 +144,7 @@ class ScState:
             raise ValueError("Cannot get entity state because entity ID is None")
         state = self._hass.states.get(entity_id)
         if state is None:
-            _LOGGER.debug("State not found for entity %s", entity_id)
+            # _LOGGER.debug("State not found for entity %s", entity_id)
             return None
 
         return state
@@ -183,7 +183,7 @@ class ScState:
                 e,
             )
 
-        _LOGGER.debug("%s: '%s' = '%s'", self.caller, entity_id, state_str)
+        # _LOGGER.debug("%s: '%s' = '%s'", self.caller, entity_id, state_str)
 
         return state_str
 
@@ -413,7 +413,7 @@ class ScState:
         sun_state: State | None = self._get_entity_state(HA_SUN_ENTITY)
         if sun_state is None:
             raise ValueError(f"{self.caller}: Failed to get sun state")
-        _LOGGER.debug("%s: Sun state: %s", self.caller, sun_state)
+        # _LOGGER.debug("%s: Sun state: %s", self.caller, sun_state)
 
         return sun_state
 

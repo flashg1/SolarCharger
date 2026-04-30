@@ -71,12 +71,13 @@ def log_is_event_loop(
     logger: logging.Logger, classname: str, methodframe: FrameType | None
 ) -> None:
     """Log if running in event loop thread."""
-    logger.debug(
-        "%s %s is running in event loop thread: %s",
-        classname,
-        methodframe.f_code.co_name if methodframe else "<UnknownMethod>",
-        is_event_loop_thread(),
-    )
+
+    # logger.debug(
+    #     "%s %s is running in event loop thread: %s",
+    #     classname,
+    #     methodframe.f_code.co_name if methodframe else "<UnknownMethod>",
+    #     is_event_loop_thread(),
+    # )
 
 
 # ----------------------------------------------------------------------------
@@ -130,7 +131,7 @@ def get_sun_attribute_or_abort(caller: str, sun_state: State, attrib_name: str) 
     sun_attrib = sun_state.attributes.get(attrib_name)
     if sun_attrib is None:
         raise ValueError(f"{caller}: Failed to get sun attribute '{attrib_name}'")
-    _LOGGER.debug("%s: Sun %s=%s", caller, attrib_name, sun_attrib)
+    # _LOGGER.debug("%s: Sun %s=%s", caller, attrib_name, sun_attrib)
 
     return sun_attrib
 

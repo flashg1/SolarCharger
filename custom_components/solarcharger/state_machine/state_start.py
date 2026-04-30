@@ -69,6 +69,8 @@ class StateStart(SolarChargeState):
         self.solarcharge.started_max_charge = 0
         self.solarcharge.started_calibrate_max_charge_speed = False
 
+        self.solarcharge.log_configuration()
+
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
         """Session starting state."""

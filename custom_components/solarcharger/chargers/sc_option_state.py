@@ -263,13 +263,13 @@ class ScOptionState(ScConfigState):
                 config_item, entity_id, entity_val
             )
 
-        _LOGGER.debug(
-            "%s: %s: '%s' = '%s'",
-            config_name,
-            config_item,
-            entity_id,
-            entity_val,
-        )
+        # _LOGGER.debug(
+        #     "%s: %s: '%s' = '%s'",
+        #     config_name,
+        #     config_item,
+        #     entity_id,
+        #     entity_val,
+        # )
 
     # ----------------------------------------------------------------------------
     def option_get_id(self, config_item: str) -> str | None:

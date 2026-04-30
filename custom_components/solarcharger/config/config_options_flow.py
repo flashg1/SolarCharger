@@ -20,6 +20,17 @@ from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from ..const import (
     DOMAIN,
+    ENTITY_CHARGEE_GET_CHARGE_LIMIT,
+    ENTITY_CHARGEE_LOCATION_SENSOR,
+    ENTITY_CHARGEE_SET_CHARGE_LIMIT,
+    ENTITY_CHARGEE_SOC_SENSOR,
+    ENTITY_CHARGEE_UPDATE_HA_BUTTON,
+    ENTITY_CHARGEE_WAKE_UP_BUTTON,
+    ENTITY_CHARGER_CHARGING_SENSOR,
+    ENTITY_CHARGER_GET_CHARGE_CURRENT,
+    ENTITY_CHARGER_ON_OFF_SWITCH,
+    ENTITY_CHARGER_PLUGGED_IN_SENSOR,
+    ENTITY_CHARGER_SET_CHARGE_CURRENT,
     ERROR_EMPTY_CHARGER_LIST,
     ERROR_NUMBER_FORMAT,
     ERROR_SUBENTRY_ID_NOT_FOUND,
@@ -34,6 +45,7 @@ from ..const import (
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    NUMBER_CHARGER_MAX_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
@@ -55,23 +67,11 @@ from ..const import (
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
-    OPTION_CHARGEE_GET_CHARGE_LIMIT,
-    OPTION_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
-    OPTION_CHARGEE_SET_CHARGE_LIMIT,
-    OPTION_CHARGEE_SOC_SENSOR,
-    OPTION_CHARGEE_UPDATE_HA_BUTTON,
-    OPTION_CHARGEE_WAKE_UP_BUTTON,
-    OPTION_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
-    OPTION_CHARGER_GET_CHARGE_CURRENT,
-    OPTION_CHARGER_MAX_CURRENT,
     OPTION_CHARGER_NAME,
-    OPTION_CHARGER_ON_OFF_SWITCH,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR,
-    OPTION_CHARGER_SET_CHARGE_CURRENT,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_ID,
@@ -400,10 +400,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 TEXT_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_PLUGGED_IN_SENSOR, use_default
+                subentry, ENTITY_CHARGER_PLUGGED_IN_SENSOR, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGER_PLUGGED_IN_SENSOR,
+                ENTITY_CHARGER_PLUGGED_IN_SENSOR,
                 SENSOR_ENTITY_SELECTOR_READ_ONLY,
                 SENSOR_ENTITY_SELECTOR,
             ),
@@ -424,18 +424,18 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 TEXT_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_ON_OFF_SWITCH, use_default
+                subentry, ENTITY_CHARGER_ON_OFF_SWITCH, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGER_ON_OFF_SWITCH,
+                ENTITY_CHARGER_ON_OFF_SWITCH,
                 SWITCH_ENTITY_SELECTOR_READ_ONLY,
                 SWITCH_ENTITY_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_CHARGING_SENSOR, use_default
+                subentry, ENTITY_CHARGER_CHARGING_SENSOR, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGER_CHARGING_SENSOR,
+                ENTITY_CHARGER_CHARGING_SENSOR,
                 SENSOR_ENTITY_SELECTOR_READ_ONLY,
                 SENSOR_ENTITY_SELECTOR,
             ),
@@ -448,61 +448,61 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 TEXT_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_MAX_CURRENT, use_default
+                subentry, NUMBER_CHARGER_MAX_CURRENT, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGER_MAX_CURRENT,
+                NUMBER_CHARGER_MAX_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_GET_CHARGE_CURRENT, use_default
+                subentry, ENTITY_CHARGER_GET_CHARGE_CURRENT, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGER_GET_CHARGE_CURRENT,
+                ENTITY_CHARGER_GET_CHARGE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_SET_CHARGE_CURRENT, use_default
+                subentry, ENTITY_CHARGER_SET_CHARGE_CURRENT, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGER_SET_CHARGE_CURRENT,
+                ENTITY_CHARGER_SET_CHARGE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGEE_SOC_SENSOR, use_default
+                subentry, ENTITY_CHARGEE_SOC_SENSOR, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGEE_SOC_SENSOR,
+                ENTITY_CHARGEE_SOC_SENSOR,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGEE_GET_CHARGE_LIMIT, use_default
+                subentry, ENTITY_CHARGEE_GET_CHARGE_LIMIT, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGEE_GET_CHARGE_LIMIT,
-                NUMBER_ENTITY_SELECTOR_READ_ONLY,
-                NUMBER_ENTITY_SELECTOR,
-                modifiable_if_solarcharger_entity=True,
-            ),
-            self._optional(
-                subentry, OPTION_CHARGEE_SET_CHARGE_LIMIT, use_default
-            ): choose_selector(
-                api_entities,
-                OPTION_CHARGEE_SET_CHARGE_LIMIT,
+                ENTITY_CHARGEE_GET_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
-                subentry, OPTION_CHARGEE_LOCATION_SENSOR, use_default
+                subentry, ENTITY_CHARGEE_SET_CHARGE_LIMIT, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGEE_LOCATION_SENSOR,
+                ENTITY_CHARGEE_SET_CHARGE_LIMIT,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+                modifiable_if_solarcharger_entity=True,
+            ),
+            self._optional(
+                subentry, ENTITY_CHARGEE_LOCATION_SENSOR, use_default
+            ): choose_selector(
+                api_entities,
+                ENTITY_CHARGEE_LOCATION_SENSOR,
                 LOCATION_ENTITY_SELECTOR_READ_ONLY,
                 LOCATION_ENTITY_SELECTOR,
             ),
@@ -515,19 +515,19 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 TEXT_SELECTOR,
             ),
             self._optional(
-                subentry, OPTION_CHARGEE_WAKE_UP_BUTTON, use_default
+                subentry, ENTITY_CHARGEE_WAKE_UP_BUTTON, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGEE_WAKE_UP_BUTTON,
+                ENTITY_CHARGEE_WAKE_UP_BUTTON,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
                 BUTTON_ENTITY_SELECTOR,
             ),
             # Turning on force HA update switch will override the in-built update HA button.
             self._optional(
-                subentry, OPTION_CHARGEE_UPDATE_HA_BUTTON, use_default
+                subentry, ENTITY_CHARGEE_UPDATE_HA_BUTTON, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGEE_UPDATE_HA_BUTTON,
+                ENTITY_CHARGEE_UPDATE_HA_BUTTON,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
                 BUTTON_ENTITY_SELECTOR,
             ),

@@ -17,12 +17,12 @@ class SolarChargeState(ABC):
 
     # ----------------------------------------------------------------------------
     @property
-    def solarcharge(self) -> "SolarCharge":
+    def solarcharge(self) -> SolarCharge:
         """Get the state machine context."""
         return self._context
 
     @solarcharge.setter
-    def solarcharge(self, context: "SolarCharge") -> None:
+    def solarcharge(self, context: SolarCharge) -> None:
         """Set the state machine context."""
         self._context = context
 

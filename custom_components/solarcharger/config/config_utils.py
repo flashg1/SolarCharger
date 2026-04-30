@@ -489,14 +489,14 @@ def get_saved_option_value(
     if use_default and final_val is None and config_item in NON_ENTITY_CONFIGS:
         final_val = get_device_config_default_value(subentry, config_item)
 
-    _LOGGER.debug(
-        "%s: %s: final=%s, local=%s, global=%s",
-        subentry.unique_id,
-        config_item,
-        final_val,
-        saved_local_val,
-        saved_global_val,
-    )
+    # _LOGGER.debug(
+    #     "%s: %s: final=%s, local=%s, global=%s",
+    #     subentry.unique_id,
+    #     config_item,
+    #     final_val,
+    #     saved_local_val,
+    #     saved_global_val,
+    # )
 
     return final_val
 

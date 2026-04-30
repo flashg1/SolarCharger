@@ -411,7 +411,7 @@ class ChargeScheduler(ScOptionState):
         # Calculate charge start time required to reach charge limit at charge end time.
         self._calc_charge_starttime(goal)
 
-        if log_it:
+        if log_it or _LOGGER.isEnabledFor(logging.DEBUG):
             self.log_goal(goal, msg)
 
         return goal

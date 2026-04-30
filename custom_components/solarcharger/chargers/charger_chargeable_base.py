@@ -11,21 +11,21 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from ..const import (
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-    OPTION_CHARGEE_GET_CHARGE_LIMIT,
-    OPTION_CHARGEE_LOCATION_SENSOR,
+    ENTITY_CHARGEE_GET_CHARGE_LIMIT,
+    ENTITY_CHARGEE_LOCATION_SENSOR,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
-    OPTION_CHARGEE_SET_CHARGE_LIMIT,
-    OPTION_CHARGEE_SOC_SENSOR,
-    OPTION_CHARGEE_UPDATE_HA_BUTTON,
-    OPTION_CHARGEE_WAKE_UP_BUTTON,
-    OPTION_CHARGER_CHARGING_SENSOR,
+    ENTITY_CHARGEE_SET_CHARGE_LIMIT,
+    ENTITY_CHARGEE_SOC_SENSOR,
+    ENTITY_CHARGEE_UPDATE_HA_BUTTON,
+    ENTITY_CHARGEE_WAKE_UP_BUTTON,
+    ENTITY_CHARGER_CHARGING_SENSOR,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
-    OPTION_CHARGER_GET_CHARGE_CURRENT,
-    OPTION_CHARGER_MAX_CURRENT,
-    OPTION_CHARGER_ON_OFF_SWITCH,
-    OPTION_CHARGER_PLUGGED_IN_SENSOR,
-    OPTION_CHARGER_SET_CHARGE_CURRENT,
+    ENTITY_CHARGER_GET_CHARGE_CURRENT,
+    NUMBER_CHARGER_MAX_CURRENT,
+    ENTITY_CHARGER_ON_OFF_SWITCH,
+    ENTITY_CHARGER_PLUGGED_IN_SENSOR,
+    ENTITY_CHARGER_SET_CHARGE_CURRENT,
 )
 from ..models.model_config import ConfigValueDict
 from .chargeable import Chargeable
@@ -89,14 +89,14 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     async def async_wake_up(self, val_dict: ConfigValueDict | None = None) -> None:
         """Wake up chargeable device."""
         await self.async_option_press_entity_button(
-            OPTION_CHARGEE_WAKE_UP_BUTTON, val_dict=val_dict
+            ENTITY_CHARGEE_WAKE_UP_BUTTON, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
     async def async_update_ha(self, val_dict: ConfigValueDict | None = None) -> None:
         """Force chargeable device to update data in HA."""
         await self.async_option_press_entity_button(
-            OPTION_CHARGEE_UPDATE_HA_BUTTON, val_dict=val_dict
+            ENTITY_CHARGEE_UPDATE_HA_BUTTON, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
 
         # 'device_tracker.tesla23m3_location_tracker' = 'not_home' or 'home'
         state = self.option_get_entity_string(
-            OPTION_CHARGEE_LOCATION_SENSOR, val_dict=val_dict
+            ENTITY_CHARGEE_LOCATION_SENSOR, val_dict=val_dict
         )
         state_list = self.option_get_list(
             OPTION_CHARGEE_LOCATION_STATE_LIST, val_dict=val_dict
@@ -122,14 +122,14 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     ) -> int | None:
         """Get state of charge (SoC) of chargeable device."""
         return self.option_get_entity_integer(
-            OPTION_CHARGEE_SOC_SENSOR, val_dict=val_dict
+            ENTITY_CHARGEE_SOC_SENSOR, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
     def get_charge_limit(self, val_dict: ConfigValueDict | None = None) -> float | None:
         """Get chargeable device charge limit."""
         return self.option_get_entity_number(
-            OPTION_CHARGEE_GET_CHARGE_LIMIT, val_dict=val_dict
+            ENTITY_CHARGEE_GET_CHARGE_LIMIT, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
             msg = f"Invalid charge limit {charge_limit}. Must be between {min_limit} and {max_limit} %%."
             raise ValueError(msg)
         await self.async_option_set_entity_number(
-            OPTION_CHARGEE_SET_CHARGE_LIMIT, charge_limit, val_dict=val_dict
+            ENTITY_CHARGEE_SET_CHARGE_LIMIT, charge_limit, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
@@ -177,7 +177,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     ) -> float | None:
         """Get charger max allowable current in amps."""
         return self.option_get_entity_number(
-            OPTION_CHARGER_MAX_CURRENT, val_dict=val_dict
+            NUMBER_CHARGER_MAX_CURRENT, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
@@ -186,7 +186,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         is_connected = False
 
         state = self.option_get_entity_string(
-            OPTION_CHARGER_PLUGGED_IN_SENSOR, val_dict=val_dict
+            ENTITY_CHARGER_PLUGGED_IN_SENSOR, val_dict=val_dict
         )
         state_list = self.option_get_list(
             OPTION_CHARGER_CONNECT_STATE_LIST, val_dict=val_dict
@@ -202,7 +202,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         switched_on = False
 
         state = self.option_get_entity_string(
-            OPTION_CHARGER_ON_OFF_SWITCH, val_dict=val_dict
+            ENTITY_CHARGER_ON_OFF_SWITCH, val_dict=val_dict
         )
         if state == STATE_ON:
             switched_on = True
@@ -216,7 +216,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         """Switch on or off charger."""
 
         await self.async_option_turn_entity_switch(
-            OPTION_CHARGER_ON_OFF_SWITCH, turn_on, val_dict=val_dict
+            ENTITY_CHARGER_ON_OFF_SWITCH, turn_on, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
@@ -225,7 +225,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         is_charging = False
 
         state = self.option_get_entity_string(
-            OPTION_CHARGER_CHARGING_SENSOR, val_dict=val_dict
+            ENTITY_CHARGER_CHARGING_SENSOR, val_dict=val_dict
         )
         state_list = self.option_get_list(OPTION_CHARGER_CHARGING_STATE_LIST)
         if state is not None and state_list is not None:
@@ -239,7 +239,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     ) -> float | None:
         """Get charger charge current in AMPS."""
         return self.option_get_entity_number(
-            OPTION_CHARGER_GET_CHARGE_CURRENT, val_dict=val_dict
+            ENTITY_CHARGER_GET_CHARGE_CURRENT, val_dict=val_dict
         )
 
     # ----------------------------------------------------------------------------
@@ -250,7 +250,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
 
         new_current = round(charge_current)
         await self.async_option_set_entity_integer(
-            OPTION_CHARGER_SET_CHARGE_CURRENT, new_current, val_dict=val_dict
+            ENTITY_CHARGER_SET_CHARGE_CURRENT, new_current, val_dict=val_dict
         )
 
         return new_current

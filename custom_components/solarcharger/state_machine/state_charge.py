@@ -11,10 +11,10 @@ from homeassistant.util.dt import as_local, utcnow
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import (
+    ENTITY_CHARGER_CHARGING_SENSOR,
+    ENTITY_CHARGER_GET_CHARGE_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_POWER_MONITOR_DURATION,
-    OPTION_CHARGER_CHARGING_SENSOR,
-    OPTION_CHARGER_GET_CHARGE_CURRENT,
     SENSOR_CONSUMED_POWER,
     ChargeStatus,
     RunState,
@@ -246,10 +246,10 @@ class StateCharge(SolarChargeState):
 
         charger_max_current = self.solarcharge.get_charger_max_current()
 
-        config_item = OPTION_CHARGER_GET_CHARGE_CURRENT
+        config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
         val_dict = ConfigValueDict(config_item, {})
         battery_charge_current = self.solarcharge.get_charge_current(charger, val_dict)
-        if val_dict.config_values[OPTION_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
+        if val_dict.config_values[ENTITY_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
             # So we can't get the current, ie. a resistive load.
             # All devices must have max charge current configured.
             new_charge_current = charger_max_current
@@ -343,7 +343,7 @@ class StateCharge(SolarChargeState):
     def _log_charging_status(self, charger: Charger, msg: str) -> None:
         """Generate debug message only if required."""
 
-        val_dict = ConfigValueDict(OPTION_CHARGER_CHARGING_SENSOR, {})
+        val_dict = ConfigValueDict(ENTITY_CHARGER_CHARGING_SENSOR, {})
         is_charging = self.solarcharge.is_charging(charger, val_dict=val_dict)
 
         _LOGGER.warning(
@@ -353,7 +353,7 @@ class StateCharge(SolarChargeState):
             self.solarcharge.is_connected(charger),
             charger.is_charger_switch_on(),
             is_charging,
-            val_dict.config_values[OPTION_CHARGER_CHARGING_SENSOR].entity_value,
+            val_dict.config_values[ENTITY_CHARGER_CHARGING_SENSOR].entity_value,
         )
 
     # ----------------------------------------------------------------------------

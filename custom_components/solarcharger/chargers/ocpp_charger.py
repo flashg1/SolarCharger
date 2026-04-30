@@ -12,14 +12,14 @@ from homeassistant.helpers.device_registry import DeviceEntry
 
 from ..const import (
     DOMAIN_OCPP,
+    ENTITY_CHARGER_CHARGING_SENSOR,
+    ENTITY_CHARGER_SET_CHARGE_CURRENT,
+    ENTITY_OCPP_CHARGER_ID,
+    ENTITY_OCPP_TRANSACTION_ID,
     NUMBER,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     OCPP_CHARGING_STATE,
-    OPTION_CHARGER_CHARGING_SENSOR,
-    OPTION_CHARGER_SET_CHARGE_CURRENT,
-    OPTION_OCPP_CHARGER_ID,
-    OPTION_OCPP_TRANSACTION_ID,
 )
 from ..entity import compose_entity_id
 from ..models.model_config import ConfigValue, ConfigValueDict
@@ -120,11 +120,11 @@ class OcppCharger(ChargerChargeableBase):
             entity_id = compose_entity_id(
                 NUMBER, self._subentry.unique_id, "fake_set_charge_current"
             )
-            config_val = ConfigValue(OPTION_CHARGER_SET_CHARGE_CURRENT, entity_id, None)
-            val_dict.config_values[OPTION_CHARGER_SET_CHARGE_CURRENT] = config_val
+            config_val = ConfigValue(ENTITY_CHARGER_SET_CHARGE_CURRENT, entity_id, None)
+            val_dict.config_values[ENTITY_CHARGER_SET_CHARGE_CURRENT] = config_val
 
         # Only set charge current when charger is in OCPP_CHARGING_STATE.
-        state = self.option_get_entity_string(OPTION_CHARGER_CHARGING_SENSOR)
+        state = self.option_get_entity_string(ENTITY_CHARGER_CHARGING_SENSOR)
         if state != OCPP_CHARGING_STATE:
             _LOGGER.warning(
                 "%s: Cannot set current due to charger in state %s",
@@ -136,7 +136,7 @@ class OcppCharger(ChargerChargeableBase):
         new_charge_current = round(charge_current)
 
         # Get OCPP charger ID
-        ocpp_charger_id = self.option_get_entity_string(OPTION_OCPP_CHARGER_ID)
+        ocpp_charger_id = self.option_get_entity_string(ENTITY_OCPP_CHARGER_ID)
 
         # Get charge profile id
         charge_profile_id = self.get_integer(self.ocpp_profile_id_entity_id)
@@ -159,7 +159,7 @@ class OcppCharger(ChargerChargeableBase):
 
         # Get OCPP transaction id
         ocpp_charger_transaction_id = self.option_get_entity_integer_or_abort(
-            OPTION_OCPP_TRANSACTION_ID
+            ENTITY_OCPP_TRANSACTION_ID
         )
         service_name = "set_charge_rate"
         service_data: dict[str, Any] = {

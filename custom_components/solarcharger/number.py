@@ -24,6 +24,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .config.config_utils import get_device_config_default_value
 from .const import (
     DOMAIN,
+    ENTITY_CHARGEE_CHARGE_LIMIT,
     NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
@@ -35,6 +36,7 @@ from .const import (
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    NUMBER_CHARGER_MAX_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
@@ -58,8 +60,6 @@ from .const import (
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
-    OPTION_CHARGEE_CHARGE_LIMIT,
-    OPTION_CHARGER_MAX_CURRENT,
 )
 from .entity import (
     SolarChargerEntity,
@@ -186,13 +186,13 @@ CONFIG_NUMBER_LIST: tuple[
     #####################################
     # Used as local device entity for OCPP only. Others come with own entity.
     (
-        OPTION_CHARGEE_CHARGE_LIMIT,
+        ENTITY_CHARGEE_CHARGE_LIMIT,
         [
             SolarChargerEntityType.TYPE_LOCAL_OCPP,
             SolarChargerEntityType.TYPE_LOCAL_USER_CUSTOM,
         ],
         NumberEntityDescription(
-            key=OPTION_CHARGEE_CHARGE_LIMIT,
+            key=ENTITY_CHARGEE_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0,
@@ -204,10 +204,10 @@ CONFIG_NUMBER_LIST: tuple[
     # OCPP comes with own entity, but should also use this to avoid reading from OCPP.
     # So will make this configurable.
     (
-        OPTION_CHARGER_MAX_CURRENT,
+        NUMBER_CHARGER_MAX_CURRENT,
         SolarChargerEntityType.TYPE_LOCALHIDDEN,
         NumberEntityDescription(
-            key=OPTION_CHARGER_MAX_CURRENT,
+            key=NUMBER_CHARGER_MAX_CURRENT,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.CURRENT,
             native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
