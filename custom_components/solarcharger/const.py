@@ -382,8 +382,8 @@ DEFAULT_CHARGE_LIMIT_MAP: dict[str, str] = {
     NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: NUMBER_CHARGE_LIMIT_SUNDAY,
 }
 
-# Config with entity values.
-CONFIG_ENTITY_LIST: list[str] = [
+# Config for entity IDs.
+CONFIG_ENTITY_ID_LIST: list[str] = [
     #####################################
     # Charger general configs
     #####################################
@@ -415,8 +415,6 @@ CONFIG_ENTITY_LIST: list[str] = [
     ENTITY_CHARGER_SET_CHARGE_CURRENT,
     ENTITY_OCPP_CHARGER_ID,
     ENTITY_OCPP_TRANSACTION_ID,
-    NUMBER_OCPP_PROFILE_ID,
-    NUMBER_OCPP_PROFILE_STACK_LEVEL,
     #####################################
     # Chargee control entities
     #####################################
@@ -454,7 +452,7 @@ CONFIG_ENTITY_LIST: list[str] = [
 ]
 
 # Config option with local values.
-CONFIG_OPTION_LOCAL_LIST: list[str] = [
+CONFIG_LOCAL_OPTION_LIST: list[str] = [
     OPTION_CHARGER_NAME,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
@@ -462,14 +460,22 @@ CONFIG_OPTION_LOCAL_LIST: list[str] = [
     OPTION_CHARGEE_LOCATION_STATE_LIST,
 ]
 
-# Config option with entity values.
-# No easy way to do this at the moment since the entity names are unknown.
-# TODO: Need link between config_time and local entity name.
-CONFIG_OPTION_ENTITY_LIST: list[str] = [
+# Not used. FYI only. See OPTION_LOCAL_INTERNAL_ENTITIES.
+CONFIG_INTERNAL_ENTITY_LIST: list[str] = [
     #####################################
-    # Internal control entities
+    # Internal non-configurable entities
     #####################################
+    # Common entities
+    DATETIME_NEXT_CHARGE_TIME,
+    SWITCH_CHARGE,
+    SWITCH_FAST_CHARGE_MODE,
+    SWITCH_SCHEDULE_CHARGE,
+    SWITCH_PLUGIN_TRIGGER,
+    SWITCH_SUN_TRIGGER,
     SELECT_DEVICE_PRESENCE_SENSOR,
+    # OCPP entities
+    NUMBER_OCPP_PROFILE_ID,
+    NUMBER_OCPP_PROFILE_STACK_LEVEL,
 ]
 
 #######################################################
@@ -598,6 +604,8 @@ CHARGE_API_DEFAULT_VALUES: dict[str, dict[str, Any | None]] = {
 #######################################################
 # Lists
 #######################################################
+DEVICE_NAME_MARKER = "<DeviceName>"
+CONFIG_NAME_MARKER = "<ConfigName>"
 
 #####################################
 # Global default entities
@@ -657,6 +665,25 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 }
 
 #####################################
+# Internal non-configurable entities
+# Link between config_time and entity name.
+#####################################
+# Non-configurable entities: Local device internal control entities.
+OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
+    # Common entities
+    DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
+    SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
+    SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
+    SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
+    SWITCH_PLUGIN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PLUGIN_TRIGGER}",
+    SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
+    SELECT_DEVICE_PRESENCE_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_DEVICE_PRESENCE_SENSOR}",
+    # OCPP entities
+    NUMBER_OCPP_PROFILE_ID: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_OCPP_PROFILE_ID}",
+    NUMBER_OCPP_PROFILE_STACK_LEVEL: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_OCPP_PROFILE_STACK_LEVEL}",
+}
+
+#####################################
 # Device API entities
 #
 # Note:
@@ -666,8 +693,6 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 #####################################
 # Use this to delete an entity from saved options, eg. sensor.deleteme, button.deleteme
 OPTION_DELETE_ENTITY = ".deleteme"
-DEVICE_NAME_MARKER = "<DeviceName>"
-CONFIG_NAME_MARKER = "<ConfigName>"
 
 # See OCPP spec v1.6j page 38 transition states, and page 77 ChargePointStatus (sensor.charger_status_connector).
 # Available (no EV connected)
@@ -864,14 +889,6 @@ USER_CUSTOM_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_CHARGER_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CHARGER_ALLOCATED_POWER}",
-    # Non-configurable entities: Local device internal control entities (not used here, FYI only)
-    # DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
-    # SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
-    # SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
-    # SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
-    # SWITCH_PLUGIN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PLUGIN_TRIGGER}",
-    # SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
-    # SELECT_DEVICE_PRESENCE_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_DEVICE_PRESENCE_SENSOR}",
 }
 
 CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {

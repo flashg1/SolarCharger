@@ -520,6 +520,28 @@ def delete_marked_entities(
 
 
 # ----------------------------------------------------------------------------
+def create_entity_ids_from_templates(
+    entity_map: dict[str, Any],
+    template_map: dict[str, str | None] | None,
+    device_name: str | None,
+    config_name: str | None,
+) -> None:
+    """Create entity IDs from templates."""
+
+    if template_map:
+        key_list = list(template_map.keys())
+        for config_item in key_list:
+            entity_id = get_device_entity_id_with_substitution(
+                template_map,
+                config_item,
+                device_name,
+                config_name,
+            )
+            if entity_id:
+                entity_map[config_item] = entity_id
+
+
+# ----------------------------------------------------------------------------
 def reset_api_entities(
     config_entry: ConfigEntry,
     config_name: str,  # Same as subentry unique_id
@@ -545,15 +567,8 @@ def reset_api_entities(
                     data[OPTION_CHARGER_NAME] = device_name
 
                     api_entities = get_device_api_entities(subentry)
-                    if api_entities:
-                        key_list = list(api_entities.keys())
-                        for config_item in key_list:
-                            entity_name = get_device_entity_id_with_substitution(
-                                api_entities,
-                                config_item,
-                                device_name,
-                                subentry.unique_id,
-                            )
-                            if entity_name:
-                                data[config_item] = entity_name
+                    create_entity_ids_from_templates(
+                        data, api_entities, device_name, subentry.unique_id
+                    )
+
     return data

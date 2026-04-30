@@ -19,10 +19,10 @@ from homeassistant.helpers import device_registry as dr
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
+from ..config.config_utils import create_entity_ids_from_templates
 from ..const import (
-    CONFIG_ENTITY_LIST,
-    CONFIG_OPTION_ENTITY_LIST,
-    CONFIG_OPTION_LOCAL_LIST,
+    CONFIG_ENTITY_ID_LIST,
+    CONFIG_LOCAL_OPTION_LIST,
     DOMAIN,
     ENTITY_CHARGEE_LOCATION_SENSOR,
     ENTITY_CHARGEE_SOC_SENSOR,
@@ -46,6 +46,8 @@ from ..const import (
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
+    OPTION_CHARGER_NAME,
+    OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
@@ -240,7 +242,7 @@ class SolarCharge(ScOptionState):
     # Log configuration for debugging
     # ----------------------------------------------------------------------------
     def _log_config_entities(self, entity_list: list[str]) -> None:
-        """Log config entity values."""
+        """Log config entities."""
 
         val_dict = ConfigValueDict("Config entities", {})
         for config_item in entity_list:
@@ -249,30 +251,40 @@ class SolarCharge(ScOptionState):
         _LOGGER.debug("%s: %s", self.caller, val_dict)
 
     # ----------------------------------------------------------------------------
-    def _log_config_option_locals(self, option_list: list[str]) -> None:
-        """Log config option with local values."""
+    def _log_local_options(self, option_list: list[str]) -> None:
+        """Log local option values."""
 
-        val_dict = ConfigValueDict("Config options", {})
+        val_dict = ConfigValueDict("Local options", {})
         for config_item in option_list:
             self.option_get_string(config_item, val_dict)
 
         _LOGGER.debug("%s: %s", self.caller, val_dict)
 
     # ----------------------------------------------------------------------------
-    def _log_config_option_entities(self, option_list: list[str]) -> None:
-        """Log config option with entity values."""
+    def _log_internal_entities(self, template_map: dict[str, str]) -> None:
+        """Log internal non-configurable entities."""
 
-        # No easy way to do this at the moment since the entity names are unknown.
-        # TODO: Need link between config_time and local entity name.
+        entity_map: dict[str, Any] = {}
+        device_name = self.option_get_string(OPTION_CHARGER_NAME)
+        config_name = self._subentry.unique_id
+        create_entity_ids_from_templates(
+            entity_map, template_map, device_name, config_name
+        )
+
+        val_dict = ConfigValueDict("Internal entities", {})
+        for config_item, entity_id in list(entity_map.items()):
+            self.option_get_entity_string_direct(config_item, entity_id, val_dict)
+
+        _LOGGER.debug("%s: %s", self.caller, val_dict)
 
     # ----------------------------------------------------------------------------
     def log_configuration(self) -> None:
-        """Log power allocations."""
+        """Log all configuration settings."""
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
-            self._log_config_entities(CONFIG_ENTITY_LIST)
-            self._log_config_option_locals(CONFIG_OPTION_LOCAL_LIST)
-            self._log_config_option_entities(CONFIG_OPTION_ENTITY_LIST)
+            self._log_config_entities(CONFIG_ENTITY_ID_LIST)
+            self._log_local_options(CONFIG_LOCAL_OPTION_LIST)
+            self._log_internal_entities(OPTION_LOCAL_INTERNAL_ENTITIES)
 
     # ----------------------------------------------------------------------------
     # Common code

@@ -396,6 +396,25 @@ class ScOptionState(ScConfigState):
         return entity_val
 
     # ----------------------------------------------------------------------------
+    def option_get_entity_string_direct(
+        self,
+        config_item: str,
+        entity_id: str | None,
+        val_dict: ConfigValueDict | None = None,
+    ) -> str | None:
+        """Get string value directly given config item and entity id."""
+        entity_val = None
+
+        if entity_id:
+            entity_val = self.get_string(entity_id)
+
+        self._set_config_value_dict(
+            val_dict, self._subentry.unique_id, config_item, entity_id, entity_val
+        )
+
+        return entity_val
+
+    # ----------------------------------------------------------------------------
     def option_get_entity_string(
         self,
         config_item: str,

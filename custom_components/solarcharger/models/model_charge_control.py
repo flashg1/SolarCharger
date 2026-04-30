@@ -65,6 +65,12 @@ class ControlEntities:
     # Cannot get input_datetime to work, so input_times is not used.
     input_times: dict[str, SolarChargerInputTimeConfigEntity] | None = None
 
+    # # Mapping config_item to domain.
+    # config_domain_map: dict[str, str] | None = None
+    # # Mapping domain to config_item/entity dictionary.
+    # # Problem: Global default and local device entities both use the same config item.
+    # domain_entity_map: dict[str, dict[str, SolarChargerEntity]] | None = None
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
