@@ -302,7 +302,7 @@ ENTITY_CHARGEE_WAKE_UP_BUTTON = "chargee_wake_up_button"
 ENTITY_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 
 #####################################
-# Other control entities
+# Internal control entities
 #####################################
 SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 
@@ -382,6 +382,7 @@ DEFAULT_CHARGE_LIMIT_MAP: dict[str, str] = {
     NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: NUMBER_CHARGE_LIMIT_SUNDAY,
 }
 
+# Config with entity values.
 CONFIG_ENTITY_LIST: list[str] = [
     #####################################
     # Charger general configs
@@ -427,10 +428,6 @@ CONFIG_ENTITY_LIST: list[str] = [
     ENTITY_CHARGEE_WAKE_UP_BUTTON,
     ENTITY_CHARGEE_UPDATE_HA_BUTTON,
     #####################################
-    # Other control entities
-    #####################################
-    SELECT_DEVICE_PRESENCE_SENSOR,
-    #####################################
     # Charge schedule entities
     #####################################
     NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
@@ -456,12 +453,23 @@ CONFIG_ENTITY_LIST: list[str] = [
     TIME_CHARGE_ENDTIME_SUNDAY,
 ]
 
-CONFIG_OPTION_LIST: list[str] = [
+# Config option with local values.
+CONFIG_OPTION_LOCAL_LIST: list[str] = [
     OPTION_CHARGER_NAME,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGEE_LOCATION_STATE_LIST,
+]
+
+# Config option with entity values.
+# No easy way to do this at the moment since the entity names are unknown.
+# TODO: Need link between config_time and local entity name.
+CONFIG_OPTION_ENTITY_LIST: list[str] = [
+    #####################################
+    # Internal control entities
+    #####################################
+    SELECT_DEVICE_PRESENCE_SENSOR,
 ]
 
 #######################################################

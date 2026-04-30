@@ -21,7 +21,8 @@ from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     CONFIG_ENTITY_LIST,
-    CONFIG_OPTION_LIST,
+    CONFIG_OPTION_ENTITY_LIST,
+    CONFIG_OPTION_LOCAL_LIST,
     DOMAIN,
     ENTITY_CHARGEE_LOCATION_SENSOR,
     ENTITY_CHARGEE_SOC_SENSOR,
@@ -248,8 +249,8 @@ class SolarCharge(ScOptionState):
         _LOGGER.debug("%s: %s", self.caller, val_dict)
 
     # ----------------------------------------------------------------------------
-    def _log_config_options(self, option_list: list[str]) -> None:
-        """Log config option values."""
+    def _log_config_option_locals(self, option_list: list[str]) -> None:
+        """Log config option with local values."""
 
         val_dict = ConfigValueDict("Config options", {})
         for config_item in option_list:
@@ -258,12 +259,20 @@ class SolarCharge(ScOptionState):
         _LOGGER.debug("%s: %s", self.caller, val_dict)
 
     # ----------------------------------------------------------------------------
+    def _log_config_option_entities(self, option_list: list[str]) -> None:
+        """Log config option with entity values."""
+
+        # No easy way to do this at the moment since the entity names are unknown.
+        # TODO: Need link between config_time and local entity name.
+
+    # ----------------------------------------------------------------------------
     def log_configuration(self) -> None:
         """Log power allocations."""
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             self._log_config_entities(CONFIG_ENTITY_LIST)
-            self._log_config_options(CONFIG_OPTION_LIST)
+            self._log_config_option_locals(CONFIG_OPTION_LOCAL_LIST)
+            self._log_config_option_entities(CONFIG_OPTION_ENTITY_LIST)
 
     # ----------------------------------------------------------------------------
     # Common code
