@@ -382,6 +382,9 @@ DEFAULT_CHARGE_LIMIT_MAP: dict[str, str] = {
     NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: NUMBER_CHARGE_LIMIT_SUNDAY,
 }
 
+#######################################################
+# Lists for debug logging of entity configuration
+#######################################################
 # Config for entity IDs.
 CONFIG_ENTITY_ID_LIST: list[str] = [
     #####################################
@@ -460,7 +463,7 @@ CONFIG_LOCAL_OPTION_LIST: list[str] = [
     OPTION_CHARGEE_LOCATION_STATE_LIST,
 ]
 
-# Not used. FYI only. See OPTION_LOCAL_INTERNAL_ENTITIES.
+# Not used. FYI only. Using OPTION_LOCAL_INTERNAL_ENTITIES instead.
 CONFIG_INTERNAL_ENTITY_LIST: list[str] = [
     #####################################
     # Internal non-configurable entities
