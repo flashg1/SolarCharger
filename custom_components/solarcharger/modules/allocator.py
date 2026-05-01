@@ -259,7 +259,7 @@ class PowerAllocator:
             self._global_defaults_control.controller.solar_charge.get_net_power()
         )
         if net_power is None:
-            _LOGGER.warning("Failed to get net power update. Try again next cycle.")
+            _LOGGER.warning("Cannot get net power update. Try next cycle.")
             return
 
         (
@@ -279,7 +279,7 @@ class PowerAllocator:
                     allocation_ladder, net_power
                 )
 
-            _LOGGER.info(
+            _LOGGER.debug(
                 "After allocation: total_instance=%s, net_power=%s, remain_power=%s",
                 total_instance,
                 net_power,
@@ -292,7 +292,7 @@ class PowerAllocator:
             )
 
             for rung in allocation_ladder:
-                _LOGGER.info(
+                _LOGGER.debug(
                     "priority=%s, total_max_power=%s, total_consumed_power=%s, "
                     "total_need_power=%s, total_lack_power=%s, total_plan_weight=%s, "
                     "total_final_weight=%s, total_instance=%s",
@@ -319,12 +319,10 @@ class PowerAllocator:
                         else allocation.plan_power,
                     )
 
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "%s: %s",
                         control.config_name,
                         allocation,
                     )
         else:
-            _LOGGER.debug(
-                "No running charger for net power allocation. Try again next cycle."
-            )
+            _LOGGER.debug("No running charger for power allocation. Try next cycle.")

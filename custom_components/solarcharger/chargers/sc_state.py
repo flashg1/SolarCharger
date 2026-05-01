@@ -193,7 +193,7 @@ class ScState:
 
         state_str = self.get_state_string(entity_id)
         if state_str is None or state_str in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "%s: Cannot get number: entity='%s', value='%s'",
                 self.caller,
                 entity_id,
@@ -229,7 +229,7 @@ class ScState:
 
         state_str = self.get_state_string(entity_id)
         if state_str is None:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "%s: Cannot get string for entity '%s'",
                 self.caller,
                 entity_id,
@@ -244,7 +244,7 @@ class ScState:
 
         state_str = self.get_state_string(entity_id)
         if state_str is None:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "%s: Cannot get boolean for entity '%s'",
                 self.caller,
                 entity_id,
@@ -269,7 +269,7 @@ class ScState:
 
         state_str = self.get_state_string(entity_id)
         if state_str is None:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "%s: Cannot get datetime for entity '%s'",
                 self.caller,
                 entity_id,
@@ -294,7 +294,7 @@ class ScState:
 
         state_str = self.get_state_string(entity_id)
         if state_str is None:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "%s: Cannot get time for entity '%s'",
                 self.caller,
                 entity_id,
