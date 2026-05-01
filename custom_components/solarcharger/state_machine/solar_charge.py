@@ -622,7 +622,7 @@ class SolarCharge(ScOptionState):
     def log_context(self, context: ContextData) -> None:
         """Log context data."""
 
-        _LOGGER.warning("%s: %s", self.caller, context)
+        _LOGGER.warning("%s: ContextData: %s", self.caller, context)
 
     # ----------------------------------------------------------------------------
     def get_context(

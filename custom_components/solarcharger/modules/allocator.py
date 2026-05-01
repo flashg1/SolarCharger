@@ -325,4 +325,4 @@ class PowerAllocator:
                         allocation,
                     )
         else:
-            _LOGGER.debug("No running charger for power allocation. Try next cycle.")
+            _LOGGER.debug("No running charger for power allocation")

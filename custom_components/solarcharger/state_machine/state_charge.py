@@ -370,6 +370,7 @@ class StateCharge(SolarChargeState):
             started_calibration=self.solarcharge.started_calibrate_max_charge_speed,
             started_max_charge=self.solarcharge.started_max_charge,
             msg="Calibration",
+            log_it=True,
         )
         if self.solarcharge.scheduler.calibration_charge_limit == -1:
             raise EntityExceptionError("Charge limit not set")
@@ -386,8 +387,6 @@ class StateCharge(SolarChargeState):
             )
         else:
             raise EntityExceptionError("Missing SOC sensor")
-
-        self.solarcharge.scheduler.log_goal(goal, "Calibrate charge speed")
 
     # ----------------------------------------------------------------------------
     async def _async_calibrate_max_charge_speed_if_required(
