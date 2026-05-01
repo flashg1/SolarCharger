@@ -6,7 +6,6 @@
 ### Improvement
 - Reduced debug logging.
 - Refactored data models and reorganised directory structure.
-day.
 - Refactored max_charge_now to avoid pausing during the night and less likely to time-drift reducing charge speed during the day.
 - For scheduled night-time charging, always charge at max current without pause.
 - For scheduled day-time charging, it is possible to pause and not always charge at max current.
