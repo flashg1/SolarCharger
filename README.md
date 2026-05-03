@@ -32,6 +32,8 @@
 [How to use](https://github.com/flashg1/SolarCharger#how-to-use)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Option 1](https://github.com/flashg1/SolarCharger#option-1)  
 &nbsp;&nbsp;&nbsp;&nbsp;[Option 2](https://github.com/flashg1/SolarCharger#option-2)  
+[Wiki pages](https://github.com/flashg1/SolarCharger/wiki)  
+
 
 ## Disclaimer:
 Even though this custom integration has been created with care, the author cannot be responsible for any damage caused by this integration.  Use at your own risk.
