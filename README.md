@@ -18,7 +18,20 @@
 
 
 ## Solar Charger - Work in progress
+Table of contents
 
+[Disclaimer](https://github.com/flashg1/SolarCharger#disclaimer)  
+[Overview](https://github.com/flashg1/SolarCharger#overview)  
+[Features](https://github.com/flashg1/SolarCharger#features)  
+[My setup](https://github.com/flashg1/SolarCharger#my-setup)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Other supported integrations](https://github.com/flashg1/SolarCharger#other-supported-integrations)  
+[Installation](https://github.com/flashg1/SolarCharger#installation)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Install via HACS (Recommended)](https://github.com/flashg1/SolarCharger#install-via-hacs-recommended)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Manual install](https://github.com/flashg1/SolarCharger#manual-install)  
+[Configuration](https://github.com/flashg1/SolarCharger#configuration)  
+[How to use](https://github.com/flashg1/SolarCharger#how-to-use)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Option 1](https://github.com/flashg1/SolarCharger#option-1)  
+&nbsp;&nbsp;&nbsp;&nbsp;[Option 2](https://github.com/flashg1/SolarCharger#option-2)  
 
 ## Disclaimer:
 Even though this custom integration has been created with care, the author cannot be responsible for any damage caused by this integration.  Use at your own risk.
