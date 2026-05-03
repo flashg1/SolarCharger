@@ -18,8 +18,8 @@
 
 
 ## Solar Charger - Work in progress
-Table of contents
 
+## Table of contents
 [Disclaimer](https://github.com/flashg1/SolarCharger#disclaimer)  
 [Overview](https://github.com/flashg1/SolarCharger#overview)  
 [Features](https://github.com/flashg1/SolarCharger#features)  
