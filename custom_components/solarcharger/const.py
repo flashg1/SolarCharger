@@ -12,7 +12,7 @@ NAME = "Solar Charger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json and README.md
-VERSION = "0.6.1"
+VERSION = "0.6.2"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -293,7 +293,8 @@ NUMBER_OCPP_PROFILE_STACK_LEVEL = "ocpp_profile_stack_level"
 # Chargee control entities
 #####################################
 ENTITY_CHARGEE_SOC_SENSOR = "chargee_soc_sensor"
-ENTITY_CHARGEE_CHARGE_LIMIT = "chargee_charge_limit"
+# Used for OCPP and user custom chargers only
+NUMBER_CHARGEE_CHARGE_LIMIT = "chargee_charge_limit"
 ENTITY_CHARGEE_GET_CHARGE_LIMIT = "chargee_get_charge_limit"
 ENTITY_CHARGEE_SET_CHARGE_LIMIT = "chargee_set_charge_limit"
 ENTITY_CHARGEE_LOCATION_SENSOR = "chargee_location_sensor"
@@ -422,7 +423,7 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     # Chargee control entities
     #####################################
     ENTITY_CHARGEE_SOC_SENSOR,
-    ENTITY_CHARGEE_CHARGE_LIMIT,
+    # NUMBER_CHARGEE_CHARGE_LIMIT,
     ENTITY_CHARGEE_GET_CHARGE_LIMIT,
     ENTITY_CHARGEE_SET_CHARGE_LIMIT,
     ENTITY_CHARGEE_LOCATION_SENSOR,
@@ -438,6 +439,7 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
+    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
@@ -469,13 +471,16 @@ CONFIG_INTERNAL_ENTITY_LIST: list[str] = [
     # Internal non-configurable entities
     #####################################
     # Common entities
-    DATETIME_NEXT_CHARGE_TIME,
     SWITCH_CHARGE,
     SWITCH_FAST_CHARGE_MODE,
-    SWITCH_SCHEDULE_CHARGE,
+    DATETIME_NEXT_CHARGE_TIME,
+    SELECT_DEVICE_PRESENCE_SENSOR,
+    SWITCH_PRESENCE_TRIGGER,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_SUN_TRIGGER,
-    SELECT_DEVICE_PRESENCE_SENSOR,
+    SWITCH_SCHEDULE_CHARGE,
+    SWITCH_POLL_CHARGER_UPDATE,
+    SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     # OCPP entities
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
@@ -549,7 +554,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     # Local device optional defaults
     #####################################
     NUMBER_CHARGER_MAX_CURRENT: None,  # Also update CONFIG_WITH_NO_DEFAULTS
-    ENTITY_CHARGEE_CHARGE_LIMIT: 70,
+    NUMBER_CHARGEE_CHARGE_LIMIT: 70,
     #####################################
     # Local device switch defaults
     #####################################
@@ -605,10 +610,14 @@ CHARGE_API_DEFAULT_VALUES: dict[str, dict[str, Any | None]] = {
 }
 
 #######################################################
-# Lists
+# Config item to entity ID mapping lists
 #######################################################
+# Name of the device in HA, eg. charger1
 DEVICE_NAME_MARKER = "<DeviceName>"
+# Combination of domain name and device name, eg. ocpp_charger1
 CONFIG_NAME_MARKER = "<ConfigName>"
+# Use this to delete an entity from saved options, eg. sensor.deleteme, button.deleteme
+OPTION_DELETE_ENTITY = ".deleteme"
 
 #####################################
 # Global default entities
@@ -674,13 +683,16 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 # Non-configurable entities: Local device internal control entities.
 OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
     # Common entities
-    DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
     SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
     SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
-    SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
+    DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
+    SELECT_DEVICE_PRESENCE_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_DEVICE_PRESENCE_SENSOR}",
+    SWITCH_PRESENCE_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PRESENCE_TRIGGER}",
     SWITCH_PLUGIN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_PLUGIN_TRIGGER}",
     SWITCH_SUN_TRIGGER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUN_TRIGGER}",
-    SELECT_DEVICE_PRESENCE_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_DEVICE_PRESENCE_SENSOR}",
+    SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
+    SWITCH_POLL_CHARGER_UPDATE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_POLL_CHARGER_UPDATE}",
+    SWITCH_CALIBRATE_MAX_CHARGE_SPEED: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CALIBRATE_MAX_CHARGE_SPEED}",
     # OCPP entities
     NUMBER_OCPP_PROFILE_ID: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_OCPP_PROFILE_ID}",
     NUMBER_OCPP_PROFILE_STACK_LEVEL: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_OCPP_PROFILE_STACK_LEVEL}",
@@ -688,15 +700,7 @@ OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
 
 #####################################
 # Device API entities
-#
-# Note:
-# Key name used in entity ID indicates entity created is not hidden and is configured in local defaults, eg.
-#     OPTION_CHARGEE_CHARGE_LIMIT: f"number.{DOMAIN}_{CONFIG_NAME_MARKER}_{OPTION_CHARGEE_CHARGE_LIMIT}",
-# ie. not using equivalent entity from global defaults.
 #####################################
-# Use this to delete an entity from saved options, eg. sensor.deleteme, button.deleteme
-OPTION_DELETE_ENTITY = ".deleteme"
-
 # See OCPP spec v1.6j page 38 transition states, and page 77 ChargePointStatus (sensor.charger_status_connector).
 # Available (no EV connected)
 # Preparing (EV plugged in but charging yet to start)
@@ -729,8 +733,8 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     # Setting this to blank string to disallow configuration in settings.
     ENTITY_CHARGER_SET_CHARGE_CURRENT: "",
     ENTITY_CHARGEE_SOC_SENSOR: None,
-    ENTITY_CHARGEE_GET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{ENTITY_CHARGEE_CHARGE_LIMIT}",
-    ENTITY_CHARGEE_SET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{ENTITY_CHARGEE_CHARGE_LIMIT}",
+    ENTITY_CHARGEE_GET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGEE_CHARGE_LIMIT}",
+    ENTITY_CHARGEE_SET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGEE_CHARGE_LIMIT}",
     ENTITY_CHARGEE_LOCATION_SENSOR: None,
     OPTION_CHARGEE_LOCATION_STATE_LIST: None,
     ENTITY_CHARGEE_WAKE_UP_BUTTON: None,
@@ -878,8 +882,8 @@ USER_CUSTOM_ENTITIES: dict[str, str | None] = {
     ENTITY_CHARGER_GET_CHARGE_CURRENT: None,
     ENTITY_CHARGER_SET_CHARGE_CURRENT: None,
     ENTITY_CHARGEE_SOC_SENSOR: None,
-    ENTITY_CHARGEE_GET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{ENTITY_CHARGEE_CHARGE_LIMIT}",
-    ENTITY_CHARGEE_SET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{ENTITY_CHARGEE_CHARGE_LIMIT}",
+    ENTITY_CHARGEE_GET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGEE_CHARGE_LIMIT}",
+    ENTITY_CHARGEE_SET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGEE_CHARGE_LIMIT}",
     ENTITY_CHARGEE_LOCATION_SENSOR: None,
     OPTION_CHARGEE_LOCATION_STATE_LIST: None,
     ENTITY_CHARGEE_WAKE_UP_BUTTON: None,

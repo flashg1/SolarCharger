@@ -24,7 +24,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .config.config_utils import get_device_config_default_value
 from .const import (
     DOMAIN,
-    ENTITY_CHARGEE_CHARGE_LIMIT,
     NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
@@ -33,6 +32,7 @@ from .const import (
     NUMBER_CHARGE_LIMIT_THURSDAY,
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_CHARGEE_CHARGE_LIMIT,
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
@@ -186,13 +186,13 @@ CONFIG_NUMBER_LIST: tuple[
     #####################################
     # Used as local device entity for OCPP only. Others come with own entity.
     (
-        ENTITY_CHARGEE_CHARGE_LIMIT,
+        NUMBER_CHARGEE_CHARGE_LIMIT,
         [
             SolarChargerEntityType.TYPE_LOCAL_OCPP,
             SolarChargerEntityType.TYPE_LOCAL_USER_CUSTOM,
         ],
         NumberEntityDescription(
-            key=ENTITY_CHARGEE_CHARGE_LIMIT,
+            key=NUMBER_CHARGEE_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
             native_unit_of_measurement=PERCENTAGE,
             native_min_value=0,

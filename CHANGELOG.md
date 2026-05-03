@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.2 2026-05-03
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.5.4 or prior.
+### Improvement
+- Added missing entities for config debug logging during startup.
+
 ## v0.6.1 2026-04-26
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.5.4 or prior.
