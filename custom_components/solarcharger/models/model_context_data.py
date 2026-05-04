@@ -54,6 +54,7 @@ class ContextData:
             f"state={self.state.value}, "
             f"is_continue_state={self.is_continue_state}, "
             f"next_step={self.next_step.value} ("
+            f"max_allocation_count={self.max_allocation_count}, "
             f"is_enough_power={self.is_enough_power}, "
             f"average_allocated_power={self.average_allocated_power}, "
             f"data_points={self.data_points}), "

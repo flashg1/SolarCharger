@@ -26,9 +26,9 @@ from ..const import (
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+    NUMBER_CURRENT_UPDATE_PERIOD,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
-    NUMBER_WAIT_CHARGER_UPDATE,
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SWITCH,
@@ -86,10 +86,10 @@ class ScOptionState(ScConfigState):
     # not defined in config_options_flow _charger_control_entities_schema().
     # ----------------------------------------------------------------------------
     @cached_property
-    def wait_charger_update_entity_id(self) -> str:
-        """Return wait charger update entity ID."""
+    def current_update_period_entity_id(self) -> str:
+        """Return current update period entity ID."""
         return compose_entity_id(
-            NUMBER, CONFIG_NAME_GLOBAL_DEFAULTS, NUMBER_WAIT_CHARGER_UPDATE
+            NUMBER, CONFIG_NAME_GLOBAL_DEFAULTS, NUMBER_CURRENT_UPDATE_PERIOD
         )
 
     @cached_property

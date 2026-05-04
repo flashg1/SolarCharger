@@ -42,6 +42,7 @@ from .const import (
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
+    NUMBER_CURRENT_UPDATE_PERIOD,
     NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
@@ -60,7 +61,6 @@ from .const import (
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
-    NUMBER_WAIT_CHARGER_UPDATE,
 )
 from .entity import (
     SolarChargerEntity,
@@ -396,15 +396,15 @@ CONFIG_NUMBER_LIST: tuple[
     # Charger configs
     #####################################
     (
-        NUMBER_WAIT_CHARGER_UPDATE,
+        NUMBER_CURRENT_UPDATE_PERIOD,
         SolarChargerEntityType.TYPE_GLOBAL,
         NumberEntityDescription(
-            key=NUMBER_WAIT_CHARGER_UPDATE,
+            key=NUMBER_CURRENT_UPDATE_PERIOD,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.SECONDS,
-            native_min_value=1.0,
-            native_max_value=600.0,
+            native_min_value=10.0,
+            native_max_value=1200.0,
         ),
     ),
     (

@@ -1,7 +1,6 @@
 # ruff: noqa: TRY401, TID252
 """State machine state."""
 
-import asyncio
 import logging
 
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -162,15 +161,7 @@ class StateCharge(SolarChargeState):
         config_min_current = self.solarcharge.get_charger_min_current(
             charger_max_current
         )
-
         charger_min_current = config_min_current
-        # if goal.use_charge_schedule:
-        #     if self.solarcharge.scheduler.is_not_enough_time_to_complete_charge(
-        #         old_charge_current,
-        #         charger_max_current,
-        #         goal,
-        #     ):
-        #         charger_min_current = charger_max_current
 
         #####################################
         # Calculate new current from allocated power
@@ -333,7 +324,6 @@ class StateCharge(SolarChargeState):
         await self.solarcharge.async_turn_charger_switch(charger, turn_on=True)
         await self.solarcharge.async_set_charge_current(charger, INITIAL_CHARGE_CURRENT)
         await self.solarcharge.async_update_ha(chargeable)
-        # self._subscribe_allocated_power_update()
         self._log_charging_status(charger, "Charger ON")
 
     # ----------------------------------------------------------------------------

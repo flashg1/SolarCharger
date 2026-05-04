@@ -11,11 +11,11 @@
                 "description": "Config for net power entity and update interval.",
                 "data": {
                     "net_power": "Net Power (W)",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 60)"
+                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20)"
                 },
                 "data_description": {
                     "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current. The waiting period should be greater than or equal to the sensor update interval."
+                    "wait_net_power_update": "Seconds to wait for net power sensor update. The waiting period should be greater than or equal to the sensor update interval."
                 }
             },
             "reconfigure": {
@@ -23,11 +23,11 @@
                 "description": "Config for net power entity and update interval.",
                 "data": {
                     "net_power": "Net Power (W)",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 60)"
+                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20)"
                 },
                 "data_description": {
                     "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update before adjusting charger current. The waiting period should be greater than or equal to the sensor update interval."
+                    "wait_net_power_update": "Seconds to wait for net power sensor update. The waiting period should be greater than or equal to the sensor update interval."
                 }
             }
         },
@@ -60,7 +60,7 @@
             "entry_type": "Charger device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage in \"Global defaults\", max current in charger device if available, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
+                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage and current update period in \"Global defaults\", max current in charger device, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
             }
         },
         "custom": {
@@ -86,7 +86,7 @@
             "entry_type": "Custom device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage in \"Global defaults\", max current in charger device if available, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
+                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage and current update period in \"Global defaults\", max current in charger device, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
             }
         }
     },
@@ -287,8 +287,8 @@
             "sunset_elevation_end_trigger": {
                 "name": "Sunset elevation end trigger"
             },
-            "wait_charger_update": {
-                "name": "Wait charger update"
+            "current_update_period": {
+                "name": "Current update period"
             },
             "power_monitor_duration": {
                 "name": "Power monitor duration"

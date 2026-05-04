@@ -19,10 +19,7 @@ from homeassistant.helpers import device_registry as dr
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
-from ..config.config_utils import create_entity_ids_from_templates
 from ..const import (
-    CONFIG_ENTITY_ID_LIST,
-    CONFIG_LOCAL_OPTION_LIST,
     DOMAIN,
     ENTITY_CHARGEE_LOCATION_SENSOR,
     ENTITY_CHARGEE_SOC_SENSOR,
@@ -45,9 +42,6 @@ from ..const import (
     NUMBER_WAIT_CHARGEE_WAKEUP,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
-    NUMBER_WAIT_CHARGER_UPDATE,
-    OPTION_CHARGER_NAME,
-    OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
@@ -110,7 +104,6 @@ class SolarCharge(ScOptionState):
         self.running_goal: ScheduleData
 
         self.wait_net_power_update: float = 20
-        self.wait_charger_update: float = 60
         self.started_calibrate_max_charge_speed = False
         self.charge_current_updatetime: float = 0
         self.soc_updates: list[StateOfCharge] = []
@@ -204,7 +197,7 @@ class SolarCharge(ScOptionState):
     async def async_charger_sleep(self) -> None:
         """Wait before looping again."""
 
-        sleep_seconds = self.get_number(self.wait_charger_update_entity_id)
+        sleep_seconds = self.get_number(self.current_update_period_entity_id)
 
         if sleep_seconds is None or sleep_seconds < self.wait_net_power_update:
             sleep_seconds = self.wait_net_power_update
@@ -270,54 +263,6 @@ class SolarCharge(ScOptionState):
             await self.async_turn_switch(
                 self.calibrate_max_charge_speed_switch_entity_id, turn_on=False
             )
-
-    # ----------------------------------------------------------------------------
-    # Log configuration for debugging
-    # ----------------------------------------------------------------------------
-    def _log_config_entities(self, entity_list: list[str]) -> None:
-        """Log config entities."""
-
-        val_dict = ConfigValueDict("Config entities", {})
-        for config_item in entity_list:
-            self.option_get_entity_string(config_item, val_dict)
-
-        _LOGGER.debug("%s: %s", self.caller, val_dict)
-
-    # ----------------------------------------------------------------------------
-    def _log_local_options(self, option_list: list[str]) -> None:
-        """Log local option values."""
-
-        val_dict = ConfigValueDict("Local options", {})
-        for config_item in option_list:
-            self.option_get_string(config_item, val_dict)
-
-        _LOGGER.debug("%s: %s", self.caller, val_dict)
-
-    # ----------------------------------------------------------------------------
-    def _log_internal_entities(self, template_map: dict[str, str]) -> None:
-        """Log internal non-configurable entities."""
-
-        entity_map: dict[str, Any] = {}
-        device_name = self.option_get_string(OPTION_CHARGER_NAME)
-        config_name = self._subentry.unique_id
-        create_entity_ids_from_templates(
-            entity_map, template_map, device_name, config_name
-        )
-
-        val_dict = ConfigValueDict("Internal entities", {})
-        for config_item, entity_id in list(entity_map.items()):
-            self.option_get_entity_string_direct(config_item, entity_id, val_dict)
-
-        _LOGGER.debug("%s: %s", self.caller, val_dict)
-
-    # ----------------------------------------------------------------------------
-    def log_configuration(self) -> None:
-        """Log all configuration settings."""
-
-        if _LOGGER.isEnabledFor(logging.DEBUG):
-            self._log_config_entities(CONFIG_ENTITY_ID_LIST)
-            self._log_local_options(CONFIG_LOCAL_OPTION_LIST)
-            self._log_internal_entities(OPTION_LOCAL_INTERNAL_ENTITIES)
 
     # ----------------------------------------------------------------------------
     # Common code
@@ -623,13 +568,13 @@ class SolarCharge(ScOptionState):
         return self.is_fast_charge_mode()
 
     # ----------------------------------------------------------------------------
-    def is_monitor_available_power(self) -> bool:
-        """Is monitor available power option enabled?"""
-        need_to_monitor = False
+    def _is_allow_pause_state(self) -> bool:
+        """Check if charger is allowed to go into pause state."""
+        allow_pause_state = False
 
         if self.max_allocation_count > 0:
             # Yes, monitor config switched on.
-            need_to_monitor = True
+            allow_pause_state = True
 
             max_current = self.get_charger_max_current()
             min_current = self.get_charger_min_current(max_current)
@@ -645,9 +590,9 @@ class SolarCharge(ScOptionState):
                 or self.is_fast_charge_mode()
                 or self.is_calibrate_max_charge_speed()
             ):
-                need_to_monitor = False
+                allow_pause_state = False
 
-        return need_to_monitor
+        return allow_pause_state
 
     # ----------------------------------------------------------------------------
     # Machine state functions
@@ -658,7 +603,33 @@ class SolarCharge(ScOptionState):
         _LOGGER.warning("%s: ContextData: %s", self.caller, context)
 
     # ----------------------------------------------------------------------------
-    def get_context(
+    def _calc_average_allocated_power(
+        self,
+        max_allocation_count: int,
+        power_allocations: list[float],
+    ) -> tuple[float, int]:
+        """Calculate average allocated power."""
+
+        average_allocated_power = 0
+
+        if max_allocation_count > 0 and len(power_allocations) > 0:
+            average_allocated_power = sum(power_allocations) / len(power_allocations)
+
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(
+                "%s: average_allocated_power=%s, "
+                "max_allocation_count=%s, data_points=%s, power_allocations=%s",
+                self.caller,
+                average_allocated_power,
+                max_allocation_count,
+                len(power_allocations),
+                power_allocations,
+            )
+
+        return (average_allocated_power, len(power_allocations))
+
+    # ----------------------------------------------------------------------------
+    def _get_context(
         self,
         charger: Charger,
         chargeable: Chargeable,
@@ -696,7 +667,57 @@ class SolarCharge(ScOptionState):
         context.is_use_secondary_power_source = self.is_use_secondary_power_source()
         context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
+        # Data points managed in _async_handle_allocated_power_update().
+        (context.average_allocated_power, context.data_points) = (
+            self._calc_average_allocated_power(
+                context.max_allocation_count, context.power_allocations
+            )
+        )
+
         return context
+
+    # ----------------------------------------------------------------------------
+    def _is_average_allocated_power_more_than_min_workable_power(
+        self,
+        max_allocation_count: int,
+        power_allocations: list[float],
+        average_allocated_power: float,
+        data_points: int,
+        raise_the_bar: bool,
+    ) -> bool:
+        """Is average allocated power more than minimum workable power? None=not enough data.
+
+        raise_the_bar: Raise the bar to make it easier to get below the threshold, or harder to get above it.
+        Should be used to make it harder to switch on the charger.
+        """
+        is_enough_power = None
+
+        if max_allocation_count > 0 and data_points >= max_allocation_count:
+            charger_min_workable_current = self.get_charger_min_workable_current()
+            charger_effective_voltage = self.get_charger_effective_voltage()
+            min_workable_power = (
+                charger_min_workable_current * charger_effective_voltage * -1
+            )
+            if raise_the_bar:
+                # Raise the bar by 10% to avoid borderline cases where the charger might keep switching on and off.
+                min_workable_power *= 1.10
+
+            # Note surplus power is negative.
+            is_enough_power = average_allocated_power <= min_workable_power
+
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug(
+                    "%s: average_allocated_power=%s, min_workable_power=%s, is_enough_power=%s, "
+                    "max_allocation_count=%s, data_points=%s",
+                    self.caller,
+                    average_allocated_power,
+                    min_workable_power,
+                    is_enough_power,
+                    max_allocation_count,
+                    data_points,
+                )
+
+        return is_enough_power
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_charge_state(self, context: ContextData) -> None:
@@ -722,16 +743,15 @@ class SolarCharge(ScOptionState):
         )
 
         if continue_charge:
-            if self.is_monitor_available_power():
-                # Data points managed in _async_handle_allocated_power_update().
-                (
-                    context.is_enough_power,
-                    context.average_allocated_power,
-                    context.data_points,
-                ) = self.is_average_allocated_power_more_than_min_workable_power(
-                    context.max_allocation_count,
-                    context.power_allocations,
-                    raise_the_bar=False,
+            if self._is_allow_pause_state():
+                context.is_enough_power = (
+                    self._is_average_allocated_power_more_than_min_workable_power(
+                        context.max_allocation_count,
+                        context.power_allocations,
+                        context.average_allocated_power,
+                        context.data_points,
+                        raise_the_bar=False,
+                    )
                 )
 
                 if context.is_enough_power is not None and not context.is_enough_power:
@@ -760,16 +780,15 @@ class SolarCharge(ScOptionState):
         )
 
         if continue_pause:
-            if self.is_monitor_available_power():
-                # Data points managed in _async_handle_allocated_power_update().
-                (
-                    context.is_enough_power,
-                    context.average_allocated_power,
-                    context.data_points,
-                ) = self.is_average_allocated_power_more_than_min_workable_power(
-                    context.max_allocation_count,
-                    context.power_allocations,
-                    raise_the_bar=True,
+            if self._is_allow_pause_state():
+                context.is_enough_power = (
+                    self._is_average_allocated_power_more_than_min_workable_power(
+                        context.max_allocation_count,
+                        context.power_allocations,
+                        context.average_allocated_power,
+                        context.data_points,
+                        raise_the_bar=True,
+                    )
                 )
 
                 if context.is_enough_power is None or not context.is_enough_power:
@@ -777,7 +796,7 @@ class SolarCharge(ScOptionState):
                     context.is_continue_state = True
 
     # ----------------------------------------------------------------------------
-    def set_is_continue_state(
+    def _set_is_continue_state(
         self,
         context: ContextData,
     ) -> None:
@@ -816,7 +835,7 @@ class SolarCharge(ScOptionState):
         if state == RunState.CHARGING:
             await self.async_set_charge_limit_if_required(chargeable, self.running_goal)
 
-        context = self.get_context(
+        context = self._get_context(
             charger,
             chargeable,
             state,
@@ -827,7 +846,7 @@ class SolarCharge(ScOptionState):
         )
 
         # Check if continue charging or exit loop. Must run after setting charge limit.
-        self.set_is_continue_state(context)
+        self._set_is_continue_state(context)
 
         return context
 
@@ -938,51 +957,6 @@ class SolarCharge(ScOptionState):
         self.entities.sensors[SENSOR_AVERAGE_PAUSE_DURATION].set_state(
             stats.pause_average_duration.total_seconds() / 60
         )
-
-    # ----------------------------------------------------------------------------
-    def is_average_allocated_power_more_than_min_workable_power(
-        self,
-        max_allocation_count: int,
-        power_allocations: list[float],
-        raise_the_bar: bool,
-    ) -> tuple[bool | None, float, int]:
-        """Is average allocated power more than minimum workable power? None=not enough data.
-
-        raise_the_bar: Raise the bar to make it easier to get below the threshold, or harder to get above it.
-        Should be used to make it harder to switch on the charger.
-        """
-        is_enough_power = None
-        average_allocated_power = 0
-
-        if max_allocation_count > 0 and len(power_allocations) >= max_allocation_count:
-            average_allocated_power = sum(power_allocations) / len(power_allocations)
-
-            charger_min_workable_current = self.get_charger_min_workable_current()
-            charger_effective_voltage = self.get_charger_effective_voltage()
-            min_workable_power = (
-                charger_min_workable_current * charger_effective_voltage * -1
-            )
-            if raise_the_bar:
-                # Raise the bar by 10% to avoid borderline cases where the charger might keep switching on and off.
-                min_workable_power *= 1.10
-
-            # Note surplus power is negative.
-            is_enough_power = average_allocated_power <= min_workable_power
-
-            if _LOGGER.isEnabledFor(logging.DEBUG):
-                _LOGGER.debug(
-                    "%s: average_allocated_power=%s W, min_workable_power=%s W, is_enough_power=%s, "
-                    "max_allocation_count=%s, power_allocations_count=%s, power_allocations=%s",
-                    self.caller,
-                    average_allocated_power,
-                    min_workable_power,
-                    is_enough_power,
-                    max_allocation_count,
-                    len(power_allocations),
-                    power_allocations,
-                )
-
-        return (is_enough_power, average_allocated_power, len(power_allocations))
 
     # ----------------------------------------------------------------------------
     async def async_start_state_machine(self, machine_state: SolarChargeState) -> None:

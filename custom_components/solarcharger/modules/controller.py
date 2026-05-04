@@ -284,7 +284,7 @@ class ChargeController(ScOptionState):
     def _run_device_presence_detected_task(self) -> None:
         """Use semaphore to ensure that only one thread can update task count and only one task running."""
 
-        _LOGGER.info("%s: Device presence detected.")
+        _LOGGER.info("%s: Device presence detected.", self.caller)
 
         # Use semaphore to create only one async_semaphore_wakeup_and_update_ha() task.
         if self.solar_charge.semaphore_update_ha_task_count == 0:
