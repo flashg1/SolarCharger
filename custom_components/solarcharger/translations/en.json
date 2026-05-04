@@ -287,6 +287,9 @@
             "sunset_elevation_end_trigger": {
                 "name": "Sunset elevation end trigger"
             },
+            "wait_charger_update": {
+                "name": "Wait charger update"
+            },
             "power_monitor_duration": {
                 "name": "Power monitor duration"
             },

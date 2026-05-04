@@ -237,7 +237,7 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 # Power import/export sensor
 #####################################
 CONFIG_NET_POWER = "net_power"
-CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 60 seconds
+CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 20 seconds
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 OPTION_LAST_CHARGER_ID = "last_charger_id"
@@ -266,6 +266,7 @@ NUMBER_WAIT_CHARGER_OFF = "wait_charger_off"  # 5 seconds
 NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 second
 
 # 0 minutes=disabled, suggest 15 minutes to capture allocated power and turn off if average is below min power.
+NUMBER_WAIT_CHARGER_UPDATE = "wait_charger_update"  # 60 seconds
 NUMBER_POWER_MONITOR_DURATION = "power_monitor_duration"  # 10 minutes
 
 #####################################
@@ -470,7 +471,9 @@ CONFIG_INTERNAL_ENTITY_LIST: list[str] = [
     #####################################
     # Internal non-configurable entities
     #####################################
-    # Common entities
+    # Global entities
+    NUMBER_WAIT_CHARGER_UPDATE,
+    # Local entities
     SWITCH_CHARGE,
     SWITCH_FAST_CHARGE_MODE,
     DATETIME_NEXT_CHARGE_TIME,
@@ -538,6 +541,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Global defaults: Charger configs
     #####################################
+    NUMBER_WAIT_CHARGER_UPDATE: 60,
     NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
     #####################################
     # Local device required defaults
@@ -682,7 +686,9 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 #####################################
 # Non-configurable entities: Local device internal control entities.
 OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
-    # Common entities
+    # Global entities
+    NUMBER_WAIT_CHARGER_UPDATE: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{NUMBER_WAIT_CHARGER_UPDATE}",
+    # Local entities
     SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
     SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
     DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",

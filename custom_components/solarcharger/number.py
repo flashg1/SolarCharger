@@ -60,6 +60,7 @@ from .const import (
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
+    NUMBER_WAIT_CHARGER_UPDATE,
 )
 from .entity import (
     SolarChargerEntity,
@@ -394,6 +395,18 @@ CONFIG_NUMBER_LIST: tuple[
     #####################################
     # Charger configs
     #####################################
+    (
+        NUMBER_WAIT_CHARGER_UPDATE,
+        SolarChargerEntityType.TYPE_GLOBAL,
+        NumberEntityDescription(
+            key=NUMBER_WAIT_CHARGER_UPDATE,
+            entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            native_min_value=1.0,
+            native_max_value=600.0,
+        ),
+    ),
     (
         NUMBER_POWER_MONITOR_DURATION,
         SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,

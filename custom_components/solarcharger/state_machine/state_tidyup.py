@@ -29,6 +29,7 @@ class StateTidyUp(SolarChargeState):
     def _unsubscribe_allocated_power_update(self) -> None:
         """Unsubscribe allocated power update."""
 
+        self.solarcharge.give_up_real_power_allocation()
         self.solarcharge.tracker.untrack_allocated_power_update()
 
     # ----------------------------------------------------------------------------

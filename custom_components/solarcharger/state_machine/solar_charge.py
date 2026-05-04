@@ -43,9 +43,9 @@ from ..const import (
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
-    NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
+    NUMBER_WAIT_CHARGER_UPDATE,
     OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_AVERAGE_PAUSE_DURATION,
@@ -53,6 +53,7 @@ from ..const import (
     SENSOR_LAST_PAUSE_DURATION,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
+    SENSOR_SHARE_ALLOCATION,
     ChargeStatus,
     RunState,
 )
@@ -108,7 +109,8 @@ class SolarCharge(ScOptionState):
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
 
-        self.wait_net_power_update: float = 60
+        self.wait_net_power_update: float = 20
+        self.wait_charger_update: float = 60
         self.started_calibrate_max_charge_speed = False
         self.charge_current_updatetime: float = 0
         self.soc_updates: list[StateOfCharge] = []
@@ -184,6 +186,37 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     # Global utils
+    # ----------------------------------------------------------------------------
+    def participate_in_real_power_allocation(self) -> None:
+        """Participate in real power allocation."""
+
+        assert self.entities.sensors is not None
+        self.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(1)
+
+    # ----------------------------------------------------------------------------
+    def give_up_real_power_allocation(self) -> None:
+        """Participate in real power allocation."""
+
+        assert self.entities.sensors is not None
+        self.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(0)
+
+    # ----------------------------------------------------------------------------
+    async def async_charger_sleep(self) -> None:
+        """Wait before looping again."""
+
+        sleep_seconds = self.get_number(self.wait_charger_update_entity_id)
+
+        if sleep_seconds is None or sleep_seconds < self.wait_net_power_update:
+            sleep_seconds = self.wait_net_power_update
+            _LOGGER.error(
+                "%s: Wait charger update (%s) must be greater than or equal to wait net power update (%s)",
+                self.caller,
+                sleep_seconds,
+                self.wait_net_power_update,
+            )
+
+        await asyncio.sleep(sleep_seconds)
+
     # ----------------------------------------------------------------------------
     def get_charger_priority(self) -> int:
         """Get charger priority."""
@@ -472,7 +505,7 @@ class SolarCharge(ScOptionState):
                         new_charge_current,
                         old_charge_current,
                     )
-                    await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+                    # await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(
@@ -992,10 +1025,6 @@ class SolarCharge(ScOptionState):
         # Start charge session
         #####################################
         try:
-            # Init stats
-            self.stats = ChargeStats()
-            self.set_pause_stats(self.stats)
-
             await self.async_start_state_machine(StateStart())
 
         except Exception as e:

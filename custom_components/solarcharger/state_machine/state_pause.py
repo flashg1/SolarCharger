@@ -7,7 +7,7 @@ import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import SENSOR_SHARE_ALLOCATION, ChargeStatus, RunState
+from ..const import ChargeStatus, RunState
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_context_data import ContextData
 
@@ -61,12 +61,10 @@ class StatePause(SolarChargeState):
         """Pause charge and wait for external trigger to continue. Let device sleep."""
 
         start_time = self.solarcharge.get_local_datetime()
-
-        assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(0)
+        self.solarcharge.give_up_real_power_allocation()
 
         # Reset buffer for moving average
-        self.solarcharge.power_allocations = []
+        # self.solarcharge.power_allocations = []
 
         # Initialise counts before starting loop
         stats.loop_success_count = 0
@@ -102,10 +100,8 @@ class StatePause(SolarChargeState):
                     "%s: Failed to pause charge: %s", self.solarcharge.caller, e
                 )
 
-            await asyncio.sleep(self.solarcharge.wait_net_power_update)
+            await self.solarcharge.async_charger_sleep()
             stats.loop_total_count += 1
-
-        self.solarcharge.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(1)
 
         end_time = self.solarcharge.get_local_datetime()
         paused_duration = end_time - start_time

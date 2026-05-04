@@ -14,8 +14,10 @@ from homeassistant.core import HomeAssistant, State
 
 from ..config.config_utils import get_saved_option_value
 from ..const import (
+    CONFIG_NAME_GLOBAL_DEFAULTS,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
+    NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -26,6 +28,7 @@ from ..const import (
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    NUMBER_WAIT_CHARGER_UPDATE,
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SWITCH,
@@ -82,6 +85,13 @@ class ScOptionState(ScConfigState):
     # Non-modifiable local device entities, ie.
     # not defined in config_options_flow _charger_control_entities_schema().
     # ----------------------------------------------------------------------------
+    @cached_property
+    def wait_charger_update_entity_id(self) -> str:
+        """Return wait charger update entity ID."""
+        return compose_entity_id(
+            NUMBER, CONFIG_NAME_GLOBAL_DEFAULTS, NUMBER_WAIT_CHARGER_UPDATE
+        )
+
     @cached_property
     def next_charge_time_trigger_entity_id(self) -> str:
         """Return the next charge time trigger entity ID."""

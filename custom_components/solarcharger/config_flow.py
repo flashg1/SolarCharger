@@ -39,7 +39,7 @@ _LOGGER = logging.getLogger(__name__)
 STEP_SOURCE_POWER_SCHEMA = vol.Schema(
     {
         vol.Required(CONFIG_NET_POWER, default=None): POWER_ENTITY_SELECTOR,
-        vol.Optional(CONFIG_WAIT_NET_POWER_UPDATE, default=60): WAIT_TIME_SELECTOR,
+        vol.Optional(CONFIG_WAIT_NET_POWER_UPDATE, default=20): WAIT_TIME_SELECTOR,
     }
 )
 
