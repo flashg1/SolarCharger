@@ -1,11 +1,15 @@
-# ruff: noqa: TID252
+# ruff: noqa: TRY401, TID252
 """State machine state."""
 
 import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import RunState
+from ..const import (
+    SENSOR_CHARGER_ALLOCATED_POWER,
+    SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
+    RunState,
+)
 from .solar_charge_state import SolarChargeState
 from .state_end import StateEnd
 
@@ -32,6 +36,10 @@ class StateTidyUp(SolarChargeState):
         # Unsubscribe allocated power
         self.solarcharge.give_up_real_power_allocation()
         self.solarcharge.tracker.untrack_allocated_power_update()
+        self.solarcharge.entities.sensors[
+            SENSOR_MOVING_AVERAGE_ALLOCATED_POWER
+        ].set_state(0)
+        self.solarcharge.entities.sensors[SENSOR_CHARGER_ALLOCATED_POWER].set_state(0)
 
         # Unsubscribe sync charge current
         self.solarcharge.tracker.untrack_sync_update()
@@ -60,7 +68,7 @@ class StateTidyUp(SolarChargeState):
                 )
 
         except Exception as e:
-            _LOGGER.error(
+            _LOGGER.exception(
                 "%s: Failed to tidy up charge task on exit: %s",
                 self.solarcharge.caller,
                 e,

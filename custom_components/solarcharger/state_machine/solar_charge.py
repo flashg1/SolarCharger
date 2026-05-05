@@ -45,6 +45,7 @@ from ..const import (
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
+    SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
@@ -606,6 +607,21 @@ class SolarCharge(ScOptionState):
         _LOGGER.warning("%s: ContextData: %s", self.caller, context)
 
     # ----------------------------------------------------------------------------
+    def _log_power_allocations(self, context: ContextData) -> None:
+        """Log power allocations."""
+
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(
+                "%s: average_allocated_power=%s, "
+                "max_allocation_count=%s, data_points=%s, power_allocations=%s",
+                self.caller,
+                context.average_allocated_power,
+                context.max_allocation_count,
+                context.data_points,
+                context.power_allocations,
+            )
+
+    # ----------------------------------------------------------------------------
     def _calc_average_allocated_power(
         self,
         max_allocation_count: int,
@@ -670,12 +686,18 @@ class SolarCharge(ScOptionState):
         context.is_use_secondary_power_source = self.is_use_secondary_power_source()
         context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
+        # (context.average_allocated_power, context.data_points) = (
+        #     self._calc_average_allocated_power(
+        #         context.max_allocation_count, context.power_allocations
+        #     )
+        # )
+
         # Data points managed in _async_handle_allocated_power_update().
-        (context.average_allocated_power, context.data_points) = (
-            self._calc_average_allocated_power(
-                context.max_allocation_count, context.power_allocations
-            )
-        )
+        context.average_allocated_power = self.entities.sensors[
+            SENSOR_MOVING_AVERAGE_ALLOCATED_POWER
+        ].state
+        context.data_points = len(context.power_allocations)
+        self._log_power_allocations(context)
 
         return context
 

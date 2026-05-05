@@ -165,6 +165,7 @@ CONFIG_SENSOR_LIST: tuple[
             native_unit_of_measurement=UnitOfPower.WATT,
             suggested_display_precision=0,
             state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
         ),
         0,
     ),
