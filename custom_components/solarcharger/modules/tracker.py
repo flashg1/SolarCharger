@@ -44,6 +44,7 @@ from ..const import (
     CALLBACK_PLUG_IN_CHARGER,
     CALLBACK_SOC_UPDATE,
     CALLBACK_SUN_ELEVATION_UPDATE,
+    CALLBACK_SYNC_UPDATE,
     ENTITY_CHARGEE_SOC_SENSOR,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
     HA_SUN_ENTITY,
@@ -396,6 +397,20 @@ class Tracker(ScOptionState):
         """Unsubscribe allocated power update events."""
 
         self.remove_callback(CALLBACK_ALLOCATE_POWER)
+
+    # ----------------------------------------------------------------------------
+    def track_sync_update(self, action: STATE_CHANGE_CALLBACK) -> None:
+        """Track sync events."""
+
+        self._track_state_change(
+            self.sync_update_entity_id, CALLBACK_SYNC_UPDATE, action
+        )
+
+    # ----------------------------------------------------------------------------
+    def untrack_sync_update(self) -> None:
+        """Unsubscribe sync events."""
+
+        self.remove_callback(CALLBACK_SYNC_UPDATE)
 
     # ----------------------------------------------------------------------------
     # Sensors that are created by default

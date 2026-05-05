@@ -23,6 +23,7 @@ from ..const import (
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
+    SENSOR_SYNC_UPDATE,
     WEEKLY_CHARGE_ENDTIMES,
 )
 from ..helpers.utils import log_is_event_loop
@@ -139,6 +140,21 @@ class SolarChargerCoordinator(ScOptionState):
         self._unsub.append(subscription)
 
     # ----------------------------------------------------------------------------
+    def _track_charge_current_update(self) -> None:
+        """Track charge current update."""
+
+        charge_current_update_period = self.get_charge_current_update_period()
+        _LOGGER.info("charge_current_update_period=%s", charge_current_update_period)
+
+        subscription = async_track_time_interval(
+            self._hass,
+            self._async_synchronise_charge_current_update,
+            timedelta(seconds=charge_current_update_period),
+        )
+
+        self._unsub.append(subscription)
+
+    # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the coordinator and its managed components."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
@@ -154,6 +170,7 @@ class SolarChargerCoordinator(ScOptionState):
         # Global default entities MUST be created first before running the coordinator.setup().
         # Otherwise cannot get entity config values here.
         self._track_net_power_update()
+        self._track_charge_current_update()
         self._track_config_options_update()
 
     # ----------------------------------------------------------------------------
@@ -269,6 +286,18 @@ class SolarChargerCoordinator(ScOptionState):
                 continue
 
             await control.controller.async_check_if_need_to_reschedule_charge()
+
+    # ----------------------------------------------------------------------------
+    async def _async_synchronise_charge_current_update(self, now: datetime) -> None:
+        """Synchronise charge current update."""
+
+        # Coordinator has global defaults subentry
+        control = self.device_controls[self._subentry.subentry_id]
+
+        assert control.controller.charge_control.entities.sensors is not None
+        control.controller.charge_control.entities.sensors[
+            SENSOR_SYNC_UPDATE
+        ].set_state(datetime.now().astimezone())
 
     # ----------------------------------------------------------------------------
     # Coordinator functions

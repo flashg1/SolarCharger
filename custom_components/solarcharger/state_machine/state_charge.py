@@ -1,6 +1,7 @@
 # ruff: noqa: TRY401, TID252
 """State machine state."""
 
+from datetime import datetime
 import logging
 
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
@@ -113,6 +114,94 @@ class StateCharge(SolarChargeState):
                         new_state.state,
                         e,
                     )
+
+    # ----------------------------------------------------------------------------
+    async def _async_semaphore_adjust_charge_current(self) -> None:
+        """Task created in semphore to adjust charge current."""
+
+        try:
+            assert self.solarcharge.entities.sensors is not None
+            allocated_power = float(
+                self.solarcharge.entities.sensors[SENSOR_CHARGER_ALLOCATED_POWER].state
+            )
+
+            await self._async_adjust_charge_current(
+                self.solarcharge.charger,
+                self.solarcharge.chargeable,
+                allocated_power,
+            )
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to adjust charge current: %s",
+                self.caller,
+                e,
+            )
+
+        # This is the only place where count is set to 0.
+        self.solarcharge.semaphore_update_charge_current_task_count = 0
+
+    # ----------------------------------------------------------------------------
+    def _run_adjust_charge_current_task(self) -> None:
+        """Use semaphore to ensure that only one thread can update task count and only one task running."""
+
+        if self.solarcharge.semaphore_update_charge_current_task_count == 0:
+            with self.solarcharge.semaphore_update_charge_current_task:
+                # Count is reset on task completion.
+                self.solarcharge.semaphore_update_charge_current_task_count = 1
+
+                self.solarcharge.get_ha().loop.create_task(
+                    self._async_semaphore_adjust_charge_current()
+                )
+        else:
+            _LOGGER.warning(
+                "%s: Update charge current task already running.",
+                self.caller,
+            )
+
+    # ----------------------------------------------------------------------------
+    async def _async_handle_sync_update(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Fetch and process state change event."""
+        data = event.data
+        old_state: State | None = data["old_state"]
+        new_state: State | None = data["new_state"]
+
+        self.solarcharge.tracker.log_state_change(event)
+
+        if new_state is not None and old_state is not None:
+            if (
+                new_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+                and new_state.state != old_state.state
+            ):
+                try:
+                    sync_time = as_local(datetime.fromisoformat(new_state.state))
+                    update_time = as_local(new_state.last_updated)
+
+                    _LOGGER.debug(
+                        "%s: sync_time=%s, update_time=%s",
+                        self.solarcharge.caller,
+                        sync_time,
+                        update_time,
+                    )
+
+                    self._run_adjust_charge_current_task()
+
+                except Exception as e:
+                    _LOGGER.exception(
+                        "%s: Failed to handle sync event '%s': %s",
+                        self.solarcharge.caller,
+                        new_state.state,
+                        e,
+                    )
+
+    # ----------------------------------------------------------------------------
+    def _subscribe_sync_update(self) -> None:
+        """Subscribe for sync update."""
+
+        self.solarcharge.tracker.track_sync_update(self._async_handle_sync_update)
 
     # ----------------------------------------------------------------------------
     # Charge loop
@@ -321,9 +410,13 @@ class StateCharge(SolarChargeState):
         self.solarcharge.scheduler.log_goal(
             self.solarcharge.starting_goal, "Start session"
         )
+
         await self.solarcharge.async_turn_charger_switch(charger, turn_on=True)
         await self.solarcharge.async_set_charge_current(charger, INITIAL_CHARGE_CURRENT)
         await self.solarcharge.async_update_ha(chargeable)
+
+        self._subscribe_sync_update()
+
         self._log_charging_status(charger, "Charger ON")
 
     # ----------------------------------------------------------------------------
@@ -364,17 +457,17 @@ class StateCharge(SolarChargeState):
                     done_switch_on_charger = True
 
                 # Adjust current.
-                assert self.solarcharge.entities.sensors is not None
-                allocated_power = float(
-                    self.solarcharge.entities.sensors[
-                        SENSOR_CHARGER_ALLOCATED_POWER
-                    ].state
-                )
-                await self._async_adjust_charge_current(
-                    charger,
-                    chargeable,
-                    allocated_power,
-                )
+                # assert self.solarcharge.entities.sensors is not None
+                # allocated_power = float(
+                #     self.solarcharge.entities.sensors[
+                #         SENSOR_CHARGER_ALLOCATED_POWER
+                #     ].state
+                # )
+                # await self._async_adjust_charge_current(
+                #     charger,
+                #     chargeable,
+                #     allocated_power,
+                # )
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(
@@ -403,6 +496,9 @@ class StateCharge(SolarChargeState):
             # Tesla BLE need 25 seconds here, ie. OPTION_WAIT_CHARGEE_UPDATE_HA = 25 seconds
             await self.solarcharge.async_charger_sleep()
             stats.loop_total_count += 1
+
+        if done_switch_on_charger:
+            self.solarcharge.tracker.untrack_sync_update()
 
         return context
 

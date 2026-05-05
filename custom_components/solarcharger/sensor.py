@@ -16,6 +16,7 @@ from homeassistant.const import STATE_UNKNOWN, UnitOfPower, UnitOfTime
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.util.dt import as_local
 
 from .const import (
     DOMAIN,
@@ -30,6 +31,7 @@ from .const import (
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
+    SENSOR_SYNC_UPDATE,
     RunState,
 )
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -166,6 +168,16 @@ CONFIG_SENSOR_LIST: tuple[
         0,
     ),
     (
+        SENSOR_SYNC_UPDATE,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_GLOBAL,
+        SensorEntityDescription(
+            key=SENSOR_SYNC_UPDATE,
+            device_class=SensorDeviceClass.TIMESTAMP,
+        ),
+        as_local(datetime.now()),
+    ),
+    (
         SENSOR_LAST_CHECK,
         SolarChargerSensorLastCheck,
         SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBALHIDDEN,
@@ -173,6 +185,7 @@ CONFIG_SENSOR_LIST: tuple[
             key=SENSOR_LAST_CHECK,
         ),
         STATE_UNKNOWN,
+        # as_local(datetime.now()),
     ),
     #####################################
     # Diagnostic entities

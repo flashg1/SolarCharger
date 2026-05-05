@@ -240,11 +240,12 @@ CONFIG_NET_POWER = "net_power"
 CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 20 seconds
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
-OPTION_LAST_CHARGER_ID = "last_charger_id"
 
 #####################################
 # Charger general configs
 #####################################
+NUMBER_CURRENT_UPDATE_PERIOD = "current_update_period"  # 60 seconds
+
 NUMBER_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # No defaults
 NUMBER_CHARGER_MAX_SPEED = "charger_max_speed"  # 6.1448 %/hr
 NUMBER_CHARGER_MIN_CURRENT = "charger_min_current"  # 1 Amps
@@ -266,7 +267,6 @@ NUMBER_WAIT_CHARGER_OFF = "wait_charger_off"  # 5 seconds
 NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 second
 
 # 0 minutes=disabled, suggest 15 minutes to capture allocated power and turn off if average is below min power.
-NUMBER_CURRENT_UPDATE_PERIOD = "current_update_period"  # 60 seconds
 NUMBER_POWER_MONITOR_DURATION = "power_monitor_duration"  # 10 minutes
 
 #####################################
@@ -306,6 +306,7 @@ ENTITY_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 #####################################
 # Internal control entities
 #####################################
+SENSOR_SYNC_UPDATE = "sync_update"
 SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 
 #####################################
@@ -472,6 +473,7 @@ CONFIG_INTERNAL_ENTITY_LIST: list[str] = [
     # Internal non-configurable entities
     #####################################
     # Global entities
+    SENSOR_SYNC_UPDATE,
     NUMBER_CURRENT_UPDATE_PERIOD,
     # Local entities
     SWITCH_CHARGE,
@@ -687,6 +689,7 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 # Non-configurable entities: Local device internal control entities.
 OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
     # Global entities
+    SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
     NUMBER_CURRENT_UPDATE_PERIOD: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{NUMBER_CURRENT_UPDATE_PERIOD}",
     # Local entities
     SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
@@ -927,6 +930,7 @@ CALLBACK_DEVICE_PRESENCE = "callback_device_presence"
 CALLBACK_SUNRISE_START_CHARGE = "callback_sunrise_start_charge"
 CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
 CALLBACK_ALLOCATE_POWER = "callback_allocate_power"
+CALLBACK_SYNC_UPDATE = "callback_sync_update"
 CALLBACK_NEXT_CHARGE_TIME_UPDATE = "callback_next_charge_time_update"
 CALLBACK_NEXT_CHARGE_TIME_TRIGGER = "callback_next_charge_time_trigger"
 CALLBACK_SOC_UPDATE = "callback_soc_update"

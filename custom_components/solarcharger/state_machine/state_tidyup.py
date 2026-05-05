@@ -26,11 +26,15 @@ class StateTidyUp(SolarChargeState):
         self.state = RunState.ENDING
 
     # ----------------------------------------------------------------------------
-    def _unsubscribe_allocated_power_update(self) -> None:
+    def _unsubscribe_updates(self) -> None:
         """Unsubscribe allocated power update."""
 
+        # Unsubscribe allocated power
         self.solarcharge.give_up_real_power_allocation()
         self.solarcharge.tracker.untrack_allocated_power_update()
+
+        # Unsubscribe sync charge current
+        self.solarcharge.tracker.untrack_sync_update()
 
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(
@@ -40,7 +44,7 @@ class StateTidyUp(SolarChargeState):
 
         try:
             self.solarcharge.started_max_charge = 0
-            self._unsubscribe_allocated_power_update()
+            self._unsubscribe_updates()
             await self.solarcharge.async_turn_off_calibrate_max_charge_speed_switch()
 
             # async_update_ha() most likely not required here

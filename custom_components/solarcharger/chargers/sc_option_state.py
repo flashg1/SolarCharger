@@ -31,6 +31,8 @@ from ..const import (
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
+    SENSOR,
+    SENSOR_SYNC_UPDATE,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_CHARGE,
@@ -82,14 +84,21 @@ class ScOptionState(ScConfigState):
 
     # ----------------------------------------------------------------------------
     # Local device only entities.
-    # Non-modifiable local device entities, ie.
+    # Non-modifiable local device internal entities, ie.
     # not defined in config_options_flow _charger_control_entities_schema().
     # ----------------------------------------------------------------------------
     @cached_property
     def current_update_period_entity_id(self) -> str:
-        """Return current update period entity ID."""
+        """Return charge current update period entity ID."""
         return compose_entity_id(
             NUMBER, CONFIG_NAME_GLOBAL_DEFAULTS, NUMBER_CURRENT_UPDATE_PERIOD
+        )
+
+    @cached_property
+    def sync_update_entity_id(self) -> str:
+        """Return sync update entity ID used by chargers to synchronise charge current updates."""
+        return compose_entity_id(
+            SENSOR, CONFIG_NAME_GLOBAL_DEFAULTS, SENSOR_SYNC_UPDATE
         )
 
     @cached_property
@@ -268,6 +277,8 @@ class ScOptionState(ScConfigState):
         entity_id: str | None,
         entity_val: Any | None = None,
     ) -> None:
+        """Save values in config value dictionary if exists."""
+
         if val_dict is not None:
             val_dict.config_values[config_item] = ConfigValue(
                 config_item, entity_id, entity_val
@@ -711,6 +722,13 @@ class ScOptionState(ScConfigState):
         return weekly_schedule
 
     # ----------------------------------------------------------------------------
+    # Global default entities
+    # ----------------------------------------------------------------------------
+    def get_charge_current_update_period(self) -> float:
+        """Get charge current update period."""
+        return self.get_number_or_abort(self.current_update_period_entity_id)
+
+    # ----------------------------------------------------------------------------
     # Local device control entities
     # ----------------------------------------------------------------------------
     def is_fast_charge_mode(self) -> bool:
@@ -754,5 +772,4 @@ class ScOptionState(ScConfigState):
             self.calibrate_max_charge_speed_switch_entity_id
         )
 
-    # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------

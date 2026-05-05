@@ -175,6 +175,9 @@
     },
     "entity": {
         "sensor": {
+            "sync_update": {
+                "name": "Sync update"
+            },
             "run_state": {
                 "name": "Run state",
                 "state": {

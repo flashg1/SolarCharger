@@ -214,6 +214,16 @@ class ScState:
             return None
 
     # ----------------------------------------------------------------------------
+    def get_number_or_abort(self, entity_id: str) -> float:
+        """Get number object."""
+
+        num = self.get_number(entity_id)
+        if num is None:
+            raise EntityExceptionError(f"Cannot get number for entity '{entity_id}'")
+
+        return num
+
+    # ----------------------------------------------------------------------------
     def get_integer(self, entity_id: str) -> int | None:
         """Get int object."""
 
