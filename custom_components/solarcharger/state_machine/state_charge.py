@@ -3,6 +3,7 @@
 
 from datetime import datetime
 import logging
+import threading
 
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, EventStateChangedData, State
@@ -46,6 +47,10 @@ class StateCharge(SolarChargeState):
     ) -> None:
         """Initialise machine state."""
         self.state = RunState.CHARGING
+
+        # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
+        self._semaphore_update_charge_current_task = threading.Semaphore(value=1)
+        self._semaphore_update_charge_current_task_count = 0
 
     # ----------------------------------------------------------------------------
     # Subscriptions
@@ -139,16 +144,16 @@ class StateCharge(SolarChargeState):
             )
 
         # This is the only place where count is set to 0.
-        self.solarcharge.semaphore_update_charge_current_task_count = 0
+        self._semaphore_update_charge_current_task_count = 0
 
     # ----------------------------------------------------------------------------
-    def _run_adjust_charge_current_task(self) -> None:
+    def _start_adjust_charge_current_task(self) -> None:
         """Use semaphore to ensure that only one thread can update task count and only one task running."""
 
-        if self.solarcharge.semaphore_update_charge_current_task_count == 0:
-            with self.solarcharge.semaphore_update_charge_current_task:
+        if self._semaphore_update_charge_current_task_count == 0:
+            with self._semaphore_update_charge_current_task:
                 # Count is reset on task completion.
-                self.solarcharge.semaphore_update_charge_current_task_count = 1
+                self._semaphore_update_charge_current_task_count = 1
 
                 self.solarcharge.get_ha().loop.create_task(
                     self._async_semaphore_adjust_charge_current()
@@ -187,7 +192,7 @@ class StateCharge(SolarChargeState):
                         update_time,
                     )
 
-                    self._run_adjust_charge_current_task()
+                    self._start_adjust_charge_current_task()
 
                 except Exception as e:
                     _LOGGER.exception(
@@ -455,19 +460,6 @@ class StateCharge(SolarChargeState):
                 if not done_switch_on_charger:
                     await self._switch_on_charger_and_set_current(charger, chargeable)
                     done_switch_on_charger = True
-
-                # Adjust current.
-                # assert self.solarcharge.entities.sensors is not None
-                # allocated_power = float(
-                #     self.solarcharge.entities.sensors[
-                #         SENSOR_CHARGER_ALLOCATED_POWER
-                #     ].state
-                # )
-                # await self._async_adjust_charge_current(
-                #     charger,
-                #     chargeable,
-                #     allocated_power,
-                # )
 
                 # Check if calibration is required during charge.
                 await self._async_calibrate_max_charge_speed_if_required(

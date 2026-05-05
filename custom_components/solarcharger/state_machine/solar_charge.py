@@ -113,12 +113,8 @@ class SolarCharge(ScOptionState):
         self.started_max_charge: int = 0
 
         # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
-        self.semaphore_update_ha_task = threading.Semaphore(value=1)
-        self.semaphore_update_ha_task_count = 0
-
-        # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
-        self.semaphore_update_charge_current_task = threading.Semaphore(value=1)
-        self.semaphore_update_charge_current_task_count = 0
+        self._semaphore_update_ha_task = threading.Semaphore(value=1)
+        self._semaphore_update_ha_task_count = 0
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -929,6 +925,7 @@ class SolarCharge(ScOptionState):
 
         try:
             await self.async_retry_15_times_to_update_ha_until_charger_on()
+
         except Exception as e:
             _LOGGER.exception(
                 "%s: Error updating HA triggered by presence detection: %s",
@@ -937,7 +934,27 @@ class SolarCharge(ScOptionState):
             )
 
         # This is the only place where update_ha_task_count is set to 0.
-        self.semaphore_update_ha_task_count = 0
+        self._semaphore_update_ha_task_count = 0
+
+    # ----------------------------------------------------------------------------
+    def start_check_charger_connection_task(self) -> None:
+        """Use semaphore to ensure that only one thread can update task count and only one task running."""
+
+        _LOGGER.info("%s: Device presence detected.", self.caller)
+
+        # Use semaphore to create only one async_semaphore_wakeup_and_update_ha() task.
+        if self._semaphore_update_ha_task_count == 0:
+            with self._semaphore_update_ha_task:
+                # This is the only place where update_ha_task_count is set to 1.
+                # Count is reset on task completion.
+                self._semaphore_update_ha_task_count = 1
+
+                self._hass.loop.create_task(self.async_semaphore_wakeup_and_update_ha())
+        else:
+            _LOGGER.warning(
+                "%s: Update HA task triggered by presence detection already running.",
+                self.caller,
+            )
 
     # ----------------------------------------------------------------------------
     def set_last_pause_duration(self, last_pause_duration: timedelta) -> None:

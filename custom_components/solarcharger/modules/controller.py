@@ -281,28 +281,6 @@ class ChargeController(ScOptionState):
                         self._turn_charger_switch(turn_on=True)
 
     # ----------------------------------------------------------------------------
-    def _run_device_presence_detected_task(self) -> None:
-        """Use semaphore to ensure that only one thread can update task count and only one task running."""
-
-        _LOGGER.info("%s: Device presence detected.", self.caller)
-
-        # Use semaphore to create only one async_semaphore_wakeup_and_update_ha() task.
-        if self.solar_charge.semaphore_update_ha_task_count == 0:
-            with self.solar_charge.semaphore_update_ha_task:
-                # This is the only place where update_ha_task_count is set to 1.
-                # Count is reset on task completion.
-                self.solar_charge.semaphore_update_ha_task_count = 1
-
-                self._hass.loop.create_task(
-                    self.solar_charge.async_semaphore_wakeup_and_update_ha()
-                )
-        else:
-            _LOGGER.warning(
-                "%s: Update HA task triggered by presence detection already running.",
-                self.caller,
-            )
-
-    # ----------------------------------------------------------------------------
     async def async_handle_device_presence_event(
         self, event: Event[EventStateChangedData]
     ) -> None:
@@ -321,7 +299,7 @@ class ChargeController(ScOptionState):
                     and new_state.state != old_state.state
                 ):
                     if new_state.state == STATE_ON and old_state.state == STATE_OFF:
-                        self._run_device_presence_detected_task()
+                        self._solar_charge.start_check_charger_connection_task()
 
     # ----------------------------------------------------------------------------
     async def async_handle_next_charge_time_update(
