@@ -116,8 +116,8 @@ To:    \\homeassistant.local\config\custom_components\solarcharger
 - Restart Home Assistant.
 
 ## Configuration
-- Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
-- Set up "Net Power" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor net_power expresses negative value in Watts for power exported to grid, or positive value for power imported from grid.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
+1. Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
+1. Set up "Net Power" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor net_power expresses negative value in Watts for power exported to grid, or positive value for power imported from grid.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
 ```
 Settings > Devices & services > Helpers > Create helper > Template > Template a sensor >
 
@@ -128,15 +128,19 @@ Device class: Power
 State class: Measurement
 Device: Envoy [YourEnvoyId]
 ```
-- Add charger device, eg. Tesla, OCPP, etc.
+3. Add charger device, eg. Tesla, OCPP, etc.
+1. If using OCPP charger, configure your charger to point to your HA OCPP central server, eg. ws://homeassistant.local:9000
+1. Please set the following configs after adding charger,
 
-- If using OCPP charger, configure your charger to point to your HA OCPP central server, eg. ws://homeassistant.local:9000
+Global defaults (SolarCharger > Global defaults > Configuration):
+* Charger effective voltage
+* Current update period
 
-- Config the integration specifying the charger effective voltage, maximum current, maximum charge speed, ie.
-```
-SolarCharger > Global defaults > Configuration > Effective voltage
-SolarCharger > Your local device > Configuration > Max current
-```
+Local device (SolarCharger > Local device > Configuration):
+* Maximum current
+* Maximum charge speed
+
+Please see [here](https://github.com/flashg1/SolarCharger/wiki/Installation#what-configs-are-required-after-installation) for more information.
 
 How to use
 ==========
