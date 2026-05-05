@@ -1,4 +1,4 @@
-# ruff: noqa: TID252
+# ruff: noqa: TRY401, TID252
 """State machine state."""
 
 from datetime import timedelta
@@ -16,6 +16,7 @@ from ..const import (
     OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_CONSUMED_POWER,
+    SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
     RunState,
 )
 from ..models.model_charge_stats import ChargeStats
@@ -96,6 +97,8 @@ class StateStart(SolarChargeState):
                     ):
                         self.solarcharge.power_allocations.pop(0)
 
+                        # if max_allocation_count > 0 and len(power_allocations) > 0:
+
                     assert self.solarcharge.entities.sensors is not None
                     consumed_power = float(
                         self.solarcharge.entities.sensors[SENSOR_CONSUMED_POWER].state
@@ -104,14 +107,12 @@ class StateStart(SolarChargeState):
                         allocated_power - consumed_power
                     )
 
-                # This callback is still running in paused state.
-                # Only adjust charge current if we are still in charging state
-                # if self.solarcharge.machine_state.state == RunState.CHARGING:
-                #     await self._async_adjust_charge_current(
-                #         self.solarcharge.charger,
-                #         self.solarcharge.chargeable,
-                #         allocated_power,
-                #     )
+                    self.solarcharge.entities.sensors[
+                        SENSOR_MOVING_AVERAGE_ALLOCATED_POWER
+                    ].set_state(
+                        sum(self.solarcharge.power_allocations)
+                        / len(self.solarcharge.power_allocations)
+                    )
 
             except Exception as e:
                 _LOGGER.exception(

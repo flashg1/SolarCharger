@@ -175,9 +175,6 @@
     },
     "entity": {
         "sensor": {
-            "sync_update": {
-                "name": "Sync update"
-            },
             "run_state": {
                 "name": "Run state",
                 "state": {
@@ -191,6 +188,9 @@
             },
             "charger_allocated_power": {
                 "name": "Allocated power"
+            },
+            "moving_average_allocated_power": {
+                "name": "Moving average allocated power"
             },
             "consumed_power": {
                 "name": "Consumed power"
@@ -209,6 +209,9 @@
             },
             "last_pause_duration": {
                 "name": "Last pause duration"
+            },
+            "sync_update": {
+                "name": "Sync update"
             },
             "last_check": {
                 "name": "Last check"
