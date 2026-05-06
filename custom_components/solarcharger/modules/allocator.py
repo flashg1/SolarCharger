@@ -99,14 +99,27 @@ class PowerAllocator:
             allocation.plan_weight = (
                 allocation_weight * control.controller.charge_control.instance_count
             )
-            allocation.final_weight = allocation.plan_weight * share_allocation
+            final_weight = allocation.plan_weight * share_allocation
 
-            if allocation.final_weight > 0:
-                if consumed_power < max_power:
-                    allocation.need_power = consumed_power - max_power
-            else:
+            # Determine following variables:
+            allocation.allocation_final_weight = 0
+            allocation.deallocation_final_weight = 0
+            allocation.need_power = 0
+
+            if consumed_power < max_power:
+                # Participate in allocation
+                allocation.allocation_final_weight = final_weight
+
                 # Paused device has need_power = lack_power = consumed_power = 0.
-                allocation.need_power = 0
+                if allocation.allocation_final_weight > 0:
+                    allocation.need_power = consumed_power - max_power
+
+                # Only participate in deallocation if consumed power > 0
+                if consumed_power > 0:
+                    allocation.deallocation_final_weight = final_weight
+            else:
+                # Participate in deallocation only
+                allocation.deallocation_final_weight = final_weight
 
             rung = allocation_map.get(allocation.priority)
             if rung is None:
@@ -118,7 +131,8 @@ class PowerAllocator:
             rung.total_consumed_power += allocation.consumed_power
             rung.total_need_power += allocation.need_power
             rung.total_plan_weight += allocation.plan_weight
-            rung.total_final_weight += allocation.final_weight
+            rung.total_allocation_final_weight += allocation.allocation_final_weight
+            rung.total_deallocation_final_weight += allocation.deallocation_final_weight
             rung.total_instance += control.controller.charge_control.instance_count
 
             total_instance += control.controller.charge_control.instance_count
@@ -137,6 +151,186 @@ class PowerAllocator:
         return [allocation_map[priority] for priority in sorted(allocation_map.keys())]
 
     # ----------------------------------------------------------------------------
+    # def _allocate_power(self, rung: AllocationGroup, net_power: float) -> float:
+    #     """Allocate power to priority level.
+
+    #     net_power: -ve = power to allocate, +ve = power to free up.
+    #     """
+
+    #     remain_power = net_power
+
+    #     for allocation in rung.allocations:
+    #         # The following are updated:
+    #         #   allocation.final_power
+    #         #   allocation.lack_power
+    #         if rung.total_allocation_final_weight > 0:
+    #             if net_power < 0:
+    #                 # Allocate power, ie. -ve
+    #                 allocated_power = (
+    #                     net_power
+    #                     * allocation.allocation_final_weight
+    #                     / rung.total_allocation_final_weight
+    #                 )
+    #             else:
+    #                 # Give back power, ie. +ve
+    #                 allocated_power = (
+    #                     net_power
+    #                     * allocation.deallocation_final_weight
+    #                     / rung.total_deallocation_final_weight
+    #                 )
+
+    #             # allocated_power can be -ve or +ve.
+    #             # allocation.need_power can be -ve or 0, but not +ve.
+    #             if allocated_power <= allocation.need_power:
+    #                 # Enough power: allocated_power = 0 or -ve
+    #                 # For paused device, allocated_power = need_power = lack_power = 0.
+    #                 allocation.final_power = allocation.need_power
+    #                 allocation.lack_power = 0
+    #             else:
+    #                 # Not enough power: allocated_power is -ve or +ve
+    #                 if allocated_power < 0:
+    #                     # Allocate power, ie. -ve
+    #                     allocation.final_power = max(
+    #                         allocated_power, allocation.need_power
+    #                     )
+    #                 else:
+    #                     # Give back power, ie. +ve
+    #                     allocation.final_power = min(
+    #                         allocated_power, allocation.consumed_power
+    #                     )
+
+    #                 allocation.lack_power = max(
+    #                     allocation.need_power - allocation.final_power,
+    #                     -allocation.max_power,
+    #                 )
+
+    #             remain_power = remain_power - allocation.final_power
+    #         else:
+    #             allocation.final_power = 0
+    #             allocation.lack_power = 0
+
+    #         rung.total_lack_power += allocation.lack_power
+
+    #         # The following are updated:
+    #         #   allocation.plan_power
+    #         if rung.total_plan_weight > 0:
+    #             plan_power = net_power * allocation.plan_weight / rung.total_plan_weight
+    #             if net_power < 0:
+    #                 # Allocate power, ie. -ve
+    #                 allocation.plan_power = max(plan_power, -allocation.max_power)
+    #             else:
+    #                 # Give back power, ie. +ve
+    #                 allocation.plan_power = min(plan_power, allocation.max_power)
+    #         else:
+    #             allocation.plan_power = 0
+
+    #     return remain_power
+
+    # ----------------------------------------------------------------------------
+    def _allocate_real_power_to_device(
+        self,
+        rung: AllocationGroup,
+        allocation: PowerAllocation,
+        remain_power: float,
+        weight: float,
+        total_weight: float,
+        net_power: float,
+    ) -> float:
+
+        # The following are updated:
+        #   allocation.final_power
+        #   allocation.lack_power
+        allocation.final_power = 0
+        allocation.lack_power = 0
+
+        if total_weight > 0:
+            allocated_power = net_power * weight / total_weight
+
+            # allocated_power can be -ve or +ve.
+            # allocation.need_power can be -ve or 0, but not +ve.
+            if allocated_power <= allocation.need_power:
+                # Enough power: allocated_power = 0 or -ve
+                # For paused device, allocated_power = need_power = lack_power = 0.
+                allocation.final_power = allocation.need_power
+                allocation.lack_power = 0
+            else:
+                # Not enough power: allocated_power is -ve or +ve
+                if allocated_power < 0:
+                    # Allocate power, ie. -ve
+                    allocation.final_power = max(allocated_power, allocation.need_power)
+                else:
+                    # Give back power, ie. +ve
+                    allocation.final_power = min(
+                        allocated_power, allocation.consumed_power
+                    )
+
+                allocation.lack_power = max(
+                    allocation.need_power - allocation.final_power,
+                    -allocation.max_power,
+                )
+
+            remain_power = remain_power - allocation.final_power
+
+        rung.total_lack_power += allocation.lack_power
+
+        return remain_power
+
+    # ----------------------------------------------------------------------------
+    def _allocate_real_power(
+        self,
+        rung: AllocationGroup,
+        allocation: PowerAllocation,
+        remain_power: float,
+        net_power: float,
+    ) -> float:
+        """Allocate real power to running devices."""
+
+        if net_power < 0:
+            # Allocate power, ie. -ve
+            remain_power = self._allocate_real_power_to_device(
+                rung,
+                allocation,
+                remain_power,
+                allocation.allocation_final_weight,
+                rung.total_allocation_final_weight,
+                net_power,
+            )
+        else:
+            # Give back power, ie. +ve
+            remain_power = self._allocate_real_power_to_device(
+                rung,
+                allocation,
+                remain_power,
+                allocation.deallocation_final_weight,
+                rung.total_deallocation_final_weight,
+                net_power,
+            )
+
+        return remain_power
+
+    # ----------------------------------------------------------------------------
+    def _allocate_plan_power(
+        self,
+        rung: AllocationGroup,
+        allocation: PowerAllocation,
+        net_power: float,
+    ) -> None:
+        """Allocate plan power to paused devices."""
+
+        # The following are updated:
+        #   allocation.plan_power
+        allocation.plan_power = 0
+
+        if rung.total_plan_weight > 0:
+            plan_power = net_power * allocation.plan_weight / rung.total_plan_weight
+            if net_power < 0:
+                # Allocate power, ie. -ve
+                allocation.plan_power = max(plan_power, -allocation.max_power)
+            else:
+                # Give back power, ie. +ve
+                allocation.plan_power = min(plan_power, allocation.max_power)
+
+    # ----------------------------------------------------------------------------
     def _allocate_power(self, rung: AllocationGroup, net_power: float) -> float:
         """Allocate power to priority level.
 
@@ -146,54 +340,20 @@ class PowerAllocator:
         remain_power = net_power
 
         for allocation in rung.allocations:
-            # The following are updated:
-            #   allocation.final_power
-            #   allocation.lack_power
-            if rung.total_final_weight > 0:
-                allocated_power = (
-                    net_power * allocation.final_weight / rung.total_final_weight
-                )
+            # Allocate real power to running devices.
+            remain_power = self._allocate_real_power(
+                rung,
+                allocation,
+                remain_power,
+                net_power,
+            )
 
-                # allocated_power can be -ve or +ve.
-                # allocation.need_power can be -ve or 0, but not +ve.
-                if allocated_power <= allocation.need_power:
-                    # Enough power: allocated_power = 0 or -ve
-                    # For paused device, allocated_power = need_power = lack_power = 0.
-                    allocation.final_power = allocation.need_power
-                    allocation.lack_power = 0
-                else:
-                    # Not enough power: allocated_power is -ve or +ve
-                    if allocated_power < 0:
-                        # Allocate power, ie. -ve
-                        allocation.final_power = max(
-                            allocated_power, allocation.need_power
-                        )
-                    else:
-                        # Give back power, ie. +ve
-                        allocation.final_power = min(
-                            allocated_power, allocation.consumed_power
-                        )
-
-                    allocation.lack_power = max(
-                        allocation.need_power - allocation.final_power,
-                        -allocation.max_power,
-                    )
-
-                remain_power = remain_power - allocation.final_power
-            else:
-                allocation.final_power = 0
-                allocation.lack_power = 0
-
-            rung.total_lack_power += allocation.lack_power
-
-            # The following are updated:
-            #   allocation.plan_power
-            if rung.total_plan_weight > 0:
-                allocation.plan_power = (
-                    net_power * allocation.plan_weight / rung.total_plan_weight
-                )
-            else:
-                allocation.plan_power = 0
+            # Allocate plan power to paused devices.
+            self._allocate_plan_power(
+                rung,
+                allocation,
+                net_power,
+            )
 
         return remain_power
 
@@ -302,7 +462,7 @@ class PowerAllocator:
                     rung.total_need_power,
                     rung.total_lack_power,
                     rung.total_plan_weight,
-                    rung.total_final_weight,
+                    rung.total_allocation_final_weight,
                     rung.total_instance,
                 )
 

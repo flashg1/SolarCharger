@@ -43,7 +43,8 @@ class PowerAllocation:
 
     # Final allocation with 0 share for paused chargers.
     # final_power is used by running chargers to adjust current.
-    final_weight: float = 0
+    allocation_final_weight: float = 0
+    deallocation_final_weight: float = 0
     final_power: float = 0
 
 
@@ -67,5 +68,6 @@ class AllocationGroup:
     total_lack_power: float = 0
 
     total_plan_weight: float = 0
-    total_final_weight: float = 0
+    total_allocation_final_weight: float = 0
+    total_deallocation_final_weight: float = 0
     total_instance: int = 0
