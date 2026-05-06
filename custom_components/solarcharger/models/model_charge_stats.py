@@ -41,7 +41,6 @@ class ChargeStats:
     pause_last_duration: timedelta = timedelta(seconds=0)
 
     # ----------------------------------------------------------------------------
-    # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of ChargeStats."""
         return (

@@ -46,7 +46,6 @@ class ContextData:
     is_calibrate_max_charge_speed: bool = False
 
     # ----------------------------------------------------------------------------
-    # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of charging process conext data."""
 

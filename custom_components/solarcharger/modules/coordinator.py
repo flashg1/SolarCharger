@@ -319,9 +319,6 @@ class SolarChargerCoordinator(ScOptionState):
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
         try:
-            #####################################
-            # Power allocation
-            #####################################
             await self._allocator.async_allocate_net_power()
 
         except Exception as e:

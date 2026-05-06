@@ -89,6 +89,7 @@ class PowerAllocator:
 
             allocation = PowerAllocation(
                 subentry_id=control.subentry_id,
+                name=control.config_name,
                 max_power=max_power,
                 consumed_power=consumed_power,
                 priority=priority,
@@ -106,6 +107,18 @@ class PowerAllocator:
             allocation.deallocation_final_weight = 0
             allocation.need_power = 0
 
+            #######################################################
+            # If at less than max power but not zero, participate in both allocation and deallocation.
+            # If at zero power, participate only in allocation.
+            # If at max power, participate only in deallocation.
+            # The objective is to:
+            # - Ensure devices running at max power do not share in allocation, so that other devices
+            #   can a get bigger share. This is not perfect since device might just be at below max
+            #   power and get allocated more than required. This is ok since it won't participate in
+            #   next allocation.
+            # - Ensure devices at zero power do not participate in deallocation, so that other devices
+            #   can get a bigger share. Similar for allocation, this is not perfect for the same reason.
+            #######################################################
             if consumed_power < max_power:
                 # Participate in allocation
                 allocation.allocation_final_weight = final_weight
@@ -118,7 +131,7 @@ class PowerAllocator:
                 if consumed_power > 0:
                     allocation.deallocation_final_weight = final_weight
             else:
-                # Participate in deallocation only
+                # Participate in deallocation only.
                 allocation.deallocation_final_weight = final_weight
 
             rung = allocation_map.get(allocation.priority)
@@ -151,82 +164,6 @@ class PowerAllocator:
         return [allocation_map[priority] for priority in sorted(allocation_map.keys())]
 
     # ----------------------------------------------------------------------------
-    # def _allocate_power(self, rung: AllocationGroup, net_power: float) -> float:
-    #     """Allocate power to priority level.
-
-    #     net_power: -ve = power to allocate, +ve = power to free up.
-    #     """
-
-    #     remain_power = net_power
-
-    #     for allocation in rung.allocations:
-    #         # The following are updated:
-    #         #   allocation.final_power
-    #         #   allocation.lack_power
-    #         if rung.total_allocation_final_weight > 0:
-    #             if net_power < 0:
-    #                 # Allocate power, ie. -ve
-    #                 allocated_power = (
-    #                     net_power
-    #                     * allocation.allocation_final_weight
-    #                     / rung.total_allocation_final_weight
-    #                 )
-    #             else:
-    #                 # Give back power, ie. +ve
-    #                 allocated_power = (
-    #                     net_power
-    #                     * allocation.deallocation_final_weight
-    #                     / rung.total_deallocation_final_weight
-    #                 )
-
-    #             # allocated_power can be -ve or +ve.
-    #             # allocation.need_power can be -ve or 0, but not +ve.
-    #             if allocated_power <= allocation.need_power:
-    #                 # Enough power: allocated_power = 0 or -ve
-    #                 # For paused device, allocated_power = need_power = lack_power = 0.
-    #                 allocation.final_power = allocation.need_power
-    #                 allocation.lack_power = 0
-    #             else:
-    #                 # Not enough power: allocated_power is -ve or +ve
-    #                 if allocated_power < 0:
-    #                     # Allocate power, ie. -ve
-    #                     allocation.final_power = max(
-    #                         allocated_power, allocation.need_power
-    #                     )
-    #                 else:
-    #                     # Give back power, ie. +ve
-    #                     allocation.final_power = min(
-    #                         allocated_power, allocation.consumed_power
-    #                     )
-
-    #                 allocation.lack_power = max(
-    #                     allocation.need_power - allocation.final_power,
-    #                     -allocation.max_power,
-    #                 )
-
-    #             remain_power = remain_power - allocation.final_power
-    #         else:
-    #             allocation.final_power = 0
-    #             allocation.lack_power = 0
-
-    #         rung.total_lack_power += allocation.lack_power
-
-    #         # The following are updated:
-    #         #   allocation.plan_power
-    #         if rung.total_plan_weight > 0:
-    #             plan_power = net_power * allocation.plan_weight / rung.total_plan_weight
-    #             if net_power < 0:
-    #                 # Allocate power, ie. -ve
-    #                 allocation.plan_power = max(plan_power, -allocation.max_power)
-    #             else:
-    #                 # Give back power, ie. +ve
-    #                 allocation.plan_power = min(plan_power, allocation.max_power)
-    #         else:
-    #             allocation.plan_power = 0
-
-    #     return remain_power
-
-    # ----------------------------------------------------------------------------
     def _allocate_real_power_to_device(
         self,
         rung: AllocationGroup,
@@ -238,8 +175,6 @@ class PowerAllocator:
     ) -> float:
 
         # The following are updated:
-        #   allocation.final_power
-        #   allocation.lack_power
         allocation.final_power = 0
         allocation.lack_power = 0
 
@@ -318,7 +253,6 @@ class PowerAllocator:
         """Allocate plan power to paused devices."""
 
         # The following are updated:
-        #   allocation.plan_power
         allocation.plan_power = 0
 
         if rung.total_plan_weight > 0:
@@ -419,13 +353,10 @@ class PowerAllocator:
             self._global_defaults_control.controller.solar_charge.get_net_power()
         )
         if net_power is None:
-            _LOGGER.warning("Cannot get net power update. Try next cycle.")
+            _LOGGER.warning("Cannot get net power. Try next cycle.")
             return
 
-        (
-            total_instance,
-            allocation_map,
-        ) = self._get_total_allocation_pool()
+        (total_instance, allocation_map) = self._get_total_allocation_pool()
 
         if total_instance > 0:
             allocation_ladder = self._sorted_list_of_priority_level(allocation_map)
@@ -452,26 +383,15 @@ class PowerAllocator:
             )
 
             for rung in allocation_ladder:
-                _LOGGER.debug(
-                    "priority=%s, total_max_power=%s, total_consumed_power=%s, "
-                    "total_need_power=%s, total_lack_power=%s, total_plan_weight=%s, "
-                    "total_final_weight=%s, total_instance=%s",
-                    rung.priority,
-                    rung.total_max_power,
-                    rung.total_consumed_power,
-                    rung.total_need_power,
-                    rung.total_lack_power,
-                    rung.total_plan_weight,
-                    rung.total_allocation_final_weight,
-                    rung.total_instance,
-                )
+                _LOGGER.debug("AllocationGroup: %s", rung)
 
                 for allocation in rung.allocations:
-                    control = self._device_controls.get(allocation.subentry_id)
-                    assert control is not None
+                    control = self._device_controls[allocation.subentry_id]
 
-                    # Writer will set entity value directly. Reader will get value via entity ID in options which can be overridden.
-                    # Paticipants in power sharing will use final_power, non-participants will use plan_power as indication of possible available power.
+                    # Writer will set entity value directly. Reader will get value via
+                    # entity ID in options which can be overridden.
+                    # Paticipants in power sharing will use final_power, non-participants
+                    # will use plan_power as indication of possible available power.
                     await async_set_allocated_power(
                         control.controller.charge_control,
                         allocation.final_power
@@ -479,10 +399,6 @@ class PowerAllocator:
                         else allocation.plan_power,
                     )
 
-                    _LOGGER.debug(
-                        "%s: %s",
-                        control.config_name,
-                        allocation,
-                    )
+                    _LOGGER.debug("PowerAllocation: %s", allocation)
         else:
             _LOGGER.debug("No running charger for power allocation")
