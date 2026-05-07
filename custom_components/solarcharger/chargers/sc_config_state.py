@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 
 from ..const import (
     CONFIG_CURRENT_UPDATE_PERIOD,
-    CONFIG_NET_POWER,
+    CONFIG_NET_POWER_SENSOR,
     CONFIG_WAIT_NET_POWER_UPDATE,
 )
 from .sc_state import ScState
@@ -103,7 +103,7 @@ class ScConfigState(ScState):
         # PowerAllocator: Failed to parse state 'unavailable' for entity 'sensor.main_power_net':
         # could not convert string to float: 'unavailable'
 
-        return self.config_get_entity_number(CONFIG_NET_POWER)
+        return self.config_get_entity_number(CONFIG_NET_POWER_SENSOR)
 
     # ----------------------------------------------------------------------------
     def get_wait_net_power_update(self) -> float:

@@ -23,7 +23,7 @@ from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
 from .config.config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
 from .const import (
     CONFIG_CURRENT_UPDATE_PERIOD,
-    CONFIG_NET_POWER,
+    CONFIG_NET_POWER_SENSOR,
     CONFIG_WAIT_NET_POWER_UPDATE,
     DEFAULT_CURRENT_UPDATE_PERIOD,
     DEFAULT_WAIT_NET_POWER_UPDATE,
@@ -147,7 +147,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             # User step or reconfigure step with incorrect user input.
-            net_power: str = user_input.get(CONFIG_NET_POWER)
+            net_power_sensor: str = user_input.get(CONFIG_NET_POWER_SENSOR)
             wait_net_power_update: float = user_input.get(CONFIG_WAIT_NET_POWER_UPDATE)
             current_update_period: float = user_input.get(CONFIG_CURRENT_UPDATE_PERIOD)
 
@@ -155,7 +155,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             # Starting reconfigure step, user_input is None.
             # Get previously configured valies to show as defaults in the form.
             self._abort_if_unique_id_mismatch()
-            net_power: str = self._get_reconfigure_entry().data[CONFIG_NET_POWER]
+            net_power_sensor: str = self._get_reconfigure_entry().data[
+                CONFIG_NET_POWER_SENSOR
+            ]
             wait_net_power_update: float = self._get_reconfigure_entry().data[
                 CONFIG_WAIT_NET_POWER_UPDATE
             ]
@@ -165,7 +167,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
 
         else:
             # Starting initial user step, user_input is None.
-            net_power: str | None = None
+            net_power_sensor: str | None = None
             wait_net_power_update: float = DEFAULT_WAIT_NET_POWER_UPDATE
             current_update_period: float = DEFAULT_CURRENT_UPDATE_PERIOD
 
@@ -173,7 +175,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         step_user_schema = vol.Schema(
             {
                 vol.Required(
-                    CONFIG_NET_POWER, default=net_power
+                    CONFIG_NET_POWER_SENSOR, default=net_power_sensor
                 ): POWER_ENTITY_SELECTOR,
                 vol.Optional(
                     CONFIG_WAIT_NET_POWER_UPDATE, default=wait_net_power_update

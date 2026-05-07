@@ -7,17 +7,17 @@
         },
         "step": {
             "user": {
-                "title": "Net power config",
-                "description": "Config for net power entity and update interval.",
+                "title": "SolarCharger config",
+                "description": "Config for net power sensor and its update interval, and how often to adjust the charge current.",
                 "data": {
-                    "net_power": "Net Power (W)",
+                    "net_power_sensor": "Net power sensor (W)",
                     "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20 sec)",
                     "current_update_period": "Charge current update period (default: 60 sec)"
                 },
                 "data_description": {
-                    "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
+                    "net_power_sensor": "Sensor that expresses negative value in Watts for power exported to grid, or positive value for power imported from grid. This sensor is the feedback loop for adjusting power consumption.",
                     "wait_net_power_update": "The wait net power update interval must be greater than or equal to the net power sensor update interval.",
-                    "current_update_period": "The charge current update period must be greater then or equal to the wait net power update interval."
+                    "current_update_period": "The charge current update period must be greater than or equal to the wait net power update interval."
                 }
             }
         },
@@ -282,9 +282,6 @@
             },
             "sunset_elevation_end_trigger": {
                 "name": "Sunset elevation end trigger"
-            },
-            "current_update_period": {
-                "name": "Current update period"
             },
             "power_monitor_duration": {
                 "name": "Power monitor duration"

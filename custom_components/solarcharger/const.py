@@ -12,7 +12,7 @@ NAME = "SolarCharger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json and README.md
-VERSION = "0.6.2"
+VERSION = "0.7.0"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -238,7 +238,7 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 #####################################
 # Power import/export sensor
 #####################################
-CONFIG_NET_POWER = "net_power"
+CONFIG_NET_POWER_SENSOR = "net_power_sensor"
 CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"
 DEFAULT_WAIT_NET_POWER_UPDATE = 20  # 20 seconds
 CONFIG_CURRENT_UPDATE_PERIOD = "current_update_period"

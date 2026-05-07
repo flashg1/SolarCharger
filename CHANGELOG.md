@@ -1,10 +1,10 @@
 # Changelog
 
-## v0.6.2 2026-05-03
+## v0.7.0 2026-05-03
 ### Breaking change
-- Decoupled net power update period from charge current update period to provide more data points for power allocation simple moving average calculation. Please set "[Current update period](https://github.com/flashg1/SolarCharger/wiki/Installation#current-update-period)" in global defaults.
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.5.4 or prior.
+- Decoupled wait net power update interval from charge current update period to provide more data points for power allocation simple moving average calculation. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Sorry no way to avoid this since this is a new config flow. Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
 ### Improvement
+- Refactored config flow for better user experience and ease of maintenance.
 - Improved power allocation: Devices running at max current are excluded from power allocation.
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.
 - Added simple moving average allocated power sensor.

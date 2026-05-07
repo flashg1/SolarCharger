@@ -11,7 +11,7 @@ from ..config.config_utils import create_entity_ids_from_templates
 from ..const import (
     CONFIG_ENTITY_ID_LIST,
     CONFIG_LOCAL_OPTION_LIST,
-    CONFIG_NET_POWER,
+    CONFIG_NET_POWER_SENSOR,
     NUMBER_POWER_MONITOR_DURATION,
     OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
@@ -136,7 +136,7 @@ class StateStart(SolarChargeState):
     # ----------------------------------------------------------------------------
     def _log_net_power_configs(self) -> None:
 
-        net_power_entity_id = self.solarcharge.config_get_id(CONFIG_NET_POWER)
+        net_power_entity_id = self.solarcharge.config_get_id(CONFIG_NET_POWER_SENSOR)
         net_power = self.solarcharge.get_net_power()
 
         _LOGGER.debug(
