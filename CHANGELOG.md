@@ -9,6 +9,7 @@
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.
 - Added simple moving average allocated power sensor.
 - Adjust charge current on synchronised update cycle across all chargers.
+- The same moving average window is now applicable across all machine states.
 - Added missing entities for config debug logging during startup.
 
 ## v0.6.1 2026-04-26
