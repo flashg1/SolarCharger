@@ -30,6 +30,7 @@ from .const import (
     DOMAIN,
     ERROR_CURRENT_UPDATE_PERIOD,
     ERROR_WAIT_NET_POWER_UPDATE,
+    NAME,
     SUBENTRY_TYPE_CHARGER,
     SUBENTRY_TYPE_CUSTOM,
 )
@@ -38,19 +39,6 @@ from .exceptions.validation_exception import ValidationExceptionError
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
-
-
-STEP_SOURCE_POWER_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONFIG_NET_POWER, default=None): POWER_ENTITY_SELECTOR,
-        vol.Optional(
-            CONFIG_WAIT_NET_POWER_UPDATE, default=DEFAULT_WAIT_NET_POWER_UPDATE
-        ): WAIT_TIME_SELECTOR,
-        vol.Optional(
-            CONFIG_CURRENT_UPDATE_PERIOD, default=DEFAULT_CURRENT_UPDATE_PERIOD
-        ): WAIT_TIME_SELECTOR,
-    }
-)
 
 
 # ----------------------------------------------------------------------------
@@ -94,6 +82,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> ConfigOptionsFlowHandler:
         """Get the options flow for this handler."""
+
         # see https://developers.home-assistant.io/blog/2024/11/12/options-flow/
         if parse_version(ha_version) < parse_version("2024.11.0"):
             return ConfigOptionsFlowHandler(config_entry=config_entry)
@@ -107,13 +96,14 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         cls, config_entry: ConfigEntry
     ) -> dict[str, type[ConfigSubentryFlow]]:
         """Return subentries supported by this integration."""
+
         return {
             SUBENTRY_TYPE_CHARGER: AddChargerSubEntryFlowHandler,
             SUBENTRY_TYPE_CUSTOM: AddCustomSubEntryFlowHandler,
         }
 
     # ----------------------------------------------------------------------------
-    def validate_power_input(
+    def _validate_user_config(
         self, data: dict[str, Any], errors: dict[str, str]
     ) -> dict[str, Any]:
         """Validate the user input for the power collection step."""
@@ -136,22 +126,18 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            config_data = self.validate_power_input(user_input, errors)
+            config_data = self._validate_user_config(user_input, errors)
 
-            # if len(errors) == 0 and self.source == SOURCE_RECONFIGURE:
-            #     return self.async_update_reload_and_abort(
-            #         self._get_reconfigure_entry(), data_updates=config_data
-            #     )
-            # return self.async_create_entry(
-            #     title="SolarCharger",
-            #     data=config_data,
-            # )
+            if not errors:
+                # Reconfigure step: reconfigure entry.
+                if self.source == SOURCE_RECONFIGURE:
+                    self._abort_if_unique_id_mismatch()
+                    return self.async_update_reload_and_abort(
+                        self._get_reconfigure_entry(), data_updates=config_data
+                    )
 
-            if len(errors) == 0:
-                return self.async_create_entry(
-                    title="SolarCharger",
-                    data=config_data,
-                )
+                # Initial user step: create entry.
+                return self.async_create_entry(title=NAME, data=config_data)
 
         # The following is not required since single_config_entry is set in manifest.json.
         # config_entries: list[ConfigEntry] = self._async_current_entries()
@@ -159,37 +145,32 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         #     if len(config_entries) >= 1:
         #         return self.async_abort(reason=ERROR_SINGLE_INSTANCE_ALLOWED)
 
-        return self.async_show_form(
-            step_id="user", data_schema=STEP_SOURCE_POWER_SCHEMA, errors=errors
-        )
-
-    # ----------------------------------------------------------------------------
-    async def async_step_reconfigure(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle reconfiguration of an existing config entry."""
-        errors: dict[str, str] = {}
-
         if user_input is not None:
+            # User step or reconfigure step with incorrect user input.
+            net_power: str = user_input.get(CONFIG_NET_POWER)
+            wait_net_power_update: float = user_input.get(CONFIG_WAIT_NET_POWER_UPDATE)
+            current_update_period: float = user_input.get(CONFIG_CURRENT_UPDATE_PERIOD)
+
+        elif self.source == SOURCE_RECONFIGURE:
+            # Starting reconfigure step, user_input is None.
+            # Get previously configured valies to show as defaults in the form.
             self._abort_if_unique_id_mismatch()
+            net_power: str = self._get_reconfigure_entry().data[CONFIG_NET_POWER]
+            wait_net_power_update: float = self._get_reconfigure_entry().data[
+                CONFIG_WAIT_NET_POWER_UPDATE
+            ]
+            current_update_period: float = self._get_reconfigure_entry().data[
+                CONFIG_CURRENT_UPDATE_PERIOD
+            ]
 
-            config_data = self.validate_power_input(user_input, errors)
+        else:
+            # Starting initial user step, user_input is None.
+            net_power: str | None = None
+            wait_net_power_update: float = DEFAULT_WAIT_NET_POWER_UPDATE
+            current_update_period: float = DEFAULT_CURRENT_UPDATE_PERIOD
 
-            if len(errors) == 0:
-                return self.async_update_reload_and_abort(
-                    self._get_reconfigure_entry(), data_updates=config_data
-                )
-
-        # Get previously configured valies to show as defaults in the form.
-        net_power: str = self._get_reconfigure_entry().data[CONFIG_NET_POWER]
-        wait_net_power_update: float = self._get_reconfigure_entry().data[
-            CONFIG_WAIT_NET_POWER_UPDATE
-        ]
-        current_update_period: float = self._get_reconfigure_entry().data[
-            CONFIG_CURRENT_UPDATE_PERIOD
-        ]
-
-        net_power_schema = vol.Schema(
+        # Create schema with default values.
+        step_user_schema = vol.Schema(
             {
                 vol.Required(
                     CONFIG_NET_POWER, default=net_power
@@ -203,6 +184,15 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             }
         )
 
+        # Use single step for both "user" and "reconfigure", so no need to duplicate translations.
         return self.async_show_form(
-            step_id="reconfigure", data_schema=net_power_schema, errors=errors
+            step_id="user", data_schema=step_user_schema, errors=errors
         )
+
+    # ----------------------------------------------------------------------------
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle reconfiguration of an existing config entry."""
+
+        return await self.async_step_user(user_input)

@@ -8,7 +8,7 @@ from homeassistant.const import Platform, __version__ as HA_VERSION
 from .helpers.utils import compose_subdomain
 
 MANUFACTURER = "FlashG"
-NAME = "Solar Charger"
+NAME = "SolarCharger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json and README.md

@@ -19,20 +19,6 @@
                     "wait_net_power_update": "The wait net power update interval must be greater than or equal to the net power sensor update interval.",
                     "current_update_period": "The charge current update period must be greater then or equal to the wait net power update interval."
                 }
-            },
-            "reconfigure": {
-                "title": "Net power config",
-                "description": "Config for net power entity and update interval.",
-                "data": {
-                    "net_power": "Net Power (W)",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20 sec)",
-                    "current_update_period": "Charge current update period (default: 60 sec)"
-                },
-                "data_description": {
-                    "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
-                    "wait_net_power_update": "The wait net power update interval must be greater than or equal to the net power sensor update interval.",
-                    "current_update_period": "The charge current update period must be greater then or equal to the wait net power update interval."
-                }
             }
         },
         "abort": {
