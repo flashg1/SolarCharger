@@ -117,7 +117,7 @@ To:    \\homeassistant.local\config\custom_components\solarcharger
 
 ## Configuration
 1. Go through normal procedure to add the integration, ie. Settings > Devices & services > Add integration > Search for "SolarCharger"
-1. Set up "Net Power" sensor in Home Assistant (HA) config.  For example, for Enphase, sensor net_power expresses negative value in Watts for power exported to grid, or positive value for power imported from grid.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
+1. Set up net power sensor in Home Assistant (HA) config.  For example, for Enphase, the net power sensor expresses negative value in Watts for power exported to grid, or positive value for power imported from grid.  For other inverter brands, adjust the formula to conform with above requirement according to your setup.
 ```
 Settings > Devices & services > Helpers > Create helper > Template > Template a sensor >
 
@@ -134,7 +134,6 @@ Device: Envoy [YourEnvoyId]
 
 Global defaults (SolarCharger > Global defaults > Configuration):
 * Charger effective voltage
-* Current update period
 
 Local device (SolarCharger > Local device > Configuration):
 * Maximum current
