@@ -89,7 +89,7 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [Tessie](https://www.home-assistant.io/integrations/tessie)*
 - [Teslemetry](https://www.home-assistant.io/integrations/teslemetry/)* beta release.
 
-Integration APIs requiring paid subscription for most countries are marked with *.  See note on [API polling interval](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-reconfigure-net-power-and-wait-net-power-update-interval).
+Integration APIs requiring paid subscription for most countries are marked with *.  Please see [charge current update period](https://github.com/flashg1/SolarCharger/wiki/Installation#current-update-period) in relation to API polling interval.
 
 If your integration is not listed above, you might want to try "Add custom device" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch is required as a minimum) > Submit
 
