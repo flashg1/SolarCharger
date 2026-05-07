@@ -219,7 +219,7 @@ class StateStart(SolarChargeState):
             if time_diff < timedelta(seconds=30):
                 triggered_by_timer = True
 
-        _LOGGER.warning(
+        _LOGGER.info(
             "%s: charge_start_time=%s, next_charge_time=%s, time_diff=%s, triggered_by_timer=%s",
             self.solarcharge.caller,
             charge_start_time,
@@ -273,9 +273,6 @@ class StateStart(SolarChargeState):
         self.solarcharge.started_calibrate_max_charge_speed = False
 
         # Init power monitor duration
-        self.solarcharge.wait_net_power_update = (
-            self.solarcharge.get_wait_net_power_update()
-        )
         self._init_power_monitor_window(self.solarcharge.wait_net_power_update)
 
     # ----------------------------------------------------------------------------

@@ -22,10 +22,14 @@ from .config.config_subentry_charger import AddChargerSubEntryFlowHandler
 from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
 from .config.config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
 from .const import (
+    CONFIG_CURRENT_UPDATE_PERIOD,
     CONFIG_NET_POWER,
     CONFIG_WAIT_NET_POWER_UPDATE,
+    DEFAULT_CURRENT_UPDATE_PERIOD,
+    DEFAULT_WAIT_NET_POWER_UPDATE,
     DOMAIN,
-    ERROR_SINGLE_INSTANCE_ALLOWED,
+    ERROR_CURRENT_UPDATE_PERIOD,
+    ERROR_WAIT_NET_POWER_UPDATE,
     SUBENTRY_TYPE_CHARGER,
     SUBENTRY_TYPE_CUSTOM,
 )
@@ -39,7 +43,12 @@ _LOGGER = logging.getLogger(__name__)
 STEP_SOURCE_POWER_SCHEMA = vol.Schema(
     {
         vol.Required(CONFIG_NET_POWER, default=None): POWER_ENTITY_SELECTOR,
-        vol.Optional(CONFIG_WAIT_NET_POWER_UPDATE, default=20): WAIT_TIME_SELECTOR,
+        vol.Optional(
+            CONFIG_WAIT_NET_POWER_UPDATE, default=DEFAULT_WAIT_NET_POWER_UPDATE
+        ): WAIT_TIME_SELECTOR,
+        vol.Optional(
+            CONFIG_CURRENT_UPDATE_PERIOD, default=DEFAULT_CURRENT_UPDATE_PERIOD
+        ): WAIT_TIME_SELECTOR,
     }
 )
 
@@ -104,51 +113,80 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         }
 
     # ----------------------------------------------------------------------------
+    def validate_power_input(
+        self, data: dict[str, Any], errors: dict[str, str]
+    ) -> dict[str, Any]:
+        """Validate the user input for the power collection step."""
+
+        wait_net_power_update: float = data[CONFIG_WAIT_NET_POWER_UPDATE]
+        current_update_period: float = data[CONFIG_CURRENT_UPDATE_PERIOD]
+
+        if current_update_period < wait_net_power_update:
+            errors[CONFIG_WAIT_NET_POWER_UPDATE] = ERROR_WAIT_NET_POWER_UPDATE
+            errors[CONFIG_CURRENT_UPDATE_PERIOD] = ERROR_CURRENT_UPDATE_PERIOD
+
+        # Return info that you want to store in the config entry.
+        return data
+
+    # ----------------------------------------------------------------------------
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Entry point for initial config."""
         errors: dict[str, str] = {}
+
         if user_input is not None:
-            self.validate_power_input(user_input, errors)
-            if not errors and self.source == SOURCE_RECONFIGURE:
-                return self.async_update_reload_and_abort(
-                    self._get_reconfigure_entry(), data_updates=user_input
+            config_data = self.validate_power_input(user_input, errors)
+
+            # if len(errors) == 0 and self.source == SOURCE_RECONFIGURE:
+            #     return self.async_update_reload_and_abort(
+            #         self._get_reconfigure_entry(), data_updates=config_data
+            #     )
+            # return self.async_create_entry(
+            #     title="SolarCharger",
+            #     data=config_data,
+            # )
+
+            if len(errors) == 0:
+                return self.async_create_entry(
+                    title="SolarCharger",
+                    data=config_data,
                 )
 
-            return self.async_create_entry(
-                title="SolarCharger",
-                data=user_input,
-            )
-
-        config_entries: list[ConfigEntry] = self._async_current_entries()
-        if config_entries:
-            if len(config_entries) >= 1:
-                return self.async_abort(reason=ERROR_SINGLE_INSTANCE_ALLOWED)
+        # The following is not required since single_config_entry is set in manifest.json.
+        # config_entries: list[ConfigEntry] = self._async_current_entries()
+        # if config_entries:
+        #     if len(config_entries) >= 1:
+        #         return self.async_abort(reason=ERROR_SINGLE_INSTANCE_ALLOWED)
 
         return self.async_show_form(
             step_id="user", data_schema=STEP_SOURCE_POWER_SCHEMA, errors=errors
         )
 
     # ----------------------------------------------------------------------------
-    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Handle reconfiguration of an existing config entry."""
-
         errors: dict[str, str] = {}
+
         if user_input is not None:
             self._abort_if_unique_id_mismatch()
 
-            self.validate_power_input(user_input, errors)
+            config_data = self.validate_power_input(user_input, errors)
 
-            if not errors:
+            if len(errors) == 0:
                 return self.async_update_reload_and_abort(
-                    self._get_reconfigure_entry(), data_updates=user_input
+                    self._get_reconfigure_entry(), data_updates=config_data
                 )
 
         # Get previously configured valies to show as defaults in the form.
         net_power: str = self._get_reconfigure_entry().data[CONFIG_NET_POWER]
         wait_net_power_update: float = self._get_reconfigure_entry().data[
             CONFIG_WAIT_NET_POWER_UPDATE
+        ]
+        current_update_period: float = self._get_reconfigure_entry().data[
+            CONFIG_CURRENT_UPDATE_PERIOD
         ]
 
         net_power_schema = vol.Schema(
@@ -159,19 +197,12 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 vol.Optional(
                     CONFIG_WAIT_NET_POWER_UPDATE, default=wait_net_power_update
                 ): WAIT_TIME_SELECTOR,
+                vol.Optional(
+                    CONFIG_CURRENT_UPDATE_PERIOD, default=current_update_period
+                ): WAIT_TIME_SELECTOR,
             }
         )
 
         return self.async_show_form(
-            step_id="reconfigure",
-            data_schema=net_power_schema,
-            errors=errors,
+            step_id="reconfigure", data_schema=net_power_schema, errors=errors
         )
-
-    # ----------------------------------------------------------------------------
-    def validate_power_input(
-        self, data: dict[str, Any], errors: dict[str, str]
-    ) -> dict[str, Any]:
-        """Validate the user input for the power collection step."""
-        # Return info that you want to store in the config entry.
-        return data

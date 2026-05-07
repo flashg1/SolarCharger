@@ -2,8 +2,8 @@
     "title": "SolarCharger",
     "config": {
         "error": {
-            "select_net_power": "Select net power sensor",
-            "select_charger_voltage": "Select charger effective voltage"
+            "invalid_wait_net_power_update": "Wait net power update interval must be less than or equal to charge current update period.",
+            "invalid_current_update_period": "Charge current update period must be greater than or equal to wait net power update interval."
         },
         "step": {
             "user": {
@@ -11,11 +11,13 @@
                 "description": "Config for net power entity and update interval.",
                 "data": {
                     "net_power": "Net Power (W)",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20)"
+                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20 sec)",
+                    "current_update_period": "Charge current update period (default: 60 sec)"
                 },
                 "data_description": {
                     "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update. The waiting period should be greater than or equal to the sensor update interval."
+                    "wait_net_power_update": "The wait net power update interval must be greater than or equal to the net power sensor update interval.",
+                    "current_update_period": "The charge current update period must be greater then or equal to the wait net power update interval."
                 }
             },
             "reconfigure": {
@@ -23,11 +25,13 @@
                 "description": "Config for net power entity and update interval.",
                 "data": {
                     "net_power": "Net Power (W)",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20)"
+                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20 sec)",
+                    "current_update_period": "Charge current update period (default: 60 sec)"
                 },
                 "data_description": {
                     "net_power": "Sensor that expresses negative value in Watts for available power for charging or positive value for consumed power. This sensor is the feedback loop for adjusting power consumption.",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update. The waiting period should be greater than or equal to the sensor update interval."
+                    "wait_net_power_update": "The wait net power update interval must be greater than or equal to the net power sensor update interval.",
+                    "current_update_period": "The charge current update period must be greater then or equal to the wait net power update interval."
                 }
             }
         },
@@ -60,7 +64,7 @@
             "entry_type": "Charger device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage and current update period in \"Global defaults\", max current in charger device, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
+                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage in \"Global defaults\", max current in charger device, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
             }
         },
         "custom": {
@@ -86,7 +90,7 @@
             "entry_type": "Custom device",
             "abort": {
                 "device_already_added": "Error: Device already added",
-                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage and current update period in \"Global defaults\", max current in charger device, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
+                "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage in \"Global defaults\", max current in charger device, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
             }
         }
     },

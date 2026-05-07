@@ -150,6 +150,8 @@ DEVICE_MODEL_MAP: dict[str, str] = {
 #######################################################
 # Error codes
 #######################################################
+ERROR_WAIT_NET_POWER_UPDATE = "invalid_wait_net_power_update"
+ERROR_CURRENT_UPDATE_PERIOD = "invalid_current_update_period"
 ERROR_EMPTY_CHARGER_LIST = "empty_charger_device_list"
 ERROR_SELECT_CHARGER = "select_charger_error"
 ERROR_SUBENTRY_ID_NOT_FOUND = "subentry_id_not_found"
@@ -237,15 +239,17 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 # Power import/export sensor
 #####################################
 CONFIG_NET_POWER = "net_power"
-CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"  # 20 seconds
+CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"
+DEFAULT_WAIT_NET_POWER_UPDATE = 20  # 20 seconds
+CONFIG_CURRENT_UPDATE_PERIOD = "current_update_period"
+DEFAULT_CURRENT_UPDATE_PERIOD = 60  # 60 seconds
+
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 
 #####################################
 # Charger general configs
 #####################################
-NUMBER_CURRENT_UPDATE_PERIOD = "current_update_period"  # 60 seconds
-
 NUMBER_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # No defaults
 NUMBER_CHARGER_MAX_SPEED = "charger_max_speed"  # 6.1448 %/hr
 NUMBER_CHARGER_MIN_CURRENT = "charger_min_current"  # 1 Amps
@@ -475,7 +479,6 @@ CONFIG_INTERNAL_ENTITY_LIST: list[str] = [
     #####################################
     # Global entities
     SENSOR_SYNC_UPDATE,
-    NUMBER_CURRENT_UPDATE_PERIOD,
     # Local entities
     SWITCH_CHARGE,
     SWITCH_FAST_CHARGE_MODE,
@@ -544,7 +547,6 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Global defaults: Charger configs
     #####################################
-    NUMBER_CURRENT_UPDATE_PERIOD: 60,
     NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
     #####################################
     # Local device required defaults
@@ -691,7 +693,6 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
     # Global entities
     SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
-    NUMBER_CURRENT_UPDATE_PERIOD: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{NUMBER_CURRENT_UPDATE_PERIOD}",
     # Local entities
     SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
     SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",

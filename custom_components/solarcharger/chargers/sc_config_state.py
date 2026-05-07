@@ -7,7 +7,11 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from ..const import CONFIG_NET_POWER, CONFIG_WAIT_NET_POWER_UPDATE
+from ..const import (
+    CONFIG_CURRENT_UPDATE_PERIOD,
+    CONFIG_NET_POWER,
+    CONFIG_WAIT_NET_POWER_UPDATE,
+)
 from .sc_state import ScState
 
 # ----------------------------------------------------------------------------
@@ -93,12 +97,6 @@ class ScConfigState(ScState):
         await asyncio.sleep(duration)
 
     # ----------------------------------------------------------------------------
-    def get_wait_net_power_update(self) -> float:
-        """Get wait net power update time in seconds."""
-
-        return self.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
-
-    # ----------------------------------------------------------------------------
     def get_net_power(self) -> float | None:
         """Get household net power."""
 
@@ -106,3 +104,15 @@ class ScConfigState(ScState):
         # could not convert string to float: 'unavailable'
 
         return self.config_get_entity_number(CONFIG_NET_POWER)
+
+    # ----------------------------------------------------------------------------
+    def get_wait_net_power_update(self) -> float:
+        """Get wait net power update time in seconds."""
+
+        return self.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def get_charge_current_update_period(self) -> float:
+        """Get charge current update period in seconds."""
+
+        return self.config_get_number_or_abort(CONFIG_CURRENT_UPDATE_PERIOD)

@@ -17,7 +17,6 @@ from ..const import (
     CONFIG_NAME_GLOBAL_DEFAULTS,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
-    NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -26,7 +25,6 @@ from ..const import (
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
-    NUMBER_CURRENT_UPDATE_PERIOD,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     SELECT,
@@ -87,13 +85,6 @@ class ScOptionState(ScConfigState):
     # Non-modifiable local device internal entities, ie.
     # not defined in config_options_flow _charger_control_entities_schema().
     # ----------------------------------------------------------------------------
-    @cached_property
-    def current_update_period_entity_id(self) -> str:
-        """Return charge current update period entity ID."""
-        return compose_entity_id(
-            NUMBER, CONFIG_NAME_GLOBAL_DEFAULTS, NUMBER_CURRENT_UPDATE_PERIOD
-        )
-
     @cached_property
     def sync_update_entity_id(self) -> str:
         """Return sync update entity ID used by chargers to synchronise charge current updates."""
@@ -724,9 +715,10 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # Global default entities
     # ----------------------------------------------------------------------------
-    def get_charge_current_update_period(self) -> float:
-        """Get charge current update period."""
-        return self.get_number_or_abort(self.current_update_period_entity_id)
+    def get_last_sync_charge_current_time(self) -> float:
+        """Get last sync charge current time."""
+
+        return self.get_datetime(self.sync_update_entity_id)
 
     # ----------------------------------------------------------------------------
     # Local device control entities

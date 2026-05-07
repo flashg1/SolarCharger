@@ -104,7 +104,6 @@ class SolarCharge(ScOptionState):
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
 
-        self.wait_net_power_update: float = 20
         self.started_calibrate_max_charge_speed = False
         self.charge_current_updatetime: float = 0
         self.soc_updates: list[StateOfCharge] = []
@@ -116,6 +115,9 @@ class SolarCharge(ScOptionState):
         # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
         self._semaphore_update_ha_task = threading.Semaphore(value=1)
         self._semaphore_update_ha_task_count = 0
+
+        self.wait_net_power_update = self.get_wait_net_power_update()
+        self.charge_current_update_period = self.get_charge_current_update_period()
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -198,21 +200,7 @@ class SolarCharge(ScOptionState):
     async def async_charger_sleep(self) -> None:
         """Wait before looping again."""
 
-        current_update_period = self.get_charge_current_update_period()
-
-        if (
-            current_update_period is None
-            or current_update_period < self.wait_net_power_update
-        ):
-            current_update_period = self.wait_net_power_update
-            _LOGGER.error(
-                "%s: Charge current update period (%s) must be greater than or equal to wait net power update interval (%s)",
-                self.caller,
-                current_update_period,
-                self.wait_net_power_update,
-            )
-
-        await asyncio.sleep(current_update_period)
+        await asyncio.sleep(self.charge_current_update_period)
 
     # ----------------------------------------------------------------------------
     def get_charger_priority(self) -> int:
