@@ -179,11 +179,11 @@
             "charger_allocated_power": {
                 "name": "Allocated power"
             },
-            "median_allocated_power": {
-                "name": "Median allocated power"
+            "median_net_allocated_power": {
+                "name": "Median net allocated power"
             },
-            "moving_average_allocated_power": {
-                "name": "Moving average allocated power"
+            "sma_net_allocated_power": {
+                "name": "SMA net allocated power"
             },
             "consumed_power": {
                 "name": "Consumed power"

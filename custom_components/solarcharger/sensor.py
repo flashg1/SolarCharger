@@ -28,11 +28,11 @@ from .const import (
     SENSOR_INSTANCE_COUNT,
     SENSOR_LAST_CHECK,
     SENSOR_LAST_PAUSE_DURATION,
-    SENSOR_MEDIAN_ALLOCATED_POWER,
-    SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
+    SENSOR_MEDIAN_NET_ALLOCATED_POWER,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
+    SENSOR_SMA_NET_ALLOCATED_POWER,
     SENSOR_SYNC_UPDATE,
     RunState,
 )
@@ -157,11 +157,11 @@ CONFIG_SENSOR_LIST: tuple[
         0,
     ),
     (
-        SENSOR_MEDIAN_ALLOCATED_POWER,
+        SENSOR_MEDIAN_NET_ALLOCATED_POWER,
         SolarChargerSensorStateEntity,
         SolarChargerEntityType.TYPE_LOCAL,
         SensorEntityDescription(
-            key=SENSOR_MEDIAN_ALLOCATED_POWER,
+            key=SENSOR_MEDIAN_NET_ALLOCATED_POWER,
             device_class=SensorDeviceClass.POWER,
             native_unit_of_measurement=UnitOfPower.WATT,
             suggested_display_precision=0,
@@ -171,11 +171,12 @@ CONFIG_SENSOR_LIST: tuple[
         0,
     ),
     (
-        SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
+        SENSOR_SMA_NET_ALLOCATED_POWER,
         SolarChargerSensorStateEntity,
+        # SolarChargerEntityType.TYPE_LOCALHIDDEN,
         SolarChargerEntityType.TYPE_LOCAL,
         SensorEntityDescription(
-            key=SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
+            key=SENSOR_SMA_NET_ALLOCATED_POWER,
             device_class=SensorDeviceClass.POWER,
             native_unit_of_measurement=UnitOfPower.WATT,
             suggested_display_precision=0,

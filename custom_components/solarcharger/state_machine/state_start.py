@@ -16,8 +16,8 @@ from ..const import (
     OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_CONSUMED_POWER,
-    SENSOR_MEDIAN_ALLOCATED_POWER,
-    SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
+    SENSOR_MEDIAN_NET_ALLOCATED_POWER,
+    SENSOR_SMA_NET_ALLOCATED_POWER,
     RunState,
 )
 from ..models.model_charge_stats import ChargeStats
@@ -44,23 +44,11 @@ class StateStart(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
-    def _update_simple_moving_average_power_allocation(self) -> None:
-        """Calculate simple moving average from power allocations."""
+    def _update_median_net_allocated_power(self) -> None:
+        """Calculate median from net power allocations."""
 
-        assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[
-            SENSOR_MOVING_AVERAGE_ALLOCATED_POWER
-        ].set_state(
-            sum(self.solarcharge.power_allocations)
-            / len(self.solarcharge.power_allocations)
-        )
-
-    # ----------------------------------------------------------------------------
-    def _update_median_power_allocation(self) -> None:
-        """Calculate median from power allocations."""
-
-        sample_size = len(self.solarcharge.power_allocations)
-        ascending_list = sorted(self.solarcharge.power_allocations)
+        sample_size = len(self.solarcharge.net_allocations)
+        ascending_list = sorted(self.solarcharge.net_allocations)
 
         if sample_size % 2 == 0:
             # Even
@@ -72,8 +60,18 @@ class StateStart(SolarChargeState):
             median = ascending_list[index - 1]
 
         assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[SENSOR_MEDIAN_ALLOCATED_POWER].set_state(
+        self.solarcharge.entities.sensors[SENSOR_MEDIAN_NET_ALLOCATED_POWER].set_state(
             median
+        )
+
+    # ----------------------------------------------------------------------------
+    def _update_sma_net_allocated_power(self) -> None:
+        """Calculate simple moving average from net power allocations."""
+
+        assert self.solarcharge.entities.sensors is not None
+        self.solarcharge.entities.sensors[SENSOR_SMA_NET_ALLOCATED_POWER].set_state(
+            sum(self.solarcharge.net_allocations)
+            / len(self.solarcharge.net_allocations)
         )
 
     # ----------------------------------------------------------------------------
@@ -126,21 +124,21 @@ class StateStart(SolarChargeState):
                 # Save allocated power to calculate moving average.
                 if self.solarcharge.max_allocation_count > 0:
                     if (
-                        len(self.solarcharge.power_allocations)
+                        len(self.solarcharge.net_allocations)
                         >= self.solarcharge.max_allocation_count
                     ):
-                        self.solarcharge.power_allocations.pop(0)
+                        self.solarcharge.net_allocations.pop(0)
 
                     assert self.solarcharge.entities.sensors is not None
                     consumed_power = float(
                         self.solarcharge.entities.sensors[SENSOR_CONSUMED_POWER].state
                     )
-                    self.solarcharge.power_allocations.append(
+                    self.solarcharge.net_allocations.append(
                         allocated_power - consumed_power
                     )
 
-                    self._update_median_power_allocation()
-                    self._update_simple_moving_average_power_allocation()
+                    self._update_median_net_allocated_power()
+                    self._update_sma_net_allocated_power()
 
             except Exception as e:
                 _LOGGER.exception(
@@ -271,18 +269,20 @@ class StateStart(SolarChargeState):
         self.solarcharge.max_allocation_count = 0
 
         if monitor_duration > 0:
-            if monitor_duration_seconds > (2 * wait_net_power_update):
-                max_allocation_count = round(
-                    monitor_duration_seconds / wait_net_power_update
-                )
-                # Ensure odd numbers for median calculation
-                # max_allocation_count += 1 if max_allocation_count % 2 == 0 else 0
+            max_allocation_count = round(
+                monitor_duration_seconds / wait_net_power_update
+            )
+
+            if max_allocation_count >= 5:
                 self.solarcharge.max_allocation_count = max_allocation_count
             else:
+                # Power monitor duration needs to be longer to reliably determine when to pause charger.
                 _LOGGER.error(
-                    "%s: Power monitor duration (%s minutes) must be more than 2 times longer than wait net power update interval (%s seconds)",
+                    "%s: Sample size %s is too small to reliably determine when to pause charger. "
+                    "Sample size = Power monitor duration %s / wait net power update interval %s",
                     self.solarcharge.caller,
-                    monitor_duration,
+                    max_allocation_count,
+                    monitor_duration_seconds,
                     wait_net_power_update,
                 )
 
@@ -290,7 +290,7 @@ class StateStart(SolarChargeState):
     def _init_power_monitor_window(self, seconds_between_update: int) -> None:
 
         self._set_max_allocation_count(seconds_between_update)
-        self.solarcharge.power_allocations = []
+        self.solarcharge.net_allocations = []
 
     # ----------------------------------------------------------------------------
     def _init_instance_variables(self) -> None:

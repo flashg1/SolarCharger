@@ -311,8 +311,8 @@ ENTITY_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 # Internal control entities
 #####################################
 SENSOR_SYNC_UPDATE = "sync_update"
-SENSOR_MEDIAN_ALLOCATED_POWER = "median_allocated_power"
-SENSOR_MOVING_AVERAGE_ALLOCATED_POWER = "moving_average_allocated_power"
+SENSOR_MEDIAN_NET_ALLOCATED_POWER = "median_net_allocated_power"
+SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
 SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 
 #####################################
