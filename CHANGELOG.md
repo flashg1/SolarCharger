@@ -2,7 +2,7 @@
 
 ## v0.7.0 2026-05-03
 ### Breaking change
-- Decoupled wait net power update interval from charge current update period to provide more data points for power allocation simple moving average calculation. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Sorry no way to avoid this since this is a new config flow. Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
+- Decoupled wait net power update interval from charge current update period to provide more data points for power allocation median calculation. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Sorry no way to avoid this since this is a new config flow. Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
 ### Improvement
 - Using median allocated power to ignore outliers instead of simple moving average to determine whether or not to pause the charger.
 - Refactored config flow for better error response and ease of maintenance.
@@ -10,7 +10,7 @@
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.
 - Added simple moving average allocated power and median allocated power sensors.
 - Adjust charge current on synchronised update cycle across all chargers.
-- The same power monitor window/data structure is now applicable across all machine states.
+- For faster charger pause/unpause response, the same power monitor data structure is now used by all machine states.
 - Added missing entities for config debug logging during startup.
 
 ## v0.6.1 2026-04-26
