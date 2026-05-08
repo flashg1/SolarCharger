@@ -8,9 +8,9 @@
 - Refactored config flow for better error response and ease of maintenance.
 - Improved power allocation: Devices running at max current are excluded from power allocation.
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.
-- Added simple moving average allocated power sensor.
+- Added simple moving average allocated power and median allocated power sensors.
 - Adjust charge current on synchronised update cycle across all chargers.
-- The same moving average window is now applicable across all machine states.
+- The same power monitor window/data structure is now applicable across all machine states.
 - Added missing entities for config debug logging during startup.
 
 ## v0.6.1 2026-04-26
