@@ -28,6 +28,7 @@ from .const import (
     SENSOR_INSTANCE_COUNT,
     SENSOR_LAST_CHECK,
     SENSOR_LAST_PAUSE_DURATION,
+    SENSOR_MEDIAN_ALLOCATED_POWER,
     SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
@@ -152,6 +153,20 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.MEASUREMENT,
             # Always force update when setting value even if value is same.
             force_update=True,
+        ),
+        0,
+    ),
+    (
+        SENSOR_MEDIAN_ALLOCATED_POWER,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_MEDIAN_ALLOCATED_POWER,
+            device_class=SensorDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            suggested_display_precision=0,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
         ),
         0,
     ),

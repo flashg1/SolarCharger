@@ -179,6 +179,9 @@
             "charger_allocated_power": {
                 "name": "Allocated power"
             },
+            "median_allocated_power": {
+                "name": "Median allocated power"
+            },
             "moving_average_allocated_power": {
                 "name": "Moving average allocated power"
             },

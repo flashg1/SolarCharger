@@ -16,6 +16,7 @@ from ..const import (
     OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_CONSUMED_POWER,
+    SENSOR_MEDIAN_ALLOCATED_POWER,
     SENSOR_MOVING_AVERAGE_ALLOCATED_POWER,
     RunState,
 )
@@ -42,6 +43,39 @@ class StateStart(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     # Subscriptions
+    # ----------------------------------------------------------------------------
+    def _update_simple_moving_average_power_allocation(self) -> None:
+        """Calculate simple moving average from power allocations."""
+
+        assert self.solarcharge.entities.sensors is not None
+        self.solarcharge.entities.sensors[
+            SENSOR_MOVING_AVERAGE_ALLOCATED_POWER
+        ].set_state(
+            sum(self.solarcharge.power_allocations)
+            / len(self.solarcharge.power_allocations)
+        )
+
+    # ----------------------------------------------------------------------------
+    def _update_median_power_allocation(self) -> None:
+        """Calculate median from power allocations."""
+
+        sample_size = len(self.solarcharge.power_allocations)
+        ascending_list = sorted(self.solarcharge.power_allocations)
+
+        if sample_size % 2 == 0:
+            # Even
+            index = round(sample_size / 2)
+            median = (ascending_list[index - 1] + ascending_list[index]) / 2
+        else:
+            # Odd
+            index = round((sample_size + 1) / 2)
+            median = ascending_list[index - 1]
+
+        assert self.solarcharge.entities.sensors is not None
+        self.solarcharge.entities.sensors[SENSOR_MEDIAN_ALLOCATED_POWER].set_state(
+            median
+        )
+
     # ----------------------------------------------------------------------------
     # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
     # entity_id=number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power,
@@ -97,8 +131,6 @@ class StateStart(SolarChargeState):
                     ):
                         self.solarcharge.power_allocations.pop(0)
 
-                        # if max_allocation_count > 0 and len(power_allocations) > 0:
-
                     assert self.solarcharge.entities.sensors is not None
                     consumed_power = float(
                         self.solarcharge.entities.sensors[SENSOR_CONSUMED_POWER].state
@@ -107,12 +139,8 @@ class StateStart(SolarChargeState):
                         allocated_power - consumed_power
                     )
 
-                    self.solarcharge.entities.sensors[
-                        SENSOR_MOVING_AVERAGE_ALLOCATED_POWER
-                    ].set_state(
-                        sum(self.solarcharge.power_allocations)
-                        / len(self.solarcharge.power_allocations)
-                    )
+                    self._update_median_power_allocation()
+                    self._update_simple_moving_average_power_allocation()
 
             except Exception as e:
                 _LOGGER.exception(
@@ -244,12 +272,15 @@ class StateStart(SolarChargeState):
 
         if monitor_duration > 0:
             if monitor_duration_seconds > (2 * wait_net_power_update):
-                self.solarcharge.max_allocation_count = round(
+                max_allocation_count = round(
                     monitor_duration_seconds / wait_net_power_update
                 )
+                # Ensure odd numbers for median calculation
+                # max_allocation_count += 1 if max_allocation_count % 2 == 0 else 0
+                self.solarcharge.max_allocation_count = max_allocation_count
             else:
                 _LOGGER.error(
-                    "%s: Power monitor duration (%s minutes) must be more than 2 times longer than net power update interval (%s seconds)",
+                    "%s: Power monitor duration (%s minutes) must be more than 2 times longer than wait net power update interval (%s seconds)",
                     self.solarcharge.caller,
                     monitor_duration,
                     wait_net_power_update,
