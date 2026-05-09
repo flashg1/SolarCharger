@@ -9,6 +9,7 @@ from ..const import (
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_CONSUMED_POWER,
     SENSOR_SHARE_ALLOCATION,
+    RunState,
 )
 from ..helpers.general import async_set_delta_allocated_power
 from ..models.model_allocation import AllocationGroup, DeltaPowerAllocation
@@ -390,15 +391,23 @@ class PowerAllocator:
                 for allocation in rung.delta_allocations:
                     control = self._device_controls[allocation.subentry_id]
 
+                    if control.controller.solar_charge.machine_state.state in [
+                        RunState.ENDING,
+                        RunState.ENDED,
+                    ]:
+                        # Charge session ending, so set delta_allocated_power=0.
+                        delta_allocated_power = 0
+                    elif allocation.share_allocation > 0:
+                        # Paticipants in power sharing will use final_power.
+                        delta_allocated_power = allocation.final_power
+                    else:
+                        # Non-participants will use plan_power as indication of possible available power.
+                        delta_allocated_power = allocation.plan_power
+
                     # Writer will set entity value directly. Reader will get value via
                     # entity ID in options which can be overridden.
-                    # Paticipants in power sharing will use final_power, non-participants
-                    # will use plan_power as indication of possible available power.
                     await async_set_delta_allocated_power(
-                        control.controller.charge_control,
-                        allocation.final_power
-                        if allocation.share_allocation > 0
-                        else allocation.plan_power,
+                        control.controller.charge_control, delta_allocated_power
                     )
 
                     _LOGGER.debug("PowerAllocation: %s", allocation)

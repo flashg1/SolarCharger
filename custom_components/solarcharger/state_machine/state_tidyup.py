@@ -6,7 +6,6 @@ import logging
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import (
-    SENSOR_DELTA_ALLOCATED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
     SENSOR_NET_ALLOCATED_POWER,
     SENSOR_SMA_NET_ALLOCATED_POWER,
@@ -42,7 +41,6 @@ class StateTidyUp(SolarChargeState):
         self.solarcharge.tracker.untrack_sync_update()
 
         # reset sensors
-        self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].set_state(0)
         self.solarcharge.entities.sensors[SENSOR_NET_ALLOCATED_POWER].set_state(0)
         self.solarcharge.entities.sensors[SENSOR_MEDIAN_NET_ALLOCATED_POWER].set_state(
             0

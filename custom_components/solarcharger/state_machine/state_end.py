@@ -3,7 +3,7 @@
 
 import logging
 
-from ..const import RunState
+from ..const import SENSOR_DELTA_ALLOCATED_POWER, RunState
 from .solar_charge_state import SolarChargeState
 
 # ----------------------------------------------------------------------------
@@ -23,7 +23,17 @@ class StateEnd(SolarChargeState):
         self.state = RunState.ENDED
 
     # ----------------------------------------------------------------------------
+    async def _async_end_session(self) -> None:
+        """End charge session."""
+
+        # Delta allocated power is set in the coordinator timer thread.
+        # Should not be set here, but no choice.
+        # Reset here in case it is missed in the coordinator due to race condition.
+        self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].set_state(0)
+
+    # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
         """Start end state."""
 
         self.solarcharge.set_run_state(self.state)
+        self._async_end_session()
