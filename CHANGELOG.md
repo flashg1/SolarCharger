@@ -2,11 +2,11 @@
 
 ## v0.7.0 2026-05-03
 ### Breaking change
-- Decoupled wait net power update interval from charge current update period to provide more data points for median net allocated power calculation. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Sorry no way to avoid this since this is a new config flow. Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
+- In order to provide reliable pausing/unpausing of charger during low solar periods, the wait net power update interval is now decoupled from the charge current update period. This will allow more data points for the median net allocated power calculation used in charger pausing/unpausing determination. A new parameter, "Charge current update period", is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
+- Renamed allocated power sensor to delta allocated power sensor.
 ### Improvement
 - Added net allocated power sensor.
-- Renamed allocated power sensor to delta allocated power sensor.
-- Used median allocated power instead of simple moving average to ignore outliers for determining whether or not to pause charger.
+- Used median allocated power instead of simple moving average to ignore outliers for determining whether or not to pause/unpause charger.
 - Refactored config flow for better error response and ease of maintenance.
 - Improved power allocation: Devices running at max current are excluded from power allocation.
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.
