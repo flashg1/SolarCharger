@@ -36,4 +36,4 @@ class StateEnd(SolarChargeState):
         """Start end state."""
 
         self.solarcharge.set_run_state(self.state)
-        self._async_end_session()
+        await self._async_end_session()
