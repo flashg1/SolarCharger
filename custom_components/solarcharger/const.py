@@ -171,7 +171,7 @@ ERROR_SINGLE_INSTANCE_ALLOWED = "single_instance_allowed"
 # Sensors
 SENSOR_RUN_STATE = "run_state"
 
-# Sensor trigger: Delta allocated power = Net grid power * (Allocation weight / Total weight)
+# Delta allocated power = Net grid power * (Allocation weight / Total weight)
 SENSOR_DELTA_ALLOCATED_POWER = "delta_allocated_power"
 SENSOR_NET_ALLOCATED_POWER = "net_allocated_power"
 

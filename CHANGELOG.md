@@ -6,7 +6,7 @@
 ### Improvement
 - Added net allocated power sensor.
 - Renamed allocated power sensor to delta allocated power sensor.
-- Using median allocated power to ignore outliers instead of simple moving average to determine whether or not to pause the charger.
+- Used median allocated power instead of simple moving average to ignore outliers for determining whether or not to pause charger.
 - Refactored config flow for better error response and ease of maintenance.
 - Improved power allocation: Devices running at max current are excluded from power allocation.
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.

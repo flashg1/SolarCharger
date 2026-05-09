@@ -8,6 +8,7 @@ from ..chargers.charger import Charger
 from ..const import (
     SENSOR_DELTA_ALLOCATED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
+    SENSOR_NET_ALLOCATED_POWER,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     RunState,
 )
@@ -32,19 +33,21 @@ class StateTidyUp(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     def _unsubscribe_updates(self) -> None:
-        """Unsubscribe allocated power update."""
+        """Unsubscribe updates."""
 
-        # Unsubscribe allocated power
+        # Unsubscribe delta allocated power
         self.solarcharge.give_up_real_power_allocation()
         self.solarcharge.tracker.untrack_delta_allocated_power_update()
+        # Unsubscribe sync charge current
+        self.solarcharge.tracker.untrack_sync_update()
+
+        # reset sensors
+        self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].set_state(0)
+        self.solarcharge.entities.sensors[SENSOR_NET_ALLOCATED_POWER].set_state(0)
         self.solarcharge.entities.sensors[SENSOR_MEDIAN_NET_ALLOCATED_POWER].set_state(
             0
         )
         self.solarcharge.entities.sensors[SENSOR_SMA_NET_ALLOCATED_POWER].set_state(0)
-        self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].set_state(0)
-
-        # Unsubscribe sync charge current
-        self.solarcharge.tracker.untrack_sync_update()
 
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(

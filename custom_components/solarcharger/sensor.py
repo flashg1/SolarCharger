@@ -187,8 +187,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_SMA_NET_ALLOCATED_POWER,
         SolarChargerSensorStateEntity,
-        # SolarChargerEntityType.TYPE_LOCALHIDDEN,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCALHIDDEN,
         SensorEntityDescription(
             key=SENSOR_SMA_NET_ALLOCATED_POWER,
             device_class=SensorDeviceClass.POWER,
