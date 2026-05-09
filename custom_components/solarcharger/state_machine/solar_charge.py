@@ -46,6 +46,7 @@ from ..const import (
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
+    SENSOR_NET_ALLOCATED_POWER,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
@@ -652,6 +653,9 @@ class SolarCharge(ScOptionState):
         context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
         # Data points managed in _async_handle_allocated_power_update().
+        context.net_allocated_power = self.entities.sensors[
+            SENSOR_NET_ALLOCATED_POWER
+        ].state
         context.median_net_allocated_power = self.entities.sensors[
             SENSOR_MEDIAN_NET_ALLOCATED_POWER
         ].state

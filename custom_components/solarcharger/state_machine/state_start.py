@@ -17,6 +17,7 @@ from ..const import (
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_CONSUMED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
+    SENSOR_NET_ALLOCATED_POWER,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     RunState,
 )
@@ -43,6 +44,16 @@ class StateStart(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     # Subscriptions
+    # ----------------------------------------------------------------------------
+    def _update_net_allocated_power(self, net_allocated_power: float) -> None:
+        """Update net allocated power."""
+
+        assert self.solarcharge.entities.sensors is not None
+        self.solarcharge.net_allocations.append(net_allocated_power)
+        self.solarcharge.entities.sensors[SENSOR_NET_ALLOCATED_POWER].set_state(
+            net_allocated_power
+        )
+
     # ----------------------------------------------------------------------------
     def _update_median_net_allocated_power(self) -> None:
         """Calculate median from net power allocations."""
@@ -83,7 +94,7 @@ class StateStart(SolarChargeState):
     #
     # new_state=<state number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power=-200.0; min=-23000.0, max=23000.0, step=1.0, mode=box,
     # unit_of_measurement=W, device_class=power, icon=mdi:flash, friendly_name=tesla_custom Tesla23m3 Allocated power @ 2025-11-02T20:01:48.008211+11:00>
-    async def _async_handle_allocated_power_update(
+    async def _async_handle_delta_allocated_power_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
         """Fetch and process state change event."""
@@ -133,10 +144,9 @@ class StateStart(SolarChargeState):
                     consumed_power = float(
                         self.solarcharge.entities.sensors[SENSOR_CONSUMED_POWER].state
                     )
-                    self.solarcharge.net_allocations.append(
-                        allocated_power - consumed_power
-                    )
 
+                    net_allocated_power = allocated_power - consumed_power
+                    self._update_net_allocated_power(net_allocated_power)
                     self._update_median_net_allocated_power()
                     self._update_sma_net_allocated_power()
 
@@ -153,8 +163,8 @@ class StateStart(SolarChargeState):
         """Subscribe for allocated power update."""
 
         self.solarcharge.give_up_real_power_allocation()
-        self.solarcharge.tracker.track_allocated_power_update(
-            self._async_handle_allocated_power_update
+        self.solarcharge.tracker.track_delta_allocated_power_update(
+            self._async_handle_delta_allocated_power_update
         )
 
     # ----------------------------------------------------------------------------

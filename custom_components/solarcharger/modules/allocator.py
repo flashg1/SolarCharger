@@ -10,8 +10,8 @@ from ..const import (
     SENSOR_CONSUMED_POWER,
     SENSOR_SHARE_ALLOCATION,
 )
-from ..helpers.general import async_set_allocated_power
-from ..models.model_allocation import AllocationGroup, PowerAllocation
+from ..helpers.general import async_set_delta_allocated_power
+from ..models.model_allocation import AllocationGroup, DeltaPowerAllocation
 from ..models.model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ class PowerAllocator:
                 ].state
             )
 
-            allocation = PowerAllocation(
+            allocation = DeltaPowerAllocation(
                 subentry_id=control.subentry_id,
                 name=control.config_name,
                 max_power=max_power,
@@ -136,10 +136,12 @@ class PowerAllocator:
 
             rung = allocation_map.get(allocation.priority)
             if rung is None:
-                rung = AllocationGroup(priority=allocation.priority, allocations=[])
+                rung = AllocationGroup(
+                    priority=allocation.priority, delta_allocations=[]
+                )
                 allocation_map[allocation.priority] = rung
 
-            rung.allocations.append(allocation)
+            rung.delta_allocations.append(allocation)
             rung.total_max_power += allocation.max_power
             rung.total_consumed_power += allocation.consumed_power
             rung.total_need_power += allocation.need_power
@@ -167,7 +169,7 @@ class PowerAllocator:
     def _allocate_real_power_to_device(
         self,
         rung: AllocationGroup,
-        allocation: PowerAllocation,
+        allocation: DeltaPowerAllocation,
         remain_power: float,
         weight: float,
         total_weight: float,
@@ -214,7 +216,7 @@ class PowerAllocator:
     def _allocate_real_power(
         self,
         rung: AllocationGroup,
-        allocation: PowerAllocation,
+        allocation: DeltaPowerAllocation,
         remain_power: float,
         net_power: float,
     ) -> float:
@@ -247,7 +249,7 @@ class PowerAllocator:
     def _allocate_plan_power(
         self,
         rung: AllocationGroup,
-        allocation: PowerAllocation,
+        allocation: DeltaPowerAllocation,
         net_power: float,
     ) -> None:
         """Allocate plan power to paused devices."""
@@ -273,7 +275,7 @@ class PowerAllocator:
 
         remain_power = net_power
 
-        for allocation in rung.allocations:
+        for allocation in rung.delta_allocations:
             # Allocate real power to running devices.
             remain_power = self._allocate_real_power(
                 rung,
@@ -378,21 +380,21 @@ class PowerAllocator:
             )
 
             # Information only. Global default variable shows net power available for allocation.
-            await async_set_allocated_power(
+            await async_set_delta_allocated_power(
                 self._global_defaults_control.controller.charge_control, net_power
             )
 
             for rung in allocation_ladder:
                 _LOGGER.debug("AllocationGroup: %s", rung)
 
-                for allocation in rung.allocations:
+                for allocation in rung.delta_allocations:
                     control = self._device_controls[allocation.subentry_id]
 
                     # Writer will set entity value directly. Reader will get value via
                     # entity ID in options which can be overridden.
                     # Paticipants in power sharing will use final_power, non-participants
                     # will use plan_power as indication of possible available power.
-                    await async_set_allocated_power(
+                    await async_set_delta_allocated_power(
                         control.controller.charge_control,
                         allocation.final_power
                         if allocation.share_allocation > 0

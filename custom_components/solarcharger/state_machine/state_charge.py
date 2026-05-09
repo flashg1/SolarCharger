@@ -15,7 +15,7 @@ from ..const import (
     ENTITY_CHARGER_CHARGING_SENSOR,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
-    SENSOR_CHARGER_ALLOCATED_POWER,
+    SENSOR_DELTA_ALLOCATED_POWER,
     ChargeStatus,
     RunState,
 )
@@ -126,14 +126,14 @@ class StateCharge(SolarChargeState):
 
         try:
             assert self.solarcharge.entities.sensors is not None
-            allocated_power = float(
-                self.solarcharge.entities.sensors[SENSOR_CHARGER_ALLOCATED_POWER].state
+            delta_allocated_power = float(
+                self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].state
             )
 
             await self._async_adjust_charge_current(
                 self.solarcharge.charger,
                 self.solarcharge.chargeable,
-                allocated_power,
+                delta_allocated_power,
             )
 
         except Exception as e:
@@ -215,10 +215,10 @@ class StateCharge(SolarChargeState):
         self,
         charger: Charger,
         chargeable: Chargeable,
-        allocated_power: float,
+        delta_allocated_power: float,
         goal: ScheduleData,
     ) -> tuple[float, float]:
-        """Calculate new charge current based on allocated power."""
+        """Calculate new charge current based on delta allocated power."""
 
         charger_max_current = self.solarcharge.get_charger_max_current()
 
@@ -263,7 +263,7 @@ class StateCharge(SolarChargeState):
         charger_effective_voltage = self.solarcharge.get_charger_effective_voltage()
         one_amp_watt_step = charger_effective_voltage * 1
         power_offset = 0
-        all_power_net = allocated_power + (one_amp_watt_step * 0.3) + power_offset
+        all_power_net = delta_allocated_power + (one_amp_watt_step * 0.3) + power_offset
         all_current_net = all_power_net / charger_effective_voltage
 
         if all_current_net > 0:
@@ -285,13 +285,13 @@ class StateCharge(SolarChargeState):
             new_charge_current = propose_new_charge_current
 
         _LOGGER.debug(
-            "%s: allocated_power=%s, charger_effective_voltage=%s, config_min_current=%s, "
+            "%s: delta_allocated_power=%s, charger_effective_voltage=%s, config_min_current=%s, "
             "charger_min_current=%s, charger_max_current=%s, old_charge_current=%s, "
             "all_power_net=%s, all_current_net=%s, propose_charge_current=%s, "
             "propose_new_charge_current=%s, charger_min_workable_current=%s, "
             "new_charge_current=%s ",
             self.solarcharge.caller,
-            allocated_power,
+            delta_allocated_power,
             charger_effective_voltage,
             config_min_current,
             charger_min_current,
@@ -309,12 +309,12 @@ class StateCharge(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     async def _async_adjust_charge_current(
-        self, charger: Charger, chargeable: Chargeable, allocated_power: float
+        self, charger: Charger, chargeable: Chargeable, delta_allocated_power: float
     ) -> None:
         """Adjust charge current."""
 
         new_charge_current, old_charge_current = self._calc_current_change(
-            charger, chargeable, allocated_power, self.solarcharge.running_goal
+            charger, chargeable, delta_allocated_power, self.solarcharge.running_goal
         )
         if new_charge_current != old_charge_current:
             _LOGGER.info(

@@ -176,8 +176,11 @@
                     "ended": "Ended"
                 }
             },
-            "charger_allocated_power": {
-                "name": "Allocated power"
+            "delta_allocated_power": {
+                "name": "Delta allocated power"
+            },
+            "net_allocated_power": {
+                "name": "Net allocated power"
             },
             "median_net_allocated_power": {
                 "name": "Median net allocated power"

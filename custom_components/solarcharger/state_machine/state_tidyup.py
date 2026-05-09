@@ -6,7 +6,7 @@ import logging
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import (
-    SENSOR_CHARGER_ALLOCATED_POWER,
+    SENSOR_DELTA_ALLOCATED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     RunState,
@@ -36,12 +36,12 @@ class StateTidyUp(SolarChargeState):
 
         # Unsubscribe allocated power
         self.solarcharge.give_up_real_power_allocation()
-        self.solarcharge.tracker.untrack_allocated_power_update()
+        self.solarcharge.tracker.untrack_delta_allocated_power_update()
         self.solarcharge.entities.sensors[SENSOR_MEDIAN_NET_ALLOCATED_POWER].set_state(
             0
         )
         self.solarcharge.entities.sensors[SENSOR_SMA_NET_ALLOCATED_POWER].set_state(0)
-        self.solarcharge.entities.sensors[SENSOR_CHARGER_ALLOCATED_POWER].set_state(0)
+        self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].set_state(0)
 
         # Unsubscribe sync charge current
         self.solarcharge.tracker.untrack_sync_update()

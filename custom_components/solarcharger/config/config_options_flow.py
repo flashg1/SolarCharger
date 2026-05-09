@@ -77,7 +77,7 @@ from ..const import (
     OPTION_ID,
     OPTION_NAME,
     OPTION_SELECT_SETTINGS,
-    SENSOR_CHARGER_ALLOCATED_POWER,
+    SENSOR_DELTA_ALLOCATED_POWER,
     SUBENTRY_CHARGER_TYPES,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     TIME_CHARGE_ENDTIME_FRIDAY,
@@ -382,10 +382,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
-                subentry, SENSOR_CHARGER_ALLOCATED_POWER, use_default
+                subentry, SENSOR_DELTA_ALLOCATED_POWER, use_default
             ): choose_selector(
                 api_entities,
-                SENSOR_CHARGER_ALLOCATED_POWER,
+                SENSOR_DELTA_ALLOCATED_POWER,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,

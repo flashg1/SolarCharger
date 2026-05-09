@@ -33,9 +33,9 @@ from ..chargers.sc_option_state import ScOptionState
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
 from ..const import (
-    CALLBACK_ALLOCATE_POWER,
     CALLBACK_CHARGE_ENDTIME_UPDATE,
     CALLBACK_CHARGE_LIMIT_UPDATE,
+    CALLBACK_DELTA_ALLOCATE_POWER,
     CALLBACK_DEVICE_PRESENCE,
     CALLBACK_HA_STARTED,
     CALLBACK_HA_STOP,
@@ -48,7 +48,7 @@ from ..const import (
     ENTITY_CHARGEE_SOC_SENSOR,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
     HA_SUN_ENTITY,
-    SENSOR_CHARGER_ALLOCATED_POWER,
+    SENSOR_DELTA_ALLOCATED_POWER,
 )
 from ..helpers.utils import (
     remove_all_callback_subscriptions,
@@ -379,8 +379,8 @@ class Tracker(ScOptionState):
         self.remove_callback(CALLBACK_NEXT_CHARGE_TIME_UPDATE)
 
     # ----------------------------------------------------------------------------
-    def track_allocated_power_update(self, action: STATE_CHANGE_CALLBACK) -> None:
-        """Track allocated power update events."""
+    def track_delta_allocated_power_update(self, action: STATE_CHANGE_CALLBACK) -> None:
+        """Track delta allocated power update events."""
 
         # Need both changed and unchanged events, eg. update1 at time1=-500W, update2 at time2=-500W
         # Need to handle both updates to make use of the spare power.
@@ -389,14 +389,14 @@ class Tracker(ScOptionState):
         # So need both to see all events?
         #     self._async_handle_allocated_power_update,
         self._track_config_item_state(
-            SENSOR_CHARGER_ALLOCATED_POWER, CALLBACK_ALLOCATE_POWER, action
+            SENSOR_DELTA_ALLOCATED_POWER, CALLBACK_DELTA_ALLOCATE_POWER, action
         )
 
     # ----------------------------------------------------------------------------
-    def untrack_allocated_power_update(self) -> None:
-        """Unsubscribe allocated power update events."""
+    def untrack_delta_allocated_power_update(self) -> None:
+        """Unsubscribe delta allocated power update events."""
 
-        self.remove_callback(CALLBACK_ALLOCATE_POWER)
+        self.remove_callback(CALLBACK_DELTA_ALLOCATE_POWER)
 
     # ----------------------------------------------------------------------------
     def track_sync_update(self, action: STATE_CHANGE_CALLBACK) -> None:

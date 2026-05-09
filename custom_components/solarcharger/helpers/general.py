@@ -7,7 +7,7 @@ from typing import Any
 
 from homeassistant.core import State
 
-from ..const import SENSOR_CHARGER_ALLOCATED_POWER
+from ..const import SENSOR_DELTA_ALLOCATED_POWER
 from ..models.model_charge_control import ChargeControl
 
 # ----------------------------------------------------------------------------
@@ -28,8 +28,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------------
-async def async_set_allocated_power(
-    control: ChargeControl, allocated_power: float
+async def async_set_delta_allocated_power(
+    control: ChargeControl, delta_allocated_power: float
 ) -> bool:
     """Set allocated power number entity directly."""
     ok: bool = False
@@ -39,8 +39,8 @@ async def async_set_allocated_power(
         # if new value is same as old.
         # Ensure polling is disabled for the entity, otherwise will get updates twice,
         # ie. one from polling and one from push-pull.
-        control.entities.sensors[SENSOR_CHARGER_ALLOCATED_POWER].set_state(
-            allocated_power
+        control.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].set_state(
+            delta_allocated_power
         )
         ok = True
 

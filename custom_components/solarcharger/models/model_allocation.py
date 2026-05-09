@@ -6,8 +6,8 @@ from dataclasses import dataclass
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 @dataclass
-class PowerAllocation:
-    """Power allocation result."""
+class DeltaPowerAllocation:
+    """Delta power allocation result."""
 
     subentry_id: str
     name: str
@@ -51,7 +51,7 @@ class PowerAllocation:
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
-        """Return string representation of PowerAllocation."""
+        """Return string representation of DeltaPowerAllocation."""
         return (
             f"name={self.name}, "
             f"max_power={self.max_power}, "
@@ -76,7 +76,7 @@ class AllocationGroup:
     """Power allocation data for a priority level."""
 
     priority: int
-    allocations: list[PowerAllocation]
+    delta_allocations: list[DeltaPowerAllocation]
 
     # +ve, total max power including paused chargers.
     total_max_power: float = 0
