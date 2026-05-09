@@ -2,7 +2,7 @@
 
 ## v0.7.0 2026-05-03
 ### Breaking change
-- Decoupled wait net power update interval from charge current update period to provide more data points for power allocation median calculation. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Sorry no way to avoid this since this is a new config flow. Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
+- Decoupled wait net power update interval from charge current update period to provide more data points for median net allocated power calculation. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Sorry no way to avoid this since this is a new config flow. Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
 ### Improvement
 - Added net allocated power sensor.
 - Renamed allocated power sensor to delta allocated power sensor.
