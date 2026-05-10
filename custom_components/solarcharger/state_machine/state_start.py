@@ -219,25 +219,25 @@ class StateStart(SolarChargeState):
         new_state = data["new_state"]
 
         if new_state is not None:
-            duration_since_last_change = (
-                new_state.last_changed_timestamp  # UTC
-                - self.solarcharge.charge_current_updatetime
-            )
-
-            _LOGGER.debug(
-                "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
-                self.solarcharge.caller,
-                entity_id,
-                old_state.state,
-                new_state.state,
-                duration_since_last_change,
-            )
+            # duration_since_last_change = (
+            #     new_state.last_changed_timestamp  # UTC
+            #     - self.solarcharge.charge_current_updatetime
+            # )
 
             try:
                 allocated_power = float(new_state.state)
                 old_updatetime = as_local(old_state.last_reported)
                 new_updatetime = as_local(new_state.last_updated)
                 period = (new_updatetime - old_updatetime).total_seconds()
+
+                _LOGGER.debug(
+                    "%s: entity_id=%s, old_state=%s, new_state=%s, period=%s",
+                    self.solarcharge.caller,
+                    entity_id,
+                    old_state.state,
+                    new_state.state,
+                    period,
+                )
 
                 # Save allocated power to calculate moving average.
                 if self.solarcharge.max_allocation_count > 0:

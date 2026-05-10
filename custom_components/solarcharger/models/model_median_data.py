@@ -21,7 +21,7 @@ class MedianDataPoint:
     def __repr__(self) -> str:
         """Return string representation of DataPoint."""
 
-        return f"value={self.value}, period={self.period}, time={self.time}"
+        return f"(val={self.value}, period={self.period}, time={self.time})"
 
 
 # ----------------------------------------------------------------------------
