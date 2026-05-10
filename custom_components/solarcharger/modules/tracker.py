@@ -35,7 +35,7 @@ from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     CALLBACK_CHARGE_ENDTIME_UPDATE,
     CALLBACK_CHARGE_LIMIT_UPDATE,
-    CALLBACK_DELTA_ALLOCATE_POWER,
+    CALLBACK_DELTA_ALLOCATED_POWER,
     CALLBACK_DEVICE_PRESENCE,
     CALLBACK_HA_STARTED,
     CALLBACK_HA_STOP,
@@ -404,14 +404,14 @@ class Tracker(ScOptionState):
         # So need both to see all events?
         #     self._async_handle_allocated_power_update,
         self._track_config_item_state(
-            SENSOR_DELTA_ALLOCATED_POWER, CALLBACK_DELTA_ALLOCATE_POWER, action
+            SENSOR_DELTA_ALLOCATED_POWER, CALLBACK_DELTA_ALLOCATED_POWER, action
         )
 
     # ----------------------------------------------------------------------------
     def untrack_delta_allocated_power_update(self) -> None:
         """Unsubscribe delta allocated power update events."""
 
-        self.remove_callback(CALLBACK_DELTA_ALLOCATE_POWER)
+        self.remove_callback(CALLBACK_DELTA_ALLOCATED_POWER)
 
     # ----------------------------------------------------------------------------
     def track_sync_update(self, action: STATE_CHANGE_CALLBACK) -> None:

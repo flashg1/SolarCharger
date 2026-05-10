@@ -85,12 +85,24 @@ class SolarChargerCoordinator(ScOptionState):
         )
 
         self._tracker = Tracker(hass, entry, global_defaults_subentry, caller)
+
+        # Wait net power update interval.
+        self._wait_net_power_update: float = 0
+
+        # Charge current update period.
+        self._current_update_period: float = 0
+
+        # Slightly smaller charge current update period to allow for variation in net power update period.
+        self._min_current_update_period: float = 0
+
+        # Sync current update time.
         self._charge_current_updatetime: float = 0  # UTC time
 
     # ----------------------------------------------------------------------------
     @cached_property
     def _device(self) -> dr.DeviceEntry:
         """Get the device entry for the coordinator."""
+
         device_registry = dr.async_get(self._hass)
         device = device_registry.async_get_device(
             identifiers={(DOMAIN, self._entry.entry_id)}
@@ -358,7 +370,7 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
             try:
-                if duration_since_last_change >= self._charge_current_update_period:
+                if duration_since_last_change >= self._min_current_update_period:
                     await self._async_synchronise_charge_current_update(utcnow())
 
             except Exception as e:
@@ -437,7 +449,7 @@ class SolarChargerCoordinator(ScOptionState):
         subscription = async_track_time_interval(
             self._hass,
             self._async_synchronise_charge_current_update,
-            timedelta(seconds=self._charge_current_update_period),
+            timedelta(seconds=self._current_update_period),
         )
 
         self._unsub.append(subscription)
@@ -495,6 +507,19 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     # Setup
     # ----------------------------------------------------------------------------
+    def _get_min_charge_current_update_period(
+        self, wait_net_power_update: float, current_update_period: float
+    ) -> float:
+
+        # Allow for slight variation in net power update interval.
+        variation = min(
+            wait_net_power_update * 20 / 100,
+            current_update_period * 5 / 100,
+        )
+
+        return current_update_period - variation
+
+    # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the coordinator and its managed components."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
@@ -507,13 +532,17 @@ class SolarChargerCoordinator(ScOptionState):
         # device_controls must be initialised first since allocator needs to access device_controls.
         self._allocator = PowerAllocator(self._subentry, self.device_controls)
         self._wait_net_power_update = self.get_wait_net_power_update()
-        self._charge_current_update_period = self.get_charge_current_update_period()
+        self._current_update_period = self.get_charge_current_update_period()
+        self._min_current_update_period = self._get_min_charge_current_update_period(
+            self._wait_net_power_update, self._current_update_period
+        )
 
         _LOGGER.info(
-            "%s: wait_net_power_update=%s, charge_current_update_period=%s",
+            "%s: wait_net_power_update=%s, current_update_period=%s, min_current_update_period=%s",
             self.caller,
             self._wait_net_power_update,
-            self._charge_current_update_period,
+            self._current_update_period,
+            self._min_current_update_period,
         )
 
         # Global default entities MUST be created first before running the coordinator.setup().
