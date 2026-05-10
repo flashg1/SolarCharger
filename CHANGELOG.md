@@ -5,6 +5,8 @@
 - In order to provide reliable pausing/unpausing of charger during low solar periods, the wait net power update interval is now decoupled from the charge current update period. This will allow more data points for the median net allocated power calculation used in charger pausing/unpausing determination. A new parameter, "Charge current update period", is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
 - Renamed allocated power sensor to delta allocated power sensor.
 ### Improvement
+- Added Median net power period.
+- Delta allocated power is now driven by the net power update event instead of periodic timer event.
 - Synchronised charge current update is now driven by the net power update event instead of periodic timer event.
 - Added net allocated power sensor.
 - Used median allocated power instead of simple moving average to ignore outliers for determining whether or not to pause/unpause charger.

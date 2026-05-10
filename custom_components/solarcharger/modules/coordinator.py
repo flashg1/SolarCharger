@@ -92,11 +92,11 @@ class SolarChargerCoordinator(ScOptionState):
         # Charge current update period.
         self._current_update_period: float = 0
 
-        # Slightly smaller charge current update period to allow for variation in net power update period.
+        # Slightly smaller charge current update period to allow for variation in net power update interval.
         self._min_current_update_period: float = 0
 
-        # Sync current update time.
-        self._charge_current_updatetime: float = 0  # UTC time
+        # Sync charge current time.
+        self._sync_charge_current_time: float = 0  # UTC time
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -357,20 +357,24 @@ class SolarChargerCoordinator(ScOptionState):
         new_state = data["new_state"]
 
         if new_state is not None:
-            duration_since_last_change = (
-                new_state.last_changed_timestamp - self._charge_current_updatetime
+            duration_since_last_sync = (
+                new_state.last_changed_timestamp - self._sync_charge_current_time
             )
 
             _LOGGER.debug(
-                "Net power update: duration_since_last_change=%s, new_state=%s, old_state=%s, entity_id=%s",
-                duration_since_last_change,
+                "Net power update: duration_since_last_sync=%s, new_state=%s, old_state=%s, entity_id=%s",
+                duration_since_last_sync,
                 new_state.state,
                 old_state.state,
                 entity_id,
             )
 
             try:
-                if duration_since_last_change >= self._min_current_update_period:
+                # Allocate power for median net allocated power calculation.
+                await self._async_allocate_net_power(utcnow())
+
+                # Synchronise charge current update for all chargers.
+                if duration_since_last_sync >= self._min_current_update_period:
                     await self._async_synchronise_charge_current_update(utcnow())
 
             except Exception as e:
@@ -422,7 +426,7 @@ class SolarChargerCoordinator(ScOptionState):
 
     # ----------------------------------------------------------------------------
     async def _async_synchronise_charge_current_update(self, now: datetime) -> None:
-        """Synchronise charge current update."""
+        """Synchronise charge current update for all chargers."""
 
         try:
             # Coordinator has global defaults subentry
@@ -433,7 +437,7 @@ class SolarChargerCoordinator(ScOptionState):
                 SENSOR_SYNC_UPDATE
             ].set_state(datetime.now().astimezone())
 
-            self._charge_current_updatetime = utcnow().timestamp()
+            self._sync_charge_current_time = utcnow().timestamp()
 
         except Exception as e:
             _LOGGER.exception(
@@ -550,7 +554,8 @@ class SolarChargerCoordinator(ScOptionState):
         await self._tracker.async_setup()
 
         self._track_net_power_update()
-        self._start_periodic_power_allocation()
+
+        # self._start_periodic_power_allocation()
         # self._start_periodic_charge_current_update()
         self._start_periodic_maintenance()
 

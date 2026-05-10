@@ -176,6 +176,9 @@
                     "ended": "Ended"
                 }
             },
+            "median_net_power_period": {
+                "name": "Median net power period"
+            },
             "delta_allocated_power": {
                 "name": "Delta allocated power"
             },

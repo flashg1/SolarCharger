@@ -58,6 +58,7 @@ from ..models.model_charge_control import ControlEntities
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_config import ConfigValueDict
 from ..models.model_context_data import ContextData
+from ..models.model_median_data import MedianData
 from ..models.model_schedule_data import ScheduleData
 from ..models.model_state_of_charge import StateOfCharge
 from ..modules.tracker import Tracker
@@ -110,7 +111,7 @@ class SolarCharge(ScOptionState):
         self.soc_updates: list[StateOfCharge] = []
 
         # net allocation = new allocation - consumed power
-        self.net_allocations: list[float] = []
+        self.net_allocations: MedianData
         self.max_allocation_count = 0
 
         self.stats = ChargeStats()
@@ -621,7 +622,7 @@ class SolarCharge(ScOptionState):
         state: RunState,
         goal: ScheduleData,
         max_allocation_count: int,
-        net_allocations: list[float],
+        net_allocations: MedianData,
         stats: ChargeStats,
     ) -> ContextData:
         """Get charging information context."""
@@ -659,7 +660,7 @@ class SolarCharge(ScOptionState):
         context.median_net_allocated_power = self.entities.sensors[
             SENSOR_MEDIAN_NET_ALLOCATED_POWER
         ].state
-        context.data_points = len(context.net_allocations)
+        context.data_points = context.net_allocations.sample_size
         self._log_power_allocations(context)
 
         return context

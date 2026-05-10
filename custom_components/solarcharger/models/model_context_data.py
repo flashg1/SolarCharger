@@ -10,6 +10,7 @@ from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import ChargeStatus, RunState
 from .model_charge_stats import ChargeStats
+from .model_median_data import MedianData
 from .model_schedule_data import ScheduleData
 
 
@@ -26,7 +27,7 @@ class ContextData:
     state: RunState
     goal: ScheduleData
     max_allocation_count: int
-    net_allocations: list[float]
+    net_allocations: MedianData
     stats: ChargeStats
 
     # Outputs

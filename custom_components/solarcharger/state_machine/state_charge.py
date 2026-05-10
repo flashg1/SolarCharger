@@ -34,7 +34,6 @@ from .state_tidyup import StateTidyUp
 _LOGGER = logging.getLogger(__name__)
 
 INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
-MIN_TIME_BETWEEN_UPDATE = 10  # Minimum seconds between charger current updates
 
 
 # ----------------------------------------------------------------------------

@@ -172,6 +172,7 @@ ERROR_SINGLE_INSTANCE_ALLOWED = "single_instance_allowed"
 SENSOR_RUN_STATE = "run_state"
 
 # Delta allocated power = Net grid power * (Allocation weight / Total weight)
+SENSOR_MEDIAN_NET_POWER_PERIOD = "median_net_power_period"
 SENSOR_DELTA_ALLOCATED_POWER = "delta_allocated_power"
 SENSOR_NET_ALLOCATED_POWER = "net_allocated_power"
 

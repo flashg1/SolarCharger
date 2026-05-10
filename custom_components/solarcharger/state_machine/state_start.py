@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.core import Event, EventStateChangedData
+from homeassistant.util.dt import as_local, utcnow
 
 from ..config.config_utils import create_entity_ids_from_templates
 from ..const import (
@@ -17,12 +18,14 @@ from ..const import (
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_CONSUMED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
+    SENSOR_MEDIAN_NET_POWER_PERIOD,
     SENSOR_NET_ALLOCATED_POWER,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     RunState,
 )
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_config import ConfigValueDict
+from ..models.model_median_data import MedianData, MedianDataPoint
 from .solar_charge_state import SolarChargeState
 from .state_initialise import StateInitialise
 
@@ -45,45 +48,88 @@ class StateStart(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
-    def _update_net_allocated_power(self, net_allocated_power: float) -> None:
-        """Update net allocated power."""
+    def _update_sensor(self, config_item: str, value: float) -> None:
+        """Update sensor."""
 
         assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.net_allocations.append(net_allocated_power)
-        self.solarcharge.entities.sensors[SENSOR_NET_ALLOCATED_POWER].set_state(
-            net_allocated_power
-        )
+        self.solarcharge.entities.sensors[config_item].set_state(value)
 
     # ----------------------------------------------------------------------------
-    def _update_median_net_allocated_power(self) -> None:
-        """Calculate median from net power allocations."""
+    def _calculate_median_value(self, data: MedianData) -> None:
+        """Calculate median value."""
 
-        sample_size = len(self.solarcharge.net_allocations)
-        ascending_list = sorted(self.solarcharge.net_allocations)
+        sample_size = len(data.sequence)
+        ascending_list = sorted(data.sequence, key=lambda x: x.value)
 
         if sample_size % 2 == 0:
             # Even
             index = round(sample_size / 2)
-            median = (ascending_list[index - 1] + ascending_list[index]) / 2
+            data.median_value = (
+                ascending_list[index - 1].value + ascending_list[index].value
+            ) / 2
         else:
             # Odd
             index = round((sample_size + 1) / 2)
-            median = ascending_list[index - 1]
-
-        assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[SENSOR_MEDIAN_NET_ALLOCATED_POWER].set_state(
-            median
-        )
+            data.median_value = ascending_list[index - 1].value
 
     # ----------------------------------------------------------------------------
-    def _update_sma_net_allocated_power(self) -> None:
-        """Calculate simple moving average from net power allocations."""
+    def _calculate_median_period(self, data: MedianData) -> None:
+        """Calculate median period."""
 
-        assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[SENSOR_SMA_NET_ALLOCATED_POWER].set_state(
-            sum(self.solarcharge.net_allocations)
-            / len(self.solarcharge.net_allocations)
+        sample_size = len(data.sequence)
+        ascending_list = sorted(data.sequence, key=lambda x: x.period)
+
+        if sample_size % 2 == 0:
+            # Even
+            index = round(sample_size / 2)
+            data.median_period = (
+                ascending_list[index - 1].period + ascending_list[index].period
+            ) / 2
+        else:
+            # Odd
+            index = round((sample_size + 1) / 2)
+            data.median_period = ascending_list[index - 1].period
+
+    # ----------------------------------------------------------------------------
+    def _calculate_sma_value(self, data: MedianData) -> None:
+        """Calculate simple moving average value."""
+
+        data.sma_value = sum(x.value for x in data.sequence) / data.sample_size
+
+    # ----------------------------------------------------------------------------
+    def _update_net_allocated_power(
+        self, data: MedianData, new_data_point: MedianDataPoint
+    ) -> None:
+        """Update net allocated power."""
+
+        data.sequence.append(new_data_point)
+        data.now_time = self.solarcharge.get_local_datetime()
+
+        # Removes old data
+        cut_off_time = data.now_time - data.window
+        while data.sequence and data.sequence[0].time < cut_off_time:
+            data.sequence.pop(0)
+
+        data.sample_size = len(data.sequence)
+        data.sample_duration = (
+            timedelta(seconds=0)
+            if data.sample_size == 0
+            else data.sequence[data.sample_size - 1].time - data.sequence[0].time
         )
+        data.median_value = 0.0
+        data.median_period = 0.0
+        data.sma_value = 0.0
+
+        if data.sample_size > 0:
+            # Calculate median from net power allocations.
+            self._calculate_median_value(data)
+            self._calculate_median_period(data)
+            self._calculate_sma_value(data)
+
+        self._update_sensor(SENSOR_MEDIAN_NET_POWER_PERIOD, data.median_period)
+        self._update_sensor(SENSOR_NET_ALLOCATED_POWER, new_data_point.value)
+        self._update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER, data.median_value)
+        self._update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, data.sma_value)
 
     # ----------------------------------------------------------------------------
     # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
@@ -97,7 +143,76 @@ class StateStart(SolarChargeState):
     async def _async_handle_delta_allocated_power_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
-        """Fetch and process state change event."""
+        """Fetch and process state change event.
+
+        From Google AI:
+
+        This function defines the last_reported_timestamp in Home Assistant, which tracks the
+        exact time a device "checks in" or reports its status to Home Assistant, even if the
+        actual state (e.g., 'on'/'off') or attributes (e.g., brightness) have not changed.
+
+        This was introduced (circa Core 2024.3) to distinguish between when a sensor actually
+        changed state versus when it simply sent an update, enabling better troubleshooting
+        of dead sensors and accurate time-series analysis.
+
+        Here is a breakdown of the technical note provided:
+
+        1. "When the state is set and neither the state nor attributes are changed, the existing
+        state will be mutated with an updated last_reported."
+
+        -   What it means: If a temperature sensor sends 20°C and nothing else has changed,
+        Home Assistant updates the existing State object in memory. It updates
+        last_reported to now, but last_changed remains the same, because the value
+        didn't actually change.
+        -   Key Behavior: The object is "mutated" (modified in place) to reflect the heart-beat,
+        rather than creating a new state entry in the database.
+
+        2. "When handling a state change event, the last_reported_timestamp attribute of the old
+        state will not be modified and can safely be used."
+
+        -   What it means: When a state actually changes (e.g., 'off' -> 'on'), Home Assistant
+        triggers a state_changed event.
+        -   Safety: The old_state object in this event is a snapshot from before the change.
+        Its last_reported timestamp is frozen. It is safe to use old_state.last_reported
+        for calculating how long it took from the last check-in to the current change.
+
+        3. "The last_reported_timestamp attribute of the new state may be modified and the
+        last_updated_timestamp attribute should be used instead."
+
+        -   What it means: When a state changes, the new_state object is created and then
+        immediately updated with the new last_reported time.
+        -   What to use: Because the new state's last_reported might be updated again
+        immediately, if you need to know exactly when the change occurred in the
+        database, use last_updated_timestamp (which indicates when the state object was
+        updated) or last_changed (which indicates when the state value actually changed).
+
+        4. "When handling a state report event, the last_reported_timestamp attribute may be
+        modified and last_reported from the event data should be used instead."
+
+        -   What it means: This refers specifically to the state_reported event—a high-volume
+        event fired when a device reports data, but nothing has changed.
+        -   What to use: Because the state object's last_reported might change while you are
+        processing it, the safest way to get the true, precise report time is to look at the
+        last_reported field within the actual Event data, rather than checking the state
+        object itself.
+
+        Summary of Key Timestamps
+
+        Property		Description
+        last_changed	When the state value (e.g., 'on' to 'off') changed.
+        last_updated	When the state value or attributes changed.
+        last_reported	When the integration/device sent data, regardless of changes.
+
+        When to use last_reported
+
+        -   Troubleshooting: Seeing if a motion sensor or zigbee device is still checking in,
+        even if it hasn't detected motion.
+        -   Stale Data: Identifying sensors that haven't reported in over X minutes.
+
+        Note: last_reported is generally used in automation templates and backend logic,
+        rather than on Lovelace cards, although it can be enabled via customization.
+        """
+
         data = event.data
         entity_id = data["entity_id"]
         old_state = data["old_state"]
@@ -109,36 +224,28 @@ class StateStart(SolarChargeState):
                 - self.solarcharge.charge_current_updatetime
             )
 
-            if old_state is not None:
-                _LOGGER.debug(
-                    "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
-                    self.solarcharge.caller,
-                    entity_id,
-                    old_state.state,
-                    new_state.state,
-                    duration_since_last_change,
-                )
-            else:
-                _LOGGER.debug(
-                    "%s: entity_id=%s, new_state=%s, duration_since_last_change=%s",
-                    self.solarcharge.caller,
-                    entity_id,
-                    new_state.state,
-                    duration_since_last_change,
-                )
+            _LOGGER.debug(
+                "%s: entity_id=%s, old_state=%s, new_state=%s, duration_since_last_change=%s",
+                self.solarcharge.caller,
+                entity_id,
+                old_state.state,
+                new_state.state,
+                duration_since_last_change,
+            )
 
-            # # Make sure we don't change the charge current too often
-            # if duration_since_last_change >= MIN_TIME_BETWEEN_UPDATE:
             try:
                 allocated_power = float(new_state.state)
+                old_updatetime = as_local(old_state.last_reported)
+                new_updatetime = as_local(new_state.last_updated)
+                period = (new_updatetime - old_updatetime).total_seconds()
 
                 # Save allocated power to calculate moving average.
                 if self.solarcharge.max_allocation_count > 0:
-                    if (
-                        len(self.solarcharge.net_allocations)
-                        >= self.solarcharge.max_allocation_count
-                    ):
-                        self.solarcharge.net_allocations.pop(0)
+                    # if (
+                    #     len(self.solarcharge.net_allocations)
+                    #     >= self.solarcharge.max_allocation_count
+                    # ):
+                    #     self.solarcharge.net_allocations.pop(0)
 
                     assert self.solarcharge.entities.sensors is not None
                     consumed_power = float(
@@ -146,9 +253,14 @@ class StateStart(SolarChargeState):
                     )
 
                     net_allocated_power = allocated_power - consumed_power
-                    self._update_net_allocated_power(net_allocated_power)
-                    self._update_median_net_allocated_power()
-                    self._update_sma_net_allocated_power()
+                    new_data_point = MedianDataPoint(
+                        value=net_allocated_power,
+                        period=period,
+                        time=new_updatetime,
+                    )
+                    self._update_net_allocated_power(
+                        self.solarcharge.net_allocations, new_data_point
+                    )
 
             except Exception as e:
                 _LOGGER.exception(
@@ -275,6 +387,10 @@ class StateStart(SolarChargeState):
         )
         monitor_duration_seconds = monitor_duration * 60
 
+        self.solarcharge.net_allocations = MedianData(
+            window=timedelta(minutes=monitor_duration), sequence=[]
+        )
+
         # Set to 0 to disable power monitoring by default.
         self.solarcharge.max_allocation_count = 0
 
@@ -300,7 +416,6 @@ class StateStart(SolarChargeState):
     def _init_power_monitor_window(self, seconds_between_update: int) -> None:
 
         self._set_max_allocation_count(seconds_between_update)
-        self.solarcharge.net_allocations = []
 
     # ----------------------------------------------------------------------------
     def _init_instance_variables(self) -> None:

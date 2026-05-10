@@ -29,6 +29,7 @@ from .const import (
     SENSOR_LAST_CHECK,
     SENSOR_LAST_PAUSE_DURATION,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
+    SENSOR_MEDIAN_NET_POWER_PERIOD,
     SENSOR_NET_ALLOCATED_POWER,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
@@ -141,6 +142,20 @@ CONFIG_SENSOR_LIST: tuple[
             options=RUN_STATE_LIST,
         ),
         RunState.ENDED.value,
+    ),
+    (
+        SENSOR_MEDIAN_NET_POWER_PERIOD,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_MEDIAN_NET_POWER_PERIOD,
+            device_class=SensorDeviceClass.DURATION,
+            native_unit_of_measurement=UnitOfTime.SECONDS,
+            suggested_display_precision=0,
+            state_class=SensorStateClass.MEASUREMENT,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        0,
     ),
     (
         SENSOR_DELTA_ALLOCATED_POWER,
