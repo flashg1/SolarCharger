@@ -106,7 +106,7 @@ class SolarCharge(ScOptionState):
         self.running_goal: ScheduleData
 
         self.started_calibrate_max_charge_speed = False
-        self.charge_current_updatetime: float = 0
+        self.charge_current_updatetime: float = 0  # UTC time
         self.soc_updates: list[StateOfCharge] = []
 
         # net allocation = new allocation - consumed power

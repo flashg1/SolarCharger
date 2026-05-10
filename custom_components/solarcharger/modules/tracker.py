@@ -39,12 +39,14 @@ from ..const import (
     CALLBACK_DEVICE_PRESENCE,
     CALLBACK_HA_STARTED,
     CALLBACK_HA_STOP,
+    CALLBACK_NET_POWER_UPDATE,
     CALLBACK_NEXT_CHARGE_TIME_TRIGGER,
     CALLBACK_NEXT_CHARGE_TIME_UPDATE,
     CALLBACK_PLUG_IN_CHARGER,
     CALLBACK_SOC_UPDATE,
     CALLBACK_SUN_ELEVATION_UPDATE,
     CALLBACK_SYNC_UPDATE,
+    CONFIG_NET_POWER_SENSOR,
     ENTITY_CHARGEE_SOC_SENSOR,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
     HA_SUN_ENTITY,
@@ -377,6 +379,19 @@ class Tracker(ScOptionState):
         """Unsubscribe next charge time trigger events."""
 
         self.remove_callback(CALLBACK_NEXT_CHARGE_TIME_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def track_net_power_update(self, action: STATE_CHANGE_CALLBACK) -> bool:
+        """Track net power update events."""
+
+        entity_id = self.config_get_id(CONFIG_NET_POWER_SENSOR)
+        return self._track_state_change(entity_id, CALLBACK_NET_POWER_UPDATE, action)
+
+    # ----------------------------------------------------------------------------
+    def untrack_net_power_update(self) -> None:
+        """Unsubscribe net power update events."""
+
+        self.remove_callback(CALLBACK_NET_POWER_UPDATE)
 
     # ----------------------------------------------------------------------------
     def track_delta_allocated_power_update(self, action: STATE_CHANGE_CALLBACK) -> None:

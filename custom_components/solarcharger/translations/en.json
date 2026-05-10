@@ -16,7 +16,7 @@
                 },
                 "data_description": {
                     "net_power_sensor": "Sensor that expresses negative value in Watts for power exported to grid, or positive value for power imported from grid. This sensor is the feedback loop for adjusting power consumption.",
-                    "wait_net_power_update": "The wait net power update interval must be greater than or equal to the net power sensor update interval.",
+                    "wait_net_power_update": "The wait net power update interval should be equal to the net power sensor update interval.\nNet allocated power sample size = Power monitor duration / Wait net power update interval",
                     "current_update_period": "The charge current update period must be greater than or equal to the wait net power update interval."
                 }
             }

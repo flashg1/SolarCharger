@@ -105,7 +105,7 @@ class StateStart(SolarChargeState):
 
         if new_state is not None:
             duration_since_last_change = (
-                new_state.last_changed_timestamp
+                new_state.last_changed_timestamp  # UTC
                 - self.solarcharge.charge_current_updatetime
             )
 

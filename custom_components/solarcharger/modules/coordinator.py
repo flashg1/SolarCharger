@@ -9,9 +9,15 @@ from typing import Any
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.core import (
+    CALLBACK_TYPE,
+    Event,
+    EventStateChangedData,
+    HomeAssistant,
+)
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.util.dt import utcnow
 
 from ..chargers.sc_option_state import ScOptionState
 from ..config.config_utils import get_subentry_id
@@ -26,10 +32,13 @@ from ..const import (
     SENSOR_SYNC_UPDATE,
     WEEKLY_CHARGE_ENDTIMES,
 )
+
+# from ..exceptions.entity_exception import EntityExceptionError
 from ..helpers.utils import log_is_event_loop
 from ..models.model_charge_control import ChargeControl
 from ..models.model_device_control import DeviceControl
 from .allocator import PowerAllocator
+from .tracker import Tracker
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -61,6 +70,7 @@ class SolarChargerCoordinator(ScOptionState):
         global_defaults_subentry: ConfigSubentry,
     ):
         """Initialize the coordinator."""
+        caller = "Coordinator"
 
         # Instance variable declared inside __init__() are unique to the instance.
         self.device_controls: dict[str, DeviceControl] = {}
@@ -71,8 +81,11 @@ class SolarChargerCoordinator(ScOptionState):
             hass,
             entry,
             global_defaults_subentry,
-            caller="SolarChargerCoordinator",
+            caller=caller,
         )
+
+        self._tracker = Tracker(hass, entry, global_defaults_subentry, caller)
+        self._charge_current_updatetime: float = 0  # UTC time
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -311,6 +324,61 @@ class SolarChargerCoordinator(ScOptionState):
         self._unsub.append(subscription)
 
     # ----------------------------------------------------------------------------
+    # Subscriptions
+    # ----------------------------------------------------------------------------
+    # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
+    # entity_id=number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power,
+    #
+    # old_state=<state number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power=-500.0; min=-23000.0, max=23000.0, step=1.0, mode=box,
+    # unit_of_measurement=W, device_class=power, icon=mdi:flash, friendly_name=tesla_custom Tesla23m3 Allocated power @ 2025-11-02T20:00:32.962356+11:00>,
+    #
+    # new_state=<state number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power=-200.0; min=-23000.0, max=23000.0, step=1.0, mode=box,
+    # unit_of_measurement=W, device_class=power, icon=mdi:flash, friendly_name=tesla_custom Tesla23m3 Allocated power @ 2025-11-02T20:01:48.008211+11:00>
+    async def _async_handle_net_power_update(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Use net power update event to synchronise charge current update when reaching update period."""
+
+        data = event.data
+        entity_id = data["entity_id"]
+        old_state = data["old_state"]
+        new_state = data["new_state"]
+
+        if new_state is not None:
+            duration_since_last_change = (
+                new_state.last_changed_timestamp - self._charge_current_updatetime
+            )
+
+            _LOGGER.debug(
+                "Net power update: duration_since_last_change=%s, new_state=%s, old_state=%s, entity_id=%s",
+                duration_since_last_change,
+                new_state.state,
+                old_state.state,
+                entity_id,
+            )
+
+            try:
+                if duration_since_last_change >= self._charge_current_update_period:
+                    await self._async_synchronise_charge_current_update(utcnow())
+
+            except Exception as e:
+                _LOGGER.exception(
+                    "%s: Failed to synchronise charge current update for net power %s W: %s",
+                    self.solarcharge.caller,
+                    new_state.state,
+                    e,
+                )
+
+    # ----------------------------------------------------------------------------
+    def _track_net_power_update(self) -> None:
+        """Track net power update."""
+
+        ok = self._tracker.track_net_power_update(self._async_handle_net_power_update)
+        if not ok:
+            _LOGGER.error("%s: Invalid net power sensor", self.caller)
+            # raise EntityExceptionError("Invalid net power sensor")
+
+    # ----------------------------------------------------------------------------
     # Periodic functions
     # ----------------------------------------------------------------------------
     # @callback
@@ -329,16 +397,13 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    def _track_net_power_update(self) -> None:
-        """Track net power update."""
-
-        wait_net_power_update = self.get_wait_net_power_update()
-        _LOGGER.info("wait_net_power_update=%s", wait_net_power_update)
+    def _start_periodic_power_allocation(self) -> None:
+        """Start periodic power allocation."""
 
         subscription = async_track_time_interval(
             self._hass,
             self._async_allocate_net_power,
-            timedelta(seconds=wait_net_power_update),
+            timedelta(seconds=self._wait_net_power_update),
         )
 
         self._unsub.append(subscription)
@@ -356,6 +421,8 @@ class SolarChargerCoordinator(ScOptionState):
                 SENSOR_SYNC_UPDATE
             ].set_state(datetime.now().astimezone())
 
+            self._charge_current_updatetime = utcnow().timestamp()
+
         except Exception as e:
             _LOGGER.exception(
                 "%s: Failed to synchronise charge current update: %s",
@@ -364,16 +431,13 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    def _track_charge_current_update(self) -> None:
-        """Track charge current update."""
-
-        charge_current_update_period = self.get_charge_current_update_period()
-        _LOGGER.info("charge_current_update_period=%s", charge_current_update_period)
+    def _start_periodic_charge_current_update(self) -> None:
+        """Start periodic charge current update."""
 
         subscription = async_track_time_interval(
             self._hass,
             self._async_synchronise_charge_current_update,
-            timedelta(seconds=charge_current_update_period),
+            timedelta(seconds=self._charge_current_update_period),
         )
 
         self._unsub.append(subscription)
@@ -417,7 +481,7 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    def _schedule_periodic_maintenance(self) -> None:
+    def _start_periodic_maintenance(self) -> None:
         """Schedule periodic maintenance."""
 
         subscription = async_track_time_interval(
@@ -442,12 +506,26 @@ class SolarChargerCoordinator(ScOptionState):
 
         # device_controls must be initialised first since allocator needs to access device_controls.
         self._allocator = PowerAllocator(self._subentry, self.device_controls)
+        self._wait_net_power_update = self.get_wait_net_power_update()
+        self._charge_current_update_period = self.get_charge_current_update_period()
+
+        _LOGGER.info(
+            "%s: wait_net_power_update=%s, charge_current_update_period=%s",
+            self.caller,
+            self._wait_net_power_update,
+            self._charge_current_update_period,
+        )
 
         # Global default entities MUST be created first before running the coordinator.setup().
         # Otherwise cannot get entity config values here.
+        await self._tracker.async_setup()
+
         self._track_net_power_update()
-        self._track_charge_current_update()
-        self._schedule_periodic_maintenance()
+        self._start_periodic_power_allocation()
+        # self._start_periodic_charge_current_update()
+        self._start_periodic_maintenance()
+
+        # Enable system config flow callbacks after completing local setup.
         self._track_config_options_update()
 
     # ----------------------------------------------------------------------------
@@ -459,6 +537,8 @@ class SolarChargerCoordinator(ScOptionState):
         for control in self.device_controls.values():
             if control.config_name != OPTION_GLOBAL_DEFAULTS_ID:
                 await control.controller.async_unload()
+
+        await self._tracker.async_unload()
 
         for unsub_method in self._unsub:
             unsub_method()
