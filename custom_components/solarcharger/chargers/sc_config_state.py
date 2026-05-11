@@ -7,11 +7,7 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from ..const import (
-    CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
-    CONFIG_NET_POWER_SENSOR,
-    CONFIG_WAIT_NET_POWER_UPDATE,
-)
+from ..const import CONFIG_CHARGER_CURRENT_UPDATE_PERIOD, CONFIG_NET_POWER_SENSOR
 from .sc_state import ScState
 
 # ----------------------------------------------------------------------------
@@ -104,12 +100,6 @@ class ScConfigState(ScState):
         # could not convert string to float: 'unavailable'
 
         return self.config_get_entity_number(CONFIG_NET_POWER_SENSOR)
-
-    # ----------------------------------------------------------------------------
-    def get_wait_net_power_update(self) -> float:
-        """Get wait net power update time in seconds."""
-
-        return self.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
 
     # ----------------------------------------------------------------------------
     def get_charger_current_update_period(self) -> float:

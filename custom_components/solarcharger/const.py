@@ -150,7 +150,6 @@ DEVICE_MODEL_MAP: dict[str, str] = {
 #######################################################
 # Error codes
 #######################################################
-ERROR_WAIT_NET_POWER_UPDATE = "invalid_wait_net_power_update"
 ERROR_CURRENT_UPDATE_PERIOD = "invalid_current_update_period"
 ERROR_EMPTY_CHARGER_LIST = "empty_charger_device_list"
 ERROR_SELECT_CHARGER = "select_charger_error"
@@ -240,10 +239,9 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 # Power import/export sensor
 #####################################
 CONFIG_NET_POWER_SENSOR = "net_power_sensor"
-CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"
-DEFAULT_WAIT_NET_POWER_UPDATE = 20  # 20 seconds
 CONFIG_CHARGER_CURRENT_UPDATE_PERIOD = "charger_current_update_period"
 DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD = 60  # 60 seconds
+MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD = 5  # 10 seconds
 
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"

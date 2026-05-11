@@ -2,22 +2,19 @@
     "title": "SolarCharger",
     "config": {
         "error": {
-            "invalid_wait_net_power_update": "Wait net power update interval must be less than or equal to charge current update period.",
-            "invalid_current_update_period": "Charger current update period must be greater than or equal to wait net power update interval."
+            "invalid_current_update_period": "The charger current update period must not be less than 5 seconds."
         },
         "step": {
             "user": {
                 "title": "SolarCharger config",
-                "description": "Config for net power sensor and its update interval, and how often to adjust the charge current.",
+                "description": "Config for net power sensor and how often to adjust the charger current.",
                 "data": {
                     "net_power_sensor": "Net power sensor (W)",
-                    "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20 sec)",
                     "charger_current_update_period": "Charger current update period (default: 60 sec)"
                 },
                 "data_description": {
                     "net_power_sensor": "Sensor that expresses negative value in Watts for power exported to grid, or positive value for power imported from grid. This sensor is the feedback loop for adjusting power consumption.",
-                    "wait_net_power_update": "The wait net power update interval should be equal to the net power sensor update interval.\nNet allocated power sample size = Power monitor duration / Wait net power update interval",
-                    "charger_current_update_period": "The charger current update period must be greater than or equal to the net power update period."
+                    "charger_current_update_period": "The charger current update period must be greater than or equal to the net power sensor update period."
                 }
             }
         },

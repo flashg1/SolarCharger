@@ -122,7 +122,6 @@ class SolarCharge(ScOptionState):
         self._semaphore_update_ha_task = threading.Semaphore(value=1)
         self._semaphore_update_ha_task_count = 0
 
-        self.wait_net_power_update = self.get_wait_net_power_update()
         self.charge_current_update_period = self.get_charger_current_update_period()
 
         # Initialise state machine self._state variable.

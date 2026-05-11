@@ -86,9 +86,6 @@ class SolarChargerCoordinator(ScOptionState):
 
         self._tracker = Tracker(hass, entry, global_defaults_subentry, caller)
 
-        # Wait net power update interval.
-        self._wait_net_power_update: float = 0
-
         # Charge current update period.
         self._current_update_period: float = 0
 
@@ -413,16 +410,16 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    def _start_periodic_power_allocation(self) -> None:
-        """Start periodic power allocation."""
+    # def _start_periodic_power_allocation(self) -> None:
+    #     """Start periodic power allocation."""
 
-        subscription = async_track_time_interval(
-            self._hass,
-            self._async_allocate_net_power,
-            timedelta(seconds=self._wait_net_power_update),
-        )
+    #     subscription = async_track_time_interval(
+    #         self._hass,
+    #         self._async_allocate_net_power,
+    #         timedelta(seconds=self._wait_net_power_update),
+    #     )
 
-        self._unsub.append(subscription)
+    #     self._unsub.append(subscription)
 
     # ----------------------------------------------------------------------------
     async def _async_synchronise_charge_current_update(self, now: datetime) -> None:
@@ -447,16 +444,16 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    def _start_periodic_charge_current_update(self) -> None:
-        """Start periodic charge current update."""
+    # def _start_periodic_charge_current_update(self) -> None:
+    #     """Start periodic charge current update."""
 
-        subscription = async_track_time_interval(
-            self._hass,
-            self._async_synchronise_charge_current_update,
-            timedelta(seconds=self._current_update_period),
-        )
+    #     subscription = async_track_time_interval(
+    #         self._hass,
+    #         self._async_synchronise_charge_current_update,
+    #         timedelta(seconds=self._current_update_period),
+    #     )
 
-        self._unsub.append(subscription)
+    #     self._unsub.append(subscription)
 
     # ----------------------------------------------------------------------------
     async def _async_periodic_maintenance(self, now: datetime) -> None:
@@ -512,14 +509,11 @@ class SolarChargerCoordinator(ScOptionState):
     # Setup
     # ----------------------------------------------------------------------------
     def _get_min_charge_current_update_period(
-        self, wait_net_power_update: float, current_update_period: float
+        self, current_update_period: float
     ) -> float:
 
         # Allow for slight variation in net power update interval.
-        variation = min(
-            wait_net_power_update * 20 / 100,
-            current_update_period * 5 / 100,
-        )
+        variation = current_update_period * 5 / 100
 
         return current_update_period - variation
 
@@ -535,16 +529,14 @@ class SolarChargerCoordinator(ScOptionState):
 
         # device_controls must be initialised first since allocator needs to access device_controls.
         self._allocator = PowerAllocator(self._subentry, self.device_controls)
-        self._wait_net_power_update = self.get_wait_net_power_update()
         self._current_update_period = self.get_charger_current_update_period()
         self._min_current_update_period = self._get_min_charge_current_update_period(
-            self._wait_net_power_update, self._current_update_period
+            self._current_update_period
         )
 
         _LOGGER.info(
-            "%s: wait_net_power_update=%s, current_update_period=%s, min_current_update_period=%s",
+            "%s: current_update_period=%s, min_current_update_period=%s",
             self.caller,
-            self._wait_net_power_update,
             self._current_update_period,
             self._min_current_update_period,
         )

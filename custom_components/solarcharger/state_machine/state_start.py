@@ -288,11 +288,11 @@ class StateStart(SolarChargeState):
         net_power = self.solarcharge.get_net_power()
 
         _LOGGER.debug(
-            "%s: %s=%s, wait_net_power_update=%s",
+            "%s: %s=%s, power_monitor_duration=%s",
             self.solarcharge.caller,
             net_power_entity_id,
             net_power,
-            self.solarcharge.wait_net_power_update,
+            self.solarcharge.power_monitor_duration,
         )
 
     # ----------------------------------------------------------------------------
