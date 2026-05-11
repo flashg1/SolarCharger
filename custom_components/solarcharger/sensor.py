@@ -20,6 +20,7 @@ from homeassistant.util.dt import as_local
 
 from .const import (
     DOMAIN,
+    MEDIAN_DATA_STATE_LIST,
     RUN_STATE_LIST,
     SENSOR,
     SENSOR_AVERAGE_PAUSE_DURATION,
@@ -31,12 +32,14 @@ from .const import (
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
     SENSOR_NET_ALLOCATED_POWER,
+    SENSOR_NET_ALLOCATED_POWER_DATA_SET,
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     SENSOR_SYNC_UPDATE,
+    MedianDataState,
     RunState,
 )
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -182,6 +185,18 @@ CONFIG_SENSOR_LIST: tuple[
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         0,
+    ),
+    (
+        SENSOR_NET_ALLOCATED_POWER_DATA_SET,
+        SolarChargerSensorStateEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_NET_ALLOCATED_POWER_DATA_SET,
+            device_class=SensorDeviceClass.ENUM,
+            options=MEDIAN_DATA_STATE_LIST,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        MedianDataState.NOT_READY.value,
     ),
     (
         SENSOR_MEDIAN_NET_ALLOCATED_POWER,

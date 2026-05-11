@@ -53,6 +53,8 @@ class MedianData:
     #####################################
     # Data set is ready when window has full set of data.
     data_set_ready: bool = False
+    # Only set max sample size when data set is ready. 0 => Max sample size has never been set.
+    max_sample_size: int = 0
     # Sample size.
     sample_size: int = 0
     # Actual duration in samples.
@@ -72,6 +74,7 @@ class MedianData:
             f"window_duration={self.window_duration}, "
             f"now_time={self.now_time}, "
             f"data_set_ready={self.data_set_ready}, "
+            f"max_sample_size={self.max_sample_size}, "
             f"sample_size={self.sample_size}, "
             f"sample_duration={self.sample_duration}, "
             f"median_value={self.median_value}, "

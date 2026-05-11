@@ -2,14 +2,15 @@
 
 ## v0.7.0 2026-05-03
 ### Breaking change
-- In order to provide reliable pausing/unpausing of charger during low solar periods, the wait net power update interval is now decoupled from the charge current update period. This will allow more data points for the median net allocated power calculation used in charger pausing/unpausing determination. A new parameter, "Charge current update period", is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
+- In order to provide reliable pausing/unpausing of charger during low solar periods, the wait net power update interval has been removed and decoupled from the charge current update period. This will allow more data points for the median net allocated power calculation used in charger pausing/unpausing determination. A new parameter, "Charge current update period", is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
 - Renamed allocated power sensor to delta allocated power sensor.
 ### Improvement
-- Added Median net power period.
+- Added net allocated power data set status sensor.
+- Added median net allocated power period sensor.
 - Delta allocated power is now driven by the net power update event instead of periodic timer event.
 - Synchronised charge current update is now driven by the net power update event instead of periodic timer event.
+- Used median net allocated power instead of simple moving average to ignore outliers for determining whether or not to pause/unpause charger.
 - Added net allocated power sensor.
-- Used median allocated power instead of simple moving average to ignore outliers for determining whether or not to pause/unpause charger.
 - Refactored config flow for better error response and ease of maintenance.
 - Improved power allocation: Devices running at max current are excluded from power allocation.
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.

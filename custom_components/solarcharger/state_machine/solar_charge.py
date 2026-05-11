@@ -2,7 +2,7 @@
 """Solar charge state machine implementation to manage solar charging."""
 
 import asyncio
-from datetime import timedelta
+from datetime import datetime, timedelta
 import inspect
 import logging
 import threading
@@ -45,8 +45,6 @@ from ..const import (
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
-    SENSOR_MEDIAN_NET_ALLOCATED_POWER,
-    SENSOR_NET_ALLOCATED_POWER,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
@@ -102,6 +100,7 @@ class SolarCharge(ScOptionState):
         self.chargeable = chargeable
         self.scheduler = ChargeScheduler(hass, entry, subentry)
 
+        self.session_start_time = datetime.max
         self.session_triggered_by_timer = False
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
@@ -188,18 +187,23 @@ class SolarCharge(ScOptionState):
     # ----------------------------------------------------------------------------
     # Global utils
     # ----------------------------------------------------------------------------
+    def update_sensor(self, config_item: str, value: float) -> None:
+        """Update sensor."""
+
+        assert self.entities.sensors is not None
+        self.entities.sensors[config_item].set_state(value)
+
+    # ----------------------------------------------------------------------------
     def participate_in_real_power_allocation(self) -> None:
         """Participate in real power allocation."""
 
-        assert self.entities.sensors is not None
-        self.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(1)
+        self.update_sensor(SENSOR_SHARE_ALLOCATION, 1)
 
     # ----------------------------------------------------------------------------
     def give_up_real_power_allocation(self) -> None:
         """Participate in real power allocation."""
 
-        assert self.entities.sensors is not None
-        self.entities.sensors[SENSOR_SHARE_ALLOCATION].set_state(0)
+        self.update_sensor(SENSOR_SHARE_ALLOCATION, 0)
 
     # ----------------------------------------------------------------------------
     async def async_charger_sleep(self) -> None:

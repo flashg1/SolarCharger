@@ -1,7 +1,7 @@
 # ruff: noqa: TRY401, TID252
 """State machine state."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 from typing import Any
 
@@ -20,8 +20,10 @@ from ..const import (
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
     SENSOR_NET_ALLOCATED_POWER,
+    SENSOR_NET_ALLOCATED_POWER_DATA_SET,
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_SMA_NET_ALLOCATED_POWER,
+    MedianDataState,
     RunState,
 )
 from ..models.model_charge_stats import ChargeStats
@@ -49,11 +51,13 @@ class StateStart(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
-    def _update_sensor(self, config_item: str, value: float) -> None:
-        """Update sensor."""
+    def set_median_data_state(self, state: MedianDataState) -> None:
+        """Set the median data state of the object."""
 
         assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[config_item].set_state(value)
+        self.solarcharge.entities.sensors[
+            SENSOR_NET_ALLOCATED_POWER_DATA_SET
+        ].set_state(state.value)
 
     # ----------------------------------------------------------------------------
     def _calculate_median_value(self, data: MedianData) -> None:
@@ -98,44 +102,161 @@ class StateStart(SolarChargeState):
         data.sma_value = sum(x.value for x in data.sequence) / data.sample_size
 
     # ----------------------------------------------------------------------------
+    def _is_median_data_set_ready(self, data: MedianData) -> bool:
+        """Check if median datat set is ready."""
+        data_set_ready = False
+
+        # Data set ready is when sample duration is near window duration limit.
+        min_window_duration = timedelta(seconds=data.window_seconds * 80 / 100)
+        if data.sample_duration >= min_window_duration:
+            data_set_ready = True
+
+        return data_set_ready
+
+    # ----------------------------------------------------------------------------
+    # def _set_data_set_state(self, data: MedianData, removed_old_data: bool) -> None:
+    #     """Set data_set_ready and max_sample_size."""
+
+    #     if removed_old_data:
+    #         if not data.data_set_ready:
+    #             # Data set not ready
+    #             data.data_set_ready = True
+    #             self.set_median_data_state(MedianDataState.READY)
+    #             # Only set max_sample_size here is it has never been set before.
+    #             if data.max_sample_size == 0:
+    #                 data.max_sample_size = data.sample_size
+    #                 _LOGGER.info(
+    #                     "%s: Set inital max sample size: %s",
+    #                     self.solarcharge.caller,
+    #                     data.max_sample_size,
+    #                 )
+    #         else:
+    #             # Data set is ready
+    #             if data.sample_size > data.max_sample_size:
+    #                 data.max_sample_size = data.sample_size
+    #                 _LOGGER.info(
+    #                     "%s: Increased max sample size: %s",
+    #                     self.solarcharge.caller,
+    #                     data.max_sample_size,
+    #                 )
+
+    #             # Safer to just do simple check instead of using max_sample_size.
+    #             # Just in case max_sample_size increased to some huge value.
+    #             # After no update for long period, the next one update will trigger removal
+    #             # of all old data, hence at least one element in data set.
+    #             # if data.sample_size < data.max_sample_size / 2:
+    #             if data.sample_size <= 1:
+    #                 # Data sample size reducing due to no update.
+    #                 data.data_set_ready = False
+    #                 self.set_median_data_state(MedianDataState.NOT_READY)
+    #                 _LOGGER.warning(
+    #                     "%s: Median data set not ready due to sample size reduced to %s from max sample size %s",
+    #                     self.solarcharge.caller,
+    #                     data.sample_size,
+    #                     data.max_sample_size,
+    #                 )
+
+    # ----------------------------------------------------------------------------
+    def _set_data_set_state(self, data: MedianData, removed_old_data: bool) -> None:
+        """Set data_set_ready and max_sample_size."""
+
+        if removed_old_data:
+            if not data.data_set_ready:
+                # Data set not ready
+                if self._is_median_data_set_ready(data):
+                    data.data_set_ready = True
+                    self.set_median_data_state(MedianDataState.READY)
+                    # Only set max_sample_size here is it has never been set before.
+                    if data.max_sample_size == 0:
+                        data.max_sample_size = data.sample_size
+                        _LOGGER.info(
+                            "%s: Set inital max sample size: %s",
+                            self.solarcharge.caller,
+                            data.max_sample_size,
+                        )
+            else:
+                # Data set is ready
+                if data.sample_size > data.max_sample_size:
+                    data.max_sample_size = data.sample_size
+                    _LOGGER.info(
+                        "%s: Increased max sample size: %s",
+                        self.solarcharge.caller,
+                        data.max_sample_size,
+                    )
+
+                # After no update for long period, the next one update can trigger removal
+                # of all old data, hence at least one element in data set.
+                if not self._is_median_data_set_ready(data):
+                    # Data sample size reducing due to no update.
+                    data.data_set_ready = False
+                    self.set_median_data_state(MedianDataState.NOT_READY)
+                    _LOGGER.warning(
+                        "%s: Median data set not ready due to sample size reduced to %s from max sample size %s",
+                        self.solarcharge.caller,
+                        data.sample_size,
+                        data.max_sample_size,
+                    )
+
+    # ----------------------------------------------------------------------------
     def _process_net_allocated_power_update(
         self, data: MedianData, new_data_point: MedianDataPoint
     ) -> None:
         """Update net allocated power."""
 
+        #####################################
+        # Append new data and remove old data
+        #####################################
+        # The very first update most likely has inaccurate period.
         data.last_data_point = new_data_point
         data.sequence.append(new_data_point)
         data.now_time = self.solarcharge.get_local_datetime()
 
         # Removes old data
+        removed_old_data = False
         cut_off_time = data.now_time - data.window_duration
         while data.sequence and data.sequence[0].time < cut_off_time:
             data.sequence.pop(0)
-            data.data_set_ready = True
+            removed_old_data = True
 
+        #####################################
+        # Update states
+        #####################################
         data.sample_size = len(data.sequence)
         data.sample_duration = (
             timedelta(seconds=0)
             if data.sample_size == 0
             else data.sequence[data.sample_size - 1].time - data.sequence[0].time
         )
+
+        # Set data_set_ready and max_sample_size.
+        self._set_data_set_state(data, removed_old_data)
+
+        #####################################
+        # Calculate median from net power allocations
+        #####################################
         data.median_value = 0.0
         data.median_period = 0.0
         data.sma_value = 0.0
 
         if data.sample_size > 0:
-            # Calculate median from net power allocations.
             self._calculate_median_value(data)
             self._calculate_median_period(data)
             self._calculate_sma_value(data)
 
-        self._update_sensor(SENSOR_NET_ALLOCATED_POWER, new_data_point.value)
-        self._update_sensor(SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE, data.sample_size)
-        self._update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER, data.median_value)
-        self._update_sensor(
+        #####################################
+        # Update sensors
+        #####################################
+        self.solarcharge.update_sensor(SENSOR_NET_ALLOCATED_POWER, new_data_point.value)
+        self.solarcharge.update_sensor(
+            SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE, data.sample_size
+        )
+        self.solarcharge.update_sensor(
+            SENSOR_MEDIAN_NET_ALLOCATED_POWER, data.median_value
+        )
+        self.solarcharge.update_sensor(
             SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD, data.median_period
         )
-        self._update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, data.sma_value)
+        self.solarcharge.update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, data.sma_value)
 
     # ----------------------------------------------------------------------------
     # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
@@ -350,27 +471,26 @@ class StateStart(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Estimation only.
     # Run this first thing before starting session.
-    def _is_session_triggered_by_timer(self) -> bool:
+    def _is_session_triggered_by_timer(self, session_start_time: datetime) -> bool:
         """Trigger by timer?"""
         triggered_by_timer = False
         time_diff = timedelta(seconds=0)
 
-        charge_start_time = self.solarcharge.get_local_datetime()
         next_charge_time = self.solarcharge.get_datetime(
             self.solarcharge.next_charge_time_trigger_entity_id
         )
         if next_charge_time is not None:
-            if charge_start_time > next_charge_time:
-                time_diff = charge_start_time - next_charge_time
+            if session_start_time > next_charge_time:
+                time_diff = session_start_time - next_charge_time
             else:
-                time_diff = next_charge_time - charge_start_time
+                time_diff = next_charge_time - session_start_time
             if time_diff < timedelta(seconds=30):
                 triggered_by_timer = True
 
         _LOGGER.info(
-            "%s: charge_start_time=%s, next_charge_time=%s, time_diff=%s, triggered_by_timer=%s",
+            "%s: session_start_time=%s, next_charge_time=%s, time_diff=%s, triggered_by_timer=%s",
             self.solarcharge.caller,
-            charge_start_time,
+            session_start_time,
             next_charge_time,
             time_diff,
             triggered_by_timer,
@@ -421,8 +541,9 @@ class StateStart(SolarChargeState):
         """Set up instance variables once per session."""
 
         # Must run this first thing to estimate if session started by timer
+        self.solarcharge.session_start_time = self.solarcharge.get_local_datetime()
         self.solarcharge.session_triggered_by_timer = (
-            self._is_session_triggered_by_timer()
+            self._is_session_triggered_by_timer(self.solarcharge.session_start_time)
         )
         self.solarcharge.started_max_charge = 0
         self.solarcharge.started_calibrate_max_charge_speed = False

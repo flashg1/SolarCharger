@@ -182,6 +182,13 @@
             "net_allocated_power_sample_size": {
                 "name": "Net allocated power sample size"
             },
+            "net_allocated_power_data_set": {
+                "name": "Net allocated power data set",
+                "state": {
+                    "not_ready": "Not ready",
+                    "ready": "Ready"
+                }
+            },
             "median_net_allocated_power": {
                 "name": "Median net allocated power"
             },

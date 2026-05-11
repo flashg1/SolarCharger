@@ -311,6 +311,7 @@ ENTITY_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 #####################################
 SENSOR_SYNC_UPDATE = "sync_update"
 SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE = "net_allocated_power_sample_size"
+SENSOR_NET_ALLOCATED_POWER_DATA_SET = "net_allocated_power_data_set"
 SENSOR_MEDIAN_NET_ALLOCATED_POWER = "median_net_allocated_power"
 SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD = "median_net_allocated_power_period"
 SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
@@ -971,6 +972,17 @@ class RunState(Enum):
 
 
 RUN_STATE_LIST: list[str] = [state.value for state in RunState]
+
+
+class MedianDataState(Enum):
+    """Enumeration of median data set states."""
+
+    # Sensor state attributes must be lower case. Translation will display state in OS language.
+    NOT_READY = "not_ready"
+    READY = "ready"
+
+
+MEDIAN_DATA_STATE_LIST: list[str] = [state.value for state in MedianDataState]
 
 
 class ChargeControlApi(Enum):
