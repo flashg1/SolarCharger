@@ -172,7 +172,6 @@ ERROR_SINGLE_INSTANCE_ALLOWED = "single_instance_allowed"
 SENSOR_RUN_STATE = "run_state"
 
 # Delta allocated power = Net grid power * (Allocation weight / Total weight)
-SENSOR_MEDIAN_NET_POWER_PERIOD = "median_net_power_period"
 SENSOR_DELTA_ALLOCATED_POWER = "delta_allocated_power"
 SENSOR_NET_ALLOCATED_POWER = "net_allocated_power"
 
@@ -243,8 +242,8 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 CONFIG_NET_POWER_SENSOR = "net_power_sensor"
 CONFIG_WAIT_NET_POWER_UPDATE = "wait_net_power_update"
 DEFAULT_WAIT_NET_POWER_UPDATE = 20  # 20 seconds
-CONFIG_CURRENT_UPDATE_PERIOD = "current_update_period"
-DEFAULT_CURRENT_UPDATE_PERIOD = 60  # 60 seconds
+CONFIG_CHARGER_CURRENT_UPDATE_PERIOD = "charger_current_update_period"
+DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD = 60  # 60 seconds
 
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
@@ -313,7 +312,9 @@ ENTITY_CHARGEE_UPDATE_HA_BUTTON = "chargee_update_ha_button"
 # Internal control entities
 #####################################
 SENSOR_SYNC_UPDATE = "sync_update"
+SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE = "net_allocated_power_sample_size"
 SENSOR_MEDIAN_NET_ALLOCATED_POWER = "median_net_allocated_power"
+SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD = "median_net_allocated_power_period"
 SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
 SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 

@@ -23,22 +23,24 @@ class ContextData:
     charger: Charger
     chargeable: Chargeable
 
+    #####################################
     # Inputs
+    #####################################
     state: RunState
     goal: ScheduleData
-    max_allocation_count: int
     net_allocations: MedianData
     stats: ChargeStats
 
+    #####################################
     # Outputs
+    #####################################
     is_continue_state: bool = False  # Continue current state
     next_step: ChargeStatus = ChargeStatus.CHARGE_END
     is_enough_power: bool | None = None  # None=not enough data points.
-    net_allocated_power: float = 0
-    median_net_allocated_power: float = 0
-    data_points: int = 0
 
+    #####################################
     # Environment data
+    #####################################
     is_connected: bool = False
     is_below_charge_limit: bool = False
     is_charging: bool = False
@@ -55,11 +57,10 @@ class ContextData:
             f"state={self.state.value}, "
             f"is_continue_state={self.is_continue_state}, "
             f"next_step={self.next_step.value} ("
-            f"max_allocation_count={self.max_allocation_count}, "
             f"is_enough_power={self.is_enough_power}, "
-            f"median_net_allocated_power={self.median_net_allocated_power}, "
-            f"net_allocated_power={self.net_allocated_power}, "
-            f"data_points={self.data_points}), "
+            f"median_net_allocated_power={self.net_allocations.median_value}, "
+            f"sample_size={self.net_allocations.sample_size}), "
+            f"net_allocated_power={0 if self.net_allocations.last_data_point is None else self.net_allocations.last_data_point.value}, "
             f"is_connected={self.is_connected}, "
             f"is_below_charge_limit={self.is_below_charge_limit}, "
             f"is_charging={self.is_charging} ("

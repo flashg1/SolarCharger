@@ -18,8 +18,9 @@ from ..const import (
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_CONSUMED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
-    SENSOR_MEDIAN_NET_POWER_PERIOD,
+    SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
     SENSOR_NET_ALLOCATED_POWER,
+    SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     RunState,
 )
@@ -97,18 +98,20 @@ class StateStart(SolarChargeState):
         data.sma_value = sum(x.value for x in data.sequence) / data.sample_size
 
     # ----------------------------------------------------------------------------
-    def _update_net_allocated_power(
+    def _process_net_allocated_power_update(
         self, data: MedianData, new_data_point: MedianDataPoint
     ) -> None:
         """Update net allocated power."""
 
+        data.last_data_point = new_data_point
         data.sequence.append(new_data_point)
         data.now_time = self.solarcharge.get_local_datetime()
 
         # Removes old data
-        cut_off_time = data.now_time - data.window
+        cut_off_time = data.now_time - data.window_duration
         while data.sequence and data.sequence[0].time < cut_off_time:
             data.sequence.pop(0)
+            data.data_set_ready = True
 
         data.sample_size = len(data.sequence)
         data.sample_duration = (
@@ -126,9 +129,12 @@ class StateStart(SolarChargeState):
             self._calculate_median_period(data)
             self._calculate_sma_value(data)
 
-        self._update_sensor(SENSOR_MEDIAN_NET_POWER_PERIOD, data.median_period)
         self._update_sensor(SENSOR_NET_ALLOCATED_POWER, new_data_point.value)
+        self._update_sensor(SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE, data.sample_size)
         self._update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER, data.median_value)
+        self._update_sensor(
+            SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD, data.median_period
+        )
         self._update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, data.sma_value)
 
     # ----------------------------------------------------------------------------
@@ -231,22 +237,16 @@ class StateStart(SolarChargeState):
                 period = (new_updatetime - old_updatetime).total_seconds()
 
                 _LOGGER.debug(
-                    "%s: entity_id=%s, old_state=%s, new_state=%s, period=%s",
+                    "%s: entity_id=%s, period=%s, old_state=%s, new_state=%s",
                     self.solarcharge.caller,
                     entity_id,
-                    old_state.state,
-                    new_state.state,
                     period,
+                    old_state,
+                    new_state,
                 )
 
                 # Save allocated power to calculate moving average.
-                if self.solarcharge.max_allocation_count > 0:
-                    # if (
-                    #     len(self.solarcharge.net_allocations)
-                    #     >= self.solarcharge.max_allocation_count
-                    # ):
-                    #     self.solarcharge.net_allocations.pop(0)
-
+                if self.solarcharge.power_monitor_duration > 0:
                     assert self.solarcharge.entities.sensors is not None
                     consumed_power = float(
                         self.solarcharge.entities.sensors[SENSOR_CONSUMED_POWER].state
@@ -258,7 +258,7 @@ class StateStart(SolarChargeState):
                         period=period,
                         time=new_updatetime,
                     )
-                    self._update_net_allocated_power(
+                    self._process_net_allocated_power_update(
                         self.solarcharge.net_allocations, new_data_point
                     )
 
@@ -379,43 +379,42 @@ class StateStart(SolarChargeState):
         return triggered_by_timer
 
     # ----------------------------------------------------------------------------
-    def _set_max_allocation_count(self, wait_net_power_update: float) -> None:
-        """Initialize max allocation count."""
+    def _init_power_monitor_window(self) -> None:
+        """Initialize power monitor window."""
 
         monitor_duration = self.solarcharge.option_get_entity_number_or_abort(
             NUMBER_POWER_MONITOR_DURATION
         )
-        monitor_duration_seconds = monitor_duration * 60
-
+        self.solarcharge.power_monitor_duration = monitor_duration * 60
         self.solarcharge.net_allocations = MedianData(
-            window=timedelta(minutes=monitor_duration), sequence=[]
+            window_seconds=self.solarcharge.power_monitor_duration,
+            window_duration=timedelta(seconds=self.solarcharge.power_monitor_duration),
+            sequence=[],
         )
 
-        # Set to 0 to disable power monitoring by default.
-        self.solarcharge.max_allocation_count = 0
+        _LOGGER.info(
+            "%s: power_monitor_duration=%s seconds",
+            self.solarcharge.caller,
+            self.solarcharge.power_monitor_duration,
+        )
 
-        if monitor_duration > 0:
-            max_allocation_count = round(
-                monitor_duration_seconds / wait_net_power_update
-            )
+        # if monitor_duration > 0:
+        #     max_allocation_count = round(
+        #         self.solarcharge.power_monitor_duration / wait_net_power_update
+        #     )
 
-            if max_allocation_count >= 5:
-                self.solarcharge.max_allocation_count = max_allocation_count
-            else:
-                # Power monitor duration needs to be longer to reliably determine when to pause charger.
-                _LOGGER.error(
-                    "%s: Sample size %s is too small to reliably determine when to pause charger. "
-                    "Sample size = Power monitor duration %s / wait net power update interval %s",
-                    self.solarcharge.caller,
-                    max_allocation_count,
-                    monitor_duration_seconds,
-                    wait_net_power_update,
-                )
-
-    # ----------------------------------------------------------------------------
-    def _init_power_monitor_window(self, seconds_between_update: int) -> None:
-
-        self._set_max_allocation_count(seconds_between_update)
+        #     if max_allocation_count >= 5:
+        #         self.solarcharge.max_allocation_count = max_allocation_count
+        #     else:
+        #         # Power monitor duration needs to be longer to reliably determine when to pause charger.
+        #         _LOGGER.error(
+        #             "%s: Sample size %s is too small to reliably determine when to pause charger. "
+        #             "Sample size = Power monitor duration %s / wait net power update interval %s",
+        #             self.solarcharge.caller,
+        #             max_allocation_count,
+        #             self.solarcharge.power_monitor_duration,
+        #             wait_net_power_update,
+        #         )
 
     # ----------------------------------------------------------------------------
     def _init_instance_variables(self) -> None:
@@ -428,8 +427,8 @@ class StateStart(SolarChargeState):
         self.solarcharge.started_max_charge = 0
         self.solarcharge.started_calibrate_max_charge_speed = False
 
-        # Init power monitor duration
-        self._init_power_monitor_window(self.solarcharge.wait_net_power_update)
+        # Init power monitor window
+        self._init_power_monitor_window()
 
     # ----------------------------------------------------------------------------
     async def _async_start_session(self) -> None:

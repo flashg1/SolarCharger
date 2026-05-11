@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from ..const import (
-    CONFIG_CURRENT_UPDATE_PERIOD,
+    CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
     CONFIG_NET_POWER_SENSOR,
     CONFIG_WAIT_NET_POWER_UPDATE,
 )
@@ -112,7 +112,7 @@ class ScConfigState(ScState):
         return self.config_get_number_or_abort(CONFIG_WAIT_NET_POWER_UPDATE)
 
     # ----------------------------------------------------------------------------
-    def get_charge_current_update_period(self) -> float:
-        """Get charge current update period in seconds."""
+    def get_charger_current_update_period(self) -> float:
+        """Get charger current update period in seconds."""
 
-        return self.config_get_number_or_abort(CONFIG_CURRENT_UPDATE_PERIOD)
+        return self.config_get_number_or_abort(CONFIG_CHARGER_CURRENT_UPDATE_PERIOD)

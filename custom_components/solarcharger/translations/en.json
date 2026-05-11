@@ -3,7 +3,7 @@
     "config": {
         "error": {
             "invalid_wait_net_power_update": "Wait net power update interval must be less than or equal to charge current update period.",
-            "invalid_current_update_period": "Charge current update period must be greater than or equal to wait net power update interval."
+            "invalid_current_update_period": "Charger current update period must be greater than or equal to wait net power update interval."
         },
         "step": {
             "user": {
@@ -12,12 +12,12 @@
                 "data": {
                     "net_power_sensor": "Net power sensor (W)",
                     "wait_net_power_update": "Seconds to wait for net power sensor update (default: 20 sec)",
-                    "current_update_period": "Charge current update period (default: 60 sec)"
+                    "charger_current_update_period": "Charger current update period (default: 60 sec)"
                 },
                 "data_description": {
                     "net_power_sensor": "Sensor that expresses negative value in Watts for power exported to grid, or positive value for power imported from grid. This sensor is the feedback loop for adjusting power consumption.",
                     "wait_net_power_update": "The wait net power update interval should be equal to the net power sensor update interval.\nNet allocated power sample size = Power monitor duration / Wait net power update interval",
-                    "current_update_period": "The charge current update period must be greater than or equal to the wait net power update interval."
+                    "charger_current_update_period": "The charger current update period must be greater than or equal to the net power update period."
                 }
             }
         },
@@ -176,17 +176,20 @@
                     "ended": "Ended"
                 }
             },
-            "median_net_power_period": {
-                "name": "Median net power period"
-            },
             "delta_allocated_power": {
                 "name": "Delta allocated power"
             },
             "net_allocated_power": {
                 "name": "Net allocated power"
             },
+            "net_allocated_power_sample_size": {
+                "name": "Net allocated power sample size"
+            },
             "median_net_allocated_power": {
                 "name": "Median net allocated power"
+            },
+            "median_net_allocated_power_period": {
+                "name": "Median net allocated power period"
             },
             "sma_net_allocated_power": {
                 "name": "SMA net allocated power"

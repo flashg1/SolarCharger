@@ -22,10 +22,10 @@ from .config.config_subentry_charger import AddChargerSubEntryFlowHandler
 from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
 from .config.config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
 from .const import (
-    CONFIG_CURRENT_UPDATE_PERIOD,
+    CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
     CONFIG_NET_POWER_SENSOR,
     CONFIG_WAIT_NET_POWER_UPDATE,
-    DEFAULT_CURRENT_UPDATE_PERIOD,
+    DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD,
     DEFAULT_WAIT_NET_POWER_UPDATE,
     DOMAIN,
     ERROR_CURRENT_UPDATE_PERIOD,
@@ -109,11 +109,11 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         """Validate the user input for the power collection step."""
 
         wait_net_power_update: float = data[CONFIG_WAIT_NET_POWER_UPDATE]
-        current_update_period: float = data[CONFIG_CURRENT_UPDATE_PERIOD]
+        current_update_period: float = data[CONFIG_CHARGER_CURRENT_UPDATE_PERIOD]
 
         if current_update_period < wait_net_power_update:
             errors[CONFIG_WAIT_NET_POWER_UPDATE] = ERROR_WAIT_NET_POWER_UPDATE
-            errors[CONFIG_CURRENT_UPDATE_PERIOD] = ERROR_CURRENT_UPDATE_PERIOD
+            errors[CONFIG_CHARGER_CURRENT_UPDATE_PERIOD] = ERROR_CURRENT_UPDATE_PERIOD
 
         # Return info that you want to store in the config entry.
         return data
@@ -149,7 +149,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             # User step or reconfigure step with incorrect user input.
             net_power_sensor: str = user_input.get(CONFIG_NET_POWER_SENSOR)
             wait_net_power_update: float = user_input.get(CONFIG_WAIT_NET_POWER_UPDATE)
-            current_update_period: float = user_input.get(CONFIG_CURRENT_UPDATE_PERIOD)
+            current_update_period: float = user_input.get(
+                CONFIG_CHARGER_CURRENT_UPDATE_PERIOD
+            )
 
         elif self.source == SOURCE_RECONFIGURE:
             # Starting reconfigure step, user_input is None.
@@ -162,14 +164,14 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 CONFIG_WAIT_NET_POWER_UPDATE
             ]
             current_update_period: float = self._get_reconfigure_entry().data[
-                CONFIG_CURRENT_UPDATE_PERIOD
+                CONFIG_CHARGER_CURRENT_UPDATE_PERIOD
             ]
 
         else:
             # Starting initial user step, user_input is None.
             net_power_sensor: str | None = None
             wait_net_power_update: float = DEFAULT_WAIT_NET_POWER_UPDATE
-            current_update_period: float = DEFAULT_CURRENT_UPDATE_PERIOD
+            current_update_period: float = DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD
 
         # Create schema with default values.
         step_user_schema = vol.Schema(
@@ -181,7 +183,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     CONFIG_WAIT_NET_POWER_UPDATE, default=wait_net_power_update
                 ): WAIT_TIME_SELECTOR,
                 vol.Optional(
-                    CONFIG_CURRENT_UPDATE_PERIOD, default=current_update_period
+                    CONFIG_CHARGER_CURRENT_UPDATE_PERIOD, default=current_update_period
                 ): WAIT_TIME_SELECTOR,
             }
         )

@@ -110,9 +110,10 @@ class SolarCharge(ScOptionState):
         self.charge_current_updatetime: float = 0  # UTC time
         self.soc_updates: list[StateOfCharge] = []
 
+        # Power monitor duration in seconds
+        self.power_monitor_duration = 0
         # net allocation = new allocation - consumed power
         self.net_allocations: MedianData
-        self.max_allocation_count = 0
 
         self.stats = ChargeStats()
         self.started_max_charge: int = 0
@@ -122,7 +123,7 @@ class SolarCharge(ScOptionState):
         self._semaphore_update_ha_task_count = 0
 
         self.wait_net_power_update = self.get_wait_net_power_update()
-        self.charge_current_update_period = self.get_charge_current_update_period()
+        self.charge_current_update_period = self.get_charger_current_update_period()
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -569,7 +570,7 @@ class SolarCharge(ScOptionState):
         """Check if charger is allowed to go into pause state."""
         allow_pause_state = False
 
-        if self.max_allocation_count > 0:
+        if self.power_monitor_duration > 0:
             # Yes, monitor config switched on.
             allow_pause_state = True
 
@@ -605,12 +606,8 @@ class SolarCharge(ScOptionState):
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(
-                "%s: median_net_allocated_power=%s, "
-                "max_allocation_count=%s, data_points=%s, net_allocations=%s",
+                "%s: Net allocated power median data: %s",
                 self.caller,
-                context.median_net_allocated_power,
-                context.max_allocation_count,
-                context.data_points,
                 context.net_allocations,
             )
 
@@ -621,22 +618,13 @@ class SolarCharge(ScOptionState):
         chargeable: Chargeable,
         state: RunState,
         goal: ScheduleData,
-        max_allocation_count: int,
         net_allocations: MedianData,
         stats: ChargeStats,
     ) -> ContextData:
         """Get charging information context."""
 
         # Init variables
-        context = ContextData(
-            charger,
-            chargeable,
-            state,
-            goal,
-            max_allocation_count,
-            net_allocations,
-            stats,
-        )
+        context = ContextData(charger, chargeable, state, goal, net_allocations, stats)
 
         context.is_connected = self.is_connected(charger)
 
@@ -654,13 +642,13 @@ class SolarCharge(ScOptionState):
         context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
         # Data points managed in _async_handle_allocated_power_update().
-        context.net_allocated_power = self.entities.sensors[
-            SENSOR_NET_ALLOCATED_POWER
-        ].state
-        context.median_net_allocated_power = self.entities.sensors[
-            SENSOR_MEDIAN_NET_ALLOCATED_POWER
-        ].state
-        context.data_points = context.net_allocations.sample_size
+        # context.net_allocated_power = self.entities.sensors[
+        #     SENSOR_NET_ALLOCATED_POWER
+        # ].state
+        # context.median_net_allocated_power = self.entities.sensors[
+        #     SENSOR_MEDIAN_NET_ALLOCATED_POWER
+        # ].state
+        # context.data_points = context.net_allocations.sample_size
         self._log_power_allocations(context)
 
         return context
@@ -668,9 +656,7 @@ class SolarCharge(ScOptionState):
     # ----------------------------------------------------------------------------
     def _is_median_net_allocated_power_more_than_min_workable_power(
         self,
-        max_allocation_count: int,
-        median_net_allocated_power: float,
-        data_points: int,
+        net_allocations: MedianData,
         raise_the_bar: bool,
     ) -> bool:
         """Is average allocated power more than minimum workable power? None=not enough data.
@@ -680,7 +666,8 @@ class SolarCharge(ScOptionState):
         """
         is_enough_power = None
 
-        if max_allocation_count > 0 and data_points >= max_allocation_count:
+        if net_allocations.window_seconds > 0 and net_allocations.data_set_ready:
+            median_net_allocated_power = net_allocations.median_value
             charger_min_workable_current = self.get_charger_min_workable_current()
             charger_effective_voltage = self.get_charger_effective_voltage()
             min_workable_power = (
@@ -696,13 +683,13 @@ class SolarCharge(ScOptionState):
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(
                     "%s: median_net_allocated_power=%s, min_workable_power=%s, is_enough_power=%s, "
-                    "max_allocation_count=%s, data_points=%s",
+                    "sample_size=%s, sample_duration=%s",
                     self.caller,
                     median_net_allocated_power,
                     min_workable_power,
                     is_enough_power,
-                    max_allocation_count,
-                    data_points,
+                    net_allocations.sample_size,
+                    net_allocations.sample_duration,
                 )
 
         return is_enough_power
@@ -734,9 +721,7 @@ class SolarCharge(ScOptionState):
             if self._is_allow_pause_state():
                 context.is_enough_power = (
                     self._is_median_net_allocated_power_more_than_min_workable_power(
-                        context.max_allocation_count,
-                        context.median_net_allocated_power,
-                        context.data_points,
+                        context.net_allocations,
                         raise_the_bar=False,
                     )
                 )
@@ -770,9 +755,7 @@ class SolarCharge(ScOptionState):
             if self._is_allow_pause_state():
                 context.is_enough_power = (
                     self._is_median_net_allocated_power_more_than_min_workable_power(
-                        context.max_allocation_count,
-                        context.median_net_allocated_power,
-                        context.data_points,
+                        context.net_allocations,
                         raise_the_bar=True,
                     )
                 )
@@ -826,7 +809,6 @@ class SolarCharge(ScOptionState):
             chargeable,
             state,
             self.running_goal,
-            self.max_allocation_count,
             self.net_allocations,
             stats,
         )

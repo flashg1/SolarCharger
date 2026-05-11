@@ -536,7 +536,7 @@ class SolarChargerCoordinator(ScOptionState):
         # device_controls must be initialised first since allocator needs to access device_controls.
         self._allocator = PowerAllocator(self._subentry, self.device_controls)
         self._wait_net_power_update = self.get_wait_net_power_update()
-        self._current_update_period = self.get_charge_current_update_period()
+        self._current_update_period = self.get_charger_current_update_period()
         self._min_current_update_period = self._get_min_charge_current_update_period(
             self._wait_net_power_update, self._current_update_period
         )
