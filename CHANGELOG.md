@@ -5,24 +5,23 @@
 - Due to new features introduced in this release, a new parameter "Charger current update period" is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
 - Renamed "Allocated power" sensor to "Delta allocated power" sensor.
 ### New feature
-- Decoupled net power update from current adjustments in order to,
-1) regulate current adjustments according to site requirement, and
-2) provide a larger "net allocated power" data set for median calculation in order to reliably pause/unpause charger during low solar periods.
-- Charger current adjustment is now driven by net power updates, ie. no need to set "Wait net power update" interval for timer driven updates.
+- Decoupled net power update from current adjustments to,
+  1) regulate current adjustments according to site requirement, and
+  2) provide a larger "net allocated power" data set for median calculation in order to reliably pause/unpause charger during low solar periods.
+- Charger current adjustment is now driven by net power update event, ie. no need to set "Wait net power update" interval for timer driven updates.
 - Charger current adjustment is now synchronised on the "Charger current update period" across all chargers triggered by a net power update event.
 ### Improvement
 - Introduced a configurable buffer (extra percentage of minimum workable current) to raise the exit threshold for the pause state. This prevents rapid toggling between charging and paused states in borderline scenarios.
 - Added "Net allocated power data set" sensor to indicate whether data set is ready for use depending on duration of captured data.
 - Added "Median net allocated power period" sensor to indicate the net power update period.
 - Delta allocated power is now driven by the net power update event instead of periodic timer event.
-- Synchronised charge current update is now driven by the net power update event instead of periodic timer event.
+- Synchronised charge current update across all chargers is now driven by the net power update event instead of periodic timer event.
 - Used median net allocated power instead of simple moving average to ignore outliers for determining whether or not to pause/unpause charger.
 - Refactored config flow for better error response and ease of maintenance.
 - Improved power allocation: Devices running at max current are excluded from power allocation.
 - Improved power deallocation: Devices running at zero current are excluded from power deallocation.
 - Added "Median net allocated power" sensor.
 - Added "Net allocated power" sensor.
-- Adjust charge current on synchronised update cycle across all chargers.
 - For faster charger pause/unpause response, the same power monitor data structure is now used by all machine states.
 - Added missing entities for config debug logging during startup.
 
