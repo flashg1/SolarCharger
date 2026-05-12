@@ -28,10 +28,11 @@ If applicable, add screenshots to help explain your problem.
  - SolarCharger version:
  - Charger API name:
  - Charger API version:
+ - OCPP charger make and model:
 
 **Which method used to create the device?**
  - "Add charger device" button: 
  - "Add custom device" button: 
 
 **Additional context**
-Add any other context about the problem here.
+Add any other context about the problem here, eg. [debug log](https://github.com/flashg1/SolarCharger/wiki/Debugging#how-to-debug-the-integration-if-something-is-not-right), screenshots, etc.
