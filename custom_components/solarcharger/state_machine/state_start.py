@@ -347,14 +347,11 @@ class StateStart(SolarChargeState):
         new_state = data["new_state"]
 
         if new_state is not None:
-            # duration_since_last_change = (
-            #     new_state.last_changed_timestamp  # UTC
-            #     - self.solarcharge.charge_current_updatetime
-            # )
-
             try:
                 allocated_power = float(new_state.state)
+                # last_reported in UTC
                 old_updatetime = as_local(old_state.last_reported)
+                # last_updated in UTC
                 new_updatetime = as_local(new_state.last_updated)
                 period = (new_updatetime - old_updatetime).total_seconds()
 
@@ -386,7 +383,7 @@ class StateStart(SolarChargeState):
 
             except Exception as e:
                 _LOGGER.exception(
-                    "%s: Failed to adjust current for net power %s W: %s",
+                    "%s: Failed to allocate net power %s W: %s",
                     self.solarcharge.caller,
                     new_state.state,
                     e,
