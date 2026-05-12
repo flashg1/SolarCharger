@@ -239,10 +239,11 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 # Power import/export sensor
 #####################################
 CONFIG_NET_POWER_SENSOR = "net_power_sensor"
+
 CONFIG_CHARGER_CURRENT_UPDATE_PERIOD = "charger_current_update_period"
 DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD = 60  # 60 seconds
-MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD = 5  # 10 seconds
-
+MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD = 5  # 5 seconds
+DELTA_CHARGER_CURRENT_UPDATE_PERIOD = 5  # +/- 5%
 
 OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 
@@ -253,9 +254,6 @@ NUMBER_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # No defaults
 NUMBER_CHARGER_MAX_SPEED = "charger_max_speed"  # 6.1448 %/hr
 NUMBER_CHARGER_MIN_CURRENT = "charger_min_current"  # 1 Amps
 NUMBER_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"  # 1 Amps
-NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT = (
-    "charger_min_workable_current_exit_pause_percent"  # 10 %
-)
 NUMBER_CHARGER_PRIORITY = "charger_priority"  # 5, 0=highest priority
 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT = "charger_power_allocation_weight"  # 1
 NUMBER_CHARGEE_MIN_CHARGE_LIMIT = "chargee_min_charge_limit"
@@ -274,6 +272,10 @@ NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 second
 
 # 0 minutes=disabled, suggest 15 minutes to capture allocated power and turn off if average is below min power.
 NUMBER_POWER_MONITOR_DURATION = "power_monitor_duration"  # 10 minutes
+DELTA_POWER_MONITOR_DURATION = 20  # +/- 20%
+NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT = (
+    "charger_min_workable_current_exit_pause_percent"  # 10 %
+)
 
 #####################################
 # Charger control entities
@@ -408,7 +410,6 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
@@ -422,6 +423,7 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_POWER_MONITOR_DURATION,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
     #####################################
     # Charger control entities
     #####################################
@@ -479,28 +481,7 @@ CONFIG_LOCAL_OPTION_LIST: list[str] = [
     OPTION_CHARGEE_LOCATION_STATE_LIST,
 ]
 
-# Not used. FYI only. Using OPTION_LOCAL_INTERNAL_ENTITIES instead.
-CONFIG_INTERNAL_ENTITY_LIST: list[str] = [
-    #####################################
-    # Internal non-configurable entities
-    #####################################
-    # Global entities
-    SENSOR_SYNC_UPDATE,
-    # Local entities
-    SWITCH_CHARGE,
-    SWITCH_FAST_CHARGE_MODE,
-    DATETIME_NEXT_CHARGE_TIME,
-    SELECT_DEVICE_PRESENCE_SENSOR,
-    SWITCH_PRESENCE_TRIGGER,
-    SWITCH_PLUGIN_TRIGGER,
-    SWITCH_SUN_TRIGGER,
-    SWITCH_SCHEDULE_CHARGE,
-    SWITCH_POLL_CHARGER_UPDATE,
-    SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
-    # OCPP entities
-    NUMBER_OCPP_PROFILE_ID,
-    NUMBER_OCPP_PROFILE_STACK_LEVEL,
-]
+# See OPTION_LOCAL_INTERNAL_ENTITIES for internal non-configurable entities
 
 #######################################################
 # Default values
@@ -555,13 +536,13 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     # Global defaults: Charger configs
     #####################################
     NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT: 10,
     #####################################
     # Local device required defaults
     #####################################
     NUMBER_CHARGER_MAX_SPEED: 6.1448,
     NUMBER_CHARGER_MIN_CURRENT: 1,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: 1,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT: 10,
     NUMBER_CHARGER_PRIORITY: 5,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: 1,
     SENSOR_DELTA_ALLOCATED_POWER: 0,
@@ -699,10 +680,17 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 # Link between config_time and entity name.
 #####################################
 # Non-configurable entities: Local device internal control entities.
+# No point in listing sensors since they have no config to show.
 OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
+    #####################################
     # Global entities
-    SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
+    #####################################
+    # SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
+    #####################################
     # Local entities
+    #####################################
+    # Pause sensors
+    # Allocation sensors
     SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
     SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
     DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",
@@ -713,7 +701,9 @@ OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
     SWITCH_SCHEDULE_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SCHEDULE_CHARGE}",
     SWITCH_POLL_CHARGER_UPDATE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_POLL_CHARGER_UPDATE}",
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CALIBRATE_MAX_CHARGE_SPEED}",
+    #####################################
     # OCPP entities
+    #####################################
     NUMBER_OCPP_PROFILE_ID: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_OCPP_PROFILE_ID}",
     NUMBER_OCPP_PROFILE_STACK_LEVEL: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_OCPP_PROFILE_STACK_LEVEL}",
 }

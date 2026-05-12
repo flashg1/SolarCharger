@@ -23,6 +23,7 @@ from ..chargers.sc_option_state import ScOptionState
 from ..config.config_utils import get_subentry_id
 from ..const import (
     DEFAULT_CHARGE_LIMIT_MAP,
+    DELTA_CHARGER_CURRENT_UPDATE_PERIOD,
     DOMAIN,
     ERROR_DEFAULT_CHARGE_LIMIT,
     NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
@@ -354,6 +355,7 @@ class SolarChargerCoordinator(ScOptionState):
         new_state = data["new_state"]
 
         if new_state is not None:
+            # TODO: Check if ok to use last_changed_timestamp?
             duration_since_last_sync = (
                 new_state.last_changed_timestamp - self._sync_charge_current_time
             )
@@ -508,16 +510,6 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     # Setup
     # ----------------------------------------------------------------------------
-    def _get_min_charge_current_update_period(
-        self, current_update_period: float
-    ) -> float:
-
-        # Allow for slight variation in net power update interval.
-        variation = current_update_period * 5 / 100
-
-        return current_update_period - variation
-
-    # ----------------------------------------------------------------------------
     async def async_setup(self) -> None:
         """Set up the coordinator and its managed components."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
@@ -530,8 +522,10 @@ class SolarChargerCoordinator(ScOptionState):
         # device_controls must be initialised first since allocator needs to access device_controls.
         self._allocator = PowerAllocator(self._subentry, self.device_controls)
         self._current_update_period = self.get_charger_current_update_period()
-        self._min_current_update_period = self._get_min_charge_current_update_period(
+        self._min_current_update_period = (
             self._current_update_period
+            * (100 - DELTA_CHARGER_CURRENT_UPDATE_PERIOD)
+            / 100
         )
 
         _LOGGER.info(

@@ -282,9 +282,6 @@
             "charger_min_workable_current": {
                 "name": "Min workable current"
             },
-            "charger_min_workable_current_exit_pause_percent": {
-                "name": "Min workable current exit pause percent"
-            },
             "charger_priority": {
                 "name": "Priority"
             },
@@ -305,6 +302,9 @@
             },
             "power_monitor_duration": {
                 "name": "Power monitor duration"
+            },
+            "charger_min_workable_current_exit_pause_percent": {
+                "name": "Min workable current exit pause percent"
             },
             "ocpp_profile_id": {
                 "name": "Charge profile ID"
