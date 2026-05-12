@@ -35,11 +35,13 @@ from ..const import (
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
+    NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
     SENSOR_AVERAGE_PAUSE_DURATION,
@@ -379,6 +381,14 @@ class SolarCharge(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
+    def get_charger_min_workable_current_exit_pause_percent(self) -> float:
+        """Get charger minimum workable current extra percentage required to exit pause."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT
+        )
+
+    # ----------------------------------------------------------------------------
     def get_charger_effective_voltage(self) -> float:
         """Get charger effective voltage."""
 
@@ -451,7 +461,7 @@ class SolarCharge(ScOptionState):
                         new_charge_current,
                         old_charge_current,
                     )
-                    # await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+                    await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(
@@ -677,8 +687,11 @@ class SolarCharge(ScOptionState):
                 charger_min_workable_current * charger_effective_voltage * -1
             )
             if raise_the_bar:
-                # Raise the bar by 10% to avoid borderline cases where the charger might keep switching on and off.
-                min_workable_power *= 1.10
+                # Raise the bar by extra_percent to avoid borderline cases where the charger might keep switching on and off.
+                extra_percent = (
+                    self.get_charger_min_workable_current_exit_pause_percent()
+                )
+                min_workable_power *= (100 + extra_percent) / 100
 
             # Note surplus power is negative.
             is_enough_power = median_net_allocated_power <= min_workable_power

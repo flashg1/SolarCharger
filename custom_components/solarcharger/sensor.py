@@ -297,7 +297,7 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        1,
+        0,
     ),
     (
         SENSOR_PAUSE_COUNT,

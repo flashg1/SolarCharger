@@ -51,7 +51,7 @@ class StateStart(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
-    def set_median_data_state(self, state: MedianDataState) -> None:
+    def _set_median_data_state(self, state: MedianDataState) -> None:
         """Set the median data state of the object."""
 
         assert self.solarcharge.entities.sensors is not None
@@ -106,9 +106,9 @@ class StateStart(SolarChargeState):
         """Check if median datat set is ready."""
         data_set_ready = False
 
-        # Data set ready is when sample duration is near window duration limit.
-        min_window_duration = timedelta(seconds=data.window_seconds * 80 / 100)
-        if data.sample_duration >= min_window_duration:
+        # Data set ready is when sample duration >= 80% window duration.
+        min_window_seconds = data.window_seconds * 0.80
+        if data.sample_duration.total_seconds() >= min_window_seconds:
             data_set_ready = True
 
         return data_set_ready
@@ -162,12 +162,12 @@ class StateStart(SolarChargeState):
 
         if removed_old_data:
             if not data.data_set_ready:
-                # Data set not ready
+                # Data set not ready.
                 if self._is_median_data_set_ready(data):
                     data.data_set_ready = True
-                    self.set_median_data_state(MedianDataState.READY)
+                    self._set_median_data_state(MedianDataState.READY)
                     # Only set max_sample_size here is it has never been set before.
-                    if data.max_sample_size == 0:
+                    if data.max_sample_size == -1:
                         data.max_sample_size = data.sample_size
                         _LOGGER.info(
                             "%s: Set inital max sample size: %s",
@@ -175,8 +175,9 @@ class StateStart(SolarChargeState):
                             data.max_sample_size,
                         )
             else:
-                # Data set is ready
+                # Data set is ready.
                 if data.sample_size > data.max_sample_size:
+                    # Update max sample size.
                     data.max_sample_size = data.sample_size
                     _LOGGER.info(
                         "%s: Increased max sample size: %s",
@@ -189,7 +190,7 @@ class StateStart(SolarChargeState):
                 if not self._is_median_data_set_ready(data):
                     # Data sample size reducing due to no update.
                     data.data_set_ready = False
-                    self.set_median_data_state(MedianDataState.NOT_READY)
+                    self._set_median_data_state(MedianDataState.NOT_READY)
                     _LOGGER.warning(
                         "%s: Median data set not ready due to sample size reduced to %s from max sample size %s",
                         self.solarcharge.caller,

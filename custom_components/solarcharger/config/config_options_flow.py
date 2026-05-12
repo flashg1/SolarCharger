@@ -49,6 +49,7 @@ from ..const import (
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_MIN_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
@@ -321,6 +322,11 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             #####################################
             self._optional(
                 subentry, NUMBER_POWER_MONITOR_DURATION, use_default
+            ): NUMBER_ENTITY_SELECTOR,
+            self._optional(
+                subentry,
+                NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
+                use_default,
             ): NUMBER_ENTITY_SELECTOR,
         }
 
