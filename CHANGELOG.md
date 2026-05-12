@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.1 2026-05-12
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.6.1 or prior.
+### Improvement
+
+
 ## v0.7.0 2026-05-03
 ### Breaking change
 - Due to new features introduced in this release, a new parameter "Charger current update period" is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
