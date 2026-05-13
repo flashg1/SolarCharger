@@ -672,11 +672,7 @@ class SolarCharge(ScOptionState):
         net_allocations: MedianData,
         run_state: RunState,
     ) -> bool:
-        """Is average allocated power more than minimum workable power? None=not enough data.
-
-        raise_the_bar: Raise the bar to make it easier to get below the threshold, or harder to get above it.
-        Should be used to make it harder to switch on the charger.
-        """
+        """Is median net allocated power more than minimum workable power? None=not enough data."""
         is_enough_power = None
 
         if net_allocations.window_seconds > 0 and net_allocations.data_set_ready:
