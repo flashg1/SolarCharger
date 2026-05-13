@@ -122,6 +122,10 @@ class StateStart(SolarChargeState):
     def _set_data_set_state(self, data: MedianData, removed_old_data: bool) -> None:
         """Set data_set_ready and max_sample_size."""
 
+        # Only set data status if data member has been removed from set, ie. data should reach
+        # full set on first startup if everything is working as normal.
+        # Everytime data member is removed, it will check the duration span in the sample to
+        # determine whether set is ready or not.
         if removed_old_data:
             if not data.data_set_ready:
                 # Data set not ready.
