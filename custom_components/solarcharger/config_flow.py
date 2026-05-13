@@ -128,7 +128,12 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 # Reconfigure step: reconfigure entry.
                 if self.source == SOURCE_RECONFIGURE:
                     self._abort_if_unique_id_mismatch()
-                    return self.async_update_reload_and_abort(
+
+                    # https://developers.home-assistant.io/blog/2026/05/07/config-entry-listener-together-with-reloading-methods/
+                    # Using a config entry listener together with any reloading methods in a config
+                    # flow can cause the integration to reload twice and/or create a race condition.
+                    # return self.async_update_reload_and_abort(
+                    return self.async_update_and_abort(
                         self._get_reconfigure_entry(), data_updates=config_data
                     )
 
