@@ -4,7 +4,8 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.6.1 or prior.
 ### Improvement
-
+- Changed to use last_updated_timestamp instead of last_changed_timestamp for update duration calculation.
+- Make it harder to enter pause state by also checking if current net_allocated_power has enough power.
 
 ## v0.7.0 2026-05-03
 ### Breaking change

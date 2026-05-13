@@ -356,8 +356,11 @@ class SolarChargerCoordinator(ScOptionState):
 
         if new_state is not None:
             # TODO: Check if ok to use last_changed_timestamp?
+            # duration_since_last_sync = (
+            #     new_state.last_changed_timestamp - self._sync_charge_current_time
+            # )
             duration_since_last_sync = (
-                new_state.last_changed_timestamp - self._sync_charge_current_time
+                new_state.last_updated_timestamp - self._sync_charge_current_time
             )
 
             _LOGGER.debug(

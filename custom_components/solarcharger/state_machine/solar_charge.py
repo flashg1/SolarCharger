@@ -670,7 +670,7 @@ class SolarCharge(ScOptionState):
     def _is_median_net_allocated_power_more_than_min_workable_power(
         self,
         net_allocations: MedianData,
-        raise_the_bar: bool,
+        run_state: RunState,
     ) -> bool:
         """Is average allocated power more than minimum workable power? None=not enough data.
 
@@ -680,30 +680,43 @@ class SolarCharge(ScOptionState):
         is_enough_power = None
 
         if net_allocations.window_seconds > 0 and net_allocations.data_set_ready:
+            net_allocated_power = net_allocations.last_data_point.value
             median_net_allocated_power = net_allocations.median_value
             charger_min_workable_current = self.get_charger_min_workable_current()
             charger_effective_voltage = self.get_charger_effective_voltage()
             min_workable_power = (
                 charger_min_workable_current * charger_effective_voltage * -1
             )
-            if raise_the_bar:
+
+            if run_state == RunState.PAUSED:
+                # For exiting out of paused state.
+                # Make it harder to exit pause state by raising the requirement to exit pause state.
                 # Raise the bar by extra_percent to avoid borderline cases where the charger might keep switching on and off.
                 extra_percent = (
                     self.get_charger_min_workable_current_exit_pause_percent()
                 )
                 min_workable_power *= (100 + extra_percent) / 100
-
-            # Note surplus power is negative.
-            is_enough_power = median_net_allocated_power <= min_workable_power
+                # Note surplus power is negative.
+                is_enough_power = median_net_allocated_power <= min_workable_power
+            else:
+                # For entering pause state.
+                # Make it harder to go into pause state if current net_allocated_power has enough power.
+                # Note surplus power is negative.
+                is_enough_power = (
+                    median_net_allocated_power <= min_workable_power
+                    or net_allocated_power <= min_workable_power
+                )
 
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(
-                    "%s: median_net_allocated_power=%s, min_workable_power=%s, is_enough_power=%s, "
-                    "sample_size=%s, sample_duration=%s",
+                    "%s: is_enough_power=%s, run_state=%s, median_net_allocated_power=%s, net_allocated_power=%s, "
+                    "min_workable_power=%s, sample_size=%s, sample_duration=%s",
                     self.caller,
-                    median_net_allocated_power,
-                    min_workable_power,
                     is_enough_power,
+                    run_state,
+                    median_net_allocated_power,
+                    net_allocated_power,
+                    min_workable_power,
                     net_allocations.sample_size,
                     net_allocations.sample_duration,
                 )
@@ -737,8 +750,7 @@ class SolarCharge(ScOptionState):
             if self._is_allow_pause_state():
                 context.is_enough_power = (
                     self._is_median_net_allocated_power_more_than_min_workable_power(
-                        context.net_allocations,
-                        raise_the_bar=False,
+                        context.net_allocations, context.state
                     )
                 )
 
@@ -771,8 +783,7 @@ class SolarCharge(ScOptionState):
             if self._is_allow_pause_state():
                 context.is_enough_power = (
                     self._is_median_net_allocated_power_more_than_min_workable_power(
-                        context.net_allocations,
-                        raise_the_bar=True,
+                        context.net_allocations, context.state
                     )
                 )
 
