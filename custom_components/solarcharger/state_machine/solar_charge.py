@@ -654,14 +654,6 @@ class SolarCharge(ScOptionState):
         context.is_use_secondary_power_source = self.is_use_secondary_power_source()
         context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
-        # Data points managed in _async_handle_allocated_power_update().
-        # context.net_allocated_power = self.entities.sensors[
-        #     SENSOR_NET_ALLOCATED_POWER
-        # ].state
-        # context.median_net_allocated_power = self.entities.sensors[
-        #     SENSOR_MEDIAN_NET_ALLOCATED_POWER
-        # ].state
-        # context.data_points = context.net_allocations.sample_size
         self._log_power_allocations(context)
 
         return context
