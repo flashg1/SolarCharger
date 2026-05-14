@@ -24,7 +24,6 @@ from ..const import (
     SENSOR_NET_ALLOCATED_POWER,
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_SMA_NET_ALLOCATED_POWER,
-    MedianDataState,
     RunState,
 )
 from ..models.model_charge_stats import ChargeStats
@@ -94,9 +93,9 @@ class StateStart(SolarChargeState):
         data.sma_value = sum(x.value for x in data.sequence) / data.sample_size
 
     # ----------------------------------------------------------------------------
-    def _is_median_data_set_ready(self, data: MedianData) -> bool:
-        """Check if median datat set is ready."""
-        data_set_ready = False
+    def _is_median_data_ready(self, data: MedianData) -> bool:
+        """Check if median data set is ready."""
+        data_ready = False
 
         # Data set ready is when sample duration >= 80% window duration.
         min_window_seconds = (
@@ -104,12 +103,12 @@ class StateStart(SolarChargeState):
         )
 
         if data.sample_duration.total_seconds() >= min_window_seconds:
-            data_set_ready = True
+            data_ready = True
 
-        return data_set_ready
+        return data_ready
 
     # ----------------------------------------------------------------------------
-    def _set_data_set_state(self, data: MedianData, removed_old_data: bool) -> None:
+    def _set_median_data_state(self, data: MedianData, removed_old_data: bool) -> None:
         """Set data_set_ready and max_sample_size."""
 
         # Only set data status if data member has been removed from set, ie. data should reach
@@ -119,9 +118,8 @@ class StateStart(SolarChargeState):
         if removed_old_data:
             if not data.data_set_ready:
                 # Data set not ready.
-                if self._is_median_data_set_ready(data):
-                    data.data_set_ready = True
-                    self.solarcharge.set_median_data_state(MedianDataState.READY)
+                if self._is_median_data_ready(data):
+                    self.solarcharge.set_median_data_ready(data)
                     # Only set max_sample_size here is it has never been set before.
                     if data.max_sample_size == -1:
                         data.max_sample_size = data.sample_size
@@ -143,10 +141,9 @@ class StateStart(SolarChargeState):
 
                 # After no update for long period, the next one update can trigger removal
                 # of all old data, hence at least one element in data set.
-                if not self._is_median_data_set_ready(data):
+                if not self._is_median_data_ready(data):
                     # Data sample size reducing due to no update.
-                    data.data_set_ready = False
-                    self.solarcharge.set_median_data_state(MedianDataState.NOT_READY)
+                    self.solarcharge.set_median_data_not_ready(data)
                     _LOGGER.warning(
                         "%s: Median data set not ready due to sample size reduced to %s from max sample size %s",
                         self.solarcharge.caller,
@@ -186,7 +183,7 @@ class StateStart(SolarChargeState):
         )
 
         # Set data_set_ready and max_sample_size.
-        self._set_data_set_state(data, removed_old_data)
+        self._set_median_data_state(data, removed_old_data)
 
         #####################################
         # Calculate median from net power allocations
@@ -469,7 +466,7 @@ class StateStart(SolarChargeState):
             window_duration=timedelta(seconds=self.solarcharge.power_monitor_duration),
             sequence=[],
         )
-        self.solarcharge.set_median_data_state(MedianDataState.NOT_READY)
+        self.solarcharge.set_median_data_not_ready(self.solarcharge.net_allocations)
 
         _LOGGER.info(
             "%s: power_monitor_duration=%s seconds",

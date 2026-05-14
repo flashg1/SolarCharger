@@ -11,7 +11,6 @@ from ..const import (
     SENSOR_NET_ALLOCATED_POWER,
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_SMA_NET_ALLOCATED_POWER,
-    MedianDataState,
     RunState,
 )
 from .solar_charge_state import SolarChargeState
@@ -47,7 +46,7 @@ class StateTidyUp(SolarChargeState):
         # reset sensors
         self.solarcharge.update_sensor(SENSOR_NET_ALLOCATED_POWER, 0)
         self.solarcharge.update_sensor(SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE, 0)
-        self.solarcharge.set_median_data_state(MedianDataState.NOT_READY)
+        self.solarcharge.set_median_data_not_ready(self.solarcharge.net_allocations)
         self.solarcharge.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER, 0)
         self.solarcharge.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD, 0)
         self.solarcharge.update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, 0)

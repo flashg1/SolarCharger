@@ -198,13 +198,24 @@ class SolarCharge(ScOptionState):
         self.entities.sensors[config_item].set_state(value)
 
     # ----------------------------------------------------------------------------
-    def set_median_data_state(self, state: MedianDataState) -> None:
-        """Set the median data state of the object."""
+    def set_median_data_not_ready(self, data: MedianData) -> None:
+        """Set the median data set not ready."""
 
-        assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[
-            SENSOR_NET_ALLOCATED_POWER_DATA_SET
-        ].set_state(state.value)
+        data.data_set_ready = False
+        assert self.entities.sensors is not None
+        self.entities.sensors[SENSOR_NET_ALLOCATED_POWER_DATA_SET].set_state(
+            MedianDataState.NOT_READY.value
+        )
+
+    # ----------------------------------------------------------------------------
+    def set_median_data_ready(self, data: MedianData) -> None:
+        """Set the median data set ready."""
+
+        data.data_set_ready = True
+        assert self.entities.sensors is not None
+        self.entities.sensors[SENSOR_NET_ALLOCATED_POWER_DATA_SET].set_state(
+            MedianDataState.READY.value
+        )
 
     # ----------------------------------------------------------------------------
     def participate_in_real_power_allocation(self) -> None:
