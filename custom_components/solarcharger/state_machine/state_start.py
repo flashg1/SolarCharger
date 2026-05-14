@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.core import Event, EventStateChangedData
-from homeassistant.util.dt import as_local, utcnow
+from homeassistant.util.dt import as_local
 
 from ..config.config_utils import create_entity_ids_from_templates
 from ..const import (
@@ -22,7 +22,6 @@ from ..const import (
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
     SENSOR_NET_ALLOCATED_POWER,
-    SENSOR_NET_ALLOCATED_POWER_DATA_SET,
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     MedianDataState,
@@ -52,15 +51,6 @@ class StateStart(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     # Subscriptions
-    # ----------------------------------------------------------------------------
-    def _set_median_data_state(self, state: MedianDataState) -> None:
-        """Set the median data state of the object."""
-
-        assert self.solarcharge.entities.sensors is not None
-        self.solarcharge.entities.sensors[
-            SENSOR_NET_ALLOCATED_POWER_DATA_SET
-        ].set_state(state.value)
-
     # ----------------------------------------------------------------------------
     def _calculate_median_value(self, data: MedianData) -> None:
         """Calculate median value."""
@@ -131,7 +121,7 @@ class StateStart(SolarChargeState):
                 # Data set not ready.
                 if self._is_median_data_set_ready(data):
                     data.data_set_ready = True
-                    self._set_median_data_state(MedianDataState.READY)
+                    self.solarcharge.set_median_data_state(MedianDataState.READY)
                     # Only set max_sample_size here is it has never been set before.
                     if data.max_sample_size == -1:
                         data.max_sample_size = data.sample_size
@@ -156,7 +146,7 @@ class StateStart(SolarChargeState):
                 if not self._is_median_data_set_ready(data):
                     # Data sample size reducing due to no update.
                     data.data_set_ready = False
-                    self._set_median_data_state(MedianDataState.NOT_READY)
+                    self.solarcharge.set_median_data_state(MedianDataState.NOT_READY)
                     _LOGGER.warning(
                         "%s: Median data set not ready due to sample size reduced to %s from max sample size %s",
                         self.solarcharge.caller,
@@ -479,6 +469,7 @@ class StateStart(SolarChargeState):
             window_duration=timedelta(seconds=self.solarcharge.power_monitor_duration),
             sequence=[],
         )
+        self.solarcharge.set_median_data_state(MedianDataState.NOT_READY)
 
         _LOGGER.info(
             "%s: power_monitor_duration=%s seconds",

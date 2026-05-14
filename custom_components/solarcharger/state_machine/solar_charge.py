@@ -47,10 +47,12 @@ from ..const import (
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
+    SENSOR_NET_ALLOCATED_POWER_DATA_SET,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
     ChargeStatus,
+    MedianDataState,
     RunState,
 )
 from ..helpers.utils import log_is_event_loop
@@ -194,6 +196,15 @@ class SolarCharge(ScOptionState):
 
         assert self.entities.sensors is not None
         self.entities.sensors[config_item].set_state(value)
+
+    # ----------------------------------------------------------------------------
+    def set_median_data_state(self, state: MedianDataState) -> None:
+        """Set the median data state of the object."""
+
+        assert self.solarcharge.entities.sensors is not None
+        self.solarcharge.entities.sensors[
+            SENSOR_NET_ALLOCATED_POWER_DATA_SET
+        ].set_state(state.value)
 
     # ----------------------------------------------------------------------------
     def participate_in_real_power_allocation(self) -> None:

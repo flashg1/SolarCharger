@@ -4,6 +4,7 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.6.1 or prior.
 ### Improvement
+- Set MedianDataState.NOT_READY on startup and exit.
 - Replaced async_update_reload_and_abort() with async_update_and_abort() in config flow.
 - Changed to use last_updated_timestamp instead of last_changed_timestamp for update duration calculation.
 - Make it harder to enter pause state by also checking if current net_allocated_power has enough power.
