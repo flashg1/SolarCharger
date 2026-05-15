@@ -336,6 +336,43 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
+    async def _async_allocate_net_power(self) -> None:
+        """Execute an update cycle."""
+        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+
+        try:
+            await self._allocator.async_allocate_net_power()
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to allocate net power: %s",
+                self.caller,
+                e,
+            )
+
+    # ----------------------------------------------------------------------------
+    async def _async_synchronise_charge_current_update(self) -> None:
+        """Synchronise charge current update for all chargers."""
+
+        try:
+            # Coordinator has global defaults subentry
+            control = self.device_controls[self._subentry.subentry_id]
+
+            assert control.controller.charge_control.entities.sensors is not None
+            control.controller.charge_control.entities.sensors[
+                SENSOR_SYNC_UPDATE
+            ].set_state(datetime.now().astimezone())
+
+            self._sync_charge_current_time = utcnow().timestamp()
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to synchronise charge current update: %s",
+                self.caller,
+                e,
+            )
+
+    # ----------------------------------------------------------------------------
     # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
     # entity_id=number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power,
     #
@@ -355,12 +392,15 @@ class SolarChargerCoordinator(ScOptionState):
         new_state = data["new_state"]
 
         if new_state is not None:
-            # TODO: Check if ok to use last_changed_timestamp?
+            # Should use last_updated_timestamp instead of last_changed_timestamp since value might not have changed.
+            # last_updated_timestamp is updated when state is updated, while last_changed_timestamp is only updated when state changes.
             # duration_since_last_sync = (
-            #     new_state.last_changed_timestamp - self._sync_charge_current_time
+            #     new_state.last_updated_timestamp - self._sync_charge_current_time
             # )
+
+            # For adhering to current_update_period.
             duration_since_last_sync = (
-                new_state.last_updated_timestamp - self._sync_charge_current_time
+                utcnow().timestamp() - self._sync_charge_current_time
             )
 
             _LOGGER.debug(
@@ -373,11 +413,11 @@ class SolarChargerCoordinator(ScOptionState):
 
             try:
                 # Allocate power for median net allocated power calculation.
-                await self._async_allocate_net_power(utcnow())
+                await self._async_allocate_net_power()
 
                 # Synchronise charge current update for all chargers.
                 if duration_since_last_sync >= self._min_current_update_period:
-                    await self._async_synchronise_charge_current_update(utcnow())
+                    await self._async_synchronise_charge_current_update()
 
             except Exception as e:
                 _LOGGER.exception(
@@ -400,67 +440,6 @@ class SolarChargerCoordinator(ScOptionState):
     # Periodic functions
     # ----------------------------------------------------------------------------
     # @callback
-    async def _async_allocate_net_power(self, now: datetime) -> None:
-        """Execute an update cycle."""
-        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
-
-        try:
-            await self._allocator.async_allocate_net_power()
-
-        except Exception as e:
-            _LOGGER.exception(
-                "%s: Failed to allocate net power: %s",
-                self.caller,
-                e,
-            )
-
-    # ----------------------------------------------------------------------------
-    # def _start_periodic_power_allocation(self) -> None:
-    #     """Start periodic power allocation."""
-
-    #     subscription = async_track_time_interval(
-    #         self._hass,
-    #         self._async_allocate_net_power,
-    #         timedelta(seconds=self._wait_net_power_update),
-    #     )
-
-    #     self._unsub.append(subscription)
-
-    # ----------------------------------------------------------------------------
-    async def _async_synchronise_charge_current_update(self, now: datetime) -> None:
-        """Synchronise charge current update for all chargers."""
-
-        try:
-            # Coordinator has global defaults subentry
-            control = self.device_controls[self._subentry.subentry_id]
-
-            assert control.controller.charge_control.entities.sensors is not None
-            control.controller.charge_control.entities.sensors[
-                SENSOR_SYNC_UPDATE
-            ].set_state(datetime.now().astimezone())
-
-            self._sync_charge_current_time = utcnow().timestamp()
-
-        except Exception as e:
-            _LOGGER.exception(
-                "%s: Failed to synchronise charge current update: %s",
-                self.caller,
-                e,
-            )
-
-    # ----------------------------------------------------------------------------
-    # def _start_periodic_charge_current_update(self) -> None:
-    #     """Start periodic charge current update."""
-
-    #     subscription = async_track_time_interval(
-    #         self._hass,
-    #         self._async_synchronise_charge_current_update,
-    #         timedelta(seconds=self._current_update_period),
-    #     )
-
-    #     self._unsub.append(subscription)
-
-    # ----------------------------------------------------------------------------
     async def _async_periodic_maintenance(self, now: datetime) -> None:
         """Periodic maintenance."""
 
@@ -543,9 +522,6 @@ class SolarChargerCoordinator(ScOptionState):
         await self._tracker.async_setup()
 
         self._track_net_power_update()
-
-        # self._start_periodic_power_allocation()
-        # self._start_periodic_charge_current_update()
         self._start_periodic_maintenance()
 
         # Enable system config flow callbacks after completing local setup.
