@@ -202,6 +202,9 @@
             "consumed_power": {
                 "name": "Consumed power"
             },
+            "consumed_energy_today": {
+                "name": "Consumed energy today"
+            },
             "instance_count": {
                 "name": "Instance count"
             },

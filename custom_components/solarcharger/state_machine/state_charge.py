@@ -323,7 +323,6 @@ class StateCharge(SolarChargeState):
                 new_charge_current,
             )
             await self.solarcharge.async_set_charge_current(charger, new_charge_current)
-            self.solarcharge.charge_current_updatetime = utcnow().timestamp()
 
         # No need to update status here because it is now done at the main loop.
         # Power update here is not garanteed because HA will not send the same value

@@ -45,6 +45,7 @@ from ..const import (
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
     SENSOR_AVERAGE_PAUSE_DURATION,
+    SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
     SENSOR_NET_ALLOCATED_POWER_DATA_SET,
@@ -110,7 +111,8 @@ class SolarCharge(ScOptionState):
         self.running_goal: ScheduleData
 
         self.started_calibrate_max_charge_speed = False
-        self.charge_current_updatetime: float = 0  # UTC time
+        # self.update_timestamp: float = 0  # utcnow().timestamp()   # UTC time
+        self.charge_current_updatetime: datetime = datetime.min
         self.soc_updates: list[StateOfCharge] = []
 
         # Power monitor duration in seconds
@@ -443,12 +445,12 @@ class SolarCharge(ScOptionState):
     async def async_set_charge_current(self, charger: Charger, current: float) -> None:
         """Set charge current."""
 
-        config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
-        val_dict = ConfigValueDict(config_item, {})
-        can_set_current = True
-
         try:
-            # Get old charge current.
+            #####################################
+            # Get old charge current
+            #####################################
+            config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
+            val_dict = ConfigValueDict(config_item, {})
             old_charge_current = self.get_charge_current(charger, val_dict)
 
             # How do we know the status of charger on/off switch is up-to-date?
@@ -459,31 +461,65 @@ class SolarCharge(ScOptionState):
             # if not switched_on:
             #     current = 0
 
-            # Set new charge current.
+            #####################################
+            # Set new charge current
+            #####################################
             config_item = ENTITY_CHARGER_SET_CHARGE_CURRENT
             new_charge_current = await charger.async_set_charge_current(
                 current, val_dict
             )
+
+            can_set_current = True
             if val_dict.config_values[config_item].entity_id is None:
                 # So we can't set the current, ie. a resistive load.
                 new_charge_current = old_charge_current
                 can_set_current = False
 
-            effective_voltage = self.get_charger_effective_voltage()
-            if new_charge_current is not None:
-                assert self.entities.sensors is not None
-                self.entities.sensors[SENSOR_CONSUMED_POWER].set_state(
-                    new_charge_current * effective_voltage
+            #####################################
+            # Set current update time
+            #####################################
+            now_time = self.get_local_datetime()
+            old_charge_current_duration = (
+                timedelta.min
+                if self.charge_current_updatetime == datetime.min
+                else now_time - self.charge_current_updatetime
+            )
+            self.charge_current_updatetime = now_time
+
+            #####################################
+            # Set energy consumed since last current update
+            #####################################
+            assert self.entities.sensors is not None
+            old_consumed_power = self.entities.sensors[SENSOR_CONSUMED_POWER].state
+            if old_consumed_power > 0:
+                # Energy in kWh = Power in kW * time in hours
+                consumed_energy_last_period = (old_consumed_power / 1000) * (
+                    old_charge_current_duration.total_seconds() / 3600
+                )
+                consumed_energy_today = self.entities.sensors[
+                    SENSOR_CONSUMED_ENERGY_TODAY
+                ].state
+                consumed_energy_today += consumed_energy_last_period
+                self.entities.sensors[SENSOR_CONSUMED_ENERGY_TODAY].set_state(
+                    consumed_energy_today
                 )
 
-                if can_set_current:
-                    self.emit_solarcharger_event(
-                        self._device.id,
-                        EVENT_ACTION_NEW_CHARGE_CURRENT,
-                        new_charge_current,
-                        old_charge_current,
-                    )
-                    await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+            #####################################
+            # Set consumed power
+            #####################################
+            effective_voltage = self.get_charger_effective_voltage()
+            self.entities.sensors[SENSOR_CONSUMED_POWER].set_state(
+                new_charge_current * effective_voltage
+            )
+
+            if can_set_current:
+                self.emit_solarcharger_event(
+                    self._device.id,
+                    EVENT_ACTION_NEW_CHARGE_CURRENT,
+                    new_charge_current,
+                    old_charge_current,
+                )
+                await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(

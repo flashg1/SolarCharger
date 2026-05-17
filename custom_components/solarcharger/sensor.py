@@ -2,6 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
+import logging
 from typing import Any
 
 from homeassistant import config_entries, core
@@ -12,18 +13,29 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigSubentry
-from homeassistant.const import STATE_UNKNOWN, UnitOfPower, UnitOfTime
+from homeassistant.const import (
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+    UnitOfEnergy,
+    UnitOfPower,
+    UnitOfTime,
+)
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.event import async_track_time_change
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import StateType
 from homeassistant.util.dt import as_local
 
 from .const import (
     DOMAIN,
     MEDIAN_DATA_STATE_LIST,
+    RESTORE_ON_START_FALSE,
+    RESTORE_ON_START_TRUE,
     RUN_STATE_LIST,
     SENSOR,
     SENSOR_AVERAGE_PAUSE_DURATION,
+    SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
     SENSOR_DELTA_ALLOCATED_POWER,
     SENSOR_INSTANCE_COUNT,
@@ -45,10 +57,14 @@ from .const import (
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 from .modules.coordinator import SolarChargerCoordinator
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+_LOGGER = logging.getLogger(__name__)
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
+class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity, RestoreEntity):
     """SolarCharger sensor entity."""
 
     def __init__(
@@ -57,16 +73,23 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
+        starting_state: StateType | date | datetime | Decimal,
+        is_restore_state: bool,
     ) -> None:
         """Initialize the sensor."""
+
         SolarChargerEntity.__init__(self, config_item, subentry, entity_type)
+
         self.set_entity_id(SENSOR, config_item)
         self.set_entity_unique_id(SENSOR, config_item)
         self.entity_description = desc
+        self._starting_state = starting_state
+        self._is_restore_state = is_restore_state
 
     # ----------------------------------------------------------------------------
     def set_state(self, new_status):
         """Set new status."""
+
         self._attr_native_value = new_status
         self.update_ha_state()
 
@@ -77,11 +100,36 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity):
 
         await super().async_added_to_hass()
 
+        # Sensor starting state must not be None unless it is to be restored from history.
+        if self._is_restore_state:
+            if (
+                last_state := await self.async_get_last_state()
+            ) is not None and last_state.state not in (
+                STATE_UNKNOWN,
+                STATE_UNAVAILABLE,
+            ):
+                try:
+                    # Must keep type the same if entity is used in code for calculation or comparison.
+                    # Otherwise will cause runtime exception.
+                    self.set_state(type(self._starting_state)(last_state.state))
+
+                except ValueError, TypeError:
+                    _LOGGER.error(
+                        "Failed to restore state for %s. Setting to default %s.",
+                        self.entity_id,
+                        self._starting_state,
+                    )
+                    self.set_state(self._starting_state)
+            else:
+                self.set_state(self._starting_state)
+        else:
+            self.set_state(self._starting_state)
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 class SolarChargerSensorStateEntity(SolarChargerSensorEntity):
-    """Solar Charger last check sensor class."""
+    """Solar Charger state sensor class."""
 
     def __init__(
         self,
@@ -89,12 +137,57 @@ class SolarChargerSensorStateEntity(SolarChargerSensorEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
-        starting_state: StateType | date | datetime | Decimal = None,
+        starting_state: StateType | date | datetime | Decimal,
+        is_restore_state: bool,
     ) -> None:
         """Initialise sensor."""
-        super().__init__(config_item, subentry, entity_type, desc)
 
-        self._attr_native_value = starting_state
+        super().__init__(
+            config_item, subentry, entity_type, desc, starting_state, is_restore_state
+        )
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class SolarChargerSensorResetAtMidnightEntity(SolarChargerSensorEntity):
+    """Solar Charger reset at midnight sensor class."""
+
+    def __init__(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
+        desc: SensorEntityDescription,
+        starting_state: StateType | date | datetime | Decimal,
+        is_restore_state: bool,
+    ) -> None:
+        """Initialise sensor."""
+
+        super().__init__(
+            config_item, subentry, entity_type, desc, starting_state, is_restore_state
+        )
+
+    # ----------------------------------------------------------------------------
+    async def async_added_to_hass(self) -> None:
+        """Run when entity about to be added to hass."""
+
+        await super().async_added_to_hass()
+
+        # Register a listener to call _async_midnight_reset exactly at 00:00:00.
+        self.async_on_remove(
+            async_track_time_change(
+                self.hass, self._async_midnight_reset, hour=0, minute=0, second=0
+            )
+        )
+
+    # ----------------------------------------------------------------------------
+    async def _async_midnight_reset(self, now_time: datetime) -> None:
+        """Reset value to starting state at midnight. Confirmed now_time is in local time."""
+
+        _LOGGER.debug(
+            "Resetting %s to %s at %s.", self.entity_id, self._starting_state, now_time
+        )
+        self.set_state(self._starting_state)
 
 
 # ----------------------------------------------------------------------------
@@ -112,12 +205,14 @@ class SolarChargerSensorLastCheck(SolarChargerSensorEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: SensorEntityDescription,
-        starting_state: StateType | date | datetime | Decimal = None,
+        starting_state: StateType | date | datetime | Decimal,
+        is_restore_state: bool,
     ) -> None:
         """Initialise sensor."""
-        super().__init__(config_item, subentry, entity_type, desc)
 
-        self._attr_native_value = starting_state
+        super().__init__(
+            config_item, subentry, entity_type, desc, starting_state, is_restore_state
+        )
 
 
 # ----------------------------------------------------------------------------
@@ -129,6 +224,7 @@ CONFIG_SENSOR_LIST: tuple[
         SolarChargerEntityType,
         SensorEntityDescription,
         StateType | date | datetime | Decimal,
+        bool,
     ],
     ...,
 ] = (
@@ -145,7 +241,8 @@ CONFIG_SENSOR_LIST: tuple[
             device_class=SensorDeviceClass.ENUM,
             options=RUN_STATE_LIST,
         ),
-        RunState.ENDED.value,
+        RunState.ENDED.value,  # str
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_DELTA_ALLOCATED_POWER,
@@ -160,7 +257,8 @@ CONFIG_SENSOR_LIST: tuple[
             # Always force update when setting value even if value is same.
             force_update=True,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_NET_ALLOCATED_POWER,
@@ -173,7 +271,8 @@ CONFIG_SENSOR_LIST: tuple[
             suggested_display_precision=0,
             state_class=SensorStateClass.MEASUREMENT,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
@@ -184,7 +283,8 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0,  # int
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_NET_ALLOCATED_POWER_DATA_SET,
@@ -196,7 +296,8 @@ CONFIG_SENSOR_LIST: tuple[
             options=MEDIAN_DATA_STATE_LIST,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        MedianDataState.NOT_READY.value,
+        MedianDataState.NOT_READY.value,  # str
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_MEDIAN_NET_ALLOCATED_POWER,
@@ -210,7 +311,8 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
@@ -224,7 +326,8 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_SMA_NET_ALLOCATED_POWER,
@@ -238,7 +341,8 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.MEASUREMENT,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_CONSUMED_POWER,
@@ -251,7 +355,22 @@ CONFIG_SENSOR_LIST: tuple[
             suggested_display_precision=0,
             state_class=SensorStateClass.MEASUREMENT,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
+    ),
+    (
+        SENSOR_CONSUMED_ENERGY_TODAY,
+        SolarChargerSensorResetAtMidnightEntity,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SensorEntityDescription(
+            key=SENSOR_CONSUMED_ENERGY_TODAY,
+            device_class=SensorDeviceClass.ENERGY,
+            native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+            suggested_display_precision=3,
+            state_class=SensorStateClass.TOTAL,
+        ),
+        0.0,  # float
+        RESTORE_ON_START_TRUE,
     ),
     (
         SENSOR_SYNC_UPDATE,
@@ -261,7 +380,8 @@ CONFIG_SENSOR_LIST: tuple[
             key=SENSOR_SYNC_UPDATE,
             device_class=SensorDeviceClass.TIMESTAMP,
         ),
-        as_local(datetime.now()),
+        as_local(datetime.now()),  # datetime
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_LAST_CHECK,
@@ -270,8 +390,8 @@ CONFIG_SENSOR_LIST: tuple[
         SensorEntityDescription(
             key=SENSOR_LAST_CHECK,
         ),
-        STATE_UNKNOWN,
-        # as_local(datetime.now()),
+        as_local(datetime.now()),  # datetime
+        RESTORE_ON_START_FALSE,
     ),
     #####################################
     # Diagnostic entities
@@ -286,7 +406,8 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0,  # int
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_SHARE_ALLOCATION,
@@ -297,7 +418,8 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0,  # int
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_PAUSE_COUNT,
@@ -308,7 +430,8 @@ CONFIG_SENSOR_LIST: tuple[
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0,  # int
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_AVERAGE_PAUSE_DURATION,
@@ -321,7 +444,8 @@ CONFIG_SENSOR_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.MINUTES,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
     ),
     (
         SENSOR_LAST_PAUSE_DURATION,
@@ -334,7 +458,8 @@ CONFIG_SENSOR_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.MINUTES,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
-        0,
+        0.0,  # float
+        RESTORE_ON_START_FALSE,
     ),
 )
 
@@ -362,6 +487,7 @@ async def async_setup_entry(
             entity_type,
             entity_description,
             starting_state,
+            is_restore_state,
         ) in CONFIG_SENSOR_LIST:
             if is_create_entity(subentry, entity_type):
                 sensors[config_item] = cls(
@@ -370,6 +496,7 @@ async def async_setup_entry(
                     entity_type,
                     entity_description,
                     starting_state,
+                    is_restore_state,
                 )
 
         if len(sensors) > 0:
@@ -381,6 +508,3 @@ async def async_setup_entry(
                 update_before_add=False,
                 config_subentry_id=subentry.subentry_id,
             )
-            # await coordinator.init_sensors(
-            #     coordinator.charge_controls[subentry.subentry_id]
-            # )

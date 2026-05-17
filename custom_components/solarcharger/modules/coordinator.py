@@ -398,6 +398,7 @@ class SolarChargerCoordinator(ScOptionState):
             #     new_state.last_updated_timestamp - self._sync_charge_current_time
             # )
 
+            # Note that last_updated_timestamp and last_changed_timestamp are in UTC.
             # For adhering to current_update_period.
             duration_since_last_sync = (
                 utcnow().timestamp() - self._sync_charge_current_time

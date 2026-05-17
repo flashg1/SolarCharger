@@ -175,6 +175,7 @@ SENSOR_DELTA_ALLOCATED_POWER = "delta_allocated_power"
 SENSOR_NET_ALLOCATED_POWER = "net_allocated_power"
 
 SENSOR_CONSUMED_POWER = "consumed_power"
+SENSOR_CONSUMED_ENERGY_TODAY = "consumed_energy_today"
 SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
 SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
 # Pause count per session

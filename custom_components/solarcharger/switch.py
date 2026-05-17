@@ -53,7 +53,7 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: SwitchEntityDescription,
-        coordinator: "SolarChargerCoordinator",
+        coordinator: SolarChargerCoordinator,
         default_val: bool,
         is_restore_state: bool,
         action: SWITCH_ACTION_TYPE,
@@ -124,7 +124,7 @@ class SolarChargerSwitchActionEntity(SolarChargerSwitchEntity):
         subentry: ConfigSubentry,
         entity_type: SolarChargerEntityType,
         desc: SwitchEntityDescription,
-        coordinator: "SolarChargerCoordinator",
+        coordinator: SolarChargerCoordinator,
         default_val: bool,
         is_restore_state: bool,
         action: SWITCH_ACTION_TYPE,
@@ -173,7 +173,7 @@ async def async_setup_entry(
     # async_add_entities: Callable,
 ) -> None:
     """Set up buttons based on config entry."""
-    coordinator: "SolarChargerCoordinator" = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     CONFIG_SWITCH_LIST: tuple[
         tuple[
