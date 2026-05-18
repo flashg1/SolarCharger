@@ -8,6 +8,7 @@ from typing import Any
 from homeassistant.core import Event, EventStateChangedData
 from homeassistant.util.dt import as_local
 
+from ..chargers.charger import Charger
 from ..config.config_utils import create_entity_ids_from_templates
 from ..const import (
     CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
@@ -15,7 +16,6 @@ from ..const import (
     CONFIG_LOCAL_OPTION_LIST,
     CONFIG_NET_POWER_SENSOR,
     DELTA_POWER_MONITOR_DURATION,
-    NUMBER_POWER_MONITOR_DURATION,
     OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
     SENSOR_CONSUMED_POWER,
@@ -457,9 +457,7 @@ class StateStart(SolarChargeState):
     def _init_power_monitor_window(self) -> None:
         """Initialize power monitor window."""
 
-        monitor_duration = self.solarcharge.option_get_entity_number_or_abort(
-            NUMBER_POWER_MONITOR_DURATION
-        )
+        monitor_duration = self.solarcharge.get_power_monitor_duration()
         self.solarcharge.power_monitor_duration = monitor_duration * 60
         self.solarcharge.net_allocations = MedianData(
             window_seconds=self.solarcharge.power_monitor_duration,
@@ -493,7 +491,7 @@ class StateStart(SolarChargeState):
         #         )
 
     # ----------------------------------------------------------------------------
-    def _init_instance_variables(self) -> None:
+    def _init_instance_variables(self, charger: Charger) -> None:
         """Set up instance variables once per session."""
 
         # Must run this first thing to estimate if session started by timer
@@ -503,16 +501,19 @@ class StateStart(SolarChargeState):
         )
         self.solarcharge.started_max_charge = 0
         self.solarcharge.started_calibrate_max_charge_speed = False
+        self.solarcharge.can_set_current = self.solarcharge.can_set_charge_current(
+            charger
+        )
 
         # Init power monitor window
         self._init_power_monitor_window()
 
     # ----------------------------------------------------------------------------
-    async def _async_start_session(self) -> None:
+    async def _async_start_session(self, charger: Charger) -> None:
         """Start the charging session."""
 
         # Init instance variables
-        self._init_instance_variables()
+        self._init_instance_variables(charger)
 
         # Init stats
         self.solarcharge.stats = ChargeStats()
@@ -529,6 +530,6 @@ class StateStart(SolarChargeState):
 
         self.solarcharge.set_run_state(self.state)
 
-        await self._async_start_session()
+        await self._async_start_session(self.solarcharge.charger)
 
         self.solarcharge.set_machine_state(StateInitialise())

@@ -82,6 +82,12 @@ class OcppCharger(ChargerChargeableBase):
         return any(id_domain == DOMAIN_OCPP for id_domain, _ in device.identifiers)
 
     # ----------------------------------------------------------------------------
+    def can_set_charge_current(self) -> bool:
+        """Check if charger has ability to set charge current."""
+
+        return True
+
+    # ----------------------------------------------------------------------------
     # 2025-11-03 11:53:39.370 INFO (MainThread) [ocpp] sn123456789: send [2,"3cf0a97a-6bd3-4ecd-b914-c9a57ec0b3be","GetConfiguration",{"key":["ChargeProfileMaxStackLevel"]}]
     # 2025-11-03 11:53:39.376 INFO (MainThread) [ocpp] sn123456789: receive message [3,"3cf0a97a-6bd3-4ecd-b914-c9a57ec0b3be",
     # {"configurationKey":[{"key":"ChargeProfileMaxStackLevel","readonly":true,"value":"20"}]}]

@@ -16,6 +16,7 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfEnergy,
     UnitOfTime,
 )
 from homeassistant.helpers.entity import EntityCategory
@@ -50,6 +51,7 @@ from .const import (
     NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_MAX_CONSUMED_ENERGY,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_POWER_MONITOR_DURATION,
@@ -214,6 +216,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
             native_min_value=0.0,
             native_max_value=100.0,
+            native_step=0.01,
         ),
     ),
     #####################################
@@ -231,6 +234,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement="%/hr",
             native_min_value=0.0,
             native_max_value=100.0,
+            native_step=0.001,
         ),
     ),
     (
@@ -243,6 +247,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
             native_min_value=0.0,
             native_max_value=100.0,
+            native_step=0.01,
         ),
     ),
     (
@@ -255,6 +260,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
             native_min_value=0.0,
             native_max_value=100.0,
+            native_step=0.01,
         ),
     ),
     # Control entity
@@ -273,8 +279,22 @@ CONFIG_NUMBER_LIST: tuple[
         SolarChargerEntityType.TYPE_LOCAL,
         NumberEntityDescription(
             key=NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+            native_min_value=0,
+            native_max_value=100,
+            native_step=1,
+        ),
+    ),
+    (
+        NUMBER_MAX_CONSUMED_ENERGY,
+        SolarChargerEntityType.TYPE_LOCAL,
+        NumberEntityDescription(
+            key=NUMBER_MAX_CONSUMED_ENERGY,
+            entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.ENERGY,
+            native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
             native_min_value=0.0,
             native_max_value=100.0,
+            native_step=0.001,
         ),
     ),
     #####################################
@@ -293,6 +313,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfElectricPotential.VOLT,
             native_min_value=100.0,
             native_max_value=700.0,
+            native_step=0.01,
             # native_step=1.0,
             # mode=NumberMode.BOX,
             # entity_registry_enabled_default=True,
@@ -307,6 +328,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=DEGREE,
             native_min_value=-90.0,
             native_max_value=+90.0,
+            native_step=0.01,
         ),
     ),
     (
@@ -318,6 +340,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=DEGREE,
             native_min_value=-90.0,
             native_max_value=+90.0,
+            native_step=0.01,
         ),
     ),
     (
@@ -330,6 +353,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+            native_step=0.1,
         ),
     ),
     (
@@ -342,6 +366,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+            native_step=0.1,
         ),
     ),
     (
@@ -354,6 +379,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+            native_step=0.1,
         ),
     ),
     (
@@ -366,6 +392,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+            native_step=0.1,
         ),
     ),
     (
@@ -378,6 +405,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+            native_step=0.1,
         ),
     ),
     (
@@ -390,6 +418,7 @@ CONFIG_NUMBER_LIST: tuple[
             native_unit_of_measurement=UnitOfTime.SECONDS,
             native_min_value=1.0,
             native_max_value=600.0,
+            native_step=0.1,
         ),
     ),
     #####################################
@@ -403,8 +432,9 @@ CONFIG_NUMBER_LIST: tuple[
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.DURATION,
             native_unit_of_measurement=UnitOfTime.MINUTES,
-            native_min_value=0,
-            native_max_value=60,
+            native_min_value=0.0,
+            native_max_value=60.0,
+            native_step=0.01,
         ),
     ),
     (

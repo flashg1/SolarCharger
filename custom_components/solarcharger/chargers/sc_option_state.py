@@ -2,7 +2,7 @@
 """SolarCharger entity state using config from config_entry.options and config_subentry."""
 
 import asyncio
-from datetime import time
+from datetime import datetime, time
 import json
 import logging
 from typing import Any
@@ -17,6 +17,7 @@ from ..const import (
     CONFIG_NAME_GLOBAL_DEFAULTS,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
+    ENTITY_CHARGER_SET_CHARGE_CURRENT,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -25,16 +26,25 @@ from ..const import (
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
+    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_PRIORITY,
+    NUMBER_MAX_CONSUMED_ENERGY,
+    NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SENSOR,
+    SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_SYNC_UPDATE,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_CHARGE,
+    SWITCH_END_ON_MAX_CONSUMED_ENERGY,
     SWITCH_FAST_CHARGE_MODE,
+    SWITCH_PAUSE_ON_START,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_PRESENCE_TRIGGER,
@@ -93,6 +103,13 @@ class ScOptionState(ScConfigState):
         )
 
     @cached_property
+    def consumed_energy_today_entity_id(self) -> str:
+        """Return the consumed energy today entity ID."""
+        return compose_entity_id(
+            SENSOR, self._subentry.unique_id, SENSOR_CONSUMED_ENERGY_TODAY
+        )
+
+    @cached_property
     def next_charge_time_trigger_entity_id(self) -> str:
         """Return the next charge time trigger entity ID."""
         return compose_entity_id(
@@ -111,6 +128,20 @@ class ScOptionState(ScConfigState):
         """Return the poll charger update switch entity ID."""
         return compose_entity_id(
             SWITCH, self._subentry.unique_id, SWITCH_POLL_CHARGER_UPDATE
+        )
+
+    @cached_property
+    def end_on_max_consumed_energy_switch_entity_id(self) -> str:
+        """Return the end on max consumed energy switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_END_ON_MAX_CONSUMED_ENERGY
+        )
+
+    @cached_property
+    def pause_on_start_switch_entity_id(self) -> str:
+        """Return the pause on start switch entity ID."""
+        return compose_entity_id(
+            SWITCH, self._subentry.unique_id, SWITCH_PAUSE_ON_START
         )
 
     @cached_property
@@ -598,20 +629,6 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # Global or local defaults, with local defaults taking priority over global defaults.
     # ----------------------------------------------------------------------------
-    def is_reduce_charge_limit_difference_between_days(self) -> bool:
-        """Return True if reduce charge limit difference between days is enabled."""
-
-        return self.option_get_entity_boolean_or_abort(
-            SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE
-        )
-
-    # ----------------------------------------------------------------------------
-    def get_min_charge_limit(self) -> float:
-        """Get minimum charge limit."""
-
-        return self.option_get_entity_number_or_abort(NUMBER_CHARGEE_MIN_CHARGE_LIMIT)
-
-    # ----------------------------------------------------------------------------
     def is_sun_above_start_end_elevation_triggers(self) -> tuple[bool, float]:
         """Is sun above start and end elevation triggers?"""
 
@@ -715,13 +732,81 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # Global default entities
     # ----------------------------------------------------------------------------
-    def get_last_sync_charge_current_time(self) -> float:
+    def get_last_sync_charge_current_time(self) -> datetime | None:
         """Get last sync charge current time."""
 
         return self.get_datetime(self.sync_update_entity_id)
 
     # ----------------------------------------------------------------------------
+    def get_min_charge_limit(self) -> float:
+        """Get minimum charge limit."""
+
+        return self.option_get_entity_number_or_abort(NUMBER_CHARGEE_MIN_CHARGE_LIMIT)
+
+    # ----------------------------------------------------------------------------
+    def get_power_monitor_duration(self) -> float:
+        """Get power monitor duration."""
+
+        return self.option_get_entity_number_or_abort(NUMBER_POWER_MONITOR_DURATION)
+
+    # ----------------------------------------------------------------------------
+    def get_charger_min_workable_current_exit_pause_percent(self) -> float:
+        """Get charger minimum workable current extra percentage required to exit pause."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT
+        )
+
+    # ----------------------------------------------------------------------------
+    def is_reduce_charge_limit_difference_between_days(self) -> bool:
+        """Return True if reduce charge limit difference between days is enabled."""
+
+        return self.option_get_entity_boolean_or_abort(
+            SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE
+        )
+
+    # ----------------------------------------------------------------------------
     # Local device control entities
+    # ----------------------------------------------------------------------------
+    def get_charger_priority(self) -> int:
+        """Get charger priority."""
+
+        return self.option_get_entity_integer_or_abort(NUMBER_CHARGER_PRIORITY)
+
+    # ----------------------------------------------------------------------------
+    def get_charger_power_allocation_weight(self) -> float:
+        """Get charger power allocation weight."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
+        )
+
+    # ----------------------------------------------------------------------------
+    def get_max_consumed_energy_limit(self) -> float:
+        """Get maximum consumed energy limit."""
+
+        return self.option_get_entity_number_or_abort(NUMBER_MAX_CONSUMED_ENERGY)
+
+    # ----------------------------------------------------------------------------
+    def get_consumed_energy_today(self) -> float:
+        """Get consumed energy today."""
+
+        consumed_energy = self.get_number(self.consumed_energy_today_entity_id)
+        if consumed_energy is None:
+            consumed_energy = 0.0
+
+        return consumed_energy
+
+    # ----------------------------------------------------------------------------
+    def get_charger_min_workable_current(self) -> float:
+        """Get charger minimum workable current."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_MIN_WORKABLE_CURRENT
+        )
+
+    # ----------------------------------------------------------------------------
+    # Internal non-configurable entities.
     # ----------------------------------------------------------------------------
     def is_fast_charge_mode(self) -> bool:
         """Is fast charge mode on?"""
@@ -731,6 +816,18 @@ class ScOptionState(ScConfigState):
     def is_poll_charger_update(self) -> bool:
         """Is poll charger update on?"""
         return self.get_boolean_or_abort(self.poll_charger_update_switch_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def is_end_on_max_consumed_energy(self) -> bool:
+        """Is end on max consumed energy on?"""
+        return self.get_boolean_or_abort(
+            self.end_on_max_consumed_energy_switch_entity_id
+        )
+
+    # ----------------------------------------------------------------------------
+    def is_pause_on_start(self) -> bool:
+        """Is pause on start on?"""
+        return self.get_boolean_or_abort(self.pause_on_start_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_schedule_charge(self) -> bool:

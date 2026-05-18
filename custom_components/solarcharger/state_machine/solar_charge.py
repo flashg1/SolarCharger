@@ -29,15 +29,10 @@ from ..const import (
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     ENTITY_CHARGER_ON_OFF_SWITCH,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
-    ENTITY_CHARGER_SET_CHARGE_CURRENT,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     MAX_CONSECUTIVE_FAILURE_COUNT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MIN_CURRENT,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
-    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
-    NUMBER_CHARGER_PRIORITY,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
@@ -110,6 +105,7 @@ class SolarCharge(ScOptionState):
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
 
+        self.can_set_current = False
         self.started_calibrate_max_charge_speed = False
         # self.update_timestamp: float = 0  # utcnow().timestamp()   # UTC time
         self.charge_current_updatetime: datetime = datetime.min
@@ -236,20 +232,6 @@ class SolarCharge(ScOptionState):
         """Wait before looping again."""
 
         await asyncio.sleep(self.charge_current_update_period)
-
-    # ----------------------------------------------------------------------------
-    def get_charger_priority(self) -> int:
-        """Get charger priority."""
-
-        return self.option_get_entity_integer_or_abort(NUMBER_CHARGER_PRIORITY)
-
-    # ----------------------------------------------------------------------------
-    def get_charger_power_allocation_weight(self) -> float:
-        """Get charger power allocation weight."""
-
-        return self.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
-        )
 
     # ----------------------------------------------------------------------------
     # Local utils
@@ -397,22 +379,6 @@ class SolarCharge(ScOptionState):
         return charger_max_current
 
     # ----------------------------------------------------------------------------
-    def get_charger_min_workable_current(self) -> float:
-        """Get charger minimum workable current."""
-
-        return self.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_MIN_WORKABLE_CURRENT
-        )
-
-    # ----------------------------------------------------------------------------
-    def get_charger_min_workable_current_exit_pause_percent(self) -> float:
-        """Get charger minimum workable current extra percentage required to exit pause."""
-
-        return self.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT
-        )
-
-    # ----------------------------------------------------------------------------
     def get_charger_effective_voltage(self) -> float:
         """Get charger effective voltage."""
 
@@ -442,6 +408,12 @@ class SolarCharge(ScOptionState):
         return charge_current
 
     # ----------------------------------------------------------------------------
+    def can_set_charge_current(self, charger: Charger) -> bool:
+        """Check if charger has ability to set charge current."""
+
+        return charger.can_set_charge_current()
+
+    # ----------------------------------------------------------------------------
     async def async_set_charge_current(self, charger: Charger, current: float) -> None:
         """Set charge current."""
 
@@ -464,16 +436,21 @@ class SolarCharge(ScOptionState):
             #####################################
             # Set new charge current
             #####################################
-            config_item = ENTITY_CHARGER_SET_CHARGE_CURRENT
-            new_charge_current = await charger.async_set_charge_current(
-                current, val_dict
-            )
-
-            can_set_current = True
-            if val_dict.config_values[config_item].entity_id is None:
+            if self.can_set_current:
+                # config_item = ENTITY_CHARGER_SET_CHARGE_CURRENT
+                # new_charge_current = await charger.async_set_charge_current(
+                #     current, val_dict
+                # )
+                new_charge_current = await charger.async_set_charge_current(current)
+            else:
                 # So we can't set the current, ie. a resistive load.
                 new_charge_current = old_charge_current
-                can_set_current = False
+
+            # can_set_current = True
+            # if val_dict.config_values[config_item].entity_id is None:
+            #     # So we can't set the current, ie. a resistive load.
+            #     new_charge_current = old_charge_current
+            #     can_set_current = False
 
             #####################################
             # Set current update time
@@ -512,7 +489,7 @@ class SolarCharge(ScOptionState):
                 new_charge_current * effective_voltage
             )
 
-            if can_set_current:
+            if self.can_set_current:
                 self.emit_solarcharger_event(
                     self._device.id,
                     EVENT_ACTION_NEW_CHARGE_CURRENT,
@@ -649,8 +626,9 @@ class SolarCharge(ScOptionState):
             min_current = self.get_charger_min_current(max_current)
 
             if (
-                # Time-based min current using template helper.
-                min_current == max_current
+                # Time-based min current using template helper, and device can set currrent.
+                # If device cannot set current, then min_current will always be same as max_current.
+                (min_current == max_current and self.can_set_current)
                 # Note running goal is updated in both charging and paused states.
                 or (
                     self.running_goal.has_charge_endtime
@@ -736,12 +714,15 @@ class SolarCharge(ScOptionState):
 
             if run_state == RunState.PAUSED:
                 # For exiting out of paused state.
-                # Make it harder to exit pause state by raising the requirement to exit pause state.
-                # Raise the bar by extra_percent to avoid borderline cases where the charger might keep switching on and off.
-                extra_percent = (
-                    self.get_charger_min_workable_current_exit_pause_percent()
-                )
-                min_workable_power *= (100 + extra_percent) / 100
+                # Do not raise the bar if device cannot set current since allocated power is already at max power.
+                if self.can_set_current:
+                    # Make it harder to exit pause state by raising the requirement to exit pause state.
+                    # Raise the bar by extra_percent to avoid borderline cases where the charger might keep switching on and off.
+                    extra_percent = (
+                        self.get_charger_min_workable_current_exit_pause_percent()
+                    )
+                    min_workable_power *= (100 + extra_percent) / 100
+
                 # Note surplus power is negative.
                 is_enough_power = median_net_allocated_power <= min_workable_power
             else:
@@ -782,6 +763,7 @@ class SolarCharge(ScOptionState):
         continue_charge = (
             context.is_connected
             and context.is_below_charge_limit
+            and not context.goal.reached_max_consumed_energy
             and (context.stats.loop_success_count == 0 or context.is_charging)
             and (
                 not context.is_sun_trigger  # Sun trigger off, continue.

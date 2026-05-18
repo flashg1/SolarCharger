@@ -4,6 +4,9 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.6.1 or prior.
 ### Improvement
+- Refactored allocator for fairer plan allocations for paused chargers.
+- Added "Pause on start" switch to monitor available solar for devices uses a lot of energy on start up, eg. hot water.
+- Added "Max consumed energy" limit and "End on max consumed energy" switch to end charge on reaching max consumed energy.
 - Added sensor "Consumed energy today".
 - Use utcnow instead of new_state.last_updated_timestamp to determine if reaching current_update_period.
 - Set MedianDataState.NOT_READY on startup and exit.

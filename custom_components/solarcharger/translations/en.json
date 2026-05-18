@@ -130,6 +130,7 @@
                     "charger_priority": "Charger priority (0 = highest priority)",
                     "charger_power_allocation_weight": "Charger power allocation weight (allocation=net power*weight/total weight)",
                     "delta_allocated_power": "Delta allocated power sensor (W)",
+                    "max_consumed_energy": "Max consumed energy (kWh)",
                     "chargee_min_charge_limit": "Device min charge limit (%)",
                     "chargee_max_charge_limit": "Device max charge limit (%)",
                     "charger_name": "Charger name (single space to clear)",
@@ -242,6 +243,12 @@
             "poll_charger_update": {
                 "name": "Poll charger update"
             },
+            "end_on_max_consumed_energy": {
+                "name": "End on max consumed energy"
+            },
+            "pause_on_start": {
+                "name": "Pause on start"
+            },
             "schedule_charge": {
                 "name": "Schedule charge"
             },
@@ -290,6 +297,9 @@
             },
             "charger_power_allocation_weight": {
                 "name": "Power allocation weight"
+            },
+            "max_consumed_energy": {
+                "name": "Max consumed energy"
             },
             "chargee_min_charge_limit": {
                 "name": "Min charge limit"

@@ -38,11 +38,6 @@ class DeltaPowerAllocation:
     # Resulting lack power after allocation.
     lack_power: float = 0
 
-    # Planned allocation as if all chargers are not paused.
-    # plan_power is used by paused chargers to determine when to exit paused state.
-    plan_weight: float = 0
-    plan_power: float = 0
-
     # Final allocation with 0 share for paused chargers.
     # final_power is used by running chargers to adjust current.
     allocation_final_weight: float = 0  # Use this weight for allocation.
@@ -61,8 +56,6 @@ class DeltaPowerAllocation:
             f"share_allocation={self.share_allocation}, "
             f"need_power={self.need_power}, "
             f"lack_power={self.lack_power}, "
-            f"plan_weight={self.plan_weight}, "
-            f"plan_power={self.plan_power}, "
             f"allocation_final_weight={self.allocation_final_weight}, "
             f"deallocation_final_weight={self.deallocation_final_weight}, "
             f"final_power={self.final_power}"
@@ -88,7 +81,6 @@ class AllocationGroup:
     # -ve/+ve, total lack power after allocation.
     total_lack_power: float = 0
 
-    total_plan_weight: float = 0
     # Total allocation weight excluding paused chargers and chargers at max power.
     total_allocation_final_weight: float = 0
     # Total deallocation weight excluding paused chargers and chargers at zero power.
@@ -105,8 +97,38 @@ class AllocationGroup:
             f"total_consumed_power={self.total_consumed_power}, "
             f"total_need_power={self.total_need_power}, "
             f"total_lack_power={self.total_lack_power}, "
-            f"total_plan_weight={self.total_plan_weight}, "
             f"total_allocation_final_weight={self.total_allocation_final_weight}, "
             f"total_deallocation_final_weight={self.total_deallocation_final_weight}, "
             f"total_instance={self.total_instance}"
+        )
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+@dataclass
+class AllocationBook:
+    """Power allocation book."""
+
+    # Real allocation for running non-paused chargers.
+    real_allocation_map: dict[int, AllocationGroup]
+
+    # Plan allocation as if all running chargers are not paused.
+    # Plan power is used by paused chargers to determine when to exit paused state.
+    plan_allocation_map: dict[int, AllocationGroup]
+
+    # Latest net power update. -ve value means excess power, +ve value means power shortage.
+    net_power: float = 0.0
+
+    total_instance: int = 0
+    total_consumed_power: float = 0.0
+    total_power: float = 0.0
+
+    # ----------------------------------------------------------------------------
+    def __repr__(self) -> str:
+        """Return string representation of AllocationBook."""
+        return (
+            f"net_power={self.net_power}, "
+            f"total_instance={self.total_instance}, "
+            f"total_consumed_power={self.total_consumed_power}, "
+            f"total_power={self.total_power}"
         )

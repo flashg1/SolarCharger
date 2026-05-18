@@ -7,6 +7,7 @@ from ..chargers.chargeable import Chargeable
 from ..const import RunState
 from .solar_charge_state import SolarChargeState
 from .state_charge import StateCharge
+from .state_pause import StatePause
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -45,4 +46,10 @@ class StateInitialise(SolarChargeState):
 
         await self._async_init_device(self.solarcharge.chargeable)
 
-        self.solarcharge.set_machine_state(StateCharge())
+        if (
+            self.solarcharge.is_pause_on_start()
+            and self.solarcharge.stats.pause_total_count == 0
+        ):
+            self.solarcharge.set_machine_state(StatePause())
+        else:
+            self.solarcharge.set_machine_state(StateCharge())

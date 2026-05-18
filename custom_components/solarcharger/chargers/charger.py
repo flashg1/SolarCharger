@@ -87,6 +87,10 @@ class Charger(ABC):
         """Get charger charge current in AMPS."""
 
     @abstractmethod
+    def can_set_charge_current(self) -> bool:
+        """Check if charger has ability to set charge current."""
+
+    @abstractmethod
     async def async_set_charge_current(
         self, charge_current: float, val_dict: ConfigValueDict | None = None
     ) -> float:

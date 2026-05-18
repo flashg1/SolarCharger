@@ -337,6 +337,14 @@ class ChargeScheduler(ScOptionState):
             self.is_sun_above_start_end_elevation_triggers()
         )
 
+        goal.max_consumed_energy = self.get_max_consumed_energy_limit()
+        goal.consumed_energy = self.get_consumed_energy_today()
+        if (
+            self.is_end_on_max_consumed_energy()
+            and goal.consumed_energy >= goal.max_consumed_energy
+        ):
+            goal.reached_max_consumed_energy = True
+
         #####################################
         # Good place to throws exception in the charging loop if device is not ready and will try again in the next loop.
         # All devices have charge limit entity, either from device itself or created by SolarCharger.
@@ -345,9 +353,6 @@ class ChargeScheduler(ScOptionState):
         #####################################
         goal.old_charge_limit = self._get_charge_limit_or_abort(chargeable)
         goal.new_charge_limit = goal.old_charge_limit
-
-        # sun_state = self.get_sun_state_or_abort()
-        # goal.sun_elevation = get_sun_elevation(self.caller, sun_state)
 
         # Normal schedule
         if self.is_schedule_charge():

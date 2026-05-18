@@ -43,6 +43,7 @@ class ContextData:
     #####################################
     is_connected: bool = False
     is_below_charge_limit: bool = False
+    is_below_energy_limit: bool = False
     is_charging: bool = False
     charging_status: Any = ""
     is_sun_trigger: bool = False
@@ -63,6 +64,7 @@ class ContextData:
             f"net_allocated_power={0 if self.net_allocations.last_data_point is None else self.net_allocations.last_data_point.value}, "
             f"is_connected={self.is_connected}, "
             f"is_below_charge_limit={self.is_below_charge_limit} ({self.goal.battery_soc}/{self.goal.new_charge_limit}), "
+            f"reached_max_consumed_energy={self.goal.reached_max_consumed_energy} ({self.goal.consumed_energy}/{self.goal.max_consumed_energy}), "
             f"is_charging={self.is_charging} ({self.charging_status}), "
             f"is_sun_trigger={self.is_sun_trigger}, "
             f"is_sun_above_start_end_elevations={self.goal.sun_above_start_end_elevations} ({self.goal.sun_elevation}), "
