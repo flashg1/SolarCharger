@@ -15,7 +15,6 @@ from ..const import (
     ENTITY_CHARGER_CHARGING_SENSOR,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
-    SENSOR_DELTA_ALLOCATED_POWER,
     ChargeStatus,
     RunState,
 )
@@ -124,11 +123,7 @@ class StateCharge(SolarChargeState):
         """Task created in semphore to adjust charge current."""
 
         try:
-            assert self.solarcharge.entities.sensors is not None
-            delta_allocated_power = float(
-                self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].state
-            )
-
+            delta_allocated_power = self.solarcharge.get_delta_allocated_power()
             await self._async_adjust_charge_current(
                 self.solarcharge.charger,
                 self.solarcharge.chargeable,
@@ -316,14 +311,10 @@ class StateCharge(SolarChargeState):
         new_charge_current, old_charge_current = self._calc_current_change(
             charger, chargeable, delta_allocated_power, self.solarcharge.running_goal
         )
-        if new_charge_current != old_charge_current:
-            _LOGGER.info(
-                "%s: Update current from %s to %s",
-                self.solarcharge.caller,
-                old_charge_current,
-                new_charge_current,
-            )
-            await self.solarcharge.async_set_charge_current(charger, new_charge_current)
+
+        await self.solarcharge.async_set_charge_current(
+            charger, new_charge_current, old_charge_current
+        )
 
         # No need to update status here because it is now done at the main loop.
         # Power update here is not garanteed because HA will not send the same value

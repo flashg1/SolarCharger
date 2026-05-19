@@ -420,16 +420,21 @@ class SolarCharge(ScOptionState):
         return charger.can_set_charge_current()
 
     # ----------------------------------------------------------------------------
-    async def async_set_charge_current(self, charger: Charger, current: float) -> None:
+    async def async_set_charge_current(
+        self, charger: Charger, new_current: float, old_current: float | None = None
+    ) -> None:
         """Set charge current."""
 
         try:
             #####################################
             # Get old charge current
             #####################################
-            config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
-            val_dict = ConfigValueDict(config_item, {})
-            old_charge_current = self.get_charge_current(charger, val_dict)
+            if old_current is None:
+                config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
+                val_dict = ConfigValueDict(config_item, {})
+                old_charge_current = self.get_charge_current(charger, val_dict)
+            else:
+                old_charge_current = old_current
 
             # How do we know the status of charger on/off switch is up-to-date?
             # We can't unless do another poll. So just to set the current.
@@ -443,20 +448,22 @@ class SolarCharge(ScOptionState):
             # Set new charge current
             #####################################
             if self.can_set_current:
-                # config_item = ENTITY_CHARGER_SET_CHARGE_CURRENT
-                # new_charge_current = await charger.async_set_charge_current(
-                #     current, val_dict
-                # )
-                new_charge_current = await charger.async_set_charge_current(current)
+                if new_current != old_charge_current:
+                    # Only set current if different from old.
+                    _LOGGER.info(
+                        "%s: Update current from %s to %s",
+                        self.caller,
+                        old_charge_current,
+                        new_current,
+                    )
+                    new_charge_current = await charger.async_set_charge_current(
+                        new_current
+                    )
+                else:
+                    new_charge_current = new_current
             else:
                 # So we can't set the current, ie. a resistive load.
                 new_charge_current = old_charge_current
-
-            # can_set_current = True
-            # if val_dict.config_values[config_item].entity_id is None:
-            #     # So we can't set the current, ie. a resistive load.
-            #     new_charge_current = old_charge_current
-            #     can_set_current = False
 
             #####################################
             # Set current update time
@@ -504,7 +511,7 @@ class SolarCharge(ScOptionState):
 
         except Exception as e:
             _LOGGER.exception(
-                "%s: Error setting charge current %s A: %s", self.caller, current, e
+                "%s: Error setting charge current %s A: %s", self.caller, new_current, e
             )
 
     # ----------------------------------------------------------------------------

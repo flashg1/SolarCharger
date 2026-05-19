@@ -17,7 +17,6 @@ from ..const import (
     CONFIG_NAME_GLOBAL_DEFAULTS,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
-    ENTITY_CHARGER_SET_CHARGE_CURRENT,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -38,6 +37,7 @@ from ..const import (
     SELECT_DEVICE_PRESENCE_SENSOR,
     SENSOR,
     SENSOR_CONSUMED_ENERGY_TODAY,
+    SENSOR_DELTA_ALLOCATED_POWER,
     SENSOR_SYNC_UPDATE,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
@@ -766,7 +766,7 @@ class ScOptionState(ScConfigState):
         )
 
     # ----------------------------------------------------------------------------
-    # Local device control entities
+    # Local device control entities: Readers
     # ----------------------------------------------------------------------------
     def get_charger_priority(self) -> int:
         """Get charger priority."""
@@ -780,6 +780,12 @@ class ScOptionState(ScConfigState):
         return self.option_get_entity_number_or_abort(
             NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT
         )
+
+    # ----------------------------------------------------------------------------
+    def get_delta_allocated_power(self) -> float:
+        """Get delta allocated power."""
+
+        return self.option_get_entity_number_or_abort(SENSOR_DELTA_ALLOCATED_POWER)
 
     # ----------------------------------------------------------------------------
     def get_max_consumed_energy_limit(self) -> float:
