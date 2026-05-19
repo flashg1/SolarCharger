@@ -15,6 +15,8 @@ class DeltaPowerAllocation:
     # Environment data:
     # Maximum power the charger can consume.
     max_power: float
+    # Minimum power required for the charger to operate.
+    min_workable_power: float
     # Power currently consumed by the charger.
     consumed_power: float
 
@@ -50,6 +52,7 @@ class DeltaPowerAllocation:
         return (
             f"name={self.name}, "
             f"max_power={self.max_power}, "
+            f"min_workable_power={self.min_workable_power}, "
             f"consumed_power={self.consumed_power}, "
             f"priority={self.priority}, "
             f"allocation_weight={self.allocation_weight}, "

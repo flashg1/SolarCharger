@@ -8,10 +8,11 @@ from homeassistant.config_entries import ConfigSubentry
 from ..const import (
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_CONSUMED_POWER,
+    SENSOR_INSTANCE_COUNT,
     SENSOR_SHARE_ALLOCATION,
     RunState,
 )
-from ..helpers.general import async_set_delta_allocated_power
+from ..helpers.general import async_set_delta_allocated_power, async_update_sensor_state
 from ..models.model_allocation import (
     AllocationBook,
     AllocationGroup,
@@ -55,6 +56,26 @@ class PowerAllocator:
     # ----------------------------------------------------------------------------
     # Power allocation code
     # ----------------------------------------------------------------------------
+    def init_allocator(
+        self,
+    ) -> None:
+        """Initialize the power allocator."""
+
+        for control in self._device_controls.values():
+            if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
+                continue
+
+            async_update_sensor_state(
+                control.controller.charge_control, SENSOR_INSTANCE_COUNT, 0
+            )
+            async_update_sensor_state(
+                control.controller.charge_control, SENSOR_SHARE_ALLOCATION, 0
+            )
+            async_update_sensor_state(
+                control.controller.charge_control, SENSOR_CONSUMED_POWER, 0.0
+            )
+
+    # ----------------------------------------------------------------------------
     def _populate_allocation_group(
         self,
         allocation_map: dict[int, AllocationGroup],
@@ -70,8 +91,12 @@ class PowerAllocator:
             control.controller.solar_charge.get_charger_power_allocation_weight()
         )
         max_current = control.controller.solar_charge.get_charger_max_current()
+        min_workable_current = (
+            control.controller.solar_charge.get_charger_min_workable_current()
+        )
         voltage = control.controller.solar_charge.get_charger_effective_voltage()
         max_power = max_current * voltage
+        min_workable_power = min_workable_current * voltage
 
         # Participate in power allocation.
         assert control.controller.charge_control.entities.sensors is not None
@@ -85,6 +110,7 @@ class PowerAllocator:
             subentry_id=control.subentry_id,
             name=control.config_name,
             max_power=max_power,
+            min_workable_power=min_workable_power,
             consumed_power=consumed_power,
             priority=priority,
             allocation_weight=allocation_weight,
@@ -221,7 +247,15 @@ class PowerAllocator:
                 # Not enough power: allocated_power is -ve or +ve
                 if allocated_power < 0:
                     # Allocate power, ie. -ve
-                    allocation.final_power = max(allocated_power, allocation.need_power)
+                    if (
+                        allocation.consumed_power + abs(allocated_power)
+                        >= allocation.min_workable_power
+                    ):
+                        allocation.final_power = max(
+                            allocated_power, allocation.need_power
+                        )
+                    else:
+                        allocation.final_power = 0
                 else:
                     # Give back power, ie. +ve
                     allocation.final_power = min(

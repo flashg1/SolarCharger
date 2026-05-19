@@ -29,7 +29,7 @@ class StateEnd(SolarChargeState):
         # Delta allocated power is set in the coordinator timer thread.
         # Should not be set here, but no choice.
         # Reset here in case it is missed in the coordinator due to race condition.
-        self.solarcharge.entities.sensors[SENSOR_DELTA_ALLOCATED_POWER].set_state(0)
+        self.solarcharge.update_sensor(SENSOR_DELTA_ALLOCATED_POWER, 0)
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:

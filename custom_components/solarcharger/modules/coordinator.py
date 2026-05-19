@@ -432,6 +432,7 @@ class SolarChargerCoordinator(ScOptionState):
     def _track_net_power_update(self) -> None:
         """Track net power update."""
 
+        self._allocator.init_allocator()
         ok = self._tracker.track_net_power_update(self._async_handle_net_power_update)
         if not ok:
             _LOGGER.error("%s: Invalid net power sensor", self.caller)

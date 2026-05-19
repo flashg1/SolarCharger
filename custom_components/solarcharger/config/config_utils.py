@@ -538,7 +538,14 @@ def create_entity_ids_from_templates(
                 config_name,
             )
             if entity_id:
-                entity_map[config_item] = entity_id
+                # Only replace SolarCharger entities, not user overriden entities.
+                original_entity_id = entity_map.get(config_item)
+                if (
+                    original_entity_id
+                    and DOMAIN in original_entity_id
+                    and config_item in original_entity_id
+                ):
+                    entity_map[config_item] = entity_id
 
 
 # ----------------------------------------------------------------------------

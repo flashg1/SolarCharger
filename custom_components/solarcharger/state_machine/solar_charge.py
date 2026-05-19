@@ -228,6 +228,12 @@ class SolarCharge(ScOptionState):
         self.update_sensor(SENSOR_SHARE_ALLOCATION, 0)
 
     # ----------------------------------------------------------------------------
+    def set_consumed_power(self, consumed_power: float) -> None:
+        """Set consumed power."""
+
+        self.update_sensor(SENSOR_CONSUMED_POWER, consumed_power)
+
+    # ----------------------------------------------------------------------------
     async def async_charger_sleep(self) -> None:
         """Wait before looping again."""
 
@@ -485,9 +491,7 @@ class SolarCharge(ScOptionState):
             # Set consumed power
             #####################################
             effective_voltage = self.get_charger_effective_voltage()
-            self.entities.sensors[SENSOR_CONSUMED_POWER].set_state(
-                new_charge_current * effective_voltage
-            )
+            self.set_consumed_power(new_charge_current * effective_voltage)
 
             if self.can_set_current:
                 self.emit_solarcharger_event(

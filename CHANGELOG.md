@@ -3,6 +3,8 @@
 ## v0.7.1 2026-05-12
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.6.1 or prior.
+### Fix
+- Fixed issue with not able to override SolarCharger entity in options config flow.
 ### Improvement
 - Refactored allocator for fairer plan allocations for paused chargers.
 - Added "Pause on start" switch to monitor available solar for devices uses a lot of energy on start up, eg. hot water.

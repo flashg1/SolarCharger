@@ -50,6 +50,7 @@ class StateTidyUp(SolarChargeState):
         self.solarcharge.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER, 0)
         self.solarcharge.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD, 0)
         self.solarcharge.update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, 0)
+        self.solarcharge.set_consumed_power(0)
 
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(

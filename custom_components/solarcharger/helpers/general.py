@@ -28,6 +28,20 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------------
+async def async_update_sensor_state(
+    control: ChargeControl, config_item: str, value: float
+) -> bool:
+    """Set sensor entity directly."""
+    ok: bool = False
+
+    if control.entities.sensors:
+        control.entities.sensors[config_item].set_state(value)
+        ok = True
+
+    return ok
+
+
+# ----------------------------------------------------------------------------
 async def async_set_delta_allocated_power(
     control: ChargeControl, delta_allocated_power: float
 ) -> bool:
