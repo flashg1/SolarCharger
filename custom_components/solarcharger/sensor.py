@@ -87,10 +87,10 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity, RestoreEntity):
         self._is_restore_state = is_restore_state
 
     # ----------------------------------------------------------------------------
-    def set_state(self, new_status):
+    def set_state(self, new_state: StateType | date | datetime | Decimal):
         """Set new status."""
 
-        self._attr_native_value = new_status
+        self._attr_native_value = new_state
         self.update_ha_state()
 
     # ----------------------------------------------------------------------------

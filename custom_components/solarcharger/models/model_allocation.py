@@ -17,18 +17,24 @@ class DeltaPowerAllocation:
     max_power: float
     # Minimum power required for the charger to operate.
     min_workable_power: float
-    # Power currently consumed by the charger.
-    consumed_power: float
 
     # Inputs:
     # Charger priority (0 = highest priority)
     priority: int
     # Allocation weight set by user (for both allocation and deallocation).
     allocation_weight: float
+
+    # 0=No running instance, 1=Running instance
+    # If instance is 0, then member can be ignored.
+    instance: int
+
     # Set to 0 when charger is in paused state to stop charger from participating in real power allocation.
     # Paused charger will still participate in planned power allocation.
     # 1=Participate in real power allocation, 0=Do not participate in real power allocation
     share_allocation: int
+
+    # Power currently consumed by the charger.
+    consumed_power: float = 0.0
 
     # Outputs:
     # -ve value means device needs power, +ve value means device has excess power.
@@ -36,15 +42,15 @@ class DeltaPowerAllocation:
     # need_power and lack_power can be -ve or 0, but not +ve.
     # Paused devices will have 0 need_power and 0 lack_power, as they are not participating in real power allocation.
     # Power requirement before allocation.
-    need_power: float = 0
+    need_power: float = 0.0
     # Resulting lack power after allocation.
-    lack_power: float = 0
+    lack_power: float = 0.0
 
-    # Final allocation with 0 share for paused chargers.
     # final_power is used by running chargers to adjust current.
-    allocation_final_weight: float = 0  # Use this weight for allocation.
-    deallocation_final_weight: float = 0  # Use this weight for deallocation.
-    final_power: float = 0
+    # final_power is used by paused chargers to determine when to exit paused state.
+    allocation_final_weight: float = 0.0  # Use this weight for allocation.
+    deallocation_final_weight: float = 0.0  # Use this weight for deallocation.
+    final_power: float = 0.0
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -56,7 +62,9 @@ class DeltaPowerAllocation:
             f"consumed_power={self.consumed_power}, "
             f"priority={self.priority}, "
             f"allocation_weight={self.allocation_weight}, "
+            f"instance={self.instance}, "
             f"share_allocation={self.share_allocation}, "
+            f"consumed_power={self.consumed_power}, "
             f"need_power={self.need_power}, "
             f"lack_power={self.lack_power}, "
             f"allocation_final_weight={self.allocation_final_weight}, "
@@ -113,11 +121,16 @@ class AllocationBook:
     """Power allocation book."""
 
     # Real allocation for running non-paused chargers.
-    real_allocation_map: dict[int, AllocationGroup]
+    # Map has both active and paused chargers, but only active chargers will get allocation.
+    active_member_map: dict[int, AllocationGroup]
 
     # Plan allocation as if all running chargers are not paused.
     # Plan power is used by paused chargers to determine when to exit paused state.
-    plan_allocation_map: dict[int, AllocationGroup]
+    # Map has both active and paused chargers, and all will get allocation.
+    all_member_map: dict[int, AllocationGroup]
+
+    # Rebalance allocation among active chargers only.
+    balance_member_map: dict[int, AllocationGroup]
 
     # Latest net power update. -ve value means excess power, +ve value means power shortage.
     net_power: float = 0.0

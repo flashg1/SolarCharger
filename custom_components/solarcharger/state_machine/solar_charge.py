@@ -2,7 +2,8 @@
 """Solar charge state machine implementation to manage solar charging."""
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 import inspect
 import logging
 import threading
@@ -13,6 +14,7 @@ from propcache.api import cached_property
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.typing import StateType
 
 # Might be of help in the future.
 # from homeassistant.helpers.sun import get_astral_event_next
@@ -189,11 +191,15 @@ class SolarCharge(ScOptionState):
     # ----------------------------------------------------------------------------
     # Global utils
     # ----------------------------------------------------------------------------
-    def update_sensor(self, config_item: str, value: float) -> None:
+    def update_sensor(
+        self,
+        config_item: str,
+        new_state: StateType | date | datetime | Decimal,
+    ) -> None:
         """Update sensor."""
 
         assert self.entities.sensors is not None
-        self.entities.sensors[config_item].set_state(value)
+        self.entities.sensors[config_item].set_state(new_state)
 
     # ----------------------------------------------------------------------------
     def set_median_data_not_ready(self, data: MedianData) -> None:

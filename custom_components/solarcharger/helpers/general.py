@@ -2,10 +2,13 @@
 """General helpers."""
 
 # pylint: disable=relative-beyond-top-level
+from datetime import date, datetime
+from decimal import Decimal
 import logging
 from typing import Any
 
 from homeassistant.core import State
+from homeassistant.helpers.typing import StateType
 
 from ..const import SENSOR_DELTA_ALLOCATED_POWER
 from ..models.model_charge_control import ChargeControl
@@ -29,13 +32,15 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 async def async_update_sensor_state(
-    control: ChargeControl, config_item: str, value: float
+    control: ChargeControl,
+    config_item: str,
+    new_state: StateType | date | datetime | Decimal,
 ) -> bool:
     """Set sensor entity directly."""
     ok: bool = False
 
     if control.entities.sensors:
-        control.entities.sensors[config_item].set_state(value)
+        control.entities.sensors[config_item].set_state(new_state)
         ok = True
 
     return ok

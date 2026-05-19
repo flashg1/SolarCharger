@@ -37,7 +37,9 @@ from ..const import (
     SELECT_DEVICE_PRESENCE_SENSOR,
     SENSOR,
     SENSOR_CONSUMED_ENERGY_TODAY,
+    SENSOR_CONSUMED_POWER,
     SENSOR_DELTA_ALLOCATED_POWER,
+    SENSOR_SHARE_ALLOCATION,
     SENSOR_SYNC_UPDATE,
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
@@ -100,6 +102,20 @@ class ScOptionState(ScConfigState):
         """Return sync update entity ID used by chargers to synchronise charge current updates."""
         return compose_entity_id(
             SENSOR, CONFIG_NAME_GLOBAL_DEFAULTS, SENSOR_SYNC_UPDATE
+        )
+
+    @cached_property
+    def share_allocation_entity_id(self) -> str:
+        """Return the share allocation entity ID."""
+        return compose_entity_id(
+            SENSOR, self._subentry.unique_id, SENSOR_SHARE_ALLOCATION
+        )
+
+    @cached_property
+    def consumed_power_entity_id(self) -> str:
+        """Return the consumed power entity ID."""
+        return compose_entity_id(
+            SENSOR, self._subentry.unique_id, SENSOR_CONSUMED_POWER
         )
 
     @cached_property
@@ -794,16 +810,6 @@ class ScOptionState(ScConfigState):
         return self.option_get_entity_number_or_abort(NUMBER_MAX_CONSUMED_ENERGY)
 
     # ----------------------------------------------------------------------------
-    def get_consumed_energy_today(self) -> float:
-        """Get consumed energy today."""
-
-        consumed_energy = self.get_number(self.consumed_energy_today_entity_id)
-        if consumed_energy is None:
-            consumed_energy = 0.0
-
-        return consumed_energy
-
-    # ----------------------------------------------------------------------------
     def get_charger_min_workable_current(self) -> float:
         """Get charger minimum workable current."""
 
@@ -814,18 +820,39 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # Internal non-configurable entities.
     # ----------------------------------------------------------------------------
+    def get_consumed_power(self) -> float:
+        """Get consumed power."""
+
+        return self.get_number(self.consumed_power_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def get_consumed_energy_today(self) -> float:
+        """Get consumed energy today."""
+
+        return self.get_number(self.consumed_energy_today_entity_id)
+
+    # ----------------------------------------------------------------------------
+    def get_share_allocation(self) -> int:
+        """Get share allocation."""
+
+        return self.get_integer(self.share_allocation_entity_id)
+
+    # ----------------------------------------------------------------------------
     def is_fast_charge_mode(self) -> bool:
         """Is fast charge mode on?"""
+
         return self.get_boolean_or_abort(self.fast_charge_mode_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_poll_charger_update(self) -> bool:
         """Is poll charger update on?"""
+
         return self.get_boolean_or_abort(self.poll_charger_update_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_end_on_max_consumed_energy(self) -> bool:
         """Is end on max consumed energy on?"""
+
         return self.get_boolean_or_abort(
             self.end_on_max_consumed_energy_switch_entity_id
         )
@@ -833,36 +860,43 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     def is_pause_on_start(self) -> bool:
         """Is pause on start on?"""
+
         return self.get_boolean_or_abort(self.pause_on_start_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_schedule_charge(self) -> bool:
         """Is schedule charge on?"""
+
         return self.get_boolean_or_abort(self.schedule_charge_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_plugin_trigger(self) -> bool:
         """Is plugin trigger on?"""
+
         return self.get_boolean_or_abort(self.plugin_trigger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_presence_trigger(self) -> bool:
         """Is presence trigger on?"""
+
         return self.get_boolean_or_abort(self.presence_trigger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_sun_trigger(self) -> bool:
         """Is sun trigger on?"""
+
         return self.get_boolean_or_abort(self.sun_trigger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_charge_switch_on(self) -> bool:
         """Is charge switch on?"""
+
         return self.get_boolean_or_abort(self.charge_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_calibrate_max_charge_speed(self) -> bool:
         """Is calibrate max charge speed on?"""
+
         return self.get_boolean_or_abort(
             self.calibrate_max_charge_speed_switch_entity_id
         )

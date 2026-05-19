@@ -1,6 +1,7 @@
 # ruff: noqa: TID252
 """Power allocator implementation."""
 
+from copy import deepcopy
 import logging
 
 from homeassistant.config_entries import ConfigSubentry
@@ -65,6 +66,8 @@ class PowerAllocator:
             if control.config_name == OPTION_GLOBAL_DEFAULTS_ID:
                 continue
 
+            # This is required to stop the allocator from sending allocation during boot.
+            # Not sure if need to include SENSOR_INSTANCE_COUNT. Check later.
             async_update_sensor_state(
                 control.controller.charge_control, SENSOR_INSTANCE_COUNT, 0
             )
@@ -76,14 +79,8 @@ class PowerAllocator:
             )
 
     # ----------------------------------------------------------------------------
-    def _populate_allocation_group(
-        self,
-        allocation_map: dict[int, AllocationGroup],
-        control: DeviceControl,
-        consumed_power: float,
-        is_real: bool,
-    ) -> DeltaPowerAllocation:
-        """Populate allocation group with allocation."""
+    def _create_group_member(self, control: DeviceControl) -> DeltaPowerAllocation:
+        """Populate member config."""
 
         # The following are user configurable and can be overridden, so use indirection.
         priority = control.controller.solar_charge.get_charger_priority()
@@ -99,37 +96,43 @@ class PowerAllocator:
         min_workable_power = min_workable_current * voltage
 
         # Participate in power allocation.
-        assert control.controller.charge_control.entities.sensors is not None
-        share_allocation = int(
-            control.controller.charge_control.entities.sensors[
-                SENSOR_SHARE_ALLOCATION
-            ].state
-        )
+        instance = control.controller.charge_control.instance_count
+        share_allocation = control.controller.solar_charge.get_share_allocation()
 
-        allocation = DeltaPowerAllocation(
+        return DeltaPowerAllocation(
             subentry_id=control.subentry_id,
             name=control.config_name,
             max_power=max_power,
             min_workable_power=min_workable_power,
-            consumed_power=consumed_power,
             priority=priority,
             allocation_weight=allocation_weight,
+            instance=instance,
             share_allocation=share_allocation,
         )
 
-        plan_weight = (
-            allocation_weight * control.controller.charge_control.instance_count
-        )
+    # ----------------------------------------------------------------------------
+    def _populate_member_data(
+        self,
+        group_map: dict[int, AllocationGroup],
+        member: DeltaPowerAllocation,
+        consumed_power: float,
+        exclude_paused: bool,
+    ) -> None:
+        """Populate member data."""
 
-        if is_real:
-            final_weight = plan_weight * share_allocation
+        member.consumed_power = consumed_power
+
+        plan_weight = member.allocation_weight * member.instance
+
+        if exclude_paused:
+            final_weight = plan_weight * member.share_allocation
         else:
             final_weight = plan_weight
 
         # Determine following variables:
-        allocation.allocation_final_weight = 0
-        allocation.deallocation_final_weight = 0
-        allocation.need_power = 0
+        member.allocation_final_weight = 0
+        member.deallocation_final_weight = 0
+        member.need_power = 0
 
         #######################################################
         # If at less than max power but not zero, participate in both allocation and deallocation.
@@ -143,35 +146,33 @@ class PowerAllocator:
         # - Ensure devices at zero power do not participate in deallocation, so that other devices
         #   can get a bigger share. Similar for allocation, this is not perfect for the same reason.
         #######################################################
-        if consumed_power < max_power:
+        if consumed_power < member.max_power:
             # Participate in allocation
-            allocation.allocation_final_weight = final_weight
+            member.allocation_final_weight = final_weight
 
             # Paused device has need_power = lack_power = consumed_power = 0.
-            if allocation.allocation_final_weight > 0:
-                allocation.need_power = consumed_power - max_power
+            if member.allocation_final_weight > 0:
+                member.need_power = consumed_power - member.max_power
 
             # Only participate in deallocation if consumed power > 0
             if consumed_power > 0:
-                allocation.deallocation_final_weight = final_weight
+                member.deallocation_final_weight = final_weight
         else:
             # Participate in deallocation only.
-            allocation.deallocation_final_weight = final_weight
+            member.deallocation_final_weight = final_weight
 
-        rung = allocation_map.get(allocation.priority)
-        if rung is None:
-            rung = AllocationGroup(priority=allocation.priority, delta_allocations=[])
-            allocation_map[allocation.priority] = rung
+        group = group_map.get(member.priority)
+        if group is None:
+            group = AllocationGroup(priority=member.priority, delta_allocations=[])
+            group_map[member.priority] = group
 
-        rung.delta_allocations.append(allocation)
-        rung.total_max_power += allocation.max_power
-        rung.total_consumed_power += allocation.consumed_power
-        rung.total_need_power += allocation.need_power
-        rung.total_allocation_final_weight += allocation.allocation_final_weight
-        rung.total_deallocation_final_weight += allocation.deallocation_final_weight
-        rung.total_instance += control.controller.charge_control.instance_count
-
-        return allocation
+        group.delta_allocations.append(member)
+        group.total_max_power += member.max_power
+        group.total_consumed_power += member.consumed_power
+        group.total_need_power += member.need_power
+        group.total_allocation_final_weight += member.allocation_final_weight
+        group.total_deallocation_final_weight += member.deallocation_final_weight
+        group.total_instance += member.instance
 
     # ----------------------------------------------------------------------------
     def _get_total_allocation_pool(
@@ -179,10 +180,13 @@ class PowerAllocator:
     ) -> AllocationBook:
         """Get allocation pool from options. Note allocation weight entity can be overriden."""
 
-        real_map: dict[int, AllocationGroup] = {}
-        plan_map: dict[int, AllocationGroup] = {}
+        active_map: dict[int, AllocationGroup] = {}
+        all_map: dict[int, AllocationGroup] = {}
+        balance_map: dict[int, AllocationGroup] = {}
         allocation_book: AllocationBook = AllocationBook(
-            real_allocation_map=real_map, plan_allocation_map=plan_map
+            active_member_map=active_map,
+            all_member_map=all_map,
+            balance_member_map=balance_map,
         )
 
         for control in self._device_controls.values():
@@ -192,21 +196,21 @@ class PowerAllocator:
             if control.controller.charge_control.instance_count == 0:
                 continue
 
-            consumed_power = float(
-                control.controller.charge_control.entities.sensors[
-                    SENSOR_CONSUMED_POWER
-                ].state
+            all_member = self._create_group_member(control)
+            active_member = deepcopy(all_member)
+            balance_member = deepcopy(all_member)
+
+            consumed_power = control.controller.solar_charge.get_consumed_power()
+            self._populate_member_data(
+                active_map, active_member, consumed_power, exclude_paused=True
+            )
+            self._populate_member_data(all_map, all_member, 0.0, exclude_paused=False)
+            self._populate_member_data(
+                balance_map, balance_member, 0.0, exclude_paused=True
             )
 
-            real_allocation = self._populate_allocation_group(
-                real_map, control, consumed_power, is_real=True
-            )
-            self._populate_allocation_group(plan_map, control, 0.0, is_real=False)
-
-            allocation_book.total_instance += (
-                control.controller.charge_control.instance_count
-            )
-            allocation_book.total_consumed_power += real_allocation.consumed_power
+            allocation_book.total_instance += active_member.instance
+            allocation_book.total_consumed_power += active_member.consumed_power
 
         return allocation_book
 
@@ -390,57 +394,92 @@ class PowerAllocator:
         return surplus_power
 
     # ----------------------------------------------------------------------------
+    def _process_allocation_map(
+        self,
+        allocation_map: dict[int, AllocationGroup],
+        power: float,
+        exclude_paused: bool,
+    ) -> list[AllocationGroup]:
+        """Process allocation group to determine final allocation for each device."""
+
+        ladder = self._sorted_list_of_priority_level(allocation_map)
+
+        if power < 0:
+            unallocated_power = self._top_down_allocate_power(ladder, power)
+        else:
+            unallocated_power = self._bottom_up_release_power(ladder, power)
+
+        _LOGGER.warning(
+            "%s allocation: power=%s, unallocated_power=%s",
+            "Active" if exclude_paused else "Plan",
+            power,
+            unallocated_power,
+        )
+
+        return ladder
+
+    # ----------------------------------------------------------------------------
     async def _async_send_allocations(
         self,
         ladder: list[AllocationGroup],
-        power: float,
-        is_real: bool,
+        exclude_paused: bool,
     ) -> None:
         """Send allocated power to devices."""
-
-        if power < 0:
-            remain_power = self._top_down_allocate_power(ladder, power)
-        else:
-            remain_power = self._bottom_up_release_power(ladder, power)
-
-        _LOGGER.warning(
-            "%s allocation: power=%s, remain_power=%s",
-            "Real" if is_real else "Plan",
-            power,
-            remain_power,
-        )
 
         for rung in ladder:
             _LOGGER.debug("AllocationGroup: %s", rung)
 
-            for allocation in rung.delta_allocations:
-                control = self._device_controls[allocation.subentry_id]
+            for member in rung.delta_allocations:
+                control = self._device_controls[member.subentry_id]
 
-                send_allocation = False
-                if (
-                    control.controller.solar_charge.machine_state.state
-                    == RunState.ENDING
-                ):
-                    # Charge session ending, so set delta_allocated_power=0.
-                    delta_allocated_power = 0
-                    send_allocation = True
+                if control.controller.solar_charge.machine_state.state in [
+                    RunState.ENDING,
+                    RunState.ENDED,
+                ]:
+                    continue
 
-                elif (is_real and allocation.share_allocation > 0) or (
-                    not is_real and allocation.share_allocation == 0
+                if (exclude_paused and member.share_allocation > 0) or (
+                    not exclude_paused and member.share_allocation == 0
                 ):
                     # Paticipants in power sharing will use final_power.
                     # Non-participants will use plan_power as indication of possible available power.
-                    delta_allocated_power = allocation.final_power
-                    send_allocation = True
 
-                # Writer will set entity value directly. Reader will get value via
-                # entity ID in options which can be overridden.
-                if send_allocation:
+                    # Writer will set entity value directly. Reader will get value via
+                    # entity ID in options which can be overridden.
                     await async_set_delta_allocated_power(
-                        control.controller.charge_control, delta_allocated_power
+                        control.controller.charge_control, member.final_power
                     )
 
-                    _LOGGER.debug("PowerAllocation: %s", allocation)
+                    _LOGGER.debug("PowerAllocation: %s", member)
+
+    # ----------------------------------------------------------------------------
+    async def _async_process_allocation_book(
+        self, allocation_book: AllocationBook
+    ) -> None:
+        """Process allocation book."""
+
+        _LOGGER.warning("AllocationBook: %s", allocation_book)
+
+        active_member_ladder = self._process_allocation_map(
+            allocation_book.active_member_map,
+            allocation_book.net_power,
+            exclude_paused=True,
+        )
+
+        all_member_ladder = self._process_allocation_map(
+            allocation_book.all_member_map,
+            allocation_book.total_power,
+            exclude_paused=False,
+        )
+
+        # balance_member_ladder = self._process_allocation_map(
+        #     allocation_book.balance_member_map,
+        #     allocation_book.total_power,
+        #     exclude_paused=True,
+        # )
+
+        await self._async_send_allocations(active_member_ladder, exclude_paused=True)
+        await self._async_send_allocations(all_member_ladder, exclude_paused=False)
 
     # ----------------------------------------------------------------------------
     # TODO: Need to take into consideration already allocated power and max power of chargers
@@ -460,24 +499,15 @@ class PowerAllocator:
         total_instance = allocation_book.total_instance
 
         if total_instance > 0:
-            real_ladder = self._sorted_list_of_priority_level(
-                allocation_book.real_allocation_map
-            )
-            plan_ladder = self._sorted_list_of_priority_level(
-                allocation_book.plan_allocation_map
-            )
-            total_power = net_power - allocation_book.total_consumed_power
-            allocation_book.net_power = net_power
-            allocation_book.total_power = total_power
-            _LOGGER.warning("AllocationBook: %s", allocation_book)
-
             # Information only. Global default variable shows net power available for allocation.
             await async_set_delta_allocated_power(
                 self._global_defaults_control.controller.charge_control, net_power
             )
 
-            await self._async_send_allocations(real_ladder, net_power, is_real=True)
-            await self._async_send_allocations(plan_ladder, total_power, is_real=False)
+            total_power = net_power - allocation_book.total_consumed_power
+            allocation_book.net_power = net_power
+            allocation_book.total_power = total_power
+            await self._async_process_allocation_book(allocation_book)
 
         else:
             _LOGGER.debug("No running charger for power allocation")
