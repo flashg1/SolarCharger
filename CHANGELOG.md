@@ -6,7 +6,7 @@
 ### Fix
 - Fixed issue with not able to override SolarCharger entity in options config flow.
 ### Improvement
-- Refactored allocator for fairer plan allocations for paused chargers.
+- Refactored allocator for fairer allocation to paused chargers and rebalance all active chargers.
 - Added "Pause on start" switch to monitor available solar for devices uses a lot of energy on start up, eg. hot water.
 - Added "Max consumed energy" limit and "End on max consumed energy" switch to end charge on reaching max consumed energy.
 - Added sensor "Consumed energy today".

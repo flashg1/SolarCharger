@@ -80,7 +80,7 @@ class AllocationGroup:
     """Power allocation data for a priority level."""
 
     priority: int
-    delta_allocations: list[DeltaPowerAllocation]
+    delta_allocations: dict[str, DeltaPowerAllocation]
 
     # +ve, total max power including paused chargers.
     total_max_power: float = 0
@@ -120,31 +120,43 @@ class AllocationGroup:
 class AllocationBook:
     """Power allocation book."""
 
-    # Real allocation for running non-paused chargers.
-    # Map has both active and paused chargers, but only active chargers will get allocation.
+    # Map has active chargers only, and allocations for active chargers only.
     active_member_map: dict[int, AllocationGroup]
 
-    # Plan allocation as if all running chargers are not paused.
-    # Plan power is used by paused chargers to determine when to exit paused state.
-    # Map has both active and paused chargers, and all will get allocation.
+    # Map has both active and paused chargers, and all will get allocations.
+    # Used by paused chargers to determine when to exit paused state.
     all_member_map: dict[int, AllocationGroup]
 
-    # Rebalance allocation among active chargers only.
+    # Balance allocation among active chargers only.
     balance_member_map: dict[int, AllocationGroup]
+
+    total_active_instance: int = 0
+    total_paused_instance: int = 0
+
+    # Sum of active and paused instances.
+    total_instance: int = 0
+
+    # Sum of max power from active and paused chargers.
+    total_max_power: float = 0.0
+
+    # Sum of consumed power by active chargers.
+    total_consumed_power: float = 0.0
 
     # Latest net power update. -ve value means excess power, +ve value means power shortage.
     net_power: float = 0.0
 
-    total_instance: int = 0
-    total_consumed_power: float = 0.0
-    total_power: float = 0.0
+    # Sum of total_consumed_power and new net power update. -ve/+ve.
+    gross_power: float = 0.0
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of AllocationBook."""
         return (
-            f"net_power={self.net_power}, "
+            f"total_active_instance={self.total_active_instance}, "
+            f"total_paused_instance={self.total_paused_instance}, "
             f"total_instance={self.total_instance}, "
+            f"total_max_power={self.total_max_power}, "
             f"total_consumed_power={self.total_consumed_power}, "
-            f"total_power={self.total_power}"
+            f"net_power={self.net_power}, "
+            f"gross_power={self.gross_power}"
         )
