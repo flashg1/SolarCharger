@@ -67,13 +67,15 @@ class PowerAllocator:
                 continue
 
             # This is required to stop the allocator from sending allocation during boot.
-            # Not sure if need to include SENSOR_INSTANCE_COUNT. Check later.
-            async_update_sensor_state(
-                control.controller.charge_control, SENSOR_INSTANCE_COUNT, 0
-            )
-            async_update_sensor_state(
-                control.controller.charge_control, SENSOR_SHARE_ALLOCATION, 0
-            )
+            # Best not to reset here since it is managed elsewhere.
+            # async_update_sensor_state(
+            #     control.controller.charge_control, SENSOR_INSTANCE_COUNT, 0
+            # )
+            # async_update_sensor_state(
+            #     control.controller.charge_control, SENSOR_SHARE_ALLOCATION, 0
+            # )
+
+            # Best to reset consumed power to 0 in case value is not 0 before reboot.
             async_update_sensor_state(
                 control.controller.charge_control, SENSOR_CONSUMED_POWER, 0.0
             )

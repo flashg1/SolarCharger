@@ -815,6 +815,7 @@ class SolarCharge(ScOptionState):
 
         continue_pause = (
             context.is_connected
+            and not context.goal.reached_max_consumed_energy
             and (
                 not context.is_sun_trigger
                 or context.goal.sun_above_start_end_elevations
