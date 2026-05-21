@@ -1,18 +1,14 @@
-# ruff: noqa: TID252
+# ruff: noqa: TID252, PLR5501
 """Power allocator implementation."""
 
 from copy import deepcopy
 import logging
 
+from jaraco import net
+
 from homeassistant.config_entries import ConfigSubentry
 
-from ..const import (
-    OPTION_GLOBAL_DEFAULTS_ID,
-    SENSOR_CONSUMED_POWER,
-    SENSOR_INSTANCE_COUNT,
-    SENSOR_SHARE_ALLOCATION,
-    RunState,
-)
+from ..const import OPTION_GLOBAL_DEFAULTS_ID, SENSOR_CONSUMED_POWER, RunState
 from ..helpers.general import async_set_delta_allocated_power, async_update_sensor_state
 from ..models.model_allocation import (
     AllocationBook,
@@ -178,7 +174,7 @@ class PowerAllocator:
 
     # ----------------------------------------------------------------------------
     def _get_allocation_pool(self, net_power: float = 0.0) -> AllocationBook:
-        """Get allocation pool from options. Note allocation weight entity can be overriden."""
+        """Get allocation pool for active and paused devices."""
 
         active_group_map: dict[int, AllocationGroup] = {}
         all_group_map: dict[int, AllocationGroup] = {}
@@ -202,7 +198,8 @@ class PowerAllocator:
             balance_member = deepcopy(all_member)
 
             #####################################
-            # Populate all member group
+            # Populate all member group with both active and paused chargers.
+            # For paused charger allocations.
             #####################################
             self._populate_member_and_group_data(
                 all_group_map, all_member, 0.0, exclude_paused=False
@@ -212,7 +209,8 @@ class PowerAllocator:
             book.total_max_power += all_member.max_power
 
             #####################################
-            # Populate active member group
+            # Populate active member group with active chargers only.
+            # For source of rebalance allocation.
             #####################################
             consumed_power = control.controller.solar_charge.get_consumed_power()
             self._populate_member_and_group_data(
@@ -222,7 +220,8 @@ class PowerAllocator:
             book.total_consumed_power += active_member.consumed_power
 
             #####################################
-            # Populate balance member group
+            # Populate balance member group with active chargers only.
+            # For target of rebalance allocation.
             #####################################
             self._populate_member_and_group_data(
                 balance_group_map, balance_member, 0.0, exclude_paused=True
@@ -250,6 +249,7 @@ class PowerAllocator:
         weight: float,
         total_weight: float,
         net_power: float,
+        is_delta_power: bool,
     ) -> float:
 
         # The following are updated:
@@ -274,17 +274,38 @@ class PowerAllocator:
                         member.consumed_power + abs(allocated_power)
                         >= member.min_workable_power
                     ):
+                        # Available power must be above min workable power to be allocated,
+                        # otherwise it is not workable.
+                        # final_power = 0
+                        # lack_power = 0 if gross allocation
+                        # lack_power = x if delta allocation to get back from lower priority chargers.
                         member.final_power = max(allocated_power, member.need_power)
+                        member.lack_power = max(
+                            member.need_power - member.final_power,
+                            -member.max_power,
+                        )
                     else:
                         member.final_power = 0
+                        if is_delta_power:
+                            # Only try to get back lack power if performing delta power allocation.
+                            propose_final_power = max(
+                                allocated_power, member.need_power
+                            )
+                            member.lack_power = max(
+                                member.need_power - propose_final_power,
+                                -member.max_power,
+                            )
+                        else:
+                            # Gross power allocation will get back nothing, so continue with allocation.
+                            member.lack_power = 0
+
                 else:
                     # Give back power, ie. +ve
                     member.final_power = min(allocated_power, member.consumed_power)
-
-                member.lack_power = max(
-                    member.need_power - member.final_power,
-                    -member.max_power,
-                )
+                    member.lack_power = max(
+                        member.need_power - member.final_power,
+                        -member.max_power,
+                    )
 
             remain_power = remain_power - member.final_power
 
@@ -299,6 +320,7 @@ class PowerAllocator:
         member: DeltaPowerAllocation,
         remain_power: float,
         net_power: float,
+        is_delta_power: bool,
     ) -> float:
         """Allocate real power to running devices."""
 
@@ -311,6 +333,7 @@ class PowerAllocator:
                 member.allocation_final_weight,
                 rung.total_allocation_final_weight,
                 net_power,
+                is_delta_power,
             )
         else:
             # Give back power, ie. +ve
@@ -321,13 +344,14 @@ class PowerAllocator:
                 member.deallocation_final_weight,
                 rung.total_deallocation_final_weight,
                 net_power,
+                is_delta_power,
             )
 
         return remain_power
 
     # ----------------------------------------------------------------------------
     def _allocate_power_to_group(
-        self, rung: AllocationGroup, net_power: float
+        self, rung: AllocationGroup, net_power: float, is_delta_power: bool
     ) -> float:
         """Allocate power to priority level.
 
@@ -338,11 +362,16 @@ class PowerAllocator:
 
         for member in rung.delta_allocations.values():
             remain_power = self._allocate_power_to_group_member(
-                rung,
-                member,
-                remain_power,
-                net_power,
+                rung, member, remain_power, net_power, is_delta_power
             )
+
+            if net_power < 0 and remain_power >= 0:
+                # No more power to allocate.
+                break
+
+            if net_power >= 0 and remain_power <= 0:
+                # No more power to free up.
+                break
 
         return remain_power
 
@@ -373,6 +402,7 @@ class PowerAllocator:
         self,
         allocation_ladder: list[AllocationGroup],
         net_power: float,  # ie. net_power is negative to allocate power.
+        is_delta_power: bool,
     ) -> float:
         """Allocate power from higher to lower priority chargers.
 
@@ -387,23 +417,32 @@ class PowerAllocator:
         for idx in range(len(allocation_ladder)):
             rung = allocation_ladder[idx]
 
-            surplus_power = self._allocate_power_to_group(rung, surplus_power)
+            surplus_power = self._allocate_power_to_group(
+                rung, surplus_power, is_delta_power
+            )
 
-            if rung.total_lack_power < 0:
-                # If allocating power, remain_power has been depleted because total_lack_power<0.
-                power_to_free_up = rung.total_lack_power * -1
-                remain_lack_power = self._bottom_up_release_power(
-                    allocation_ladder, power_to_free_up, idx
-                )
-                freeup_power = power_to_free_up - remain_lack_power
+            #####################################
+            # Do not try to get back lack power. Let rebalance do the work!
+            #####################################
+            # if rung.total_lack_power < 0:
+            #     # If allocating power, remain_power has been depleted because total_lack_power<0.
+            #     power_to_free_up = rung.total_lack_power * -1
+            #     remain_lack_power = self._bottom_up_release_power(
+            #         allocation_ladder, power_to_free_up, idx
+            #     )
+            #     freeup_power = power_to_free_up - remain_lack_power
 
-                _LOGGER.debug(
-                    "Free up allocation: power_to_free_up=%s, remain_lack_power=%s, freeup_power=%s",
-                    power_to_free_up,
-                    remain_lack_power,
-                    freeup_power,
-                )
+            #     _LOGGER.debug(
+            #         "Free up allocation: power_to_free_up=%s, remain_lack_power=%s, freeup_power=%s",
+            #         power_to_free_up,
+            #         remain_lack_power,
+            #         freeup_power,
+            #     )
 
+            #     break
+
+            if surplus_power >= 0:
+                # No more power to allocate.
                 break
 
         return surplus_power
@@ -413,6 +452,7 @@ class PowerAllocator:
         self,
         allocation_map: dict[int, AllocationGroup],
         power: float,
+        is_delta_power: bool,
         exclude_paused: bool,
     ) -> list[AllocationGroup]:
         """Process allocation group to determine final allocation for each device."""
@@ -420,7 +460,9 @@ class PowerAllocator:
         ladder = self._sorted_list_of_priority_level(allocation_map)
 
         if power < 0:
-            unallocated_power = self._top_down_allocate_power(ladder, power)
+            unallocated_power = self._top_down_allocate_power(
+                ladder, power, is_delta_power
+            )
         else:
             unallocated_power = self._bottom_up_release_power(ladder, power)
 
@@ -508,6 +550,7 @@ class PowerAllocator:
         active_ladder = self._process_allocation_map(
             book.active_member_map,
             book.net_power,
+            is_delta_power=True,
             exclude_paused=True,
         )
 
@@ -515,6 +558,7 @@ class PowerAllocator:
         self._process_allocation_map(
             book.balance_member_map,
             book.gross_power,
+            is_delta_power=False,
             exclude_paused=True,
         )
 
@@ -522,6 +566,7 @@ class PowerAllocator:
         all_ladder = self._process_allocation_map(
             book.all_member_map,
             book.gross_power,
+            is_delta_power=False,
             exclude_paused=False,
         )
 
