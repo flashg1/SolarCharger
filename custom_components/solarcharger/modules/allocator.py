@@ -562,12 +562,15 @@ class PowerAllocator:
         _LOGGER.warning("AllocationBook: %s", book)
 
         # Allocation for active chargers.
-        active_ladder = self._process_allocation_map(
-            book.active_member_map,
-            book.net_power,
-            is_delta_power=True,
-            exclude_paused=True,
-        )
+        # active_ladder = self._process_allocation_map(
+        #     book.active_member_map,
+        #     book.net_power,
+        #     is_delta_power=True,
+        #     exclude_paused=True,
+        # )
+
+        # No need to allocate net power since rebalance will do the job and only uses consumed power.
+        active_ladder = self._sorted_list_of_priority_level(book.active_member_map)
 
         # Rebalance allocation for all active chargers.
         self._process_allocation_map(

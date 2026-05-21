@@ -399,6 +399,9 @@ class StateCharge(SolarChargeState):
     ) -> None:
         """Switch on charger and set initial current."""
 
+        # Must reset time here to avoid possible wrong energy calculation if exiting pause.
+        self.solarcharge.charge_current_updatetime = datetime.min
+
         self.solarcharge.participate_in_real_power_allocation()
 
         self.solarcharge.starting_goal = self.solarcharge.running_goal

@@ -109,8 +109,11 @@ class SolarCharge(ScOptionState):
 
         self.can_set_current = False
         self.started_calibrate_max_charge_speed = False
+
         # self.update_timestamp: float = 0  # utcnow().timestamp()   # UTC time
+        # Must reset time before setting current to avoid possible wrong energy calculation.
         self.charge_current_updatetime: datetime = datetime.min
+
         self.soc_updates: list[StateOfCharge] = []
 
         # Power monitor duration in seconds
@@ -531,6 +534,9 @@ class SolarCharge(ScOptionState):
             await self.async_set_charge_current(charger, 0)
             await self.async_turn_charger_switch(charger, turn_on=False)
             await self.async_update_ha(chargeable)
+
+        # Must reset time here to avoid possible wrong energy calculation if pausing.
+        self.charge_current_updatetime = datetime.min
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_limit(
