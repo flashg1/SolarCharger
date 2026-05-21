@@ -505,6 +505,8 @@ class StateStart(SolarChargeState):
             charger
         )
 
+        self.solarcharge.set_consumed_power(0)
+
         # Init power monitor window
         self._init_power_monitor_window()
 

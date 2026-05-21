@@ -6,8 +6,8 @@ from dataclasses import dataclass
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 @dataclass
-class DeltaPowerAllocation:
-    """Delta power allocation result."""
+class PowerAllocation:
+    """Power allocation data."""
 
     subentry_id: str
     name: str
@@ -54,7 +54,7 @@ class DeltaPowerAllocation:
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
-        """Return string representation of DeltaPowerAllocation."""
+        """Return string representation of PowerAllocation."""
         return (
             f"name={self.name}, "
             f"max_power={self.max_power}, "
@@ -80,7 +80,7 @@ class AllocationGroup:
     """Power allocation data for a priority level."""
 
     priority: int
-    delta_allocations: dict[str, DeltaPowerAllocation]
+    member_map: dict[str, PowerAllocation]
 
     # +ve, total max power including paused chargers.
     total_max_power: float = 0
@@ -121,14 +121,14 @@ class AllocationBook:
     """Power allocation book."""
 
     # Map has active chargers only, and allocations for active chargers only.
-    active_member_map: dict[int, AllocationGroup]
+    active_group_map: dict[int, AllocationGroup]
 
     # Map has both active and paused chargers, and all will get allocations.
     # Used by paused chargers to determine when to exit paused state.
-    all_member_map: dict[int, AllocationGroup]
+    all_group_map: dict[int, AllocationGroup]
 
     # Balance allocation among active chargers only.
-    balance_member_map: dict[int, AllocationGroup]
+    balance_group_map: dict[int, AllocationGroup]
 
     total_active_instance: int = 0
     total_paused_instance: int = 0

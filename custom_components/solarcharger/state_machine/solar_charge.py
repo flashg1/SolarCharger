@@ -111,7 +111,8 @@ class SolarCharge(ScOptionState):
         self.started_calibrate_max_charge_speed = False
 
         # self.update_timestamp: float = 0  # utcnow().timestamp()   # UTC time
-        # Must reset time before setting current to avoid possible wrong energy calculation.
+        # Must reset time before setting current to avoid possible wrong energy calculation after pause period.
+        # Specifically for devices with on/off switch and max current only, ie. cannot set 0 current.
         self.charge_current_updatetime: datetime = datetime.min
 
         self.soc_updates: list[StateOfCharge] = []
