@@ -226,6 +226,12 @@ class StateCharge(SolarChargeState):
             old_charge_current = charger_max_current
             return (new_charge_current, old_charge_current)
 
+        if not self.solarcharge.can_set_current:
+            # Device can get current but does not support setting current, so just use reported current.
+            new_charge_current = battery_charge_current
+            old_charge_current = battery_charge_current
+            return (new_charge_current, old_charge_current)
+
         if battery_charge_current is None:
             raise ValueError("Failed to get charge current")
         old_charge_current = self.solarcharge.validate_current(

@@ -86,6 +86,7 @@ class PowerAllocator:
         # Participate in power allocation.
         instance = control.controller.charge_control.instance_count
         share_allocation = control.controller.solar_charge.get_share_allocation()
+        can_set_current = control.controller.solar_charge.can_set_current
 
         return PowerAllocation(
             subentry_id=control.subentry_id,
@@ -96,6 +97,8 @@ class PowerAllocator:
             allocation_weight=allocation_weight,
             instance=instance,
             share_allocation=share_allocation,
+            can_set_current=can_set_current,
+            voltage=voltage,
         )
 
     # ----------------------------------------------------------------------------
@@ -136,16 +139,31 @@ class PowerAllocator:
         #   also be adjusted for subsequent deallocations to fully utilize the power.
         #######################################################
         if consumed_power < member.max_power:
-            # Participate in allocation
-            member.allocation_final_weight = final_weight
+            one_amp_watt = member.voltage * 1
+            if (
+                consumed_power > -one_amp_watt
+                and consumed_power < one_amp_watt
+                and not member.can_set_current
+            ):
+                #####################################
+                # Device can read current but not set current, so no participation.
+                #####################################
+                member.allocation_final_weight = 0
+                member.deallocation_final_weight = 0
+                member.need_power = 0
+            else:
+                #####################################
+                # Participate in allocation
+                #####################################
+                member.allocation_final_weight = final_weight
 
-            # Paused device has need_power = lack_power = consumed_power = 0.
-            if member.allocation_final_weight > 0:
-                member.need_power = consumed_power - member.max_power
+                # Paused device has need_power = lack_power = consumed_power = 0.
+                if member.allocation_final_weight > 0:
+                    member.need_power = consumed_power - member.max_power
 
-            # Only participate in deallocation if consumed power > 0
-            if consumed_power > 0:
-                member.deallocation_final_weight = final_weight
+                # Only participate in deallocation if consumed power > 0
+                if consumed_power > 0:
+                    member.deallocation_final_weight = final_weight
         else:
             # Participate in deallocation only.
             member.deallocation_final_weight = final_weight

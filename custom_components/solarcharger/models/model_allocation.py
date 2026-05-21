@@ -33,6 +33,10 @@ class PowerAllocation:
     # 1=Participate in real power allocation, 0=Do not participate in real power allocation
     share_allocation: int
 
+    # Device can set current?
+    can_set_current: bool
+    # Charger effective voltage.
+    voltage: float = 0.0
     # Power currently consumed by the charger.
     consumed_power: float = 0.0
 
@@ -64,6 +68,8 @@ class PowerAllocation:
             f"allocation_weight={self.allocation_weight}, "
             f"instance={self.instance}, "
             f"share_allocation={self.share_allocation}, "
+            f"can_set_current={self.can_set_current}, "
+            f"voltage={self.voltage}, "
             f"consumed_power={self.consumed_power}, "
             f"need_power={self.need_power}, "
             f"lack_power={self.lack_power}, "
