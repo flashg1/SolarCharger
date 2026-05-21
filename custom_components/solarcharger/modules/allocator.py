@@ -380,6 +380,7 @@ class PowerAllocator:
         self,
         allocation_ladder: list[AllocationGroup],
         net_power: float,  # ie. net_power is positive to free up power.
+        is_delta_power: bool,
         end_rung: int = -1,  # inclusive, -1 means all the way to the top priority level.
     ) -> float:
         """Release power from lower to higher priority chargers up to and not including the end_rung priority level."""
@@ -390,7 +391,9 @@ class PowerAllocator:
         for idx in range(len(allocation_ladder) - 1, end_rung, -1):
             rung = allocation_ladder[idx]
 
-            freeup_power = self._allocate_power_to_group(rung, freeup_power)
+            freeup_power = self._allocate_power_to_group(
+                rung, freeup_power, is_delta_power
+            )
 
             if freeup_power <= 0:
                 break
@@ -428,7 +431,7 @@ class PowerAllocator:
             #     # If allocating power, remain_power has been depleted because total_lack_power<0.
             #     power_to_free_up = rung.total_lack_power * -1
             #     remain_lack_power = self._bottom_up_release_power(
-            #         allocation_ladder, power_to_free_up, idx
+            #         allocation_ladder, power_to_free_up, is_delta_power, idx
             #     )
             #     freeup_power = power_to_free_up - remain_lack_power
 
@@ -464,7 +467,9 @@ class PowerAllocator:
                 ladder, power, is_delta_power
             )
         else:
-            unallocated_power = self._bottom_up_release_power(ladder, power)
+            unallocated_power = self._bottom_up_release_power(
+                ladder, power, is_delta_power
+            )
 
         _LOGGER.debug(
             "%s allocation: power=%s, unallocated_power=%s",
@@ -505,7 +510,17 @@ class PowerAllocator:
                         control.controller.charge_control, member.final_power
                     )
 
-                    _LOGGER.debug("PowerAllocation: %s", member)
+                    if _LOGGER.isEnabledFor(logging.DEBUG):
+                        _LOGGER.debug("PowerAllocation: %s", member)
+                    else:
+                        _LOGGER.warning(
+                            "%s: final_power=%s, share_allocation=%s, consumed_power=%s, lack_power=%s",
+                            member.name,
+                            member.final_power,
+                            member.share_allocation,
+                            member.consumed_power,
+                            member.lack_power,
+                        )
 
     # ----------------------------------------------------------------------------
     def _rebalance_allocation_among_active_chargers(
