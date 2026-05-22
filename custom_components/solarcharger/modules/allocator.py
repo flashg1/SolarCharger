@@ -107,6 +107,7 @@ class PowerAllocator:
         group_map: dict[int, AllocationGroup],
         member: PowerAllocation,
         consumed_power: float,
+        live_consumed_power: bool,
         exclude_paused: bool,
     ) -> None:
         """Populate member and group data."""
@@ -139,7 +140,8 @@ class PowerAllocator:
         #   also be adjusted for subsequent deallocations to fully utilize the power.
         #######################################################
         if (
-            member.share_allocation == 1
+            live_consumed_power
+            and member.share_allocation == 1
             and not member.can_set_current
             and consumed_power > -20
             and consumed_power < 20
@@ -215,7 +217,11 @@ class PowerAllocator:
             # For paused charger allocations.
             #####################################
             self._populate_member_and_group_data(
-                all_group_map, all_member, 0.0, exclude_paused=False
+                all_group_map,
+                all_member,
+                0.0,
+                live_consumed_power=False,
+                exclude_paused=False,
             )
             book.total_paused_instance += 1 if all_member.share_allocation == 0 else 0
             book.total_instance += all_member.instance
@@ -227,7 +233,11 @@ class PowerAllocator:
             #####################################
             consumed_power = control.controller.solar_charge.get_consumed_power()
             self._populate_member_and_group_data(
-                active_group_map, active_member, consumed_power, exclude_paused=True
+                active_group_map,
+                active_member,
+                consumed_power,
+                live_consumed_power=True,
+                exclude_paused=True,
             )
             book.total_active_instance += active_member.instance
             book.total_consumed_power += active_member.consumed_power
@@ -237,7 +247,11 @@ class PowerAllocator:
             # For target of rebalance allocation.
             #####################################
             self._populate_member_and_group_data(
-                balance_group_map, balance_member, 0.0, exclude_paused=True
+                balance_group_map,
+                balance_member,
+                0.0,
+                live_consumed_power=False,
+                exclude_paused=True,
             )
 
         book.net_power = net_power

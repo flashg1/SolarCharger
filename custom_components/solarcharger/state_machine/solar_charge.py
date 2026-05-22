@@ -471,8 +471,13 @@ class SolarCharge(ScOptionState):
                     )
                 else:
                     new_charge_current = new_current
+
+            # So we can't set the current, ie. a resistive load.
+            # Allow setting 0 current and 0 consumed power.
+            # Otherwise just use old current.
+            elif new_current == 0:
+                new_charge_current = new_current
             else:
-                # So we can't set the current, ie. a resistive load.
                 new_charge_current = old_charge_current
 
             #####################################
@@ -490,15 +495,17 @@ class SolarCharge(ScOptionState):
             # Set energy consumed since last current update
             #####################################
             assert self.entities.sensors is not None
-            old_consumed_power = self.entities.sensors[SENSOR_CONSUMED_POWER].state
+            old_consumed_power = float(
+                self.entities.sensors[SENSOR_CONSUMED_POWER].state
+            )
             if old_consumed_power > 0:
                 # Energy in kWh = Power in kW * time in hours
                 consumed_energy_last_period = (old_consumed_power / 1000) * (
                     old_charge_current_duration.total_seconds() / 3600
                 )
-                consumed_energy_today = self.entities.sensors[
-                    SENSOR_CONSUMED_ENERGY_TODAY
-                ].state
+                consumed_energy_today = float(
+                    self.entities.sensors[SENSOR_CONSUMED_ENERGY_TODAY].state
+                )
                 consumed_energy_today += consumed_energy_last_period
                 self.entities.sensors[SENSOR_CONSUMED_ENERGY_TODAY].set_state(
                     consumed_energy_today
