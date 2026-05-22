@@ -410,11 +410,12 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def get_charge_current(self, charger: Charger, val_dict: ConfigValueDict) -> float:
-        """Get device charge current."""
+        """Get device charge current. Return max current if do not support reading current."""
 
         charge_current = charger.get_charge_current(val_dict)
         if val_dict.config_values[ENTITY_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
-            # So we can't get the current, ie. a resistive load.
+            # Device do not support reading current, eg. a resistive load.
+            # So just return charger_max_current.
             # All devices must have max charge current configured.
             charge_current = self.get_charger_max_current()
 
@@ -440,9 +441,10 @@ class SolarCharge(ScOptionState):
             # Get old charge current
             #####################################
             if old_current is None:
-                config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
-                val_dict = ConfigValueDict(config_item, {})
-                old_charge_current = self.get_charge_current(charger, val_dict)
+                # Use max current if device do not support reading current.
+                old_charge_current = self.get_charge_current(
+                    charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
+                )
             else:
                 old_charge_current = old_current
 
@@ -472,11 +474,11 @@ class SolarCharge(ScOptionState):
                 else:
                     new_charge_current = new_current
 
-            # So we can't set the current, ie. a resistive load.
-            # Allow setting 0 current and 0 consumed power.
-            # Otherwise just use old current.
+            # Device do not support setting current.
+            # So just allow setting 0 current and 0 consumed power,
+            # otherwise just use old current.
             elif new_current == 0:
-                new_charge_current = new_current
+                new_charge_current = 0
             else:
                 new_charge_current = old_charge_current
 

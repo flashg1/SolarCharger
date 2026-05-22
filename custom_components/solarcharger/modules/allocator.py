@@ -495,7 +495,7 @@ class PowerAllocator:
         group_map: dict[int, AllocationGroup],
         power: float,
         is_delta_power: bool,
-        exclude_paused: bool,
+        allocation_type: str,
     ) -> list[AllocationGroup]:
         """Process allocation group to determine final allocation for each device."""
 
@@ -511,8 +511,9 @@ class PowerAllocator:
             )
 
         _LOGGER.debug(
-            "%s allocation: power=%s, unallocated_power=%s",
-            "Active" if exclude_paused else "Plan",
+            "%s %s: power=%s, unallocated_power=%s",
+            allocation_type,
+            "allocation" if power < 0 else "deallocation",
             power,
             unallocated_power,
         )
@@ -553,7 +554,7 @@ class PowerAllocator:
                         _LOGGER.debug("PowerAllocation: %s", member)
                     else:
                         _LOGGER.warning(
-                            "%s: final_power=%s, share_allocation=%s, consumed_power=%s",
+                            "%s: final_power=%.2f, share_allocation=%s, consumed_power=%s",
                             member.name,
                             member.final_power,
                             member.share_allocation,
@@ -584,11 +585,11 @@ class PowerAllocator:
                 )
 
                 _LOGGER.warning(
-                    "%s: rebalance=%.2f, balance=%s, active=%s",
+                    "%s: Rebalance=%.2f, From=%s, To=%.2f",
                     rebalance_member.name,
                     rebalance_member.final_power,
-                    balance_member.final_power,
                     active_member.consumed_power * -1,
+                    balance_member.final_power,
                 )
 
         return rebalance_ladder
@@ -604,7 +605,7 @@ class PowerAllocator:
         #     book.active_group_map,
         #     book.net_power,
         #     is_delta_power=True,
-        #     exclude_paused=True,
+        #     allocation_type="Delta",
         # )
 
         # No need to allocate net power since rebalance will do the job and only uses consumed power.
@@ -615,7 +616,7 @@ class PowerAllocator:
             book.balance_group_map,
             book.gross_power,
             is_delta_power=False,
-            exclude_paused=True,
+            allocation_type="Rebalance",
         )
 
         # Allocation for all running chargers including both active and paused chargers.
@@ -623,7 +624,7 @@ class PowerAllocator:
             book.all_group_map,
             book.gross_power,
             is_delta_power=False,
-            exclude_paused=False,
+            allocation_type="Plan",
         )
 
         rebalance_ladder = self._rebalance_allocation_among_active_chargers(

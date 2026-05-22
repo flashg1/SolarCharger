@@ -125,9 +125,7 @@ class StateCharge(SolarChargeState):
         try:
             delta_allocated_power = self.solarcharge.get_delta_allocated_power()
             await self._async_adjust_charge_current(
-                self.solarcharge.charger,
-                self.solarcharge.chargeable,
-                delta_allocated_power,
+                self.solarcharge.charger, delta_allocated_power
             )
 
         except Exception as e:
@@ -208,34 +206,27 @@ class StateCharge(SolarChargeState):
     def _calc_current_change(
         self,
         charger: Charger,
-        chargeable: Chargeable,
         delta_allocated_power: float,
         goal: ScheduleData,
     ) -> tuple[float, float]:
         """Calculate new charge current based on delta allocated power."""
 
-        charger_max_current = self.solarcharge.get_charger_max_current()
+        # Use max current if device do not support reading current.
+        old_charge_current = self.solarcharge.get_charge_current(
+            charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
+        )
 
-        config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
-        val_dict = ConfigValueDict(config_item, {})
-        battery_charge_current = self.solarcharge.get_charge_current(charger, val_dict)
-        if val_dict.config_values[ENTITY_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
-            # So we can't get the current, ie. a resistive load.
-            # All devices must have max charge current configured.
-            new_charge_current = charger_max_current
-            old_charge_current = charger_max_current
-            return (new_charge_current, old_charge_current)
-
+        # Device do not support setting current, so new = old.
         if not self.solarcharge.can_set_current:
-            # Device can get current but does not support setting current, so just use reported current.
-            new_charge_current = battery_charge_current
-            old_charge_current = battery_charge_current
+            new_charge_current = old_charge_current
             return (new_charge_current, old_charge_current)
 
-        if battery_charge_current is None:
+        if old_charge_current is None:
             raise ValueError("Failed to get charge current")
+
+        charger_max_current = self.solarcharge.get_charger_max_current()
         old_charge_current = self.solarcharge.validate_current(
-            charger_max_current, battery_charge_current
+            charger_max_current, old_charge_current
         )
 
         #####################################
@@ -310,12 +301,12 @@ class StateCharge(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     async def _async_adjust_charge_current(
-        self, charger: Charger, chargeable: Chargeable, delta_allocated_power: float
+        self, charger: Charger, delta_allocated_power: float
     ) -> None:
         """Adjust charge current."""
 
         new_charge_current, old_charge_current = self._calc_current_change(
-            charger, chargeable, delta_allocated_power, self.solarcharge.running_goal
+            charger, delta_allocated_power, self.solarcharge.running_goal
         )
 
         await self.solarcharge.async_set_charge_current(
