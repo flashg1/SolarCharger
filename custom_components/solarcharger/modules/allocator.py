@@ -138,34 +138,38 @@ class PowerAllocator:
         #   can get a bigger share. Similar to allocation, remain power and total weight will
         #   also be adjusted for subsequent deallocations to fully utilize the power.
         #######################################################
-        if consumed_power < member.max_power:
-            one_amp_watt = member.voltage * 1
-            if (
-                consumed_power > -one_amp_watt
-                and consumed_power < one_amp_watt
-                and not member.can_set_current
-            ):
-                #####################################
-                # Device can read current but not set current, so no participation.
-                #####################################
-                member.allocation_final_weight = 0
-                member.deallocation_final_weight = 0
-                member.need_power = 0
-            else:
-                #####################################
-                # Participate in allocation
-                #####################################
-                member.allocation_final_weight = final_weight
+        if (
+            member.share_allocation == 1
+            and not member.can_set_current
+            and consumed_power > -20
+            and consumed_power < 20
+        ):
+            #####################################
+            # Device in charging state but consumed 0 power,
+            # and can read current but not set current, so no participation.
+            #####################################
+            member.allocation_final_weight = 0
+            member.deallocation_final_weight = 0
+            member.need_power = 0
 
-                # Paused device has need_power = lack_power = consumed_power = 0.
-                if member.allocation_final_weight > 0:
-                    member.need_power = consumed_power - member.max_power
+        elif consumed_power < member.max_power:
+            #####################################
+            # Participate in allocation
+            #####################################
+            member.allocation_final_weight = final_weight
 
-                # Only participate in deallocation if consumed power > 0
-                if consumed_power > 0:
-                    member.deallocation_final_weight = final_weight
+            # Paused device has need_power = lack_power = consumed_power = 0.
+            if member.allocation_final_weight > 0:
+                member.need_power = consumed_power - member.max_power
+
+            # Only participate in deallocation if consumed power > 0
+            if consumed_power > 0:
+                member.deallocation_final_weight = final_weight
+
         else:
+            #####################################
             # Participate in deallocation only.
+            #####################################
             member.deallocation_final_weight = final_weight
 
         group = group_map.get(member.priority)
