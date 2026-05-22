@@ -64,7 +64,7 @@ class PowerAllocator:
             # control.controller.solar_charge.give_up_real_power_allocation()
 
             # Best to reset consumed power to 0 in case value is not 0 before reboot.
-            control.controller.solar_charge.set_consumed_power(0)
+            control.controller.solar_charge.set_consumed_power(0.0)
 
     # ----------------------------------------------------------------------------
     def _create_group_member(self, control: DeviceControl) -> PowerAllocation:

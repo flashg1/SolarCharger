@@ -27,7 +27,6 @@ from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
-    SENSOR_CONSUMED_POWER,
     SENSOR_INSTANCE_COUNT,
     SWITCH_CHARGE,
 )
@@ -656,7 +655,8 @@ class ChargeController(ScOptionState):
                     control.entities.sensors[SENSOR_INSTANCE_COUNT].set_state(
                         control.instance_count
                     )
-                    control.entities.sensors[SENSOR_CONSUMED_POWER].set_state(0)
+                    # I don't think setting SENSOR_CONSUMED_POWER is required here.
+                    # control.entities.sensors[SENSOR_CONSUMED_POWER].set_state(0.0)
 
             control.charge_task = await self.async_start_charge()
             control.instance_count = 1

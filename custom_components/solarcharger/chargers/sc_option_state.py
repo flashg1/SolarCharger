@@ -820,10 +820,10 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # Internal non-configurable entities.
     # ----------------------------------------------------------------------------
-    def get_consumed_power(self) -> float:
-        """Get consumed power."""
+    # def get_consumed_power(self) -> float:
+    #     """Get consumed power."""
 
-        return self.get_number(self.consumed_power_entity_id)
+    #     return self.get_number(self.consumed_power_entity_id)
 
     # ----------------------------------------------------------------------------
     def get_consumed_energy_today(self) -> float:

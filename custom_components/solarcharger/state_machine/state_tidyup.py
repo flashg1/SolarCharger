@@ -5,14 +5,7 @@ import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import (
-    SENSOR_MEDIAN_NET_ALLOCATED_POWER,
-    SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
-    SENSOR_NET_ALLOCATED_POWER,
-    SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
-    SENSOR_SMA_NET_ALLOCATED_POWER,
-    RunState,
-)
+from ..const import RunState
 from .solar_charge_state import SolarChargeState
 from .state_end import StateEnd
 
@@ -44,13 +37,13 @@ class StateTidyUp(SolarChargeState):
         self.solarcharge.tracker.untrack_sync_update()
 
         # reset sensors
-        self.solarcharge.update_sensor(SENSOR_NET_ALLOCATED_POWER, 0)
-        self.solarcharge.update_sensor(SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE, 0)
+        self.solarcharge.set_net_allocated_power(0.0)
+        self.solarcharge.set_net_allocated_power_sample_size(0)
         self.solarcharge.set_median_data_not_ready(self.solarcharge.net_allocations)
-        self.solarcharge.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER, 0)
-        self.solarcharge.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD, 0)
-        self.solarcharge.update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, 0)
-        self.solarcharge.set_consumed_power(0)
+        self.solarcharge.set_median_net_allocated_power(0.0)
+        self.solarcharge.set_median_net_allocated_power_period(0.0)
+        self.solarcharge.set_sma_net_allocated_power(0.0)
+        self.solarcharge.set_consumed_power(0.0)
 
     # ----------------------------------------------------------------------------
     async def async_tidy_up_on_exit(

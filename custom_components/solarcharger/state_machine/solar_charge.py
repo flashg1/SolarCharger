@@ -45,10 +45,15 @@ from ..const import (
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
     SENSOR_LAST_PAUSE_DURATION,
+    SENSOR_MEDIAN_NET_ALLOCATED_POWER,
+    SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
+    SENSOR_NET_ALLOCATED_POWER,
     SENSOR_NET_ALLOCATED_POWER_DATA_SET,
+    SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
     SENSOR_SHARE_ALLOCATION,
+    SENSOR_SMA_NET_ALLOCATED_POWER,
     ChargeStatus,
     MedianDataState,
     RunState,
@@ -118,7 +123,7 @@ class SolarCharge(ScOptionState):
         self.soc_updates: list[StateOfCharge] = []
 
         # Power monitor duration in seconds
-        self.power_monitor_duration = 0
+        self.power_monitor_duration: float = 0.0
         # net allocation = new allocation - consumed power
         self.net_allocations: MedianData
 
@@ -127,9 +132,12 @@ class SolarCharge(ScOptionState):
 
         # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
         self._semaphore_update_ha_task = threading.Semaphore(value=1)
-        self._semaphore_update_ha_task_count = 0
+        self._semaphore_update_ha_task_count: int = 0
 
         self.charge_current_update_period = self.get_charger_current_update_period()
+
+        # Entity backed by variable for efficiency. Ok if re-direction is not required.
+        self._consumed_power: float = 0.0
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -195,6 +203,19 @@ class SolarCharge(ScOptionState):
     # ----------------------------------------------------------------------------
     # Global utils
     # ----------------------------------------------------------------------------
+    def get_sensor_state(
+        self, config_item: str
+    ) -> StateType | date | datetime | Decimal:
+        """Get sensor state."""
+
+        assert self.entities.sensors is not None
+
+        # I think need to know the type and cast the type if using state.
+        # return self.entities.sensors[config_item].state
+
+        return self.entities.sensors[config_item].get_state()
+
+    # ----------------------------------------------------------------------------
     def update_sensor(
         self,
         config_item: str,
@@ -210,9 +231,8 @@ class SolarCharge(ScOptionState):
         """Set the median data set not ready."""
 
         data.data_set_ready = False
-        assert self.entities.sensors is not None
-        self.entities.sensors[SENSOR_NET_ALLOCATED_POWER_DATA_SET].set_state(
-            MedianDataState.NOT_READY.value
+        self.update_sensor(
+            SENSOR_NET_ALLOCATED_POWER_DATA_SET, MedianDataState.NOT_READY.value
         )
 
     # ----------------------------------------------------------------------------
@@ -220,9 +240,8 @@ class SolarCharge(ScOptionState):
         """Set the median data set ready."""
 
         data.data_set_ready = True
-        assert self.entities.sensors is not None
-        self.entities.sensors[SENSOR_NET_ALLOCATED_POWER_DATA_SET].set_state(
-            MedianDataState.READY.value
+        self.update_sensor(
+            SENSOR_NET_ALLOCATED_POWER_DATA_SET, MedianDataState.READY.value
         )
 
     # ----------------------------------------------------------------------------
@@ -238,10 +257,55 @@ class SolarCharge(ScOptionState):
         self.update_sensor(SENSOR_SHARE_ALLOCATION, 0)
 
     # ----------------------------------------------------------------------------
-    def set_consumed_power(self, consumed_power: float) -> None:
+    def set_net_allocated_power(self, val: float) -> None:
+        """Set net allocated power."""
+
+        self.update_sensor(SENSOR_NET_ALLOCATED_POWER, val)
+
+    # ----------------------------------------------------------------------------
+    def set_net_allocated_power_sample_size(self, val: int) -> None:
+        """Set net allocated power sample size."""
+
+        self.update_sensor(SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE, val)
+
+    # ----------------------------------------------------------------------------
+    def set_median_net_allocated_power(self, val: float) -> None:
+        """Set median net allocated power."""
+
+        self.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER, val)
+
+    # ----------------------------------------------------------------------------
+    def set_median_net_allocated_power_period(self, val: float) -> None:
+        """Set median net allocated power period."""
+
+        self.update_sensor(SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD, val)
+
+    # ----------------------------------------------------------------------------
+    def set_sma_net_allocated_power(self, val: float) -> None:
+        """Set SMA net allocated power."""
+
+        self.update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, val)
+
+    # ----------------------------------------------------------------------------
+    def set_consumed_power(self, val: float) -> None:
         """Set consumed power."""
 
-        self.update_sensor(SENSOR_CONSUMED_POWER, consumed_power)
+        self._consumed_power = val
+        self.update_sensor(SENSOR_CONSUMED_POWER, val)
+
+    # ----------------------------------------------------------------------------
+    # Commented out get_consumed_power() in sc_option_state.py.
+    def get_consumed_power(self) -> float:
+        """Get consumed power."""
+
+        # return self.get_sensor_state(SENSOR_CONSUMED_POWER)
+        return self._consumed_power
+
+    # ----------------------------------------------------------------------------
+    def set_consumed_energy_today(self, val: float) -> None:
+        """Set consumed energy today."""
+
+        self.update_sensor(SENSOR_CONSUMED_ENERGY_TODAY, val)
 
     # ----------------------------------------------------------------------------
     async def async_charger_sleep(self) -> None:
@@ -365,6 +429,12 @@ class SolarCharge(ScOptionState):
             await self.async_option_sleep(NUMBER_WAIT_CHARGER_OFF)
 
     # ----------------------------------------------------------------------------
+    def can_set_charge_current(self) -> bool:
+        """Check if charger has ability to set charge current."""
+
+        return self.charger.can_set_charge_current()
+
+    # ----------------------------------------------------------------------------
     def validate_current(self, max_current: float, current: float) -> float:
         """Validate charge current is within charger supported range."""
 
@@ -423,12 +493,6 @@ class SolarCharge(ScOptionState):
             raise ValueError("Failed to get device charge current")
 
         return charge_current
-
-    # ----------------------------------------------------------------------------
-    def can_set_charge_current(self, charger: Charger) -> bool:
-        """Check if charger has ability to set charge current."""
-
-        return charger.can_set_charge_current()
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_current(
@@ -496,22 +560,15 @@ class SolarCharge(ScOptionState):
             #####################################
             # Set energy consumed since last current update
             #####################################
-            assert self.entities.sensors is not None
-            old_consumed_power = float(
-                self.entities.sensors[SENSOR_CONSUMED_POWER].state
-            )
-            if old_consumed_power > 0:
+            old_consumed_power = self.get_consumed_power()
+            if old_consumed_power > 0 and old_charge_current_duration != timedelta.min:
                 # Energy in kWh = Power in kW * time in hours
                 consumed_energy_last_period = (old_consumed_power / 1000) * (
                     old_charge_current_duration.total_seconds() / 3600
                 )
-                consumed_energy_today = float(
-                    self.entities.sensors[SENSOR_CONSUMED_ENERGY_TODAY].state
-                )
+                consumed_energy_today = self.get_consumed_energy_today()
                 consumed_energy_today += consumed_energy_last_period
-                self.entities.sensors[SENSOR_CONSUMED_ENERGY_TODAY].set_state(
-                    consumed_energy_today
-                )
+                self.set_consumed_energy_today(consumed_energy_today)
 
             #####################################
             # Set consumed power

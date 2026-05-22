@@ -417,6 +417,8 @@ class SolarChargerCoordinator(ScOptionState):
                 await self._async_allocate_net_power()
 
                 # Synchronise charge current update for all chargers.
+                # During testing with 10s period for both net power and current, not every
+                # net power update trigger a current update due to period variation.
                 if duration_since_last_sync >= self._min_current_update_period:
                     await self._async_synchronise_charge_current_update()
 

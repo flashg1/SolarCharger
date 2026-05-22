@@ -18,12 +18,6 @@ from ..const import (
     DELTA_POWER_MONITOR_DURATION,
     OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
-    SENSOR_CONSUMED_POWER,
-    SENSOR_MEDIAN_NET_ALLOCATED_POWER,
-    SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
-    SENSOR_NET_ALLOCATED_POWER,
-    SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
-    SENSOR_SMA_NET_ALLOCATED_POWER,
     RunState,
 )
 from ..models.model_charge_stats import ChargeStats
@@ -200,17 +194,11 @@ class StateStart(SolarChargeState):
         #####################################
         # Update sensors
         #####################################
-        self.solarcharge.update_sensor(SENSOR_NET_ALLOCATED_POWER, new_data_point.value)
-        self.solarcharge.update_sensor(
-            SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE, data.sample_size
-        )
-        self.solarcharge.update_sensor(
-            SENSOR_MEDIAN_NET_ALLOCATED_POWER, data.median_value
-        )
-        self.solarcharge.update_sensor(
-            SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD, data.median_period
-        )
-        self.solarcharge.update_sensor(SENSOR_SMA_NET_ALLOCATED_POWER, data.sma_value)
+        self.solarcharge.set_net_allocated_power(new_data_point.value)
+        self.solarcharge.set_net_allocated_power_sample_size(data.sample_size)
+        self.solarcharge.set_median_net_allocated_power(data.median_value)
+        self.solarcharge.set_median_net_allocated_power_period(data.median_period)
+        self.solarcharge.set_sma_net_allocated_power(data.sma_value)
 
     # ----------------------------------------------------------------------------
     # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
@@ -319,11 +307,7 @@ class StateStart(SolarChargeState):
 
                 # Save allocated power to calculate moving average.
                 if self.solarcharge.power_monitor_duration > 0:
-                    assert self.solarcharge.entities.sensors is not None
-                    consumed_power = float(
-                        self.solarcharge.entities.sensors[SENSOR_CONSUMED_POWER].state
-                    )
-
+                    consumed_power = self.solarcharge.get_consumed_power()
                     net_allocated_power = allocated_power - consumed_power
                     new_data_point = MedianDataPoint(
                         value=net_allocated_power,
@@ -491,7 +475,7 @@ class StateStart(SolarChargeState):
         #         )
 
     # ----------------------------------------------------------------------------
-    def _init_instance_variables(self, charger: Charger) -> None:
+    def _init_instance_variables(self) -> None:
         """Set up instance variables once per session."""
 
         # Must run this first thing to estimate if session started by timer
@@ -501,21 +485,19 @@ class StateStart(SolarChargeState):
         )
         self.solarcharge.started_max_charge = 0
         self.solarcharge.started_calibrate_max_charge_speed = False
-        self.solarcharge.can_set_current = self.solarcharge.can_set_charge_current(
-            charger
-        )
+        self.solarcharge.can_set_current = self.solarcharge.can_set_charge_current()
 
-        self.solarcharge.set_consumed_power(0)
+        self.solarcharge.set_consumed_power(0.0)
 
         # Init power monitor window
         self._init_power_monitor_window()
 
     # ----------------------------------------------------------------------------
-    async def _async_start_session(self, charger: Charger) -> None:
+    async def _async_start_session(self) -> None:
         """Start the charging session."""
 
         # Init instance variables
-        self._init_instance_variables(charger)
+        self._init_instance_variables()
 
         # Init stats
         self.solarcharge.stats = ChargeStats()
@@ -532,6 +514,6 @@ class StateStart(SolarChargeState):
 
         self.solarcharge.set_run_state(self.state)
 
-        await self._async_start_session(self.solarcharge.charger)
+        await self._async_start_session()
 
         self.solarcharge.set_machine_state(StateInitialise())
