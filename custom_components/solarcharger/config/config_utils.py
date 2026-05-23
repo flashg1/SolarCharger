@@ -29,12 +29,13 @@ from ..const import (
     CHARGE_API_ENTITIES,
     CONFIG_NAME_MARKER,
     CONFIG_WITH_NO_DEFAULTS,
+    DELETE_ENTITY_MARKER,
+    DELETE_STRING_MARKER,
     DEVICE_NAME_MARKER,
     DOMAIN,
     DOMAIN_WITH_SUBDOMAINS,
     NON_ENTITY_CONFIGS,
     OPTION_CHARGER_NAME,
-    OPTION_DELETE_ENTITY,
     OPTION_GLOBAL_DEFAULTS_ID,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
@@ -502,18 +503,29 @@ def get_saved_option_value(
 
 
 # ----------------------------------------------------------------------------
-def delete_marked_entities(
+def delete_marked_config(
     data: dict[str, Any],
 ) -> dict[str, Any]:
-    """Delete entity strings marked for deletion."""
+    """Delete entity and config strings marked for deletion.
+
+    To delete entity from options config, user need to select dummy entity with .deleteme name.
+    To delete string from options config, user need to type in exactly 2 blanks.
+    """
 
     for config_item, value in list(data.items()):
+        # User request to delete config.
+        # "" or None made no difference, options flow will remove the config from the data structure.
+        # This is bad because I can't save a blank string in config.
+        #
         # Leave existing value unless it is marked for deletion, eg.
         # sensor.deleteme, button.deleteme, etc.
         # No other way to detect that user wants to delete the entity.
-        # User setting to None by deleting entity in user interface did not help
-        # because vol.Optional() has been set to restore from saved options.
-        if value and isinstance(value, str) and OPTION_DELETE_ENTITY in value:
+        if (
+            value is not None
+            and isinstance(value, str)
+            and (DELETE_ENTITY_MARKER in value or value == DELETE_STRING_MARKER)
+        ):
+            _LOGGER.warning("Delete config: %s = '%s'", config_item, value)
             data[config_item] = None
 
     return data
@@ -521,44 +533,76 @@ def delete_marked_entities(
 
 # ----------------------------------------------------------------------------
 def create_entity_ids_from_templates(
-    entity_map: dict[str, Any],
+    user_config_map: dict[str, Any],
     template_map: dict[str, str | None] | None,
     device_name: str | None,
     config_name: str | None,
+    is_init_all: bool,
 ) -> None:
-    """Create entity IDs from templates."""
+    """Create config from SolarCharger entity and config templates."""
 
     if template_map:
-        key_list = list(template_map.keys())
-        for config_item in key_list:
-            entity_id = get_device_entity_id_with_substitution(
+        # key_list = list(template_map.keys())
+        # for config_item in key_list:
+        for config_item, template in template_map.items():
+            sc_config = get_device_entity_id_with_substitution(
                 template_map,
                 config_item,
                 device_name,
                 config_name,
             )
-            if entity_id:
-                # Only replace SolarCharger entities, not user overriden entities.
-                original_entity_id = entity_map.get(config_item)
-                if (
-                    original_entity_id
-                    and DOMAIN in original_entity_id
-                    and config_item in original_entity_id
-                ):
-                    entity_map[config_item] = entity_id
+
+            # Confirmed config_item is not in dictionary by checking if dictionary key exists.
+            # found_config = config_item in user_config_map
+            user_config = user_config_map.get(config_item)
+            is_api_entity = (
+                False if template is None else DEVICE_NAME_MARKER in template
+            )
+            _LOGGER.warning(
+                "%s: is_api_entity=%s, user_config='%s', sc_entity_id='%s'",
+                config_item,
+                is_api_entity,
+                user_config,
+                sc_config,
+            )
+
+            if sc_config is not None:
+                #####################################
+                # Process SolarCharger configs found in user_config_map.
+                #####################################
+                if config_item == OPTION_CHARGER_NAME:
+                    # Special case, already handled in process_api_config()
+                    pass
+
+                elif user_config is None:
+                    # Only add config if this is an initial setup.
+                    # Otherwise config is destined for removal by HA.
+                    if is_init_all:
+                        user_config_map[config_item] = sc_config
+
+                elif is_api_entity:
+                    # An API entity, so must set it.
+                    user_config_map[config_item] = sc_config
+
+                else:
+                    # Everything else that is **modifiable** can be overriden.
+                    # So keep unchanged.
+                    pass
 
 
 # ----------------------------------------------------------------------------
-def reset_api_entities(
+def process_api_config(
     config_entry: ConfigEntry,
     config_name: str,  # Same as subentry unique_id
     data: dict[str, Any],
+    is_init_all: bool,
 ) -> dict[str, Any]:
     """Reset entity names using new device name and config name substitutions. Delete marked entities."""
 
     if config_name != OPTION_GLOBAL_DEFAULTS_ID:
-        # Delete marked entities
-        data = delete_marked_entities(data)
+        _LOGGER.warning("Original config: %s", data)
+        # Delete marked entities and config strings
+        data = delete_marked_config(data)
 
         # Reset API entity names due to device name change
         subentry_id = get_subentry_id(config_entry, config_name)
@@ -566,16 +610,23 @@ def reset_api_entities(
             subentry = config_entry.subentries.get(subentry_id)
             if subentry:
                 #####################################################################
-                # OPTION_CHARGER_DEVICE_NAME and others are always present if restore from saved options is enabled
+                # Charger name must be in data.
+                # For charger with blank name "", set charger name to single space, ie. " ".
+                # If OPTION_CHARGER_NAME is "" or None, HA removes it from storage.
+                # So store it as single blank, ie. " ", and then strip it before use.
+                # Here will strip the space from charger name before use.
                 #####################################################################
-                if OPTION_CHARGER_NAME in data:
-                    device_name = data.get(OPTION_CHARGER_NAME, "")
-                    device_name = slugify(device_name.strip())
+                device_name = data.get(OPTION_CHARGER_NAME, " ")
+                device_name = slugify(device_name.strip())
+                if device_name == "":
+                    # HA will not save blank configs, so make it a single blank.
+                    data[OPTION_CHARGER_NAME] = " "
+                else:
                     data[OPTION_CHARGER_NAME] = device_name
 
-                    api_entities = get_device_api_entities(subentry)
-                    create_entity_ids_from_templates(
-                        data, api_entities, device_name, subentry.unique_id
-                    )
+                api_entities = get_device_api_entities(subentry)
+                create_entity_ids_from_templates(
+                    data, api_entities, device_name, subentry.unique_id, is_init_all
+                )
 
     return data

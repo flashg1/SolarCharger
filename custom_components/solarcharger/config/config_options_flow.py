@@ -59,7 +59,7 @@ from ..const import (
     NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
-    NUMBER_MAX_CONSUMED_ENERGY,
+    NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
@@ -110,7 +110,7 @@ from .config_utils import (
     get_device_api_entities,
     get_saved_option_value,
     get_subentry_id,
-    reset_api_entities,
+    process_api_config,
 )
 
 # if TYPE_CHECKING:
@@ -399,10 +399,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
-                subentry, NUMBER_MAX_CONSUMED_ENERGY, use_default
+                subentry, NUMBER_MAX_CONSUMED_ENERGY_LIMIT, use_default
             ): choose_selector(
                 api_entities,
-                NUMBER_MAX_CONSUMED_ENERGY,
+                NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,
@@ -558,7 +558,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
     ) -> dict[str, Any]:
         """Validate the input data for the options flow."""
 
-        processed_data = reset_api_entities(self.config_entry, config_name, data)
+        processed_data = process_api_config(
+            self.config_entry, config_name, data, is_init_all=False
+        )
         coordinator: SolarChargerCoordinator = self.hass.data[DOMAIN][
             self.config_entry.entry_id
         ]

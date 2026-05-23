@@ -37,7 +37,7 @@ from ..const import (
 from ..entity import compose_entity_id
 from ..exceptions.validation_exception import ValidationExceptionError
 from ..helpers.utils import compose_subdomain
-from .config_options_flow import reset_api_entities
+from .config_options_flow import process_api_config
 from .config_utils import TEXT_SELECTOR, get_subentry_id
 
 # ----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
         data: dict[str, Any] = {
             OPTION_CHARGER_NAME: device_name,
         }
-        reset_api_entities(config_entry, subentry_unique_id, data)
+        process_api_config(config_entry, subentry_unique_id, data, is_init_all=True)
 
         self.hass.config_entries.async_update_entry(
             config_entry,

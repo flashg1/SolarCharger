@@ -8,7 +8,6 @@ from typing import Any
 from homeassistant.core import Event, EventStateChangedData
 from homeassistant.util.dt import as_local
 
-from ..chargers.charger import Charger
 from ..config.config_utils import create_entity_ids_from_templates
 from ..const import (
     CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
@@ -16,7 +15,6 @@ from ..const import (
     CONFIG_LOCAL_OPTION_LIST,
     CONFIG_NET_POWER_SENSOR,
     DELTA_POWER_MONITOR_DURATION,
-    OPTION_CHARGER_NAME,
     OPTION_LOCAL_INTERNAL_ENTITIES,
     RunState,
 )
@@ -380,11 +378,12 @@ class StateStart(SolarChargeState):
         """Log internal non-configurable entities."""
 
         entity_map: dict[str, Any] = {}
-        device_name = self.solarcharge.option_get_string(OPTION_CHARGER_NAME)
+
+        device_name = self.solarcharge.option_get_charger_name()
         # config_name = self.solarcharge._subentry.unique_id
         config_name = self.solarcharge.caller
         create_entity_ids_from_templates(
-            entity_map, template_map, device_name, config_name
+            entity_map, template_map, device_name, config_name, is_init_all=True
         )
 
         val_dict = ConfigValueDict("Internal entities", {})

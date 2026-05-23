@@ -1,14 +1,16 @@
 # Changelog
 
-## v0.7.1 2026-05-12
+## v0.8.0 2026-05-12
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.6.1 or prior.
 ### Fix
 - Fixed issue with not able to override SolarCharger entity in options config flow.
 ### Improvement
+- Select dummy entity *.deleteme to delete entity in options config flow.
+- Type 2 spaces to delete string in options config flow.
 - Refactored allocator for fairer allocation to paused chargers and rebalance all active chargers.
 - Added "Pause on start" switch to monitor available solar for devices uses a lot of energy on start up, eg. hot water.
-- Added "Max consumed energy" limit and "End on max consumed energy" switch to end charge on reaching max consumed energy.
+- Added "Max consumed energy limit" and "End on max consumed energy" switch to end charge on reaching max consumed energy.
 - Added sensor "Consumed energy today".
 - Use utcnow instead of new_state.last_updated_timestamp to determine if reaching current_update_period.
 - Set MedianDataState.NOT_READY on startup and exit.

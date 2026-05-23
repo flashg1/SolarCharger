@@ -137,6 +137,7 @@ class SolarCharge(ScOptionState):
         self.charge_current_update_period = self.get_charger_current_update_period()
 
         # Entity backed by variable for efficiency. Ok if re-direction is not required.
+        self._share_allocation: int = 0
         self._consumed_power: float = 0.0
 
         # Initialise state machine self._state variable.
@@ -248,13 +249,21 @@ class SolarCharge(ScOptionState):
     def participate_in_real_power_allocation(self) -> None:
         """Participate in real power allocation."""
 
+        self._share_allocation = 1
         self.update_sensor(SENSOR_SHARE_ALLOCATION, 1)
 
     # ----------------------------------------------------------------------------
     def give_up_real_power_allocation(self) -> None:
         """Participate in real power allocation."""
 
+        self._share_allocation = 0
         self.update_sensor(SENSOR_SHARE_ALLOCATION, 0)
+
+    # ----------------------------------------------------------------------------
+    def get_share_allocation(self) -> int:
+        """Get share allocation."""
+
+        return self._share_allocation
 
     # ----------------------------------------------------------------------------
     def set_net_allocated_power(self, val: float) -> None:
@@ -306,6 +315,34 @@ class SolarCharge(ScOptionState):
         """Set consumed energy today."""
 
         self.update_sensor(SENSOR_CONSUMED_ENERGY_TODAY, val)
+
+    # ----------------------------------------------------------------------------
+    def set_pause_count(self, val: int) -> None:
+        """Set pause count."""
+
+        self.update_sensor(SENSOR_PAUSE_COUNT, val)
+
+    # ----------------------------------------------------------------------------
+    def set_last_pause_duration(self, val: timedelta) -> None:
+        """Set last pause duration."""
+
+        # native_unit_of_measurement=UnitOfTime.MINUTES
+        self.update_sensor(SENSOR_LAST_PAUSE_DURATION, val.total_seconds() / 60)
+
+    # ----------------------------------------------------------------------------
+    def set_average_pause_duration(self, val: timedelta) -> None:
+        """Set average pause duration."""
+
+        # native_unit_of_measurement=UnitOfTime.MINUTES
+        self.update_sensor(SENSOR_AVERAGE_PAUSE_DURATION, val.total_seconds() / 60)
+
+    # ----------------------------------------------------------------------------
+    def set_pause_stats(self, val: ChargeStats) -> None:
+        """Set pause stats."""
+
+        self.set_pause_count(val.pause_total_count)
+        self.set_last_pause_duration(val.pause_last_duration)
+        self.set_average_pause_duration(val.pause_average_duration)
 
     # ----------------------------------------------------------------------------
     async def async_charger_sleep(self) -> None:
@@ -650,20 +687,6 @@ class SolarCharge(ScOptionState):
 
             if soc is not None and charge_limit is not None:
                 is_below_limit = soc < charge_limit
-                # if not is_below_limit:
-                #     _LOGGER.info(
-                #         "SOC %s %% is at or above charge limit %s %%, stopping charger %s",
-                #         soc,
-                #         charge_limit,
-                #         self.caller,
-                #     )
-                # else:
-                #     _LOGGER.debug(
-                #         "SOC %s %% is below charge limit %s %%, continuing charger %s",
-                #         soc,
-                #         charge_limit,
-                #         self.caller,
-                #     )
 
         except TimeoutError as e:
             _LOGGER.warning(
@@ -990,7 +1013,7 @@ class SolarCharge(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
-    def device_at_location_and_connected(self) -> bool:
+    def is_device_at_location_and_connected(self) -> bool:
         """Is device at location and charger connected?"""
 
         is_at_location = self.is_at_location(self.chargeable)
@@ -1066,32 +1089,6 @@ class SolarCharge(ScOptionState):
                 "%s: Update HA task triggered by presence detection already running.",
                 self.caller,
             )
-
-    # ----------------------------------------------------------------------------
-    def set_last_pause_duration(self, last_pause_duration: timedelta) -> None:
-        """Set last pause duration."""
-
-        assert self.entities.sensors is not None
-
-        # native_unit_of_measurement=UnitOfTime.MINUTES
-        self.entities.sensors[SENSOR_LAST_PAUSE_DURATION].set_state(
-            last_pause_duration.total_seconds() / 60
-        )
-
-    # ----------------------------------------------------------------------------
-    def set_pause_stats(self, stats: ChargeStats) -> None:
-        """Set pause stats."""
-
-        assert self.entities.sensors is not None
-
-        self.set_last_pause_duration(stats.pause_last_duration)
-
-        self.entities.sensors[SENSOR_PAUSE_COUNT].set_state(stats.pause_total_count)
-
-        # native_unit_of_measurement=UnitOfTime.MINUTES
-        self.entities.sensors[SENSOR_AVERAGE_PAUSE_DURATION].set_state(
-            stats.pause_average_duration.total_seconds() / 60
-        )
 
     # ----------------------------------------------------------------------------
     async def async_start_state_machine(self, machine_state: SolarChargeState) -> None:

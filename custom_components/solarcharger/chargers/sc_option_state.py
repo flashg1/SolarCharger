@@ -29,10 +29,11 @@ from ..const import (
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
-    NUMBER_MAX_CONSUMED_ENERGY,
+    NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    OPTION_CHARGER_NAME,
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SENSOR,
@@ -380,6 +381,16 @@ class ScOptionState(ScConfigState):
             return None
 
         return json.loads(json_str)
+
+    # ----------------------------------------------------------------------------
+    def option_get_charger_name(self) -> str:
+        """Get charger name from saved options. Note blank name is saved with single space."""
+
+        device_name = self.option_get_string(OPTION_CHARGER_NAME)
+        if device_name is None:
+            device_name = ""
+
+        return device_name.strip()
 
     # ----------------------------------------------------------------------------
     # Get entity ID from options config, then get entity value.
@@ -807,7 +818,7 @@ class ScOptionState(ScConfigState):
     def get_max_consumed_energy_limit(self) -> float:
         """Get maximum consumed energy limit."""
 
-        return self.option_get_entity_number_or_abort(NUMBER_MAX_CONSUMED_ENERGY)
+        return self.option_get_entity_number_or_abort(NUMBER_MAX_CONSUMED_ENERGY_LIMIT)
 
     # ----------------------------------------------------------------------------
     def get_charger_min_workable_current(self) -> float:
@@ -826,16 +837,17 @@ class ScOptionState(ScConfigState):
     #     return self.get_number(self.consumed_power_entity_id)
 
     # ----------------------------------------------------------------------------
+    # def get_share_allocation(self) -> int:
+    #     """Get share allocation."""
+
+    #     return self.get_integer(self.share_allocation_entity_id)
+
+    # ----------------------------------------------------------------------------
+    # Need entity to keep state across reboots.
     def get_consumed_energy_today(self) -> float:
         """Get consumed energy today."""
 
         return self.get_number(self.consumed_energy_today_entity_id)
-
-    # ----------------------------------------------------------------------------
-    def get_share_allocation(self) -> int:
-        """Get share allocation."""
-
-        return self.get_integer(self.share_allocation_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_fast_charge_mode(self) -> bool:

@@ -186,7 +186,7 @@ class ChargeController(ScOptionState):
                             and goal.battery_soc < goal.new_charge_limit
                         )
                     ):
-                        if self.solar_charge.device_at_location_and_connected():
+                        if self.solar_charge.is_device_at_location_and_connected():
                             _LOGGER.warning(
                                 "%s: Rescheduling charge due to schedule update",
                                 self.caller,

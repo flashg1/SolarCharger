@@ -61,9 +61,7 @@ class StateTidyUp(SolarChargeState):
             await self.solarcharge.async_turn_off_charger(charger, chargeable)
 
             # Only schedule next charge session if car is connected and at location.
-            if self.solarcharge.is_connected(
-                charger
-            ) and self.solarcharge.is_at_location(chargeable):
+            if self.solarcharge.is_device_at_location_and_connected():
                 await self.solarcharge.scheduler.async_schedule_next_charge_session(
                     chargeable, self.solarcharge.started_calibrate_max_charge_speed
                 )
