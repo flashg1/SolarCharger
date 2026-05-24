@@ -116,7 +116,6 @@
                     "sunrise_elevation_start_trigger": "Sunrise elevation start trigger (degrees)",
                     "sunset_elevation_end_trigger": "Sunset elevation end trigger (degrees)",
                     "power_monitor_duration": "Power monitor duration (minutes)",
-                    "charger_min_workable_current_exit_pause_percent": "Min workable current exit pause percent (%)",
                     "wait_chargee_wakeup": "Wait device wakeup (seconds)",
                     "wait_chargee_update_ha": "Wait device update HA (seconds)",
                     "wait_chargee_limit_change": "Wait device charge limit change (seconds)",
@@ -127,6 +126,8 @@
                     "charger_max_speed": "Charger max speed (%/hour)",
                     "charger_min_current": "Charger min current (AMP)",
                     "charger_min_workable_current": "Charger min workable current (AMP, current=0A for anything below this limit)",
+                    "charger_min_workable_current_enter_pause_percent": "Min workable current enter pause percent (%)",
+                    "charger_min_workable_current_exit_pause_percent": "Min workable current exit pause percent (%)",
                     "charger_priority": "Charger priority (0 = highest priority)",
                     "charger_power_allocation_weight": "Charger power allocation weight (allocation=net power*weight/total weight)",
                     "delta_allocated_power": "Delta allocated power sensor (W)",
@@ -292,6 +293,12 @@
             "charger_min_workable_current": {
                 "name": "Min workable current"
             },
+            "charger_min_workable_current_enter_pause_percent": {
+                "name": "Min workable current enter pause percent"
+            },
+            "charger_min_workable_current_exit_pause_percent": {
+                "name": "Min workable current exit pause percent"
+            },
             "charger_priority": {
                 "name": "Priority"
             },
@@ -315,9 +322,6 @@
             },
             "power_monitor_duration": {
                 "name": "Power monitor duration"
-            },
-            "charger_min_workable_current_exit_pause_percent": {
-                "name": "Min workable current exit pause percent"
             },
             "ocpp_profile_id": {
                 "name": "Charge profile ID"

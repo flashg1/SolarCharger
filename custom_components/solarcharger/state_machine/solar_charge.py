@@ -828,34 +828,40 @@ class SolarCharge(ScOptionState):
             if run_state == RunState.PAUSED:
                 # For exiting out of paused state.
                 # Do not raise the bar if device cannot set current since allocated power is already at max power.
-                if self.can_set_current:
-                    # Make it harder to exit pause state by raising the requirement to exit pause state.
-                    # Raise the bar by extra_percent to avoid borderline cases where the charger might keep switching on and off.
-                    extra_percent = (
-                        self.get_charger_min_workable_current_exit_pause_percent()
-                    )
-                    min_workable_power *= (100 + extra_percent) / 100
+
+                # if self.can_set_current:
+                # Make it harder to exit pause state by raising the requirement to exit pause state.
+                # Raise the bar by extra_percent to avoid borderline cases where the charger might keep switching on and off.
+                exit_pause_extra_percent = (
+                    self.get_charger_min_workable_current_exit_pause_percent()
+                )
+                limit = min_workable_power * (100 + exit_pause_extra_percent) / 100
 
                 # Note surplus power is negative.
-                is_enough_power = median_net_allocated_power <= min_workable_power
+                is_enough_power = median_net_allocated_power <= limit
             else:
                 # For entering pause state.
                 # Make it harder to go into pause state if current net_allocated_power has enough power.
                 # Note surplus power is negative.
+                enter_pause_extra_percent = (
+                    self.get_charger_min_workable_current_enter_pause_percent()
+                )
+                limit = min_workable_power * (100 + enter_pause_extra_percent) / 100
+
                 is_enough_power = (
-                    median_net_allocated_power <= min_workable_power
-                    or net_allocated_power <= min_workable_power
+                    median_net_allocated_power <= limit or net_allocated_power <= limit
                 )
 
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug(
                     "%s: is_enough_power=%s, run_state=%s, median_net_allocated_power=%s, net_allocated_power=%s, "
-                    "min_workable_power=%s, sample_size=%s, sample_duration=%s",
+                    "limit=%s, min_workable_power=%s, sample_size=%s, sample_duration=%s",
                     self.caller,
                     is_enough_power,
                     run_state,
                     median_net_allocated_power,
                     net_allocated_power,
+                    limit,
                     min_workable_power,
                     net_allocations.sample_size,
                     net_allocations.sample_duration,

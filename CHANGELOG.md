@@ -2,6 +2,8 @@
 
 ## v0.8.0 2026-05-12
 ### Breaking change
+- Added "Min workable current enter pause percent" local device config.
+- Moved "Min workable current exit pause percent" to global defaults to local device config.
 - Added "Max consumed energy limit" and "End on max consumed energy" switch to end charge on reaching max consumed energy.
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### Fix

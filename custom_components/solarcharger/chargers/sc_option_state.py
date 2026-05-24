@@ -26,6 +26,7 @@ from ..const import (
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_ENTER_PAUSE_PERCENT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
@@ -777,14 +778,6 @@ class ScOptionState(ScConfigState):
         return self.option_get_entity_number_or_abort(NUMBER_POWER_MONITOR_DURATION)
 
     # ----------------------------------------------------------------------------
-    def get_charger_min_workable_current_exit_pause_percent(self) -> float:
-        """Get charger minimum workable current extra percentage required to exit pause."""
-
-        return self.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT
-        )
-
-    # ----------------------------------------------------------------------------
     def is_reduce_charge_limit_difference_between_days(self) -> bool:
         """Return True if reduce charge limit difference between days is enabled."""
 
@@ -826,6 +819,22 @@ class ScOptionState(ScConfigState):
 
         return self.option_get_entity_number_or_abort(
             NUMBER_CHARGER_MIN_WORKABLE_CURRENT
+        )
+
+    # ----------------------------------------------------------------------------
+    def get_charger_min_workable_current_enter_pause_percent(self) -> float:
+        """Get charger minimum workable current extra percentage required to enter pause."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_ENTER_PAUSE_PERCENT
+        )
+
+    # ----------------------------------------------------------------------------
+    def get_charger_min_workable_current_exit_pause_percent(self) -> float:
+        """Get charger minimum workable current extra percentage required to exit pause."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT
         )
 
     # ----------------------------------------------------------------------------
