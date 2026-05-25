@@ -112,7 +112,7 @@ class SolarCharge(ScOptionState):
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
 
-        # Remember last current for devices that cannot set current.
+        # Remember last current for energy calculation and for devices that cannot set current.
         self.last_charge_current: float = 0.0
 
         self.can_set_current: bool = False

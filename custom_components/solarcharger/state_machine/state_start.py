@@ -485,7 +485,6 @@ class StateStart(SolarChargeState):
         self.solarcharge.started_max_charge = 0
         self.solarcharge.started_calibrate_max_charge_speed = False
         self.solarcharge.can_set_current = self.solarcharge.can_set_charge_current()
-        self.solarcharge.last_charge_current = 0.0
 
         self.solarcharge.set_consumed_power(0.0)
 
