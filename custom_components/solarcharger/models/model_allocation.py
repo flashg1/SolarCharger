@@ -15,8 +15,9 @@ class PowerAllocation:
     # Environment data:
     # Maximum power the charger can consume.
     max_power: float
-    # Minimum power required for the charger to operate.
-    min_workable_power: float
+    # Minimum power required for the charger to operate. Must be -ve for surplus power.
+    activation_power: float
+    adjusted_activation_power: float
 
     # Inputs:
     # Charger priority (0 = highest priority)
@@ -62,7 +63,8 @@ class PowerAllocation:
         return (
             f"name={self.name}, "
             f"max_power={self.max_power}, "
-            f"min_workable_power={self.min_workable_power}, "
+            f"activation_power={self.activation_power}, "
+            f"adjusted_activation_power={self.adjusted_activation_power}, "
             f"consumed_power={self.consumed_power}, "
             f"priority={self.priority}, "
             f"allocation_weight={self.allocation_weight}, "
