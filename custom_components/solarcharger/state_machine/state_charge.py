@@ -438,7 +438,7 @@ class StateCharge(SolarChargeState):
         await self.solarcharge.async_turn_charger_switch(charger, turn_on=True)
         charger_max_current = self.solarcharge.get_charger_max_current()
         charger_min_current = self.solarcharge.get_charger_min_current(
-            charger_max_current
+            charger_max_current, direct=True
         )
         await self.solarcharge.async_set_charge_current(charger, charger_min_current)
         await self.solarcharge.async_update_ha(chargeable)

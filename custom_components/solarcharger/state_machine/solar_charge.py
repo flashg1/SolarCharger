@@ -207,6 +207,15 @@ class SolarCharge(ScOptionState):
     # ----------------------------------------------------------------------------
     # Global utils
     # ----------------------------------------------------------------------------
+    def get_number_state(
+        self, config_item: str
+    ) -> StateType | date | datetime | Decimal:
+        """Get number state."""
+
+        assert self.entities.numbers is not None
+        return self.entities.numbers[config_item].state
+
+    # ----------------------------------------------------------------------------
     def get_sensor_state(
         self, config_item: str
     ) -> StateType | date | datetime | Decimal:
@@ -486,12 +495,18 @@ class SolarCharge(ScOptionState):
         return current
 
     # ----------------------------------------------------------------------------
-    def get_charger_min_current(self, charger_max_current: float) -> float:
+    def get_charger_min_current(
+        self, charger_max_current: float, direct: bool = False
+    ) -> float:
         """Get charger min current."""
 
-        config_min_current = self.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_MIN_CURRENT
-        )
+        if direct:
+            config_min_current = self.get_number_state(NUMBER_CHARGER_MIN_CURRENT)
+        else:
+            config_min_current = self.option_get_entity_number_or_abort(
+                NUMBER_CHARGER_MIN_CURRENT
+            )
+
         return self.validate_current(charger_max_current, config_min_current)
 
     # ----------------------------------------------------------------------------
