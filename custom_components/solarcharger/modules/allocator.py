@@ -93,8 +93,8 @@ class PowerAllocator:
             subentry_id=control.subentry_id,
             name=control.config_name,
             max_power=max_power,
-            adjusted_activation_power=adjusted_activation_power,
             activation_power=activation_power,
+            adjusted_activation_power=adjusted_activation_power,
             priority=priority,
             allocation_weight=allocation_weight,
             instance=instance,
@@ -296,7 +296,7 @@ class PowerAllocator:
                 # Allocate power, ie. -ve
                 #####################################
                 if member.consumed_power + abs(allocated_power) >= abs(
-                    member.activation_power
+                    member.adjusted_activation_power
                 ):
                     #####################################
                     # Only allocate if above activation power.
@@ -555,11 +555,11 @@ class PowerAllocator:
                         _LOGGER.debug("PowerAllocation: %s", member)
                     elif member.share_allocation == 0:
                         _LOGGER.warning(
-                            "%s: state=Paused, plan_power=%.2f, activation_power=%.2f, adjusted_activation_power=%.2f",
+                            "%s: state=Paused, plan_power=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
                             member.name,
                             member.final_power,
-                            member.activation_power,
                             member.adjusted_activation_power,
+                            member.activation_power,
                         )
 
     # ----------------------------------------------------------------------------
@@ -586,13 +586,13 @@ class PowerAllocator:
                 )
 
                 _LOGGER.warning(
-                    "%s: Rebalance=%.2f, From=%s, To=%.2f, activation_power=%.2f, adjusted_activation_power=%.2f",
+                    "%s: Rebalance=%.2f, From=%.2f, To=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
                     rebalance_member.name,
                     rebalance_member.final_power,
                     active_member.consumed_power * -1,
                     balance_member.final_power,
-                    active_member.activation_power,
                     active_member.adjusted_activation_power,
+                    active_member.activation_power,
                 )
 
         return rebalance_ladder

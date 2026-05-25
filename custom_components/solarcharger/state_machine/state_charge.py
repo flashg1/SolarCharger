@@ -50,9 +50,6 @@ class StateCharge(SolarChargeState):
         self._semaphore_update_charge_current_task = threading.Semaphore(value=1)
         self._semaphore_update_charge_current_task_count: int = 0
 
-        # Remember last current for devices that cannot set current.
-        self._last_current: float = 0.0
-
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
@@ -232,6 +229,8 @@ class StateCharge(SolarChargeState):
         )
 
     # ----------------------------------------------------------------------------
+    # if old_charge_current is None:
+    #     raise ValueError("Failed to get charge current")
     def _calc_current_change(
         self,
         charger: Charger,
@@ -240,30 +239,20 @@ class StateCharge(SolarChargeState):
     ) -> tuple[float, float]:
         """Calculate new charge current based on delta allocated power."""
 
-        # Use max current if device do not support reading current.
-        old_charge_current = self.solarcharge.get_charge_current(
-            charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
-        )
+        old_charge_current = self.solarcharge.last_charge_current
 
         if not self.solarcharge.can_set_current:
             # Device do not support setting current.
-            # Can lose a bit for energy calculation if device set current=0 by itself, so save new current.
-            new_charge_current = old_charge_current
-            old_charge_current = self._last_current
-            self._last_current = new_charge_current
+            # Use max current if device do not support reading current.
+            new_charge_current = self.solarcharge.get_charge_current(
+                charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
+            )
             return (new_charge_current, old_charge_current)
-
-        if old_charge_current is None:
-            raise ValueError("Failed to get charge current")
-
-        charger_max_current = self.solarcharge.get_charger_max_current()
-        old_charge_current = self.solarcharge.validate_current(
-            charger_max_current, old_charge_current
-        )
 
         #####################################
         # Charge at max current if fast charge
         #####################################
+        charger_max_current = self.solarcharge.get_charger_max_current()
         if (
             self.solarcharge.is_fast_charge_mode()
             or self.solarcharge.is_calibrate_max_charge_speed()
@@ -342,7 +331,7 @@ class StateCharge(SolarChargeState):
         )
 
         _LOGGER.warning(
-            "%s: delta_allocated_power=%s, new_current=%s, old_current=%s",
+            "%s: delta_allocated_power=%.2f, new_current=%s, old_current=%s",
             self.solarcharge.caller,
             delta_allocated_power,
             new_charge_current,
@@ -464,11 +453,12 @@ class StateCharge(SolarChargeState):
     ) -> ContextData:
         """Loop to charge device."""
 
-        # Initialise counts before starting loop
+        # Initialise before starting loop
+        self.solarcharge.last_charge_current = 0.0
+        done_switch_on_charger = False
         stats.loop_success_count = 0
         stats.loop_consecutive_fail_count = 0
-        done_switch_on_charger = False
-        self._last_current = 0.0
+
         while True:
             self.solarcharge.abort_if_exceed_max_consecutive_failure()
 

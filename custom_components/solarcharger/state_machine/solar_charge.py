@@ -112,6 +112,9 @@ class SolarCharge(ScOptionState):
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
 
+        # Remember last current for devices that cannot set current.
+        self.last_charge_current: float = 0.0
+
         self.can_set_current: bool = False
         self.started_calibrate_max_charge_speed: bool = False
 
@@ -542,10 +545,7 @@ class SolarCharge(ScOptionState):
             # Get old charge current
             #####################################
             if old_current is None:
-                # Use max current if device do not support reading current.
-                old_charge_current = self.get_charge_current(
-                    charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
-                )
+                old_charge_current = self.last_charge_current
             else:
                 old_charge_current = old_current
 
@@ -576,12 +576,12 @@ class SolarCharge(ScOptionState):
                     new_charge_current = new_current
 
             # Device do not support setting current.
-            # So just allow setting 0 current and 0 consumed power,
-            # otherwise just use old current.
-            elif new_current == 0:
-                new_charge_current = 0
+            # So new current is either 0 or max current.
             else:
-                new_charge_current = old_charge_current
+                new_charge_current = new_current
+
+            # Can lose a bit for energy calculation if device set current=0 by itself, so save new current.
+            self.last_charge_current = new_charge_current
 
             #####################################
             # Set current update time
@@ -739,9 +739,10 @@ class SolarCharge(ScOptionState):
             min_current = self.get_charger_min_current(max_current)
 
             if (
-                # Time-based min current using template helper, and device can set currrent.
-                # If device cannot set current, then min_current will always be same as max_current.
-                (min_current == max_current and self.can_set_current)
+                # If device cannot set current, then ignore this condition.
+                # (min_current == max_current and self.can_set_current)
+                # Time-based min current using template helper.
+                (min_current == max_current)
                 # Note running goal is updated in both charging and paused states.
                 or (
                     self.running_goal.has_charge_endtime
