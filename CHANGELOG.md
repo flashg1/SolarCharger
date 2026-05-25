@@ -2,13 +2,13 @@
 
 ## v0.8.0 2026-05-12
 ### Breaking change
-- Changed charger starting current from 6A to charger min current.
+- Changed charger starting current from 6A to charger min current. Please ensure your charge min current is set.
 - Added "Min workable current enter pause percent" local device config.
-- Moved "Min workable current exit pause percent" to global defaults to local device config.
+- Moved "Min workable current exit pause percent" from global defaults to local device config.
 - Added "Max consumed energy limit" and "End on max consumed energy" switch to end charge on reaching max consumed energy.
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### Fix
-- Fixed issue with not able to override SolarCharger entity in options config flow.
+- Fixed issue with not able to override pre-configured SolarCharger entity in options config flow.
 ### Improvement
 - Select dummy entity *.deleteme to delete entity in options config flow.
 - Type 2 spaces to delete string in options config flow.
