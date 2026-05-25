@@ -640,23 +640,27 @@ class PowerAllocator:
     # ----------------------------------------------------------------------------
     async def async_allocate_net_power(self) -> None:
         """Calculate power allocation. Power allocation weight can be 0."""
+        ok: bool = False
 
         net_power = (
             self._global_defaults_control.controller.solar_charge.get_net_power()
         )
-        if net_power is None:
-            _LOGGER.warning("Cannot get net power. Try next cycle.")
-            return
 
-        allocation_book = self._get_allocation_pool(net_power)
+        if net_power is not None:
+            allocation_book = self._get_allocation_pool(net_power)
 
-        if allocation_book.total_instance > 0:
-            # Information only. Global default variable shows net power available for allocation.
-            await async_set_delta_allocated_power(
-                self._global_defaults_control.controller.charge_control, net_power
-            )
+            if allocation_book.total_instance > 0:
+                # Information only. Global default variable shows net power available for allocation.
+                await async_set_delta_allocated_power(
+                    self._global_defaults_control.controller.charge_control, net_power
+                )
 
-            await self._async_process_allocation_book(allocation_book)
+                await self._async_process_allocation_book(allocation_book)
+                ok = True
 
+            else:
+                _LOGGER.debug("No running charger for power allocation")
         else:
-            _LOGGER.debug("No running charger for power allocation")
+            _LOGGER.warning("Cannot get net power. Try next cycle.")
+
+        return ok

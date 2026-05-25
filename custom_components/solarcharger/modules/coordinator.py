@@ -96,6 +96,9 @@ class SolarChargerCoordinator(ScOptionState):
         # Sync charge current time.
         self._sync_charge_current_time: float = 0  # UTC time
 
+        # Net power update count
+        self._net_power_update_count: int = 0
+
     # ----------------------------------------------------------------------------
     @cached_property
     def _device(self) -> dr.DeviceEntry:
@@ -336,12 +339,13 @@ class SolarChargerCoordinator(ScOptionState):
     # ----------------------------------------------------------------------------
     # Subscriptions
     # ----------------------------------------------------------------------------
-    async def _async_allocate_net_power(self) -> None:
+    async def _async_allocate_net_power(self) -> bool:
         """Execute an update cycle."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+        ok: bool = False
 
         try:
-            await self._allocator.async_allocate_net_power()
+            ok = await self._allocator.async_allocate_net_power()
 
         except Exception as e:
             _LOGGER.exception(
@@ -349,6 +353,8 @@ class SolarChargerCoordinator(ScOptionState):
                 self.caller,
                 e,
             )
+
+        return ok
 
     # ----------------------------------------------------------------------------
     async def _async_synchronise_charge_current_update(self) -> None:
@@ -414,12 +420,17 @@ class SolarChargerCoordinator(ScOptionState):
 
             try:
                 # Allocate power for median net allocated power calculation.
-                await self._async_allocate_net_power()
+                if await self._async_allocate_net_power():
+                    self._net_power_update_count += 1
 
                 # Synchronise charge current update for all chargers.
                 # During testing with 10s period for both net power and current, not every
                 # net power update trigger a current update due to period variation.
-                if duration_since_last_sync >= self._min_current_update_period:
+                if (
+                    self._net_power_update_count > 0
+                    and duration_since_last_sync >= self._min_current_update_period
+                ):
+                    self._net_power_update_count = 0
                     await self._async_synchronise_charge_current_update()
 
             except Exception as e:
