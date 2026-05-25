@@ -48,7 +48,10 @@ class StateCharge(SolarChargeState):
 
         # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
         self._semaphore_update_charge_current_task = threading.Semaphore(value=1)
-        self._semaphore_update_charge_current_task_count = 0
+        self._semaphore_update_charge_current_task_count: int = 0
+
+        # Remember last current for devices that cannot set current.
+        self._last_current: float = 0.0
 
     # ----------------------------------------------------------------------------
     # Subscriptions
@@ -203,6 +206,32 @@ class StateCharge(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Charge loop
     # ----------------------------------------------------------------------------
+    def _is_zero_current(self, current) -> bool:
+        """Is zero current?"""
+
+        return -0.5 < current < +0.5
+
+    # ----------------------------------------------------------------------------
+    def _is_device_turn_off_by_itself(
+        self, old_current: float, new_current: float
+    ) -> bool:
+        """Device turned off by itself?"""
+
+        return self._is_zero_current(new_current) and not self._is_zero_current(
+            old_current
+        )
+
+    # ----------------------------------------------------------------------------
+    def _is_device_turn_on_by_itself(
+        self, old_current: float, new_current: float
+    ) -> bool:
+        """Device turned on by itself?"""
+
+        return self._is_zero_current(old_current) and not self._is_zero_current(
+            new_current
+        )
+
+    # ----------------------------------------------------------------------------
     def _calc_current_change(
         self,
         charger: Charger,
@@ -216,9 +245,12 @@ class StateCharge(SolarChargeState):
             charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
         )
 
-        # Device do not support setting current, so new = old.
         if not self.solarcharge.can_set_current:
+            # Device do not support setting current.
+            # Can lose a bit for energy calculation if device set current=0 by itself, so save new current.
             new_charge_current = old_charge_current
+            old_charge_current = self._last_current
+            self._last_current = new_charge_current
             return (new_charge_current, old_charge_current)
 
         if old_charge_current is None:
@@ -307,6 +339,14 @@ class StateCharge(SolarChargeState):
 
         new_charge_current, old_charge_current = self._calc_current_change(
             charger, delta_allocated_power, self.solarcharge.running_goal
+        )
+
+        _LOGGER.warning(
+            "%s: delta_allocated_power=%s, new_current=%s, old_current=%s",
+            self.solarcharge.caller,
+            delta_allocated_power,
+            new_charge_current,
+            old_charge_current,
         )
 
         await self.solarcharge.async_set_charge_current(
@@ -428,6 +468,7 @@ class StateCharge(SolarChargeState):
         stats.loop_success_count = 0
         stats.loop_consecutive_fail_count = 0
         done_switch_on_charger = False
+        self._last_current = 0.0
         while True:
             self.solarcharge.abort_if_exceed_max_consecutive_failure()
 

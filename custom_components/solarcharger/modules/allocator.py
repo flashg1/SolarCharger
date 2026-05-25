@@ -552,13 +552,11 @@ class PowerAllocator:
 
                     if _LOGGER.isEnabledFor(logging.DEBUG):
                         _LOGGER.debug("PowerAllocation: %s", member)
-                    else:
+                    elif member.share_allocation == 0:
                         _LOGGER.warning(
-                            "%s: final_power=%.2f, share_allocation=%s, consumed_power=%s",
+                            "%s: state=Paused, plan_power=%.2f",
                             member.name,
                             member.final_power,
-                            member.share_allocation,
-                            member.consumed_power,
                         )
 
     # ----------------------------------------------------------------------------

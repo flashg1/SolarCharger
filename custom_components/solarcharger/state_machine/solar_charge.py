@@ -108,12 +108,12 @@ class SolarCharge(ScOptionState):
         self.scheduler = ChargeScheduler(hass, entry, subentry)
 
         self.session_start_time = datetime.max
-        self.session_triggered_by_timer = False
+        self.session_triggered_by_timer: bool = False
         self.starting_goal: ScheduleData
         self.running_goal: ScheduleData
 
-        self.can_set_current = False
-        self.started_calibrate_max_charge_speed = False
+        self.can_set_current: bool = False
+        self.started_calibrate_max_charge_speed: bool = False
 
         # self.update_timestamp: float = 0  # utcnow().timestamp()   # UTC time
         # Must reset time before setting current to avoid possible wrong energy calculation after pause period.

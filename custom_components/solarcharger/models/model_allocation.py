@@ -158,11 +158,11 @@ class AllocationBook:
     def __repr__(self) -> str:
         """Return string representation of AllocationBook."""
         return (
-            f"total_active_instance={self.total_active_instance}, "
-            f"total_paused_instance={self.total_paused_instance}, "
+            f"active_instance={self.total_active_instance}, "
+            f"paused_instance={self.total_paused_instance}, "
             f"total_instance={self.total_instance}, "
-            f"total_max_power={self.total_max_power}, "
-            f"total_consumed_power={self.total_consumed_power}, "
+            f"max_power={self.total_max_power}, "
+            f"consumed_power={self.total_consumed_power}, "
             f"net_power={self.net_power}, "
             f"gross_power={self.gross_power}"
         )
