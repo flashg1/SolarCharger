@@ -2,6 +2,7 @@
 
 ## v0.8.0 2026-05-12
 ### Breaking change
+- Changed charger starting current from 6A to charger min current.
 - Added "Min workable current enter pause percent" local device config.
 - Moved "Min workable current exit pause percent" to global defaults to local device config.
 - Added "Max consumed energy limit" and "End on max consumed energy" switch to end charge on reaching max consumed energy.
