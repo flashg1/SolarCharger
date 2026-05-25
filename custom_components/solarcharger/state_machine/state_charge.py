@@ -32,8 +32,6 @@ from .state_tidyup import StateTidyUp
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
-# INITIAL_CHARGE_CURRENT = 6  # Initial charge current in Amps
-
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -331,11 +329,11 @@ class StateCharge(SolarChargeState):
         )
 
         _LOGGER.warning(
-            "%s: delta_allocated_power=%.2f, new_current=%s, old_current=%s",
+            "%s: delta_allocated_power=%.2f, old_current=%s, new_current=%s",
             self.solarcharge.caller,
             delta_allocated_power,
-            new_charge_current,
             old_charge_current,
+            new_charge_current,
         )
 
         await self.solarcharge.async_set_charge_current(
@@ -436,11 +434,9 @@ class StateCharge(SolarChargeState):
         )
 
         await self.solarcharge.async_turn_charger_switch(charger, turn_on=True)
-        charger_max_current = self.solarcharge.get_charger_max_current()
-        charger_min_current = self.solarcharge.get_charger_min_current(
-            charger_max_current, direct=True
-        )
-        await self.solarcharge.async_set_charge_current(charger, charger_min_current)
+        # Set initial charge current.
+        min_workable_current = self.solarcharge.get_charger_min_workable_current()
+        await self.solarcharge.async_set_charge_current(charger, min_workable_current)
         await self.solarcharge.async_update_ha(chargeable)
 
         self._subscribe_sync_update()

@@ -34,21 +34,19 @@ class ContextData:
     #####################################
     # Outputs
     #####################################
-    is_continue_state: bool = False  # Continue current state
+    continue_state: bool = False  # Continue current state
     next_step: ChargeStatus = ChargeStatus.CHARGE_END
-    is_enough_power: bool | None = None  # None=not enough data points.
+    enough_power: bool | None = None  # None=not enough data points.
 
     #####################################
     # Environment data
     #####################################
-    is_connected: bool = False
-    is_below_charge_limit: bool = False
-    is_below_energy_limit: bool = False
-    is_charging: bool = False
+    connected: bool = False
+    below_charge_limit: bool = False
+    charging: bool = False
     charging_status: Any = ""
-    is_sun_trigger: bool = False
-    is_use_secondary_power_source: bool = False
-    is_calibrate_max_charge_speed: bool = False
+    fast_charge: bool = False
+    calibrate_max_charge_speed: bool = False
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -56,20 +54,21 @@ class ContextData:
 
         return (
             f"state={self.state.value}, "
-            f"is_continue_state={self.is_continue_state}, "
+            f"continue_state={self.continue_state}, "
             f"next_step={self.next_step.value} ("
-            f"is_enough_power={self.is_enough_power}, "
+            f"enough_power={self.enough_power}, "
             f"median_net_allocated_power={self.net_allocations.median_value}, "
             f"sample_size={self.net_allocations.sample_size}), "
             f"net_allocated_power={0 if self.net_allocations.last_data_point is None else self.net_allocations.last_data_point.value}, "
-            f"is_connected={self.is_connected}, "
-            f"is_below_charge_limit={self.is_below_charge_limit} ({self.goal.battery_soc}/{self.goal.new_charge_limit}), "
-            f"reached_max_consumed_energy={self.goal.reached_max_consumed_energy} ({self.goal.consumed_energy}/{self.goal.max_consumed_energy}), "
-            f"is_charging={self.is_charging} ({self.charging_status}), "
-            f"is_sun_trigger={self.is_sun_trigger}, "
-            f"is_sun_above_start_end_elevations={self.goal.sun_above_start_end_elevations} ({self.goal.sun_elevation}), "
-            f"is_use_secondary_power_source={self.is_use_secondary_power_source}, "
-            f"is_calibrate_max_charge_speed={self.is_calibrate_max_charge_speed}, "
+            f"connected={self.connected}, "
+            f"below_charge_limit={self.below_charge_limit} ({self.goal.battery_soc}/{self.goal.new_charge_limit}), "
+            f"end_on_max_consumed_energy={self.goal.end_on_max_consumed_energy}, "
+            f"below_max_consumed_energy={self.goal.below_max_consumed_energy} ({self.goal.consumed_energy}/{self.goal.max_consumed_energy}), "
+            f"charging={self.charging} ({self.charging_status}), "
+            f"sun_trigger={self.goal.sun_trigger}, "
+            f"sun_above_start_end_elevations={self.goal.sun_above_start_end_elevations} ({self.goal.sun_elevation}), "
+            f"fast_charge={self.fast_charge}, "
+            f"calibrate_max_charge_speed={self.calibrate_max_charge_speed}, "
             f"timer_session={self.goal.timer_session}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "
             f"started_max_charge={self.goal.started_max_charge}, "

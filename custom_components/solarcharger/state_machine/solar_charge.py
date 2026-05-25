@@ -89,10 +89,11 @@ class SolarCharge(ScOptionState):
         subentry: ConfigSubentry,
         tracker: Tracker,
         entities: ControlEntities,
-        charger: Any,
-        chargeable: Any,
-        # charger: Charger,
-        # chargeable: Chargeable,
+        charger: Charger,
+        chargeable: Chargeable,
+        # Used type Any to get around circular reference at one stage.
+        # charger: Any,
+        # chargeable: Any,
     ) -> None:
         """Initialize the SolarCharge state machine instance."""
 
@@ -736,12 +737,6 @@ class SolarCharge(ScOptionState):
         return is_charging
 
     # ----------------------------------------------------------------------------
-    def is_use_secondary_power_source(self) -> bool:
-        """Is using secondary power source?"""
-
-        return self.is_fast_charge_mode()
-
-    # ----------------------------------------------------------------------------
     def _is_allow_pause_state(self) -> bool:
         """Check if charger is allowed to go into pause state."""
         allow_pause_state = False
@@ -804,20 +799,19 @@ class SolarCharge(ScOptionState):
         # Init variables
         context = ContextData(charger, chargeable, state, goal, net_allocations, stats)
 
-        context.is_connected = self.is_connected(charger)
+        context.connected = self.is_connected(charger)
 
         # Device charge limit must have already been set before this check.
-        context.is_below_charge_limit = self.is_below_charge_limit(chargeable)
+        context.below_charge_limit = self.is_below_charge_limit(chargeable)
 
         val_dict = ConfigValueDict(ENTITY_CHARGER_CHARGING_SENSOR, {})
-        context.is_charging = self.is_charging(charger, val_dict=val_dict)
+        context.charging = self.is_charging(charger, val_dict=val_dict)
         context.charging_status = val_dict.config_values[
             ENTITY_CHARGER_CHARGING_SENSOR
         ].entity_value
 
-        context.is_sun_trigger = self.is_sun_trigger()
-        context.is_use_secondary_power_source = self.is_use_secondary_power_source()
-        context.is_calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
+        context.fast_charge = self.is_fast_charge_mode()
+        context.calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
         self._log_power_allocations(context)
 
@@ -915,70 +909,76 @@ class SolarCharge(ScOptionState):
         """Is continue charge state?"""
 
         context.next_step = ChargeStatus.CHARGE_CONTINUE
-        context.is_continue_state = True
+        context.continue_state = True
 
         # Charge just-in-time feature:
         # If end time is set, charge can still stop at end elevation trigger,
         # and then start again closer to end time to complete charge.
         continue_charge = (
-            context.is_connected
-            and context.is_below_charge_limit
-            and not context.goal.reached_max_consumed_energy
-            and (context.stats.loop_success_count == 0 or context.is_charging)
+            context.connected
+            and context.below_charge_limit
             and (
-                not context.is_sun_trigger  # Sun trigger off, continue.
+                not context.goal.end_on_max_consumed_energy
+                or context.goal.below_max_consumed_energy
+            )
+            and (context.stats.loop_success_count == 0 or context.charging)
+            and (
+                not context.goal.sun_trigger  # Sun trigger off, continue.
                 or context.goal.sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
-                or context.is_use_secondary_power_source
-                or context.is_calibrate_max_charge_speed
+                or context.fast_charge
+                or context.calibrate_max_charge_speed
                 or (context.goal.has_charge_endtime and context.goal.max_charge_now)
             )
         )
 
         if continue_charge:
             if self._is_allow_pause_state():
-                context.is_enough_power = (
+                context.enough_power = (
                     self._is_median_net_allocated_power_more_than_min_workable_power(
                         context.net_allocations, context.state
                     )
                 )
 
-                if context.is_enough_power is not None and not context.is_enough_power:
+                if context.enough_power is not None and not context.enough_power:
                     context.next_step = ChargeStatus.CHARGE_PAUSE
-                    context.is_continue_state = False
+                    context.continue_state = False
         else:
             context.next_step = ChargeStatus.CHARGE_END
-            context.is_continue_state = False
+            context.continue_state = False
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_pause_state(self, context: ContextData) -> None:
         """Is continue pause state?"""
 
         context.next_step = ChargeStatus.CHARGE_CONTINUE
-        context.is_continue_state = False
+        context.continue_state = False
 
         continue_pause = (
-            context.is_connected
-            and not context.goal.reached_max_consumed_energy
+            context.connected
             and (
-                not context.is_sun_trigger
+                not context.goal.end_on_max_consumed_energy
+                or context.goal.below_max_consumed_energy
+            )
+            and (
+                not context.goal.sun_trigger
                 or context.goal.sun_above_start_end_elevations
             )
-            and not context.is_use_secondary_power_source
-            and not context.is_calibrate_max_charge_speed
+            and not context.fast_charge
+            and not context.calibrate_max_charge_speed
             and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
         )
 
         if continue_pause:
             if self._is_allow_pause_state():
-                context.is_enough_power = (
+                context.enough_power = (
                     self._is_median_net_allocated_power_more_than_min_workable_power(
                         context.net_allocations, context.state
                     )
                 )
 
-                if context.is_enough_power is None or not context.is_enough_power:
+                if context.enough_power is None or not context.enough_power:
                     context.next_step = ChargeStatus.CHARGE_PAUSE
-                    context.is_continue_state = True
+                    context.continue_state = True
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_state(

@@ -332,6 +332,7 @@ class ChargeScheduler(ScOptionState):
         goal.include_tomorrow = include_tomorrow
         goal.started_max_charge = started_max_charge
 
+        goal.sun_trigger = self.is_sun_trigger()
         # Sun trigger might be off but should be ok.
         (goal.sun_above_start_end_elevations, goal.sun_elevation) = (
             self.is_sun_above_start_end_elevation_triggers()
@@ -339,11 +340,11 @@ class ChargeScheduler(ScOptionState):
 
         goal.max_consumed_energy = self.get_max_consumed_energy_limit()
         goal.consumed_energy = self.get_consumed_energy_today()
-        if (
-            self.is_end_on_max_consumed_energy()
-            and goal.consumed_energy >= goal.max_consumed_energy
-        ):
-            goal.reached_max_consumed_energy = True
+        goal.end_on_max_consumed_energy = self.is_end_on_max_consumed_energy()
+        if goal.consumed_energy < goal.max_consumed_energy:
+            goal.below_max_consumed_energy = True
+        else:
+            goal.below_max_consumed_energy = False
 
         #####################################
         # Good place to throws exception in the charging loop if device is not ready and will try again in the next loop.

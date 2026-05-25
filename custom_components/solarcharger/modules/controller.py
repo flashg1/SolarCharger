@@ -73,7 +73,7 @@ class ChargeController(ScOptionState):
         # To work around this issue, do not run the switch action during initialisation,
         # and manual subscribe or unsubscribe once after initialisation so as to be in
         # sync with the switches.
-        self._initialising = True
+        self._initialising: bool = True
 
         self._control = control
         self._charger = charger
@@ -91,7 +91,7 @@ class ChargeController(ScOptionState):
         self._charge_task: Task | None = None
         self._end_charge_task: Task | None = None
 
-        self._is_updated_today_tomorrow_schedule = False
+        self._is_updated_today_tomorrow_schedule: bool = False
 
     # ----------------------------------------------------------------------------
     @cached_property

@@ -35,6 +35,7 @@ class ScheduleData:
     data_timestamp: datetime = datetime.min
 
     # Sun elevation
+    sun_trigger: bool = False
     sun_above_start_end_elevations: bool = False
     sun_elevation: float = 0
 
@@ -55,7 +56,8 @@ class ScheduleData:
     # Energy management
     max_consumed_energy: float = -1
     consumed_energy: float = 0
-    reached_max_consumed_energy: bool = False
+    end_on_max_consumed_energy: bool = False
+    below_max_consumed_energy: bool = False
 
     # Requires battery_soc to calculate
     need_charge_duration: timedelta = timedelta.min
@@ -104,11 +106,13 @@ class ScheduleData:
             f"started_max_charge={self.started_max_charge}, max_charge_now={self.max_charge_now}, "
             f"start_next_session_now={self.start_next_session_now}, "
             f"one_percent_charge_duration={self.one_percent_charge_duration}, battery_soc={self.battery_soc}, "
+            f"end_on_max_consumed_energy={self.end_on_max_consumed_energy}, "
+            f"below_max_consumed_energy={self.below_max_consumed_energy}, "
             f"max_consumed_energy={self.max_consumed_energy}, consumed_energy={self.consumed_energy}, "
-            f"reached_max_consumed_energy={self.reached_max_consumed_energy}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "
-            f"sun_elevation={self.sun_elevation}, sun_above_start_end_elevations={self.sun_above_start_end_elevations}, "
+            f"sun_trigger={self.sun_trigger}, "
+            f"sun_above_start_end_elevations={self.sun_above_start_end_elevations}, sun_elevation={self.sun_elevation}, "
             f"data_timestamp={self.data_timestamp}, "
             f"{self.weekly_schedule}"
         )
