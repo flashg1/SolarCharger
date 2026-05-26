@@ -26,10 +26,14 @@ class StateEnd(SolarChargeState):
     async def _async_end_session(self) -> None:
         """End charge session."""
 
-        # Delta allocated power is set in the coordinator timer thread.
+        # Delta allocated power is set by allocator in coordinator timer thread.
         # Should not be set here, but no choice.
         # Reset here in case it is missed in the coordinator due to race condition.
         self.solarcharge.update_sensor(SENSOR_DELTA_ALLOCATED_POWER, 0)
+
+        # Ensure goals are reset on exit because it is read by allocator when starting charger thread.
+        self.solarcharge.starting_goal = None
+        self.solarcharge.running_goal = None
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
