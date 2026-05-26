@@ -110,8 +110,8 @@ class SolarCharge(ScOptionState):
 
         self.session_start_time = datetime.max
         self.session_triggered_by_timer: bool = False
-        self.starting_goal: ScheduleData
-        self.running_goal: ScheduleData
+        self.starting_goal: ScheduleData | None = None
+        self.running_goal: ScheduleData | None = None
 
         # Remember last current for energy calculation and for devices that cannot set current.
         self.last_charge_current: float = 0.0
@@ -129,7 +129,7 @@ class SolarCharge(ScOptionState):
         # Power monitor duration in seconds
         self.power_monitor_duration: float = 0.0
         # net allocation = new allocation - consumed power
-        self.net_allocations: MedianData
+        self.net_allocations: MedianData | None = None
 
         self.stats = ChargeStats()
         self.started_max_charge: int = 0
@@ -737,6 +737,33 @@ class SolarCharge(ScOptionState):
         return is_charging
 
     # ----------------------------------------------------------------------------
+    def is_max_speed_charge(self) -> bool:
+        """Check if charge at max speed?"""
+        max_speed_charge = False
+
+        max_current = self.get_charger_max_current()
+        min_current = self.get_charger_min_current(max_current)
+
+        if (
+            # If device cannot set current, then ignore this condition.
+            # (min_current == max_current and self.can_set_current)
+            # Time-based min current using template helper.
+            (min_current == max_current)
+            # Note running goal is updated in both charging and paused states.
+            or (
+                # Running goal is not ready to the allocator for a brief period.
+                self.running_goal is not None
+                and self.running_goal.has_charge_endtime
+                and self.running_goal.max_charge_now
+            )
+            or self.is_fast_charge_mode()
+            or self.is_calibrate_max_charge_speed()
+        ):
+            max_speed_charge = True
+
+        return max_speed_charge
+
+    # ----------------------------------------------------------------------------
     def _is_allow_pause_state(self) -> bool:
         """Check if charger is allowed to go into pause state."""
         allow_pause_state = False
@@ -745,22 +772,7 @@ class SolarCharge(ScOptionState):
             # Yes, monitor config switched on.
             allow_pause_state = True
 
-            max_current = self.get_charger_max_current()
-            min_current = self.get_charger_min_current(max_current)
-
-            if (
-                # If device cannot set current, then ignore this condition.
-                # (min_current == max_current and self.can_set_current)
-                # Time-based min current using template helper.
-                (min_current == max_current)
-                # Note running goal is updated in both charging and paused states.
-                or (
-                    self.running_goal.has_charge_endtime
-                    and self.running_goal.max_charge_now
-                )
-                or self.is_fast_charge_mode()
-                or self.is_calibrate_max_charge_speed()
-            ):
+            if self.is_max_speed_charge():
                 allow_pause_state = False
 
         return allow_pause_state

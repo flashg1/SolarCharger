@@ -88,6 +88,7 @@ class PowerAllocator:
             )
         )
         can_set_current = control.controller.solar_charge.can_set_current
+        max_speed_charge = control.controller.solar_charge.is_max_speed_charge()
 
         return PowerAllocation(
             subentry_id=control.subentry_id,
@@ -100,6 +101,7 @@ class PowerAllocator:
             instance=instance,
             share_allocation=share_allocation,
             can_set_current=can_set_current,
+            max_speed_charge=max_speed_charge,
             voltage=voltage,
         )
 
@@ -295,11 +297,11 @@ class PowerAllocator:
                 #####################################
                 # Allocate power, ie. -ve
                 #####################################
-                if member.consumed_power + abs(allocated_power) >= abs(
-                    member.adjusted_activation_power
-                ):
+                if member.max_speed_charge or member.consumed_power + abs(
+                    allocated_power
+                ) >= abs(member.adjusted_activation_power):
                     #####################################
-                    # Only allocate if above activation power.
+                    # Only allocate if charge at max speed or above activation power.
                     #####################################
                     member.final_power = max(allocated_power, member.need_power)
                     member.lack_power = max(

@@ -36,6 +36,9 @@ class PowerAllocation:
 
     # Device can set current?
     can_set_current: bool
+
+    # Device allows pause state?
+    max_speed_charge: bool = False
     # Charger effective voltage.
     voltage: float = 0.0
     # Power currently consumed by the charger.
@@ -71,6 +74,7 @@ class PowerAllocation:
             f"instance={self.instance}, "
             f"share_allocation={self.share_allocation}, "
             f"can_set_current={self.can_set_current}, "
+            f"max_speed_charge={self.max_speed_charge}, "
             f"voltage={self.voltage}, "
             f"consumed_power={self.consumed_power}, "
             f"need_power={self.need_power}, "
