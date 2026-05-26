@@ -3,8 +3,8 @@
 ## v0.8.0 2026-05-12
 ### Breaking change
 - Changed charger starting current from 6A to min workable current. Please ensure your min workable current is set.
-- Added "Min workable current enter pause percent" local device config.
-- Moved "Min workable current exit pause percent" from global defaults to local device config.
+- Added "Min workable current pause threshold" local device config.
+- Renamed "Min workable current exit pause percent" to "Min workable current resume threshold" and moved from global defaults to local device config.
 - Added "Max consumed energy limit" and "End on max consumed energy" switch to end charge on reaching max consumed energy.
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### Fix
