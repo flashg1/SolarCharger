@@ -26,8 +26,8 @@ from ..const import (
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_PAUSE_THRESHOLD,
-    NUMBER_CHARGER_MIN_WORKABLE_CURRENT_RESUME_THRESHOLD,
+    NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
+    NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
@@ -826,7 +826,7 @@ class ScOptionState(ScConfigState):
         """Get charger minimum workable current extra percentage required to enter pause."""
 
         return self.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_PAUSE_THRESHOLD
+            NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD
         )
 
     # ----------------------------------------------------------------------------
@@ -834,7 +834,7 @@ class ScOptionState(ScConfigState):
         """Get charger minimum workable current extra percentage required to exit pause."""
 
         return self.option_get_entity_number_or_abort(
-            NUMBER_CHARGER_MIN_WORKABLE_CURRENT_RESUME_THRESHOLD
+            NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD
         )
 
     # ----------------------------------------------------------------------------

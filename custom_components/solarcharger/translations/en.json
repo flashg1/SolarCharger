@@ -126,8 +126,8 @@
                     "charger_max_speed": "Charger max speed (%/hour)",
                     "charger_min_current": "Charger min current (AMP)",
                     "charger_min_workable_current": "Charger min workable current (AMP, current=0A for anything below this limit)",
-                    "charger_min_workable_current_pause_threshold": "Min workable current pause threshold (%)",
-                    "charger_min_workable_current_resume_threshold": "Min workable current resume threshold (%)",
+                    "charger_min_workable_power_pause_threshold": "Min workable power pause threshold (%)",
+                    "charger_min_workable_power_resume_threshold": "Min workable power resume threshold (%)",
                     "charger_priority": "Charger priority (0 = highest priority)",
                     "charger_power_allocation_weight": "Charger power allocation weight (allocation=net power*weight/total weight)",
                     "delta_allocated_power": "Delta allocated power sensor (W)",
@@ -293,11 +293,11 @@
             "charger_min_workable_current": {
                 "name": "Min workable current"
             },
-            "charger_min_workable_current_pause_threshold": {
-                "name": "Min workable current pause threshold"
+            "charger_min_workable_power_pause_threshold": {
+                "name": "Min workable power pause threshold"
             },
-            "charger_min_workable_current_resume_threshold": {
-                "name": "Min workable current resume threshold"
+            "charger_min_workable_power_resume_threshold": {
+                "name": "Min workable power resume threshold"
             },
             "charger_priority": {
                 "name": "Priority"

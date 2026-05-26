@@ -3,9 +3,9 @@
 ## v0.8.0 2026-05-12
 ### Breaking change
 - Changed charger starting current from 6A to min workable current. Please ensure your min workable current is set.
-- Added "Min workable current pause threshold" local device config.
-- Renamed "Min workable current exit pause percent" to "Min workable current resume threshold" and moved from global defaults to local device config.
-- Added "Max consumed energy limit" and "End on max consumed energy" switch to end charge on reaching max consumed energy.
+- Added "[Min workable power pause threshold](https://github.com/flashg1/SolarCharger/wiki/User-guide#min-workable-power-pause-threshold)" to local device config.
+- Renamed "Min workable current exit pause percent" to "Min workable power resume threshold" and moved from global defaults to local device config.
+- Added "[Max consumed energy limit](https://github.com/flashg1/SolarCharger/wiki/User-guide#max-consumed-energy-limit)" and "[End on max consumed energy](https://github.com/flashg1/SolarCharger/wiki/User-guide#end-on-max-consumed-energy)" switch to end charge on reaching max consumed energy.
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 ### Fix
 - Fixed issue with not able to override pre-configured SolarCharger entity in options config flow.
@@ -14,8 +14,8 @@
 - Type 2 spaces to delete string in options config flow.
 - Refactored allocator for fairer allocation to paused chargers and rebalance all active chargers.
 - Made "Min workable current" overridable.
-- Added "Pause on start" switch to monitor available solar for devices that use a lot of energy on start up, eg. hot water.
-- Added sensor "Consumed energy today".
+- Added "[Pause on start](https://github.com/flashg1/SolarCharger/wiki/User-guide#pause-on-start)" switch to monitor available solar for devices that use a lot of energy when switched on.
+- Added sensor "[Consumed energy today](https://github.com/flashg1/SolarCharger/wiki/User-guide#consumed-energy-today)".
 - Use utcnow instead of new_state.last_updated_timestamp to determine if reaching current_update_period.
 - Set MedianDataState.NOT_READY on startup and exit.
 - Replaced async_update_reload_and_abort() with async_update_and_abort() in config flow.
