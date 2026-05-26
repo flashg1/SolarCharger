@@ -38,7 +38,6 @@ from ..const import (
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
-    NUMBER_WAIT_CHARGER_AMP_CHANGE,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
     SENSOR_AVERAGE_PAUSE_DURATION,
@@ -635,7 +634,8 @@ class SolarCharge(ScOptionState):
                     new_charge_current,
                     old_charge_current,
                 )
-                await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+                # Do not hold up callback
+                # await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(

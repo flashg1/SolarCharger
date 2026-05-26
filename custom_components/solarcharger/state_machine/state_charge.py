@@ -15,6 +15,7 @@ from ..const import (
     ENTITY_CHARGER_CHARGING_SENSOR,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
+    NUMBER_WAIT_CHARGER_AMP_CHANGE,
     ChargeStatus,
     RunState,
 )
@@ -391,6 +392,7 @@ class StateCharge(SolarChargeState):
             await self.solarcharge.async_set_charge_current(
                 charger, charger_max_current
             )
+            await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
         else:
             raise EntityExceptionError("Missing SOC sensor")
 
