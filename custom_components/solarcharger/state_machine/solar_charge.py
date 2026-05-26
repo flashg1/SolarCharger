@@ -113,18 +113,17 @@ class SolarCharge(ScOptionState):
         self.starting_goal: ScheduleData | None = None
         self.running_goal: ScheduleData | None = None
 
-        # Remember last current for energy calculation and for devices that cannot set current.
-        self.last_charge_current: float = 0.0
-
         self.can_set_current: bool = False
-        self.started_calibrate_max_charge_speed: bool = False
 
         # self.update_timestamp: float = 0  # utcnow().timestamp()   # UTC time
+        # Remember last current for energy calculation and for devices that cannot set current.
+        self.last_charge_current: float = 0.0
         # Must reset time before setting current to avoid possible wrong energy calculation after pause period.
         # Specifically for devices with on/off switch and max current only, ie. cannot set 0 current.
         self.charge_current_updatetime: datetime = datetime.min
 
         self.soc_updates: list[StateOfCharge] = []
+        self.started_calibrate_max_charge_speed: bool = False
 
         # Power monitor duration in seconds
         self.power_monitor_duration: float = 0.0

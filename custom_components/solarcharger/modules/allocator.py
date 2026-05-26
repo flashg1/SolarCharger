@@ -556,7 +556,7 @@ class PowerAllocator:
                     if _LOGGER.isEnabledFor(logging.DEBUG):
                         _LOGGER.debug("PowerAllocation: %s", member)
                     elif member.share_allocation == 0:
-                        _LOGGER.warning(
+                        _LOGGER.info(
                             "%s: state=Paused, plan_power=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
                             member.name,
                             member.final_power,
@@ -587,7 +587,7 @@ class PowerAllocator:
                     active_member.consumed_power * -1
                 )
 
-                _LOGGER.warning(
+                _LOGGER.info(
                     "%s: Rebalance=%.2f, From=%.2f, To=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
                     rebalance_member.name,
                     rebalance_member.final_power,
@@ -603,7 +603,7 @@ class PowerAllocator:
     async def _async_process_allocation_book(self, book: AllocationBook) -> None:
         """Process allocation book."""
 
-        _LOGGER.warning("AllocationBook: %s", book)
+        _LOGGER.info("AllocationBook: %s", book)
 
         # Allocation for active chargers.
         # active_ladder = self._process_allocation_group(

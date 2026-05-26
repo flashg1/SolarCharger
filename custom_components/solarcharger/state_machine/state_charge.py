@@ -328,7 +328,7 @@ class StateCharge(SolarChargeState):
             charger, delta_allocated_power, self.solarcharge.running_goal
         )
 
-        _LOGGER.warning(
+        _LOGGER.info(
             "%s: delta_allocated_power=%.2f, old_current=%s, new_current=%s",
             self.solarcharge.caller,
             delta_allocated_power,

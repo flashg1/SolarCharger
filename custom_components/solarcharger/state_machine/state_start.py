@@ -482,9 +482,12 @@ class StateStart(SolarChargeState):
         self.solarcharge.session_triggered_by_timer = (
             self._is_session_triggered_by_timer(self.solarcharge.session_start_time)
         )
-        self.solarcharge.started_max_charge = 0
-        self.solarcharge.started_calibrate_max_charge_speed = False
+
+        self.solarcharge.starting_goal = None
+        self.solarcharge.running_goal = None
         self.solarcharge.can_set_current = self.solarcharge.can_set_charge_current()
+        self.solarcharge.started_calibrate_max_charge_speed = False
+        self.solarcharge.started_max_charge = 0
 
         self.solarcharge.set_consumed_power(0.0)
 
