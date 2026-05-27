@@ -266,6 +266,7 @@ NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD = (
 # 0=highest priority, 0-4 reserved for system. User priority starts from 5.
 NUMBER_CHARGER_PRIORITY = "charger_priority"  # 8
 MAX_SPEED_CHARGE_PRIORITY = 3
+MAX_SPEED_CHARGE_PRIORITY_WEIGHT = 1
 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT = "charger_power_allocation_weight"  # 1
 NUMBER_MAX_CONSUMED_ENERGY_LIMIT = "max_consumed_energy_limit"  # 7 kWh
 NUMBER_CHARGEE_MIN_CHARGE_LIMIT = "chargee_min_charge_limit"

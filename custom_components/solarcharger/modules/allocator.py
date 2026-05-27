@@ -6,7 +6,12 @@ import logging
 
 from homeassistant.config_entries import ConfigSubentry
 
-from ..const import MAX_SPEED_CHARGE_PRIORITY, OPTION_GLOBAL_DEFAULTS_ID, RunState
+from ..const import (
+    MAX_SPEED_CHARGE_PRIORITY,
+    MAX_SPEED_CHARGE_PRIORITY_WEIGHT,
+    OPTION_GLOBAL_DEFAULTS_ID,
+    RunState,
+)
 from ..helpers.general import async_set_delta_allocated_power
 from ..models.model_allocation import AllocationBook, AllocationGroup, PowerAllocation
 from ..models.model_device_control import DeviceControl
@@ -90,9 +95,12 @@ class PowerAllocator:
         can_set_current = control.controller.solar_charge.can_set_current
         max_speed_charge = control.controller.solar_charge.is_max_speed_charge()
 
-        # Chargers that requires charging at max charge speed has system priority.
+        # Chargers that requires charging at max speed has system priority and equal weight.
+        # This is to ensure they are allocated first over others even if others have higher priority set by user.
+        # Otherwise others with higher priority set by user will get allocation and try to charge!
         if max_speed_charge:
             priority = MAX_SPEED_CHARGE_PRIORITY
+            allocation_weight = MAX_SPEED_CHARGE_PRIORITY_WEIGHT
 
         return PowerAllocation(
             subentry_id=control.subentry_id,

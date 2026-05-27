@@ -10,7 +10,7 @@
 ### Fix
 - Fixed issue with not able to override pre-configured SolarCharger entity in options config flow.
 ### Improvement
-- Chargers that requires charging at max charge speed has system priority 3.
+- Chargers that requires charging at max charge speed has system priority 3 and weight 1.
 - Select dummy entity *.deleteme to delete entity in options config flow.
 - Type 2 spaces to delete string in options config flow.
 - Refactored allocator for fairer allocation to paused chargers and rebalance all active chargers.
