@@ -118,6 +118,11 @@ class PowerAllocator:
         )
 
     # ----------------------------------------------------------------------------
+    def _is_zero_power(self, power: float) -> bool:
+
+        return power > -20 and power < 20
+
+    # ----------------------------------------------------------------------------
     def _populate_member_and_group_data(
         self,
         group_map: dict[int, AllocationGroup],
@@ -159,8 +164,7 @@ class PowerAllocator:
             live_consumed_power
             and member.share_allocation == 1
             and not member.can_set_current
-            and consumed_power > -20
-            and consumed_power < 20
+            and self._is_zero_power(consumed_power)
         ):
             #####################################
             # Device in charging state but consumed 0 power,
@@ -246,6 +250,7 @@ class PowerAllocator:
             #####################################
             # Populate active member group with active chargers only.
             # For source of rebalance allocation.
+            # Only this group can be used for direct deallocation. Not required since using rebalance.
             #####################################
             consumed_power = control.controller.solar_charge.get_consumed_power()
             self._populate_member_and_group_data(
@@ -271,6 +276,9 @@ class PowerAllocator:
             )
 
         book.net_power = net_power
+
+        # Gross power cannot be greater than 0.
+        # book.gross_power = min(net_power - book.total_consumed_power, 0)
         book.gross_power = net_power - book.total_consumed_power
 
         return book
@@ -300,7 +308,7 @@ class PowerAllocator:
         member.lack_power = 0
 
         if total_weight > 0:
-            allocated_power = net_power * weight / total_weight
+            allocated_power = remain_power * weight / total_weight
 
             # allocated_power can be -ve or +ve.
             # member.need_power can be -ve or 0, but not +ve.
@@ -325,19 +333,26 @@ class PowerAllocator:
                     # Less than min workable power, so take nothing.
                     #####################################
                     member.final_power = 0
-                    if is_delta_power:
-                        # Only try to get back lack power if performing delta power allocation.
-                        # Note delta power allocation is not used since we are using rebalance.
-                        # Code here is just for completeness and future use.
-                        propose_final_power = max(allocated_power, member.need_power)
-                        member.lack_power = max(
-                            member.need_power - propose_final_power,
-                            -member.max_power,
-                        )
-                    else:
-                        # Gross power allocation.
-                        # ie. lower priority chargers have nothing to deallocate.
-                        member.lack_power = 0
+                    propose_final_power = max(allocated_power, member.need_power)
+                    member.lack_power = max(
+                        member.need_power - propose_final_power,
+                        -member.max_power,
+                    )
+
+                    # if is_delta_power:
+                    #     # Delta power allocation.
+                    #     # Delta power allocation is not used since we are using rebalance.
+                    #     # So no need to try to get lack power from lower priority chargers.
+                    #     # Code here is just for completeness.
+                    #     propose_final_power = max(allocated_power, member.need_power)
+                    #     member.lack_power = max(
+                    #         member.need_power - propose_final_power,
+                    #         -member.max_power,
+                    #     )
+                    # else:
+                    #     # Gross power allocation.
+                    #     # ie. lower priority chargers have nothing to deallocate.
+                    #     member.lack_power = 0
 
             else:
                 #####################################
@@ -617,7 +632,8 @@ class PowerAllocator:
 
         _LOGGER.info("AllocationBook: %s", book)
 
-        # Allocation for active chargers.
+        # Can be used for direct deallocation since group has consumed power info.
+        # No need to allocate/deallocate net power since rebalance will do the job.
         # active_ladder = self._process_allocation_group(
         #     book.active_group_map,
         #     book.net_power,
@@ -625,7 +641,6 @@ class PowerAllocator:
         #     allocation_type="Delta",
         # )
 
-        # No need to allocate net power since rebalance will do the job and only uses consumed power.
         active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
         # Rebalance allocation for all active chargers.
@@ -635,6 +650,9 @@ class PowerAllocator:
             is_delta_power=False,
             allocation_type="Rebalance",
         )
+        rebalance_ladder = self._rebalance_allocation_among_active_chargers(
+            book, active_ladder
+        )
 
         # Allocation for all running chargers including both active and paused chargers.
         all_ladder = self._process_allocation_group(
@@ -642,10 +660,6 @@ class PowerAllocator:
             book.gross_power,
             is_delta_power=False,
             allocation_type="Plan",
-        )
-
-        rebalance_ladder = self._rebalance_allocation_among_active_chargers(
-            book, active_ladder
         )
 
         await self._async_send_allocations(rebalance_ladder, paused_only=False)
