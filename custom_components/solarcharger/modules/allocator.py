@@ -627,7 +627,7 @@ class PowerAllocator:
         return rebalance_ladder
 
     # ----------------------------------------------------------------------------
-    async def _async_process_allocation_book(self, book: AllocationBook) -> None:
+    async def _async_process_allocation_book_v1(self, book: AllocationBook) -> None:
         """Process allocation book."""
 
         _LOGGER.info("AllocationBook: %s", book)
@@ -641,9 +641,23 @@ class PowerAllocator:
         #     allocation_type="Delta",
         # )
 
+        # Allocation for all running chargers including both active and paused chargers.
+        # All group can only paticipate in allocation of negative gross power.
+        # If gross power is positive:
+        # - All group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
+        all_ladder = self._process_allocation_group(
+            book.all_group_map,
+            book.gross_power,
+            is_delta_power=False,
+            allocation_type="Plan",
+        )
+
         active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
         # Rebalance allocation for all active chargers.
+        # Balance group can only paticipate in allocation of negative gross power.
+        # If gross power is positive:
+        # - Balance group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
         self._process_allocation_group(
             book.balance_group_map,
             book.gross_power,
@@ -654,7 +668,19 @@ class PowerAllocator:
             book, active_ladder
         )
 
+        await self._async_send_allocations(rebalance_ladder, paused_only=False)
+        await self._async_send_allocations(all_ladder, paused_only=True)
+
+    # ----------------------------------------------------------------------------
+    async def _async_process_allocation_book_v2(self, book: AllocationBook) -> None:
+        """Process allocation book."""
+
+        _LOGGER.info("AllocationBook: %s", book)
+
         # Allocation for all running chargers including both active and paused chargers.
+        # All group can only paticipate in allocation of negative gross power.
+        # If gross power is positive:
+        # - All group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
         all_ladder = self._process_allocation_group(
             book.all_group_map,
             book.gross_power,
@@ -662,8 +688,43 @@ class PowerAllocator:
             allocation_type="Plan",
         )
 
-        await self._async_send_allocations(rebalance_ladder, paused_only=False)
-        await self._async_send_allocations(all_ladder, paused_only=True)
+        if book.gross_power < 0:
+            #####################################
+            # Allocation
+            #####################################
+            active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
+
+            # Rebalance allocation for all active chargers.
+            # Balance group can only paticipate in allocation of negative gross power.
+            # If gross power is positive:
+            # - Balance group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
+            self._process_allocation_group(
+                book.balance_group_map,
+                book.gross_power,
+                is_delta_power=False,
+                allocation_type="Rebalance",
+            )
+            rebalance_ladder = self._rebalance_allocation_among_active_chargers(
+                book, active_ladder
+            )
+
+            await self._async_send_allocations(rebalance_ladder, paused_only=False)
+            await self._async_send_allocations(all_ladder, paused_only=True)
+
+        else:
+            #####################################
+            # Deallocation
+            #####################################
+            # Can be used for direct deallocation since group has consumed power info.
+            active_ladder = self._process_allocation_group(
+                book.active_group_map,
+                book.net_power,
+                is_delta_power=True,
+                allocation_type="Delta",
+            )
+
+            await self._async_send_allocations(active_ladder, paused_only=False)
+            await self._async_send_allocations(all_ladder, paused_only=True)
 
     # ----------------------------------------------------------------------------
     async def async_allocate_net_power(self) -> None:
@@ -683,7 +744,7 @@ class PowerAllocator:
                     self._global_defaults_control.controller.charge_control, net_power
                 )
 
-                await self._async_process_allocation_book(allocation_book)
+                await self._async_process_allocation_book_v2(allocation_book)
                 ok = True
 
             else:
