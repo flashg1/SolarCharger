@@ -294,7 +294,7 @@ CONFIG_NUMBER_LIST: tuple[
         SolarChargerEntityType.TYPE_LOCAL,
         NumberEntityDescription(
             key=NUMBER_CHARGER_PRIORITY,
-            native_min_value=0,
+            native_min_value=5,  # Priority 0 to 4 reserved for system.
             native_max_value=100,
             native_step=1,
         ),
