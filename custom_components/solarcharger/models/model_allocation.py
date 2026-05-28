@@ -135,15 +135,20 @@ class AllocationGroup:
 class AllocationBook:
     """Power allocation book."""
 
-    # Map has active chargers only, and allocations for active chargers only.
+    # Map has active chargers only, for allocation/deallocation of the chargers.
+    # Active group assumes all chargers in group has real consumed power data.
     active_group_map: dict[int, AllocationGroup]
 
     # Map has both active and paused chargers, and all will get allocations.
     # Used by paused chargers to determine when to exit paused state.
+    # All group assumes all chargers in group has 0 consumed power.
+    # - Gross power < 0, allocation is done according to the configs for each charger.
+    # - Gross power >= 0, deallocation is 0 since consumed_power=0, hence final_power=0.
     all_group_map: dict[int, AllocationGroup]
 
-    # Balance allocation among active chargers only.
-    balance_group_map: dict[int, AllocationGroup]
+    # Map has active chargers only, for rebalance allocation among the chargers.
+    # Rebalance group assumes all chargers in group has 0 consumed power.
+    rebalance_group_map: dict[int, AllocationGroup]
 
     total_active_instance: int = 0
     total_paused_instance: int = 0
