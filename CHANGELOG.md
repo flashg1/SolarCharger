@@ -6,11 +6,11 @@
 - Changed charger starting current from 6A to min workable current. Please ensure your min workable current is set.
 - Added [Min workable power pause threshold](https://github.com/flashg1/SolarCharger/wiki/User-guide#min-workable-power-pause-threshold) to local device config.
 - Renamed "Min workable current exit pause percent" to [Min workable power resume threshold](https://github.com/flashg1/SolarCharger/wiki/User-guide#min-workable-power-resume-threshold) and moved from global defaults to local device config.
-- Added [Max consumed energy limit](https://github.com/flashg1/SolarCharger/wiki/User-guide#max-consumed-energy-limit) and [End on max consumed energy](https://github.com/flashg1/SolarCharger/wiki/User-guide#end-on-max-consumed-energy) switch to end charge on reaching max consumed energy.
+- Added [Max consumed energy limit](https://github.com/flashg1/SolarCharger/wiki/User-guide#max-consumed-energy-limit) and [End on max consumed energy](https://github.com/flashg1/SolarCharger/wiki/User-guide#end-on-max-consumed-energy) switch to end charge on reaching max consumed energy limit.
 ### Fix
 - Fixed issue with not able to override pre-configured SolarCharger entity in options config flow.
 ### Improvement
-- Chargers that requires charging at max charge speed has system priority 3 and weight 1.
+- Chargers that requires charging at max charge speed has system priority 3 and weight 1. Priorities 0 to 4 are now reserved for SolarCharger internal use.
 - Select dummy entity *.deleteme to delete entity in options config flow.
 - Type 2 spaces to delete string in options config flow.
 - Refactored allocator for fairer allocation to paused chargers and rebalance all active chargers.
