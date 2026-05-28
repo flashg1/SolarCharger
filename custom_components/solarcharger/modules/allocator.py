@@ -72,7 +72,9 @@ class PowerAllocator:
             control.controller.solar_charge.set_consumed_power(0.0)
 
     # ----------------------------------------------------------------------------
-    def _create_group_member(self, control: DeviceControl) -> PowerAllocation:
+    def _create_group_member(
+        self, control: DeviceControl, consumed_power: float
+    ) -> PowerAllocation:
         """Create member from config. Note allocation weight entity can be overriden."""
 
         # The following are user configurable and can be overridden, so use indirection.
@@ -86,13 +88,30 @@ class PowerAllocator:
 
         # Participate in power allocation.
         instance = control.controller.charge_control.instance_count
+
+        # Device pause state.
         share_allocation = control.controller.solar_charge.get_share_allocation()
+        can_set_current = control.controller.solar_charge.can_set_current
+        if (
+            share_allocation == 1
+            and not can_set_current
+            and self._is_zero_power(consumed_power)
+        ):
+            #####################################
+            # Device in charging state but consumed 0 power,
+            # and can read current but not set current, so no participation,
+            # ie. device is in self-imposed paused state.
+            # Setting share_allocation=0 to ensure device do not participate
+            # in allocation/deallocation and receives planned allocations.
+            #####################################
+            share_allocation = 0
+            consumed_power = 0
+
         adjusted_activation_power, activation_power = (
             control.controller.solar_charge.get_adjusted_activation_power(
                 RunState.PAUSED if share_allocation == 0 else RunState.CHARGING
             )
         )
-        can_set_current = control.controller.solar_charge.can_set_current
         max_speed_charge = control.controller.solar_charge.is_max_speed_charge()
 
         # Chargers that requires charging at max speed has system priority and equal weight.
@@ -102,7 +121,7 @@ class PowerAllocator:
             priority = MAX_SPEED_CHARGE_PRIORITY
             allocation_weight = MAX_SPEED_CHARGE_PRIORITY_WEIGHT
 
-        return PowerAllocation(
+        member = PowerAllocation(
             subentry_id=control.subentry_id,
             name=control.config_name,
             max_power=max_power,
@@ -116,6 +135,9 @@ class PowerAllocator:
             max_speed_charge=max_speed_charge,
             voltage=voltage,
         )
+        member.consumed_power = consumed_power
+
+        return member
 
     # ----------------------------------------------------------------------------
     def _is_zero_power(self, power: float) -> bool:
@@ -160,23 +182,9 @@ class PowerAllocator:
         #   can get a bigger share. Similar to allocation, remain power and total weight will
         #   also be adjusted for subsequent deallocations to fully utilize the power.
         #######################################################
-        if (
-            live_consumed_power
-            and member.share_allocation == 1
-            and not member.can_set_current
-            and self._is_zero_power(consumed_power)
-        ):
+        if consumed_power < member.max_power:
             #####################################
-            # Device in charging state but consumed 0 power,
-            # and can read current but not set current, so no participation.
-            #####################################
-            member.allocation_final_weight = 0
-            member.deallocation_final_weight = 0
-            member.need_power = 0
-
-        elif consumed_power < member.max_power:
-            #####################################
-            # Participate in allocation
+            # Participate in allocation and possibly deallocation.
             #####################################
             member.allocation_final_weight = final_weight
 
@@ -228,7 +236,12 @@ class PowerAllocator:
             if control.controller.charge_control.instance_count == 0:
                 continue
 
-            all_member = self._create_group_member(control)
+            # Get final consumed power from member and then reset to 0.
+            consumed_power = control.controller.solar_charge.get_consumed_power()
+            all_member = self._create_group_member(control, consumed_power)
+            consumed_power = all_member.consumed_power
+            all_member.consumed_power = 0
+
             active_member = deepcopy(all_member)
             balance_member = deepcopy(all_member)
 
@@ -252,7 +265,6 @@ class PowerAllocator:
             # For source of rebalance allocation.
             # Only this group can be used for direct deallocation. Not required since using rebalance.
             #####################################
-            consumed_power = control.controller.solar_charge.get_consumed_power()
             self._populate_member_and_group_data(
                 active_group_map,
                 active_member,
@@ -276,9 +288,6 @@ class PowerAllocator:
             )
 
         book.net_power = net_power
-
-        # Gross power cannot be greater than 0.
-        # book.gross_power = min(net_power - book.total_consumed_power, 0)
         book.gross_power = net_power - book.total_consumed_power
 
         return book
@@ -627,52 +636,7 @@ class PowerAllocator:
         return rebalance_ladder
 
     # ----------------------------------------------------------------------------
-    async def _async_process_allocation_book_v1(self, book: AllocationBook) -> None:
-        """Process allocation book."""
-
-        _LOGGER.info("AllocationBook: %s", book)
-
-        # Can be used for direct deallocation since group has consumed power info.
-        # No need to allocate/deallocate net power since rebalance will do the job.
-        # active_ladder = self._process_allocation_group(
-        #     book.active_group_map,
-        #     book.net_power,
-        #     is_delta_power=True,
-        #     allocation_type="Delta",
-        # )
-
-        # Allocation for all running chargers including both active and paused chargers.
-        # All group can only paticipate in allocation of negative gross power.
-        # If gross power is positive:
-        # - All group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
-        all_ladder = self._process_allocation_group(
-            book.all_group_map,
-            book.gross_power,
-            is_delta_power=False,
-            allocation_type="Plan",
-        )
-
-        active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
-
-        # Rebalance allocation for all active chargers.
-        # Balance group can only paticipate in allocation of negative gross power.
-        # If gross power is positive:
-        # - Balance group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
-        self._process_allocation_group(
-            book.balance_group_map,
-            book.gross_power,
-            is_delta_power=False,
-            allocation_type="Rebalance",
-        )
-        rebalance_ladder = self._rebalance_allocation_among_active_chargers(
-            book, active_ladder
-        )
-
-        await self._async_send_allocations(rebalance_ladder, paused_only=False)
-        await self._async_send_allocations(all_ladder, paused_only=True)
-
-    # ----------------------------------------------------------------------------
-    async def _async_process_allocation_book_v2(self, book: AllocationBook) -> None:
+    async def _async_process_allocation_book(self, book: AllocationBook) -> None:
         """Process allocation book."""
 
         _LOGGER.info("AllocationBook: %s", book)
@@ -690,14 +654,12 @@ class PowerAllocator:
 
         if book.gross_power < 0:
             #####################################
-            # Allocation
+            # Allocation - Rebalance
             #####################################
             active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
             # Rebalance allocation for all active chargers.
             # Balance group can only paticipate in allocation of negative gross power.
-            # If gross power is positive:
-            # - Balance group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
             self._process_allocation_group(
                 book.balance_group_map,
                 book.gross_power,
@@ -715,6 +677,11 @@ class PowerAllocator:
             #####################################
             # Deallocation
             #####################################
+            # Must deallocate using active group because it has consumed power info.
+            # Do not rebalance since those groups do not have comsumed power info.
+            # If gross power is positive:
+            # - Balance group will not paticipate in deallocation since consumed_power=0, hence final_power=0.
+
             # Can be used for direct deallocation since group has consumed power info.
             active_ladder = self._process_allocation_group(
                 book.active_group_map,
@@ -744,7 +711,7 @@ class PowerAllocator:
                     self._global_defaults_control.controller.charge_control, net_power
                 )
 
-                await self._async_process_allocation_book_v2(allocation_book)
+                await self._async_process_allocation_book(allocation_book)
                 ok = True
 
             else:
