@@ -92,6 +92,7 @@ class PowerAllocator:
         # Device pause state.
         share_allocation = control.controller.solar_charge.get_share_allocation()
         can_set_current = control.controller.solar_charge.can_set_current
+        self_paused = False
         if (
             share_allocation == 1
             and not can_set_current
@@ -106,6 +107,7 @@ class PowerAllocator:
             #####################################
             share_allocation = 0
             consumed_power = 0
+            self_paused = True
 
         adjusted_activation_power, activation_power = (
             control.controller.solar_charge.get_adjusted_activation_power(
@@ -133,6 +135,7 @@ class PowerAllocator:
             share_allocation=share_allocation,
             can_set_current=can_set_current,
             max_speed_charge=max_speed_charge,
+            self_paused=self_paused,
             voltage=voltage,
         )
         member.consumed_power = consumed_power
@@ -593,8 +596,9 @@ class PowerAllocator:
                         _LOGGER.debug("PowerAllocation: %s", member)
                     elif member.share_allocation == 0:
                         _LOGGER.info(
-                            "%s: state=Paused, plan_power=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
+                            "%s: state=%s, plan_power=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
                             member.name,
+                            "Self-paused" if member.self_paused else "Paused",
                             member.final_power,
                             member.adjusted_activation_power,
                             member.activation_power,
