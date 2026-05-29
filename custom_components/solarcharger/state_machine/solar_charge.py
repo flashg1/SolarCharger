@@ -586,6 +586,13 @@ class SolarCharge(ScOptionState):
                     new_charge_current = await charger.async_set_charge_current(
                         new_current
                     )
+                    self.emit_solarcharger_event(
+                        self._device.id,
+                        EVENT_ACTION_NEW_CHARGE_CURRENT,
+                        new_charge_current,
+                        old_charge_current,
+                    )
+
                 else:
                     new_charge_current = new_current
 
@@ -627,15 +634,9 @@ class SolarCharge(ScOptionState):
             effective_voltage = self.get_charger_effective_voltage()
             self.set_consumed_power(new_charge_current * effective_voltage)
 
-            if self.can_set_current:
-                self.emit_solarcharger_event(
-                    self._device.id,
-                    EVENT_ACTION_NEW_CHARGE_CURRENT,
-                    new_charge_current,
-                    old_charge_current,
-                )
-                # Do not hold up callback
-                # await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
+            # Do not hold up callback
+            # if self.can_set_current:
+            #     await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
         except Exception as e:
             _LOGGER.exception(

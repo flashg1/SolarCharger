@@ -4,6 +4,7 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
 ### Improvement
+- Only emit new charge current if different from old.
 
 ## v0.8.0 2026-05-12
 ### Breaking change
