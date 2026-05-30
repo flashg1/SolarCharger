@@ -520,7 +520,7 @@ class PowerAllocator:
             unallocated_power = self._bottom_up_release_power(ladder, net_power)
 
         _LOGGER.debug(
-            "%s %s: power=%s, unallocated_power=%s",
+            "%s %s: net_power=%s, unallocated_power=%s",
             allocation_type,
             "allocation" if net_power <= 0 else "deallocation",
             net_power,
@@ -575,7 +575,7 @@ class PowerAllocator:
                         _LOGGER.debug("PowerAllocation: %s", member)
                     elif log:
                         _LOGGER.info(
-                            "%s: priority=%s, state=%s, consumed_power=%.2f, allocated_power=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
+                            "%s: priority=%s, state=%s, consumed_power=%.2f, allocated_power=%.2f, adjusted_activation_power=%.2f (%.2f)",
                             member.name,
                             member.priority,
                             self._get_member_state(member),
@@ -609,7 +609,7 @@ class PowerAllocator:
                 )
 
                 _LOGGER.info(
-                    "%s: priority=%s, state=%s, from=%.2f, to=%.2f, rebalance=%.2f, adjusted_activation_power=%.2f, activation_power=%.2f",
+                    "%s: priority=%s, state=%s, from=%.2f, to=%.2f, rebalance=%.2f, adjusted_activation_power=%.2f (%.2f)",
                     rebalance_active_member.name,
                     rebalance_active_member.priority,
                     self._get_member_state(rebalance_active_member),
