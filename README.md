@@ -13,7 +13,7 @@
 <!-- [total-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total -->
 [total-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.total
 <!-- [latest-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/latest/total -->
-[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.8.1']
+[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.8.0']
 [hacs-link]: https://hacs.xyz/
 
 
@@ -141,8 +141,9 @@ Local device (SolarCharger > Local device > Configuration):
 
 Please see [here](https://github.com/flashg1/SolarCharger/wiki/Installation#what-configs-are-required-after-installation) for more information.
 
-How to use
-==========
+For BLE users, please see corresponding section in [FAQ](https://github.com/flashg1/SolarCharger/wiki/FAQ) for extra configuration steps.
+
+## How to use
 
 - Set your car charge limit.
 - Connect charger to car.  Normal charging at constant current should begin immediately if schedule charging is disabled.  After a little while, the integration will take over and manage the charging current during daylight hours.  Please see [wiki](https://github.com/flashg1/SolarCharger/wiki/User-guide#automation-cannot-be-triggered) if automation cannot be triggered.
@@ -152,12 +153,10 @@ How to use
 
 2 options on how to charge the car:
 
-Option 1
---------
+### Option 1
 To charge from excess solar, just plug in the charger.  The initial charge current is 6A.  After about 1 minute it will adjust the current according to amount of excess power exported to grid.
 
-Option 2
---------
+### Option 2
 To charge at full speed from secondary power source and solar, toggle on "Fast charge mode".
 
 Please also check out the [wiki](https://github.com/flashg1/SolarCharger/wiki) pages.
