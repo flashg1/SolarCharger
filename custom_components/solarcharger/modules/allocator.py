@@ -254,7 +254,7 @@ class PowerAllocator:
             self._populate_member_and_group_data(
                 all_group_map,
                 all_member,
-                0.0,
+                0,
                 exclude_paused=False,
             )
 
@@ -286,7 +286,7 @@ class PowerAllocator:
             self._populate_member_and_group_data(
                 rebalance_group_map,
                 rebalance_member,
-                0.0,
+                0,
                 exclude_paused=True,
             )
 
@@ -323,7 +323,7 @@ class PowerAllocator:
             # allocated_power can be -ve or +ve.
             # member.need_power can be -ve or 0, but not +ve.
             # For paused device, allocated_power = need_power = lack_power = 0.
-            if allocated_power < 0:
+            if allocated_power <= 0:
                 #####################################
                 # Allocate power, ie. -ve
                 #####################################
@@ -375,7 +375,7 @@ class PowerAllocator:
         member: PowerAllocation,
         remain_power: float,
         total_weight: float,
-        net_power: float,
+        original_power: float,
     ) -> tuple[float, float]:
         """Allocate real power to running devices.
 
@@ -383,7 +383,7 @@ class PowerAllocator:
         and remove member weight for next allocation.
         """
 
-        if net_power < 0:
+        if original_power <= 0:
             # Allocate power, ie. -ve
             member_weight = member.allocation_final_weight
             remain_power = self._allocate_power_to_device(
@@ -408,29 +408,29 @@ class PowerAllocator:
 
     # ----------------------------------------------------------------------------
     def _allocate_power_to_group(
-        self, rung: AllocationGroup, net_power: float
+        self, rung: AllocationGroup, original_power: float
     ) -> float:
         """Allocate power to priority level.
 
         net_power: -ve = power to allocate, +ve = power to free up.
         """
 
-        remain_power = net_power
-        if net_power < 0:
+        remain_power = original_power
+        if original_power <= 0:
             total_weight = rung.total_allocation_final_weight
         else:
             total_weight = rung.total_deallocation_final_weight
 
         for member in rung.member_map.values():
             remain_power, total_weight = self._allocate_power_to_group_member(
-                rung, member, remain_power, total_weight, net_power
+                rung, member, remain_power, total_weight, original_power
             )
 
-            if net_power < 0 and remain_power >= 0:
+            if original_power <= 0 and remain_power >= 0:
                 # No more power to allocate.
                 break
 
-            if net_power >= 0 and remain_power <= 0:
+            if original_power > 0 and remain_power <= 0:
                 # No more power to free up.
                 break
 
@@ -462,7 +462,7 @@ class PowerAllocator:
     def _top_down_allocate_power(
         self,
         ladder: list[AllocationGroup],
-        net_power: float,  # ie. net_power is negative to allocate power.
+        net_power: float,  # ie. net_power is negative or zero to allocate power.
     ) -> float:
         """Allocate power from higher to lower priority chargers.
 
@@ -507,23 +507,23 @@ class PowerAllocator:
     def _process_allocation_group(
         self,
         group_map: dict[int, AllocationGroup],
-        power: float,
+        net_power: float,
         allocation_type: str,
     ) -> list[AllocationGroup]:
         """Process allocation group to determine final allocation for each device."""
 
         ladder = self._sorted_list_of_priority_level(group_map)
 
-        if power < 0:
-            unallocated_power = self._top_down_allocate_power(ladder, power)
+        if net_power <= 0:
+            unallocated_power = self._top_down_allocate_power(ladder, net_power)
         else:
-            unallocated_power = self._bottom_up_release_power(ladder, power)
+            unallocated_power = self._bottom_up_release_power(ladder, net_power)
 
         _LOGGER.debug(
             "%s %s: power=%s, unallocated_power=%s",
             allocation_type,
-            "allocation" if power < 0 else "deallocation",
-            power,
+            "allocation" if net_power <= 0 else "deallocation",
+            net_power,
             unallocated_power,
         )
 
@@ -635,7 +635,8 @@ class PowerAllocator:
             allocation_type="Plan",
         )
 
-        if book.gross_power < 0:
+        # Gross power less than or equal to zero is considered an allocation.
+        if book.gross_power <= 0:
             #####################################
             # Allocation - Rebalance
             #####################################
