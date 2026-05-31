@@ -154,7 +154,7 @@ For BLE users, please see corresponding section in [FAQ](https://github.com/flas
 2 options on how to charge the car:
 
 ### Option 1
-To charge from excess solar, just plug in the charger.  The initial charge current is set by [Min workable current](https://github.com/flashg1/SolarCharger/wiki/User-guide#min-workable-current).  After about 1 minute it will adjust the current according to amount of excess power exported to grid.
+To charge from excess solar, just plug in the charger.  The initial charge current is set to [minimum workable current](https://github.com/flashg1/SolarCharger/wiki/User-guide#min-workable-current).  After about 1 minute it will adjust the current according to amount of excess power exported to grid.
 
 ### Option 2
 To charge at full speed from secondary power source and solar, toggle on "Fast charge mode".
