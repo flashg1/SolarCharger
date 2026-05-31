@@ -869,7 +869,7 @@ class SolarCharge(ScOptionState):
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(
-                "%s: run_state=%s, adjusted_activation_power=%s, activation_power=%s, extra_percent=%s",
+                "%s: run_state=%s, adjusted_activation_power=%s (%s), extra_percent=%s",
                 self.caller,
                 run_state,
                 adjusted_activation_power,

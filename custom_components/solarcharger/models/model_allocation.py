@@ -68,9 +68,8 @@ class PowerAllocation:
         return (
             f"name={self.name}, "
             f"max_power={self.max_power}, "
-            f"activation_power={self.activation_power}, "
-            f"adjusted_activation_power={self.adjusted_activation_power}, "
-            f"consumed_power={self.consumed_power}, "
+            f"adjusted_activation_power={self.adjusted_activation_power} ("
+            f"{self.activation_power}), "
             f"priority={self.priority}, "
             f"allocation_weight={self.allocation_weight}, "
             f"instance={self.instance}, "
