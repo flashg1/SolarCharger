@@ -4,6 +4,7 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
 ### Improvement
+- Reduced logging.
 - Set default values for all Tesla APIs.
 - Does deallocation when net_power > 0.
 - Does rebalance when gross_power <= 0.
