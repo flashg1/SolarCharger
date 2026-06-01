@@ -129,7 +129,6 @@ State class: Measurement
 Device: Envoy [YourEnvoyId]
 ```
 3. Add charger device, eg. Tesla, OCPP, etc.
-1. If using OCPP charger, configure your charger to point to your HA OCPP central server, eg. ws://homeassistant.local:9000
 1. Please set the following configs after adding charger,
 
 Global defaults (SolarCharger > Global defaults > Configuration):
@@ -141,7 +140,7 @@ Local device (SolarCharger > Local device > Configuration):
 
 Please see [here](https://github.com/flashg1/SolarCharger/wiki/Installation#what-configs-are-required-after-installation) for more information.
 
-For BLE users, please see corresponding section in [FAQ](https://github.com/flashg1/SolarCharger/wiki/FAQ) for extra configuration steps.
+For BLE and OCPP users, please see corresponding section in [FAQ](https://github.com/flashg1/SolarCharger/wiki/FAQ) for extra configuration steps.
 
 ## How to use
 
