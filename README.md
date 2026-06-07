@@ -40,7 +40,7 @@ Even though this custom integration has been created with care, the author canno
 
 
 ## Overview
-Home Assistant solar charger custom integration using OCPP and/or EV specific API to charge EV from surplus solar and weather forecast.
+Home Assistant solar charger uses surplus solar to charge your EV and home. ☀️
 
 ![Screenshot_20230702-094232_Home Assistant](https://github.com/flashg1/TeslaSolarCharger/assets/122323972/58d1df89-905b-422c-8542-0081b9fa342f)
 
