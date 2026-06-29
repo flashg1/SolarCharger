@@ -437,8 +437,9 @@ class StateCharge(SolarChargeState):
 
         await self.solarcharge.async_turn_charger_switch(charger, turn_on=True)
         # Set initial charge current.
-        min_workable_current = self.solarcharge.get_charger_min_workable_current()
-        await self.solarcharge.async_set_charge_current(charger, min_workable_current)
+        # min_workable_current = self.solarcharge.get_charger_min_workable_current()
+        # await self.solarcharge.async_set_charge_current(charger, min_workable_current)
+        await self.solarcharge.async_set_charge_current(charger, 5.0)
         await self.solarcharge.async_update_ha(chargeable)
 
         self._subscribe_sync_update()
