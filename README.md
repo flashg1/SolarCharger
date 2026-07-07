@@ -1,6 +1,9 @@
 # <img src="https://brands.home-assistant.io/solarcharger/dark_icon.png" alt="SolarCharger" width="50" style="vertical-align:Left;" /> Solar charger custom integration for Home Assistant
 
-[![Stable][releases-shield]][releases] [![HACS Badge][hacs-badge]][hacs-link] ![Project Maintenance][maintenance-shield] [![GitHub Activity][commits-shield]][commits] [![License][license-shield]](LICENSE) [![Downloads (all releases)][total-downloads]][solarcharger-link] [![Downloads (latest release)][latest-downloads]][solarcharger-link]
+[![Stable][releases-shield]][releases] [![HACS Badge][hacs-badge]][hacs-link] ![Project Maintenance][maintenance-shield] [![GitHub Activity][commits-shield]][commits] [![License][license-shield]](LICENSE) 
+<!--
+[![Downloads (all releases)][total-downloads]][solarcharger-link] [![Downloads (latest release)][latest-downloads]][solarcharger-link]
+-->
 
 [solarcharger-link]: https://github.com/flashg1/SolarCharger
 [commits-shield]: https://img.shields.io/github/commit-activity/y/flashg1/SolarCharger.svg
@@ -10,6 +13,7 @@
 [releases-shield]: https://img.shields.io/github/release/flashg1/SolarCharger.svg
 [releases]: https://github.com/flashg1/SolarCharger/releases/latest
 [hacs-badge]: https://img.shields.io/badge/HACS-Default-41BDF5.svg
+[hacs-link]: https://hacs.xyz/
 <!--
 [total-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/total
 [latest-downloads]: https://img.shields.io/github/downloads/flashg1/SolarCharger/latest/total
@@ -18,8 +22,6 @@
 [total-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.total
 [latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.8.2']
 -->
-[hacs-link]: https://hacs.xyz/
-
 
 ## Solar Charger - Work in progress
 
