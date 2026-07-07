@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.2 2026-06-30
+### Fix
+- Fix for Tesla Wall Connector charge current mismatch on startup. The fix is to set initial charge current to 6A. If SolarCharger attempts to set current to 1A after switching on Tesla Wall Connector, Tesla Wall Connector will set current to 5A causing the mismatch. Reference: [#27](https://github.com/flashg1/SolarCharger/releases/tag/v0.8.2)
+
 ## v0.8.1 2026-05-30
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
