@@ -12,6 +12,7 @@ from homeassistant.util.dt import as_local, utcnow
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..const import (
+    CHARGER_INITIAL_CURRENT,
     ENTITY_CHARGER_CHARGING_SENSOR,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
@@ -228,6 +229,14 @@ class StateCharge(SolarChargeState):
         )
 
     # ----------------------------------------------------------------------------
+    def _get_charge_current(self, charger: Charger) -> float:
+        """Get charge current. Use max current if device do not support reading current."""
+
+        return self.solarcharge.get_charge_current(
+            charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
+        )
+
+    # ----------------------------------------------------------------------------
     # if old_charge_current is None:
     #     raise ValueError("Failed to get charge current")
     def _calc_current_change(
@@ -242,10 +251,7 @@ class StateCharge(SolarChargeState):
 
         if not self.solarcharge.can_set_current:
             # Device do not support setting current.
-            # Use max current if device do not support reading current.
-            new_charge_current = self.solarcharge.get_charge_current(
-                charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
-            )
+            new_charge_current = self._get_charge_current(charger)
             return (new_charge_current, old_charge_current)
 
         #####################################
@@ -436,10 +442,26 @@ class StateCharge(SolarChargeState):
         )
 
         await self.solarcharge.async_turn_charger_switch(charger, turn_on=True)
-        # Set initial charge current.
+
+        #####################################
+        # Set initial charge current
+        #####################################
+        # Fix for Tesla Wall Connector charge current mismatch on startup.
+        # The fix is to set initial charge current to 6A.
+        # If SolarCharger attempts to set current to 1A after switching on Tesla Wall Connector,
+        # Tesla Wall Connector will set current to 5A causing the mismatch.
         # min_workable_current = self.solarcharge.get_charger_min_workable_current()
         # await self.solarcharge.async_set_charge_current(charger, min_workable_current)
-        await self.solarcharge.async_set_charge_current(charger, 6.0)
+        if self.solarcharge.can_set_current:
+            max_current = self.solarcharge.get_charger_max_current()
+            initial_current = self.solarcharge.validate_current(
+                max_current, CHARGER_INITIAL_CURRENT
+            )
+        else:
+            # Device do not support setting current.
+            initial_current = self._get_charge_current(charger)
+        await self.solarcharge.async_set_charge_current(charger, initial_current)
+
         await self.solarcharge.async_update_ha(chargeable)
 
         self._subscribe_sync_update()

@@ -12,7 +12,7 @@ NAME = "SolarCharger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json, README.md and CHANGELOG.md.
-VERSION = "0.8.2"
+VERSION = "0.8.3"
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
 
@@ -67,6 +67,7 @@ PLATFORMS: list[Platform | str] = [
 # Max number of allowable consecutive failures in charge loop
 MAX_CONSECUTIVE_FAILURE_COUNT = 10
 SELECT_NONE = "None"
+CHARGER_INITIAL_CURRENT = 6.0
 
 #######################################################
 # Subentry constants
