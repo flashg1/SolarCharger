@@ -203,14 +203,14 @@ class StateCharge(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Charge loop
     # ----------------------------------------------------------------------------
-    def _is_zero_current(self, current) -> bool:
+    def _is_zero_current(self, current: float) -> bool:
         """Is zero current?"""
 
-        return -0.5 < current < +0.5
+        return -0.1 < current < +0.1
 
     # ----------------------------------------------------------------------------
     def _is_device_turn_off_by_itself(
-        self, old_current: float, new_current: float
+        self, new_current: float, old_current: float
     ) -> bool:
         """Device turned off by itself?"""
 
@@ -220,7 +220,7 @@ class StateCharge(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     def _is_device_turn_on_by_itself(
-        self, old_current: float, new_current: float
+        self, new_current: float, old_current: float
     ) -> bool:
         """Device turned on by itself?"""
 
@@ -321,22 +321,32 @@ class StateCharge(SolarChargeState):
     async def _async_adjust_charge_current(
         self, charger: Charger, delta_allocated_power: float
     ) -> None:
-        """Adjust charge current."""
+        """Adjust charge current triggered by net power update and charge current update period."""
 
-        new_charge_current, old_charge_current = self._calc_current_change(
+        new_current, old_current = self._calc_current_change(
             charger, delta_allocated_power, self.solarcharge.running_goal
         )
+
+        # Check if device turned off by itself for device that do not support setting current.
+        # Self-paused state is communicated to allocator via consumed power set in async_set_charge_current().
+        # Allocator is triggered by net power update on another thread set up by the coordinator.
+        if not self.solarcharge.can_set_current and self._is_device_turn_off_by_itself(
+            new_current, old_current
+        ):
+            self_paused_today = self.solarcharge.get_self_paused_today()
+            self_paused_today += 1
+            self.solarcharge.set_self_paused_today(self_paused_today)
 
         _LOGGER.info(
             "%s: delta_allocated_power=%.2f, old_current=%s, new_current=%s",
             self.solarcharge.caller,
             delta_allocated_power,
-            old_charge_current,
-            new_charge_current,
+            old_current,
+            new_current,
         )
 
         await self.solarcharge.async_set_charge_current(
-            charger, new_charge_current, old_charge_current
+            charger, new_current, old_current
         )
 
         # No need to update status here because it is now done at the main loop.

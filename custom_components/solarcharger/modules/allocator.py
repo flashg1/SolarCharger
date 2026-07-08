@@ -52,9 +52,7 @@ class PowerAllocator:
     # ----------------------------------------------------------------------------
     # Power allocation code
     # ----------------------------------------------------------------------------
-    def init_allocator(
-        self,
-    ) -> None:
+    def init_allocator(self) -> None:
         """Initialize the power allocator."""
 
         for control in self._device_controls.values():
@@ -70,6 +68,11 @@ class PowerAllocator:
 
             # Best to reset consumed power to 0 in case value is not 0 before reboot.
             control.controller.solar_charge.set_consumed_power(0.0)
+
+    # ----------------------------------------------------------------------------
+    def _is_zero_power(self, power: float) -> bool:
+
+        return power > -20 and power < 20
 
     # ----------------------------------------------------------------------------
     def _create_group_member(
@@ -141,11 +144,6 @@ class PowerAllocator:
         member.consumed_power = consumed_power
 
         return member
-
-    # ----------------------------------------------------------------------------
-    def _is_zero_power(self, power: float) -> bool:
-
-        return power > -20 and power < 20
 
     # ----------------------------------------------------------------------------
     def _populate_member_and_group_data(

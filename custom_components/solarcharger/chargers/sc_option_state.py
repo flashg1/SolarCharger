@@ -41,6 +41,7 @@ from ..const import (
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
     SENSOR_DELTA_ALLOCATED_POWER,
+    SENSOR_SELF_PAUSED_TODAY,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SYNC_UPDATE,
     SWITCH,
@@ -111,6 +112,13 @@ class ScOptionState(ScConfigState):
         """Return the share allocation entity ID."""
         return compose_entity_id(
             SENSOR, self._subentry.unique_id, SENSOR_SHARE_ALLOCATION
+        )
+
+    @cached_property
+    def self_paused_today_entity_id(self) -> str:
+        """Return the self-paused today entity ID."""
+        return compose_entity_id(
+            SENSOR, self._subentry.unique_id, SENSOR_SELF_PAUSED_TODAY
         )
 
     @cached_property
@@ -857,6 +865,13 @@ class ScOptionState(ScConfigState):
         """Get consumed energy today."""
 
         return self.get_number(self.consumed_energy_today_entity_id)
+
+    # ----------------------------------------------------------------------------
+    # Need entity to keep state across reboots.
+    def get_self_paused_today(self) -> int:
+        """Get self-paused today."""
+
+        return self.get_integer(self.self_paused_today_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_fast_charge_mode(self) -> bool:

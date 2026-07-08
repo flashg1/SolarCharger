@@ -179,6 +179,7 @@ SENSOR_CONSUMED_POWER = "consumed_power"
 SENSOR_CONSUMED_ENERGY_TODAY = "consumed_energy_today"
 SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
 SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
+SENSOR_SELF_PAUSED_TODAY = "self_paused_today"
 # Pause count per session
 SENSOR_PAUSE_COUNT = "pause_count"
 # Pause avg duration per session

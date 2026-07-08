@@ -213,6 +213,9 @@
             "share_allocation": {
                 "name": "Share allocation"
             },
+            "self_paused_today": {
+                "name": "Self-paused today"
+            },
             "pause_count": {
                 "name": "Pause count"
             },

@@ -51,6 +51,7 @@ from ..const import (
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
+    SENSOR_SELF_PAUSED_TODAY,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     ChargeStatus,
@@ -326,6 +327,12 @@ class SolarCharge(ScOptionState):
         """Set consumed energy today."""
 
         self.update_sensor(SENSOR_CONSUMED_ENERGY_TODAY, val)
+
+    # ----------------------------------------------------------------------------
+    def set_self_paused_today(self, val: int) -> None:
+        """Set self-paused today."""
+
+        self.update_sensor(SENSOR_SELF_PAUSED_TODAY, val)
 
     # ----------------------------------------------------------------------------
     def set_pause_count(self, val: int) -> None:
