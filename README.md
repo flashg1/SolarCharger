@@ -128,7 +128,7 @@ To:    \\homeassistant.local\config\custom_components\solarcharger
 Settings > Devices & services > Helpers > Create helper > Template > Template a sensor >
 
 Name: Net power
-State template: {{ states('sensor.envoy_[YourEnvoyId]_current_power_consumption')|int - states('sensor.envoy_[YourEnvoyId]_current_power_production')|int }}
+State template: {{ states('sensor.envoy_[YourEnvoyId]_current_net_power_consumption')|int }}
 Unit of measurement: W
 Device class: Power
 State class: Measurement
