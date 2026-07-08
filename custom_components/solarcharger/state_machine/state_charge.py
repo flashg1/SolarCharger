@@ -229,14 +229,6 @@ class StateCharge(SolarChargeState):
         )
 
     # ----------------------------------------------------------------------------
-    def _get_charge_current(self, charger: Charger) -> float:
-        """Get charge current. Use max current if device do not support reading current."""
-
-        return self.solarcharge.get_charge_current(
-            charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
-        )
-
-    # ----------------------------------------------------------------------------
     # if old_charge_current is None:
     #     raise ValueError("Failed to get charge current")
     def _calc_current_change(
@@ -251,7 +243,7 @@ class StateCharge(SolarChargeState):
 
         if not self.solarcharge.can_set_current:
             # Device do not support setting current.
-            new_charge_current = self._get_charge_current(charger)
+            new_charge_current = self.solarcharge.get_charge_current(charger)
             return (new_charge_current, old_charge_current)
 
         #####################################
@@ -394,10 +386,8 @@ class StateCharge(SolarChargeState):
             # Change charge limit if required
             await self.solarcharge.async_set_charge_limit_if_required(chargeable, goal)
             # Set max current
-            charger_max_current = self.solarcharge.get_charger_max_current()
-            await self.solarcharge.async_set_charge_current(
-                charger, charger_max_current
-            )
+            max_current = self.solarcharge.get_charger_max_current()
+            await self.solarcharge.async_set_charge_current(charger, max_current)
             await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
         else:
             raise EntityExceptionError("Missing SOC sensor")
@@ -453,13 +443,10 @@ class StateCharge(SolarChargeState):
         # min_workable_current = self.solarcharge.get_charger_min_workable_current()
         # await self.solarcharge.async_set_charge_current(charger, min_workable_current)
         if self.solarcharge.can_set_current:
-            max_current = self.solarcharge.get_charger_max_current()
-            initial_current = self.solarcharge.validate_current(
-                max_current, CHARGER_INITIAL_CURRENT
-            )
+            initial_current = self.solarcharge.validate_current(CHARGER_INITIAL_CURRENT)
         else:
             # Device do not support setting current.
-            initial_current = self._get_charge_current(charger)
+            initial_current = self.solarcharge.get_charge_current(charger)
         await self.solarcharge.async_set_charge_current(charger, initial_current)
 
         await self.solarcharge.async_update_ha(chargeable)

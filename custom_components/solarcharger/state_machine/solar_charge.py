@@ -483,8 +483,23 @@ class SolarCharge(ScOptionState):
         return self.charger.can_set_charge_current()
 
     # ----------------------------------------------------------------------------
-    def validate_current(self, max_current: float, current: float) -> float:
+    def get_charger_max_current(self) -> float:
+        """Get charger max current."""
+
+        max_current = self.charger.get_max_charge_current()
+        if max_current is None or max_current <= 0:
+            raise ValueError("Failed to get charger max current")
+
+        return max_current
+
+    # ----------------------------------------------------------------------------
+    def validate_current(
+        self, current: float, max_current: float | None = None
+    ) -> float:
         """Validate charge current is within charger supported range."""
+
+        if max_current is None:
+            max_current = self.get_charger_max_current()
 
         if current < 0:
             current = 0
@@ -495,7 +510,7 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def get_charger_min_current(
-        self, charger_max_current: float, direct: bool = False
+        self, max_current: float | None = None, direct: bool = False
     ) -> float:
         """Get charger min current."""
 
@@ -506,17 +521,7 @@ class SolarCharge(ScOptionState):
                 NUMBER_CHARGER_MIN_CURRENT
             )
 
-        return self.validate_current(charger_max_current, config_min_current)
-
-    # ----------------------------------------------------------------------------
-    def get_charger_max_current(self) -> float:
-        """Get charger max current."""
-
-        charger_max_current = self.charger.get_max_charge_current()
-        if charger_max_current is None or charger_max_current <= 0:
-            raise ValueError("Failed to get charger max current")
-
-        return charger_max_current
+        return self.validate_current(config_min_current, max_current)
 
     # ----------------------------------------------------------------------------
     def get_charger_effective_voltage(self) -> float:
@@ -533,7 +538,7 @@ class SolarCharge(ScOptionState):
         return charger_effective_voltage
 
     # ----------------------------------------------------------------------------
-    def get_charge_current(self, charger: Charger, val_dict: ConfigValueDict) -> float:
+    def _get_charge_current(self, charger: Charger, val_dict: ConfigValueDict) -> float:
         """Get device charge current. Return max current if do not support reading current."""
 
         charge_current = charger.get_charge_current(val_dict)
@@ -547,6 +552,14 @@ class SolarCharge(ScOptionState):
             raise ValueError("Failed to get device charge current")
 
         return charge_current
+
+    # ----------------------------------------------------------------------------
+    def get_charge_current(self, charger: Charger) -> float:
+        """Get charge current. Use max current if device do not support reading current."""
+
+        return self._get_charge_current(
+            charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
+        )
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_current(
