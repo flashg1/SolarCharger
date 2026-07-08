@@ -142,6 +142,7 @@ class SolarCharge(ScOptionState):
         # Entity backed by variable for efficiency. Ok if re-direction is not required.
         self._share_allocation: int = 0
         self._consumed_power: float = 0.0
+        self._self_paused: bool = False
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -176,6 +177,11 @@ class SolarCharge(ScOptionState):
         """Return the current state of the machine."""
         return self._machine_state
 
+    @property
+    def is_self_paused(self) -> bool:
+        """Return True if the charger is self-paused."""
+        return self._self_paused
+
     # ----------------------------------------------------------------------------
     # State machine methods
     # ----------------------------------------------------------------------------
@@ -203,6 +209,12 @@ class SolarCharge(ScOptionState):
 
         assert self.entities.sensors is not None
         self.entities.sensors[SENSOR_RUN_STATE].set_state(state.value)
+
+    # ----------------------------------------------------------------------------
+    def set_self_paused(self, paused: bool) -> None:
+        """Set the self-paused state of the object."""
+
+        self._self_paused = paused
 
     # ----------------------------------------------------------------------------
     # Global utils
@@ -545,11 +557,17 @@ class SolarCharge(ScOptionState):
         return charger_effective_voltage
 
     # ----------------------------------------------------------------------------
-    def _get_charge_current(self, charger: Charger, val_dict: ConfigValueDict) -> float:
-        """Get device charge current. Return max current if do not support reading current."""
+    def get_charge_current(
+        self, charger: Charger, val_dict: ConfigValueDict | None = None
+    ) -> float:
+        """Get charge current. Return max current if device do not support reading current."""
+
+        config_item = ENTITY_CHARGER_GET_CHARGE_CURRENT
+        if val_dict is None:
+            val_dict = ConfigValueDict(config_item, {})
 
         charge_current = charger.get_charge_current(val_dict)
-        if val_dict.config_values[ENTITY_CHARGER_GET_CHARGE_CURRENT].entity_id is None:
+        if val_dict.config_values[config_item].entity_id is None:
             # Device do not support reading current, eg. a resistive load.
             # So just return charger_max_current.
             # All devices must have max charge current configured.
@@ -559,14 +577,6 @@ class SolarCharge(ScOptionState):
             raise ValueError("Failed to get device charge current")
 
         return charge_current
-
-    # ----------------------------------------------------------------------------
-    def get_charge_current(self, charger: Charger) -> float:
-        """Get charge current. Use max current if device do not support reading current."""
-
-        return self._get_charge_current(
-            charger, ConfigValueDict(ENTITY_CHARGER_GET_CHARGE_CURRENT, {})
-        )
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_current(
@@ -677,6 +687,7 @@ class SolarCharge(ScOptionState):
 
         # Must reset time here to avoid possible wrong energy calculation if pausing.
         self.charge_current_updatetime = datetime.min
+        self.set_self_paused(False)
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_limit(

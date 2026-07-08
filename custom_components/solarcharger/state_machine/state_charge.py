@@ -14,7 +14,6 @@ from ..chargers.charger import Charger
 from ..const import (
     CHARGER_INITIAL_CURRENT,
     ENTITY_CHARGER_CHARGING_SENSOR,
-    ENTITY_CHARGER_GET_CHARGE_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
     ChargeStatus,
@@ -229,8 +228,6 @@ class StateCharge(SolarChargeState):
         )
 
     # ----------------------------------------------------------------------------
-    # if old_charge_current is None:
-    #     raise ValueError("Failed to get charge current")
     def _calc_current_change(
         self,
         charger: Charger,
@@ -318,6 +315,25 @@ class StateCharge(SolarChargeState):
         return (new_charge_current, old_charge_current)
 
     # ----------------------------------------------------------------------------
+    def _update_self_paused_state(self, new_current: float, old_current: float) -> None:
+        """Update self-paused state for device that do not support setting current."""
+
+        # Check if device turned off by itself for device that do not support setting current.
+        # Self-paused state is communicated directly to allocator via set_self_paused(),
+        # or indirectly via consumed power set in async_set_charge_current().
+        # Allocator is triggered by net power update on another thread set up by the coordinator.
+        if not self.solarcharge.can_set_current:
+            if self._is_device_turn_off_by_itself(new_current, old_current):
+                self.solarcharge.set_self_paused(True)
+
+                self_paused_today = self.solarcharge.get_self_paused_today()
+                self_paused_today += 1
+                self.solarcharge.set_self_paused_today(self_paused_today)
+
+            elif self._is_device_turn_on_by_itself(new_current, old_current):
+                self.solarcharge.set_self_paused(False)
+
+    # ----------------------------------------------------------------------------
     async def _async_adjust_charge_current(
         self, charger: Charger, delta_allocated_power: float
     ) -> None:
@@ -327,15 +343,7 @@ class StateCharge(SolarChargeState):
             charger, delta_allocated_power, self.solarcharge.running_goal
         )
 
-        # Check if device turned off by itself for device that do not support setting current.
-        # Self-paused state is communicated to allocator via consumed power set in async_set_charge_current().
-        # Allocator is triggered by net power update on another thread set up by the coordinator.
-        if not self.solarcharge.can_set_current and self._is_device_turn_off_by_itself(
-            new_current, old_current
-        ):
-            self_paused_today = self.solarcharge.get_self_paused_today()
-            self_paused_today += 1
-            self.solarcharge.set_self_paused_today(self_paused_today)
+        self._update_self_paused_state(new_current, old_current)
 
         _LOGGER.info(
             "%s: delta_allocated_power=%.2f, old_current=%s, new_current=%s",
@@ -452,11 +460,15 @@ class StateCharge(SolarChargeState):
         # Tesla Wall Connector will set current to 5A causing the mismatch.
         # min_workable_current = self.solarcharge.get_charger_min_workable_current()
         # await self.solarcharge.async_set_charge_current(charger, min_workable_current)
-        if self.solarcharge.can_set_current:
-            initial_current = self.solarcharge.validate_current(CHARGER_INITIAL_CURRENT)
-        else:
+        if not self.solarcharge.can_set_current:
             # Device do not support setting current.
             initial_current = self.solarcharge.get_charge_current(charger)
+            if self._is_zero_current(initial_current):
+                self.solarcharge.set_self_paused(True)
+            else:
+                self.solarcharge.set_self_paused(False)
+        else:
+            initial_current = self.solarcharge.validate_current(CHARGER_INITIAL_CURRENT)
         await self.solarcharge.async_set_charge_current(charger, initial_current)
 
         await self.solarcharge.async_update_ha(chargeable)

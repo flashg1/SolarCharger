@@ -93,13 +93,14 @@ class PowerAllocator:
         instance = control.controller.charge_control.instance_count
 
         # Device pause state.
-        share_allocation = control.controller.solar_charge.get_share_allocation()
         can_set_current = control.controller.solar_charge.can_set_current
-        self_paused = False
+        share_allocation = control.controller.solar_charge.get_share_allocation()
+        self_paused = control.controller.solar_charge.is_self_paused
         if (
-            share_allocation == 1
-            and not can_set_current
-            and self._is_zero_power(consumed_power)
+            # not can_set_current
+            # and share_allocation == 1
+            # and self._is_zero_power(consumed_power)
+            self_paused
         ):
             #####################################
             # Device in charging state but consumed 0 power,
@@ -110,7 +111,6 @@ class PowerAllocator:
             #####################################
             share_allocation = 0
             consumed_power = 0
-            self_paused = True
 
         adjusted_activation_power, activation_power = (
             control.controller.solar_charge.get_adjusted_activation_power(
