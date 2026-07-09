@@ -205,6 +205,22 @@ class StateCharge(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Charge loop
     # ----------------------------------------------------------------------------
+    def _set_charging_substate(self) -> None:
+        """Set the charging sub-state of the object."""
+
+        if self.solarcharge.is_self_paused:
+            self.solarcharge.set_run_state(RunState.SELF_PAUSED)
+        else:
+            self.solarcharge.set_run_state(RunState.CHARGING)
+
+    # ----------------------------------------------------------------------------
+    def _set_self_paused_state(self, self_paused: bool) -> None:
+        """Set the self-paused state of the object."""
+
+        self.solarcharge.set_self_paused(self_paused)
+        self._set_charging_substate()
+
+    # ----------------------------------------------------------------------------
     def _get_leak_current(self) -> float:
         """Get leak current for device that do not support setting current."""
 
@@ -343,7 +359,7 @@ class StateCharge(SolarChargeState):
             if self._is_device_turn_off_by_itself(
                 new_current, old_current, leak_current
             ):
-                self.solarcharge.set_self_paused(True)
+                self._set_self_paused_state(True)
 
                 self_paused_today = self.solarcharge.get_self_paused_today()
                 self_paused_today += 1
@@ -352,7 +368,7 @@ class StateCharge(SolarChargeState):
             elif self._is_device_turn_on_by_itself(
                 new_current, old_current, leak_current
             ):
-                self.solarcharge.set_self_paused(False)
+                self._set_self_paused_state(False)
 
     # ----------------------------------------------------------------------------
     async def _async_adjust_charge_current(
@@ -485,9 +501,9 @@ class StateCharge(SolarChargeState):
             # Device do not support setting current.
             initial_current = self.solarcharge.get_charge_current(charger)
             if self._is_zero_current(initial_current):
-                self.solarcharge.set_self_paused(True)
+                self._set_self_paused_state(True)
             else:
-                self.solarcharge.set_self_paused(False)
+                self._set_self_paused_state(False)
         else:
             initial_current = self.solarcharge.validate_current(CHARGER_INITIAL_CURRENT)
         await self.solarcharge.async_set_charge_current(charger, initial_current)

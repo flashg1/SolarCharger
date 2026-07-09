@@ -215,10 +215,6 @@ class SolarCharge(ScOptionState):
         """Set the self-paused state of the object."""
 
         self._self_paused = self_paused
-        if self_paused:
-            self.set_run_state(RunState.SELF_PAUSED)
-        else:
-            self.set_run_state(RunState.CHARGING)
 
     # ----------------------------------------------------------------------------
     # Global utils
