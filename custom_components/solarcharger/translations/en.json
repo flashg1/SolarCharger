@@ -171,6 +171,7 @@
                     "starting": "Starting",
                     "initialising": "Initialising",
                     "charging": "Charging",
+                    "self-paused": "Self-paused",
                     "paused": "Paused",
                     "ending": "Ending",
                     "ended": "Ended"

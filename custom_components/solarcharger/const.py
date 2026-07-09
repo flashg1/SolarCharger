@@ -1013,7 +1013,11 @@ class RunState(Enum):
     UNDEFINED = "undefined"
     STARTING = "starting"
     INITIALISING = "initialising"
+
     CHARGING = "charging"
+    # SELF_PAUSED is a sub-state of CHARGING state.
+    SELF_PAUSED = "self-paused"
+
     PAUSED = "paused"
     ABORTING = "aborting"
     ENDING = "ending"

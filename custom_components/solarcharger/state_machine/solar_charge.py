@@ -211,10 +211,14 @@ class SolarCharge(ScOptionState):
         self.entities.sensors[SENSOR_RUN_STATE].set_state(state.value)
 
     # ----------------------------------------------------------------------------
-    def set_self_paused(self, paused: bool) -> None:
+    def set_self_paused(self, self_paused: bool) -> None:
         """Set the self-paused state of the object."""
 
-        self._self_paused = paused
+        self._self_paused = self_paused
+        if self_paused:
+            self.set_run_state(RunState.SELF_PAUSED)
+        else:
+            self.set_run_state(RunState.CHARGING)
 
     # ----------------------------------------------------------------------------
     # Global utils
