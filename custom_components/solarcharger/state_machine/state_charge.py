@@ -33,6 +33,9 @@ from .state_tidyup import StateTidyUp
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
+# Allow 0.5% of max current as leak current when turned off.
+LEAK_CURRENT_PERCENTAGE = 0.5
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -202,30 +205,42 @@ class StateCharge(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Charge loop
     # ----------------------------------------------------------------------------
-    def _is_zero_current(self, current: float) -> bool:
+    def _get_leak_current(self) -> float:
+        """Get leak current for device that do not support setting current."""
+
+        max_current = self.solarcharge.get_charger_max_current()
+        return max_current * LEAK_CURRENT_PERCENTAGE / 100
+
+    # ----------------------------------------------------------------------------
+    def _is_zero_current(
+        self, current: float, leak_current: float | None = None
+    ) -> bool:
         """Is zero current?"""
 
-        return -0.1 < current < +0.1
+        if leak_current is None:
+            leak_current = self._get_leak_current()
+
+        return -leak_current < current < +leak_current
 
     # ----------------------------------------------------------------------------
     def _is_device_turn_off_by_itself(
-        self, new_current: float, old_current: float
+        self, new_current: float, old_current: float, leak_current: float
     ) -> bool:
         """Device turned off by itself?"""
 
-        return self._is_zero_current(new_current) and not self._is_zero_current(
-            old_current
-        )
+        return self._is_zero_current(
+            new_current, leak_current
+        ) and not self._is_zero_current(old_current, leak_current)
 
     # ----------------------------------------------------------------------------
     def _is_device_turn_on_by_itself(
-        self, new_current: float, old_current: float
+        self, new_current: float, old_current: float, leak_current: float
     ) -> bool:
         """Device turned on by itself?"""
 
-        return self._is_zero_current(old_current) and not self._is_zero_current(
-            new_current
-        )
+        return self._is_zero_current(
+            old_current, leak_current
+        ) and not self._is_zero_current(new_current, leak_current)
 
     # ----------------------------------------------------------------------------
     def _calc_current_change(
@@ -323,14 +338,20 @@ class StateCharge(SolarChargeState):
         # or indirectly via consumed power set in async_set_charge_current().
         # Allocator is triggered by net power update on another thread set up by the coordinator.
         if not self.solarcharge.can_set_current:
-            if self._is_device_turn_off_by_itself(new_current, old_current):
+            leak_current = self._get_leak_current()
+
+            if self._is_device_turn_off_by_itself(
+                new_current, old_current, leak_current
+            ):
                 self.solarcharge.set_self_paused(True)
 
                 self_paused_today = self.solarcharge.get_self_paused_today()
                 self_paused_today += 1
                 self.solarcharge.set_self_paused_today(self_paused_today)
 
-            elif self._is_device_turn_on_by_itself(new_current, old_current):
+            elif self._is_device_turn_on_by_itself(
+                new_current, old_current, leak_current
+            ):
                 self.solarcharge.set_self_paused(False)
 
     # ----------------------------------------------------------------------------
