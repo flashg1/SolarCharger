@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.0 2026-07-11
+### Breaking change
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- Removed end of max energy limit.
+- Added generic end on condition turning true.
+
 ## v0.8.3 2026-07-07
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
