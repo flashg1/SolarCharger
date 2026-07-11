@@ -960,10 +960,7 @@ class SolarCharge(ScOptionState):
         continue_charge = (
             context.connected
             and context.below_charge_limit
-            and (
-                not context.goal.end_on_max_consumed_energy
-                or context.goal.below_max_consumed_energy
-            )
+            and (not (context.goal.end_on_condition and context.goal.exit_condition))
             and (context.stats.loop_success_count == 0 or context.charging)
             and (
                 not context.goal.sun_trigger  # Sun trigger off, continue.
@@ -998,10 +995,7 @@ class SolarCharge(ScOptionState):
 
         continue_pause = (
             context.connected
-            and (
-                not context.goal.end_on_max_consumed_energy
-                or context.goal.below_max_consumed_energy
-            )
+            and (not (context.goal.end_on_condition and context.goal.exit_condition))
             and (
                 not context.goal.sun_trigger
                 or context.goal.sun_above_start_end_elevations

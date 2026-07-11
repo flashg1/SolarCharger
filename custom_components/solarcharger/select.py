@@ -23,6 +23,7 @@ from .const import (
     RESTORE_ON_START_TRUE,
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
+    SELECT_EXIT_CONDITION_SENSOR,
     SELECT_NONE,
 )
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -121,7 +122,7 @@ class SolarChargerSelectPresenceSensorEntity(SolarChargerSelectEntity):
         default_val: str,
         is_restore_state: bool,
     ) -> None:
-        """Initialize the switch."""
+        """Initialize the selector."""
         super().__init__(
             config_item,
             subentry,
@@ -176,6 +177,60 @@ class SolarChargerSelectPresenceSensorEntity(SolarChargerSelectEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+class SolarChargerSelectTemplateBinarySensorEntity(SolarChargerSelectEntity):
+    """Representation of a SolarCharger template binary sensor selector."""
+
+    def __init__(
+        self,
+        config_item: str,
+        subentry: ConfigSubentry,
+        entity_type: SolarChargerEntityType,
+        desc: SelectEntityDescription,
+        default_val: str,
+        is_restore_state: bool,
+    ) -> None:
+        """Initialize the selector."""
+        super().__init__(
+            config_item,
+            subentry,
+            entity_type,
+            desc,
+            default_val,
+            is_restore_state,
+        )
+
+    # ----------------------------------------------------------------------------
+    @property
+    def options(self) -> list[str]:  # type: ignore[override]
+        """Return a filtered list of entity IDs."""
+
+        registry = er.async_get(self.hass)
+
+        target_classes = {
+            None,  # Include sensors with no device class (custom template sensors)
+        }
+        filtered_entities = []
+
+        for entry in registry.entities.values():
+            # 1. Ensure it is a binary sensor
+            if entry.domain != "binary_sensor":
+                continue
+
+            # 2. Check Device Class from the Registry (static configuration)
+            reg_class = entry.device_class or entry.original_device_class
+
+            # 3. Check Device Class from the State (live state)
+            state = self.hass.states.get(entry.entity_id)
+            state_class = state.attributes.get("device_class") if state else None
+
+            if reg_class in target_classes or state_class in target_classes:
+                filtered_entities.append(entry.entity_id)
+
+        return [SELECT_NONE, *sorted(filtered_entities)]
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 CONFIG_SELECT_LIST: tuple[
     tuple[
         str,
@@ -198,6 +253,16 @@ CONFIG_SELECT_LIST: tuple[
         SolarChargerEntityType.TYPE_LOCAL,
         SelectEntityDescription(
             key=SELECT_DEVICE_PRESENCE_SENSOR,
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+    (
+        SELECT_EXIT_CONDITION_SENSOR,
+        SolarChargerSelectTemplateBinarySensorEntity,
+        RESTORE_ON_START_TRUE,
+        SolarChargerEntityType.TYPE_LOCAL,
+        SelectEntityDescription(
+            key=SELECT_EXIT_CONDITION_SENSOR,
             entity_category=EntityCategory.CONFIG,
         ),
     ),

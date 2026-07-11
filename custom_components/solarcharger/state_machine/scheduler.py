@@ -3,6 +3,7 @@
 
 from datetime import datetime, time, timedelta
 import logging
+from math import e
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
@@ -340,11 +341,20 @@ class ChargeScheduler(ScOptionState):
 
         goal.max_consumed_energy = self.get_max_consumed_energy_limit()
         goal.consumed_energy = self.get_consumed_energy_today()
-        goal.end_on_max_consumed_energy = self.is_end_on_max_consumed_energy()
-        if goal.consumed_energy < goal.max_consumed_energy:
-            goal.below_max_consumed_energy = True
-        else:
-            goal.below_max_consumed_energy = False
+        goal.self_paused = self.get_self_paused_today()
+        goal.end_on_condition = self.is_end_on_condition()
+        if goal.end_on_condition:
+            entity_id = self.get_string(self.exit_condition_sensor_selector_entity_id)
+            if (
+                entity_id is not None
+                and (exit_condition := self.get_boolean(entity_id)) is not None
+            ):
+                goal.exit_condition = exit_condition
+            else:
+                _LOGGER.error(
+                    "%s: Exit condition sensor not set or not available",
+                    self.caller,
+                )
 
         #####################################
         # Good place to throws exception in the charging loop if device is not ready and will try again in the next loop.

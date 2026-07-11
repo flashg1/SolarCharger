@@ -3,8 +3,8 @@
 ## v0.9.0 2026-07-11
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
-- Removed end of max energy limit.
-- Added generic end on condition turning true.
+- Removed "End on max consumed energy" switch.
+- Added "End on condition" switch and "Exit condition sensor" selector.
 
 ## v0.8.3 2026-07-07
 ### Breaking change

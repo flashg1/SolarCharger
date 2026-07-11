@@ -37,6 +37,7 @@ from ..const import (
     OPTION_CHARGER_NAME,
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
+    SELECT_EXIT_CONDITION_SENSOR,
     SENSOR,
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
@@ -47,7 +48,7 @@ from ..const import (
     SWITCH,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_CHARGE,
-    SWITCH_END_ON_MAX_CONSUMED_ENERGY,
+    SWITCH_END_ON_CONDITION,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PAUSE_ON_START,
     SWITCH_PLUGIN_TRIGGER,
@@ -157,10 +158,10 @@ class ScOptionState(ScConfigState):
         )
 
     @cached_property
-    def end_on_max_consumed_energy_switch_entity_id(self) -> str:
-        """Return the end on max consumed energy switch entity ID."""
+    def end_on_condition_switch_entity_id(self) -> str:
+        """Return the end on condition switch entity ID."""
         return compose_entity_id(
-            SWITCH, self._subentry.unique_id, SWITCH_END_ON_MAX_CONSUMED_ENERGY
+            SWITCH, self._subentry.unique_id, SWITCH_END_ON_CONDITION
         )
 
     @cached_property
@@ -213,6 +214,13 @@ class ScOptionState(ScConfigState):
         """Return the selector entity ID for the device presence sensor."""
         return compose_entity_id(
             SELECT, self._subentry.unique_id, SELECT_DEVICE_PRESENCE_SENSOR
+        )
+
+    @cached_property
+    def exit_condition_sensor_selector_entity_id(self) -> str:
+        """Return the selector entity ID for the exit condition sensor."""
+        return compose_entity_id(
+            SELECT, self._subentry.unique_id, SELECT_EXIT_CONDITION_SENSOR
         )
 
     # ----------------------------------------------------------------------------
@@ -886,12 +894,10 @@ class ScOptionState(ScConfigState):
         return self.get_boolean_or_abort(self.poll_charger_update_switch_entity_id)
 
     # ----------------------------------------------------------------------------
-    def is_end_on_max_consumed_energy(self) -> bool:
-        """Is end on max consumed energy on?"""
+    def is_end_on_condition(self) -> bool:
+        """Is end on condition switch on?"""
 
-        return self.get_boolean_or_abort(
-            self.end_on_max_consumed_energy_switch_entity_id
-        )
+        return self.get_boolean_or_abort(self.end_on_condition_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_pause_on_start(self) -> bool:

@@ -248,8 +248,8 @@
             "poll_charger_update": {
                 "name": "Poll charger update"
             },
-            "end_on_max_consumed_energy": {
-                "name": "End on max consumed energy"
+            "end_on_condition": {
+                "name": "End on condition"
             },
             "pause_on_start": {
                 "name": "Pause on start"
@@ -276,6 +276,9 @@
         "select": {
             "device_presence_sensor": {
                 "name": "Device presence sensor"
+            },
+            "exit_condition_sensor": {
+                "name": "Exit condition sensor"
             }
         },
         "number": {
