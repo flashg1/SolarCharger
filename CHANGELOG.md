@@ -4,7 +4,7 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
 ### New feature
-- Added sub-state "[Self-paused](https://github.com/flashg1/SolarCharger/wiki/User-guide#self-paused)" as part of "Charging" state to indicate device turned off by itself while charging.
+- Added "[Self-paused](https://github.com/flashg1/SolarCharger/wiki/User-guide#self-paused)" sub-state as part of "Charging" state to indicate device turned off by itself while charging.
 - Added [Self-paused today](https://github.com/flashg1/SolarCharger/wiki/User-guide#self-paused-today) sensor to count number of times the device turned off by itself, eg. water heater.
 ### Improvement
 - Refactored code for setting initial charge current.
