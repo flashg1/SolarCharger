@@ -3,7 +3,6 @@
 
 from datetime import datetime, time, timedelta
 import logging
-from math import e
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
@@ -21,7 +20,7 @@ from ..exceptions.entity_exception import EntityExceptionError
 from ..helpers.utils import (
     get_next_sunrise_time,
     get_sec_per_degree_sun_elevation,
-    get_sun_elevation,
+    # get_sun_elevation,
 )
 from ..models.model_schedule_data import ChargeSchedule, ScheduleData
 

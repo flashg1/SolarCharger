@@ -7,7 +7,6 @@ from decimal import Decimal
 import inspect
 import logging
 import threading
-from typing import Any
 
 from propcache.api import cached_property
 

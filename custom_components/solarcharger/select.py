@@ -5,7 +5,7 @@ from typing import Any
 from homeassistant import config_entries, core
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.select import (
-    ENTITY_ID_FORMAT,
+    # ENTITY_ID_FORMAT,
     SelectEntity,
     SelectEntityDescription,
 )

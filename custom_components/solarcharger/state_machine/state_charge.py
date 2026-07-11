@@ -7,7 +7,7 @@ import threading
 
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, EventStateChangedData, State
-from homeassistant.util.dt import as_local, utcnow
+from homeassistant.util.dt import as_local
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
