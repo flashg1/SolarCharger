@@ -52,7 +52,6 @@ class StateTidyUp(SolarChargeState):
         """Tidy up on exit."""
 
         try:
-            self.solarcharge.started_max_charge = 0
             self._unsubscribe_updates()
             await self.solarcharge.async_turn_off_calibrate_max_charge_speed_switch()
 

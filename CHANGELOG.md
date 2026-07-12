@@ -5,6 +5,8 @@
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 - Added "End on condition" switch and "Exit condition sensor" selector.
 - Removed "End on max consumed energy" switch.
+### Fix
+- Need to set started_max_charge=0 when switching off charger.
 
 ## v0.8.3 2026-07-07
 ### Breaking change

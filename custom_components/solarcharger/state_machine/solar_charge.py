@@ -686,6 +686,7 @@ class SolarCharge(ScOptionState):
 
         # Must reset time here to avoid possible wrong energy calculation if pausing.
         self.charge_current_updatetime = datetime.min
+        self.started_max_charge = 0
         self.set_self_paused(False)
 
     # ----------------------------------------------------------------------------
