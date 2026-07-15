@@ -67,7 +67,7 @@ class SolarChargerSelectEntity(SolarChargerEntity, SelectEntity, RestoreEntity):
     # See https://developers.home-assistant.io/docs/core/entity/cached-property/
     @property
     def options(self) -> list[str]:  # type: ignore[override]
-        """Return option list."""
+        """Return option list for selection."""
         return self._get_option_list(self)
 
     # ----------------------------------------------------------------------------
