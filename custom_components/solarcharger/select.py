@@ -61,6 +61,16 @@ class SolarChargerSelectEntity(SolarChargerEntity, SelectEntity, RestoreEntity):
         self._is_restore_state = is_restore_state
 
     # ----------------------------------------------------------------------------
+    # More efficient to use @cached_property, but need to clear the cache when registry updates.
+    # See above commented code.
+    # OK for now since only get new list when changing config in GUI, so just override the options property without caching.
+    # See https://developers.home-assistant.io/docs/core/entity/cached-property/
+    @property
+    def options(self) -> list[str]:  # type: ignore[override]
+        """Return a filtered list of entity IDs."""
+        return self._get_option_list(self)
+
+    # ----------------------------------------------------------------------------
     async def async_select_option(self, option: str) -> None:
         """Update the selected option and save it."""
 
@@ -113,16 +123,6 @@ class SolarChargerSelectEntity(SolarChargerEntity, SelectEntity, RestoreEntity):
 
     #     # This triggers Home Assistant to re-read the property
     #     self.async_write_ha_state()
-
-    # ----------------------------------------------------------------------------
-    # More efficient to use @cached_property, but need to clear the cache when registry updates.
-    # See above commented code.
-    # OK for now since only get new list when changing config in GUI, so just override the options property without caching.
-    # See https://developers.home-assistant.io/docs/core/entity/cached-property/
-    @property
-    def options(self) -> list[str]:  # type: ignore[override]
-        """Return a filtered list of entity IDs."""
-        return self._get_option_list(self)
 
 
 # ----------------------------------------------------------------------------
@@ -197,127 +197,6 @@ def option_template_binary_sensor(self) -> list[str]:
             filtered_entities.append(entry.entity_id)
 
     return [SELECT_NONE, *sorted(filtered_entities)]
-
-
-# # ----------------------------------------------------------------------------
-# # ----------------------------------------------------------------------------
-# class SolarChargerSelectPresenceSensorEntity(SolarChargerSelectEntity):
-#     """Representation of a SolarCharger presence sensor selector."""
-
-#     def __init__(
-#         self,
-#         config_item: str,
-#         subentry: ConfigSubentry,
-#         entity_type: SolarChargerEntityType,
-#         desc: SelectEntityDescription,
-#         default_val: str,
-#         is_restore_state: bool,
-#     ) -> None:
-#         """Initialize the selector."""
-#         super().__init__(
-#             config_item,
-#             subentry,
-#             entity_type,
-#             desc,
-#             default_val,
-#             is_restore_state,
-#         )
-
-#     # ----------------------------------------------------------------------------
-#     # More efficient to use @cached_property, but need to clear the cache when registry updates.
-#     # See above commented code.
-#     # OK for now since only get new list when changing config in GUI, so just override the options property without caching.
-#     # See https://developers.home-assistant.io/docs/core/entity/cached-property/
-#     @property
-#     def options(self) -> list[str]:  # type: ignore[override]
-#         """Return a filtered list of entity IDs."""
-
-#         registry = er.async_get(self.hass)
-
-#         # # Filter for sensors and return their entity_ids
-#         # return [
-#         #     entry.entity_id
-#         #     for entry in registry.entities.values()
-#         #     if entry.domain == "binary_sensor"
-#         # ]
-
-#         target_classes = {
-#             BinarySensorDeviceClass.CONNECTIVITY,
-#             BinarySensorDeviceClass.PLUG,
-#             BinarySensorDeviceClass.PRESENCE,
-#         }
-#         filtered_entities = []
-
-#         for entry in registry.entities.values():
-#             # 1. Ensure it is a binary sensor
-#             if entry.domain != "binary_sensor":
-#                 continue
-
-#             # 2. Check Device Class from the Registry (static configuration)
-#             reg_class = entry.device_class or entry.original_device_class
-
-#             # 3. Check Device Class from the State (live state)
-#             state = self.hass.states.get(entry.entity_id)
-#             state_class = state.attributes.get("device_class") if state else None
-
-#             if reg_class in target_classes or state_class in target_classes:
-#                 filtered_entities.append(entry.entity_id)
-
-#         return [SELECT_NONE, *sorted(filtered_entities)]
-
-
-# # ----------------------------------------------------------------------------
-# # ----------------------------------------------------------------------------
-# class SolarChargerSelectTemplateBinarySensorEntity(SolarChargerSelectEntity):
-#     """Representation of a SolarCharger template binary sensor selector."""
-
-#     def __init__(
-#         self,
-#         config_item: str,
-#         subentry: ConfigSubentry,
-#         entity_type: SolarChargerEntityType,
-#         desc: SelectEntityDescription,
-#         default_val: str,
-#         is_restore_state: bool,
-#     ) -> None:
-#         """Initialize the selector."""
-#         super().__init__(
-#             config_item,
-#             subentry,
-#             entity_type,
-#             desc,
-#             default_val,
-#             is_restore_state,
-#         )
-
-#     # ----------------------------------------------------------------------------
-#     @property
-#     def options(self) -> list[str]:  # type: ignore[override]
-#         """Return a filtered list of entity IDs."""
-
-#         registry = er.async_get(self.hass)
-
-#         target_classes = {
-#             None,  # Include sensors with no device class (custom template sensors)
-#         }
-#         filtered_entities = []
-
-#         for entry in registry.entities.values():
-#             # 1. Ensure it is a binary sensor
-#             if entry.domain != "binary_sensor":
-#                 continue
-
-#             # 2. Check Device Class from the Registry (static configuration)
-#             reg_class = entry.device_class or entry.original_device_class
-
-#             # 3. Check Device Class from the State (live state)
-#             state = self.hass.states.get(entry.entity_id)
-#             state_class = state.attributes.get("device_class") if state else None
-
-#             if reg_class in target_classes or state_class in target_classes:
-#                 filtered_entities.append(entry.entity_id)
-
-#         return [SELECT_NONE, *sorted(filtered_entities)]
 
 
 # ----------------------------------------------------------------------------
