@@ -251,9 +251,6 @@
             "end_on_condition": {
                 "name": "End on condition"
             },
-            "pause_on_start": {
-                "name": "Pause on start"
-            },
             "schedule_charge": {
                 "name": "Schedule charge"
             },

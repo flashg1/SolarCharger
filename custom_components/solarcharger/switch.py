@@ -22,7 +22,6 @@ from .const import (
     SWITCH_CHARGE,
     SWITCH_END_ON_CONDITION,
     SWITCH_FAST_CHARGE_MODE,
-    SWITCH_PAUSE_ON_START,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_PRESENCE_TRIGGER,
@@ -235,17 +234,6 @@ async def async_setup_entry(
             SolarChargerEntityType.TYPE_LOCAL,
             SwitchEntityDescription(
                 key=SWITCH_END_ON_CONDITION,
-                entity_category=EntityCategory.CONFIG,
-            ),
-        ),
-        (
-            SWITCH_PAUSE_ON_START,
-            SolarChargerSwitchEntity,
-            RESTORE_ON_START_TRUE,
-            coordinator.async_switch_dummy,
-            SolarChargerEntityType.TYPE_LOCAL,
-            SwitchEntityDescription(
-                key=SWITCH_PAUSE_ON_START,
                 entity_category=EntityCategory.CONFIG,
             ),
         ),

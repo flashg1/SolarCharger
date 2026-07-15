@@ -11,7 +11,7 @@
 ### New feature
 - Added "Start state" selection: Auto, Charge or Pause.
 ### Improvement
-- Refactored select.py to pass in option selection as a class parameter.
+- Refactored select.py to pass in available options as a class parameter.
 
 ## v0.8.3 2026-07-07
 ### Breaking change

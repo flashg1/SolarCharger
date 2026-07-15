@@ -38,6 +38,7 @@ from ..const import (
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
+    SELECT_START_STATE,
     SENSOR,
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
@@ -50,7 +51,6 @@ from ..const import (
     SWITCH_CHARGE,
     SWITCH_END_ON_CONDITION,
     SWITCH_FAST_CHARGE_MODE,
-    SWITCH_PAUSE_ON_START,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_PRESENCE_TRIGGER,
@@ -165,13 +165,6 @@ class ScOptionState(ScConfigState):
         )
 
     @cached_property
-    def pause_on_start_switch_entity_id(self) -> str:
-        """Return the pause on start switch entity ID."""
-        return compose_entity_id(
-            SWITCH, self._subentry.unique_id, SWITCH_PAUSE_ON_START
-        )
-
-    @cached_property
     def charge_switch_entity_id(self) -> str:
         """Return the charge switch entity ID."""
         return compose_entity_id(SWITCH, self._subentry.unique_id, SWITCH_CHARGE)
@@ -215,6 +208,11 @@ class ScOptionState(ScConfigState):
         return compose_entity_id(
             SELECT, self._subentry.unique_id, SELECT_DEVICE_PRESENCE_SENSOR
         )
+
+    @cached_property
+    def start_state_selector_entity_id(self) -> str:
+        """Return the selector entity ID for the device start state."""
+        return compose_entity_id(SELECT, self._subentry.unique_id, SELECT_START_STATE)
 
     @cached_property
     def exit_condition_sensor_selector_entity_id(self) -> str:
@@ -898,12 +896,6 @@ class ScOptionState(ScConfigState):
         """Is end on condition switch on?"""
 
         return self.get_boolean_or_abort(self.end_on_condition_switch_entity_id)
-
-    # ----------------------------------------------------------------------------
-    def is_pause_on_start(self) -> bool:
-        """Is pause on start on?"""
-
-        return self.get_boolean_or_abort(self.pause_on_start_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_schedule_charge(self) -> bool:

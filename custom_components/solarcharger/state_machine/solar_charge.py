@@ -39,6 +39,7 @@ from ..const import (
     NUMBER_WAIT_CHARGEE_WAKEUP,
     NUMBER_WAIT_CHARGER_OFF,
     NUMBER_WAIT_CHARGER_ON,
+    SELECT_START_STATE,
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
@@ -56,6 +57,7 @@ from ..const import (
     ChargeStatus,
     MedianDataState,
     RunState,
+    StartState,
 )
 from ..helpers.utils import log_is_event_loop
 from ..models.model_charge_control import ControlEntities
@@ -480,6 +482,20 @@ class SolarCharge(ScOptionState):
 
         await self._async_wakeup_device(chargeable)
         await self.async_update_ha(chargeable)
+
+    # ----------------------------------------------------------------------------
+    def get_start_state(self) -> StartState:
+        """Get preferred start state from config."""
+
+        state_str = self.get_string(self.start_state_selector_entity_id)
+        start_state = StartState(state_str)
+        if start_state == StartState.AUTO:
+            if self.is_daytime():
+                start_state = StartState.CHARGE
+            else:
+                start_state = StartState.PAUSE
+
+        return start_state
 
     # ----------------------------------------------------------------------------
     async def async_turn_charger_switch(self, charger: Charger, turn_on: bool) -> None:
