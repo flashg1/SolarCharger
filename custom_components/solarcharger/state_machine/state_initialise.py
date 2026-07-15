@@ -45,12 +45,15 @@ class StateInitialise(SolarChargeState):
         self.solarcharge.set_run_state(self.state)
 
         await self._async_init_device(self.solarcharge.chargeable)
-        start_state = self.solarcharge.get_start_state()
 
-        if (
-            start_state == StartState.PAUSE
-            and self.solarcharge.stats.pause_total_count == 0
-        ):
+        if self.solarcharge.stats.pause_total_count == 0:
+            # Starting session for the first time, so get user preference on start state.
+            start_state = self.solarcharge.get_start_state()
+        else:
+            # Otherwise, always start in charge state after initialisation.
+            start_state = StartState.CHARGE
+
+        if start_state == StartState.PAUSE:
             self.solarcharge.set_machine_state(StatePause())
         else:
             self.solarcharge.set_machine_state(StateCharge())
