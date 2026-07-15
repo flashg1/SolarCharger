@@ -277,6 +277,14 @@
             "device_presence_sensor": {
                 "name": "Device presence sensor"
             },
+            "start_state": {
+                "name": "Start state",
+                "state": {
+                    "auto": "Auto",
+                    "charge": "Charge",
+                    "pause": "Pause"
+                }
+            },
             "exit_condition_sensor": {
                 "name": "Exit condition sensor"
             }

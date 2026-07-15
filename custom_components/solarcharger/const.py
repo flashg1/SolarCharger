@@ -61,6 +61,72 @@ PLATFORMS: list[Platform | str] = [
     # INPUT_TIME,
 ]
 
+
+#######################################################
+# Enumerations
+#######################################################
+class ChargeStatus(Enum):
+    """Enumeration of charge statuses."""
+
+    CHARGE_CONTINUE = "charge_continue"
+    CHARGE_PAUSE = "charge_pause"
+    CHARGE_END = "charge_end"
+
+
+class StartState(Enum):
+    """Enumeration of start states."""
+
+    AUTO = "auto"
+    CHARGE = "charge"
+    PAUSE = "pause"
+
+
+START_STATE_LIST: list[str] = [state.value for state in StartState]
+
+
+class RunState(Enum):
+    """Enumeration of machine states."""
+
+    # Sensor state attributes must be lower case. Translation will display state in OS language.
+    UNDEFINED = "undefined"
+    STARTING = "starting"
+    INITIALISING = "initialising"
+
+    CHARGING = "charging"
+    # SELF_PAUSED is a sub-state of CHARGING state.
+    SELF_PAUSED = "self-paused"
+
+    PAUSED = "paused"
+    ABORTING = "aborting"
+    ENDING = "ending"
+    ENDED = "ended"
+
+
+RUN_STATE_LIST: list[str] = [state.value for state in RunState]
+
+
+class MedianDataState(Enum):
+    """Enumeration of median data set states."""
+
+    # Sensor state attributes must be lower case. Translation will display state in OS language.
+    NOT_READY = "not_ready"
+    READY = "ready"
+
+
+MEDIAN_DATA_STATE_LIST: list[str] = [state.value for state in MedianDataState]
+
+
+class ChargeControlApi(Enum):
+    """Enumeration of supported ChargeControl APIs."""
+
+    OCPP_CHARGER_API = "ocpp_charger_api"
+    TESLA_CUSTOM_API = "tesla_custom_api"
+    TESLA_MQTTBLE_API = "tesla_mqtt_ble_api"
+    TESLA_FLEET_API = "tesla_fleet_api"
+    TESLA_TESSIE_API = "tesla_tessie_api"
+    USER_CUSTOM_API = "user_custom_api"
+
+
 #######################################################
 # Constants
 #######################################################
@@ -333,6 +399,7 @@ SENSOR_MEDIAN_NET_ALLOCATED_POWER = "median_net_allocated_power"
 SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD = "median_net_allocated_power_period"
 SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
 SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
+SELECT_START_STATE = "start_state"
 SELECT_EXIT_CONDITION_SENSOR = "exit_condition_sensor"
 
 #####################################
@@ -586,6 +653,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     # Local device select defaults
     #####################################
     SELECT_DEVICE_PRESENCE_SENSOR: None,  # Also update CONFIG_WITH_NO_DEFAULTS
+    SELECT_START_STATE: StartState.AUTO.value,
     SELECT_EXIT_CONDITION_SENSOR: None,  # Also update CONFIG_WITH_NO_DEFAULTS
 }
 
@@ -1002,57 +1070,6 @@ CALLBACK_CHARGE_ENDTIME_UPDATE = "callback_charge_endtime_update"
 #######################################################
 # Misc
 #######################################################
-class ChargeStatus(Enum):
-    """Enumeration of charge statuses."""
-
-    CHARGE_CONTINUE = "charge_continue"
-    CHARGE_PAUSE = "charge_pause"
-    CHARGE_END = "charge_end"
-
-
-class RunState(Enum):
-    """Enumeration of machine states."""
-
-    # Sensor state attributes must be lower case. Translation will display state in OS language.
-    UNDEFINED = "undefined"
-    STARTING = "starting"
-    INITIALISING = "initialising"
-
-    CHARGING = "charging"
-    # SELF_PAUSED is a sub-state of CHARGING state.
-    SELF_PAUSED = "self-paused"
-
-    PAUSED = "paused"
-    ABORTING = "aborting"
-    ENDING = "ending"
-    ENDED = "ended"
-
-
-RUN_STATE_LIST: list[str] = [state.value for state in RunState]
-
-
-class MedianDataState(Enum):
-    """Enumeration of median data set states."""
-
-    # Sensor state attributes must be lower case. Translation will display state in OS language.
-    NOT_READY = "not_ready"
-    READY = "ready"
-
-
-MEDIAN_DATA_STATE_LIST: list[str] = [state.value for state in MedianDataState]
-
-
-class ChargeControlApi(Enum):
-    """Enumeration of supported ChargeControl APIs."""
-
-    OCPP_CHARGER_API = "ocpp_charger_api"
-    TESLA_CUSTOM_API = "tesla_custom_api"
-    TESLA_MQTTBLE_API = "tesla_mqtt_ble_api"
-    TESLA_FLEET_API = "tesla_fleet_api"
-    TESLA_TESSIE_API = "tesla_tessie_api"
-    USER_CUSTOM_API = "user_custom_api"
-
-
 CENTRE_OF_SUN_DEGREE_BELOW_HORIZON_AT_SUNRISE = 0.833
 
 DEBUG = False
