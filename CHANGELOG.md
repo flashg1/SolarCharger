@@ -3,13 +3,15 @@
 ## v0.9.0 2026-07-11
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
-- Replaced "Start on pause" switch with "Start state" selection.
-- Added "End on condition" switch and "Exit condition sensor" selector.
+- Replaced "Start on pause" switch with "Start state" selector.
+- Replaced "End on max consumed energy" switch with a more general "End on condition" switch.
+- Removed "Max consumed energy limit" number.
 - Removed "End on max consumed energy" switch.
 ### Fix
 - Need to set started_max_charge=0 when switching off charger.
 ### New feature
-- Added "Start state" selection: Auto, Charge or Pause.
+- Added "[Start state](https://github.com/flashg1/SolarCharger/wiki/User-guide#start-state)" selector for Auto, Charge or Pause start states.
+- Added "[Exit condition sensor](https://github.com/flashg1/SolarCharger/wiki/User-guide#exit-condition-sensor)" selector and "End on condition" switch.
 ### Improvement
 - Refactored select.py to pass in available options as a class parameter.
 

@@ -52,7 +52,6 @@ from .const import (
     NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
-    NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_POWER_MONITOR_DURATION,
@@ -307,19 +306,6 @@ CONFIG_NUMBER_LIST: tuple[
             native_min_value=0,
             native_max_value=100,
             native_step=1,
-        ),
-    ),
-    (
-        NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
-        SolarChargerEntityType.TYPE_LOCAL,
-        NumberEntityDescription(
-            key=NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
-            entity_category=EntityCategory.CONFIG,
-            device_class=NumberDeviceClass.ENERGY,
-            native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-            native_min_value=0.0,
-            native_max_value=100.0,
-            native_step=0.001,
         ),
     ),
     #####################################

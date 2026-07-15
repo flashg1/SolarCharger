@@ -338,7 +338,6 @@ class ChargeScheduler(ScOptionState):
             self.is_sun_above_start_end_elevation_triggers()
         )
 
-        goal.max_consumed_energy = self.get_max_consumed_energy_limit()
         goal.consumed_energy = self.get_consumed_energy_today()
         goal.self_paused = self.get_self_paused_today()
         goal.end_on_condition = self.is_end_on_condition()

@@ -54,7 +54,6 @@ class ScheduleData:
     battery_soc: float | None = None
 
     # Energy management
-    max_consumed_energy: float = -1
     consumed_energy: float = 0
     self_paused: int = 0
 
@@ -111,7 +110,7 @@ class ScheduleData:
             f"one_percent_charge_duration={self.one_percent_charge_duration}, battery_soc={self.battery_soc}, "
             f"end_on_condition={self.end_on_condition}, "
             f"exit_condition={self.exit_condition}, "
-            f"max_consumed_energy={self.max_consumed_energy}, consumed_energy={self.consumed_energy}, self_paused={self.self_paused}, "
+            f"consumed_energy={self.consumed_energy}, self_paused={self.self_paused}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "
             f"sun_trigger={self.sun_trigger}, "

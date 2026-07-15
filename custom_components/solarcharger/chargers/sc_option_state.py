@@ -30,7 +30,6 @@ from ..const import (
     NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
-    NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
@@ -820,12 +819,6 @@ class ScOptionState(ScConfigState):
         """Get delta allocated power."""
 
         return self.option_get_entity_number_or_abort(SENSOR_DELTA_ALLOCATED_POWER)
-
-    # ----------------------------------------------------------------------------
-    def get_max_consumed_energy_limit(self) -> float:
-        """Get maximum consumed energy limit."""
-
-        return self.option_get_entity_number_or_abort(NUMBER_MAX_CONSUMED_ENERGY_LIMIT)
 
     # ----------------------------------------------------------------------------
     def get_charger_min_workable_current(self) -> float:

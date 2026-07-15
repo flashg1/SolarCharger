@@ -60,7 +60,6 @@ from ..const import (
     NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
-    NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
@@ -422,15 +421,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): choose_selector(
                 api_entities,
                 SENSOR_DELTA_ALLOCATED_POWER,
-                NUMBER_ENTITY_SELECTOR_READ_ONLY,
-                NUMBER_ENTITY_SELECTOR,
-                modifiable_if_solarcharger_entity=True,
-            ),
-            self._optional(
-                subentry, NUMBER_MAX_CONSUMED_ENERGY_LIMIT, use_default
-            ): choose_selector(
-                api_entities,
-                NUMBER_MAX_CONSUMED_ENERGY_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,
