@@ -8,6 +8,7 @@
 - Removed "Max consumed energy limit" number.
 - Removed "End on max consumed energy" switch.
 ### Fix
+- Fixed missing caller in state_charge.py during exception handling.
 - Need to set started_max_charge=0 when switching off charger.
 ### New feature
 - Added "[Start state](https://github.com/flashg1/SolarCharger/wiki/User-guide#start-state)" selector for Auto, Charge or Pause start states.

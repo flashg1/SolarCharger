@@ -133,7 +133,7 @@ class StateCharge(SolarChargeState):
         except Exception as e:
             _LOGGER.exception(
                 "%s: Failed to adjust charge current: %s",
-                self.caller,
+                self.solarcharge.caller,
                 e,
             )
 
@@ -155,7 +155,7 @@ class StateCharge(SolarChargeState):
         else:
             _LOGGER.warning(
                 "%s: Update charge current task already running.",
-                self.caller,
+                self.solarcharge.caller,
             )
 
     # ----------------------------------------------------------------------------
