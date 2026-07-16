@@ -14,6 +14,7 @@
 - Added "[Start state](https://github.com/flashg1/SolarCharger/wiki/User-guide#start-state)" selector for Auto, Charge or Pause start states.
 - Added "[Exit condition sensor](https://github.com/flashg1/SolarCharger/wiki/User-guide#exit-condition-sensor)" selector and "End on condition" switch.
 ### Improvement
+- Always read current before setting new current in case device current is out of sync with SolarCharger.
 - Refactored select.py to pass in available options as a class parameter.
 
 ## v0.8.3 2026-07-07

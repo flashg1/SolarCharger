@@ -118,6 +118,7 @@ class SolarCharge(ScOptionState):
 
         # self.update_timestamp: float = 0  # utcnow().timestamp()   # UTC time
         # Remember last current for energy calculation and for devices that cannot set current.
+        # It is only set in async_set_charge_current().
         self.last_charge_current: float = 0.0
         # Must reset time before setting current to avoid possible wrong energy calculation after pause period.
         # Specifically for devices with on/off switch and max current only, ie. cannot set 0 current.
@@ -646,7 +647,7 @@ class SolarCharge(ScOptionState):
             else:
                 new_charge_current = new_current
 
-            # Can lose a bit for energy calculation if device set current=0 by itself, so save new current.
+            # Save new current for on/off resistive load current change detection and energy calculation.
             self.last_charge_current = new_charge_current
 
             #####################################
@@ -663,7 +664,8 @@ class SolarCharge(ScOptionState):
             #####################################
             # Set energy consumed since last current update
             #####################################
-            old_consumed_power = self.get_consumed_power()
+            effective_voltage = self.get_charger_effective_voltage()
+            old_consumed_power = old_charge_current * effective_voltage
             if old_consumed_power > 0 and old_charge_current_duration != timedelta.min:
                 # Energy in kWh = Power in kW * time in hours
                 consumed_energy_last_period = (old_consumed_power / 1000) * (
@@ -676,7 +678,6 @@ class SolarCharge(ScOptionState):
             #####################################
             # Set consumed power
             #####################################
-            effective_voltage = self.get_charger_effective_voltage()
             self.set_consumed_power(new_charge_current * effective_voltage)
 
             # Do not hold up callback

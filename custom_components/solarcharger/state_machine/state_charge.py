@@ -267,12 +267,20 @@ class StateCharge(SolarChargeState):
     ) -> tuple[float, float]:
         """Calculate new charge current based on delta allocated power."""
 
-        old_charge_current = self.solarcharge.last_charge_current
-
+        #####################################
+        # Device cannot set current but can read current
+        #####################################
         if not self.solarcharge.can_set_current:
-            # Device do not support setting current.
+            # Device does not support setting current.
+            old_charge_current = self.solarcharge.last_charge_current
             new_charge_current = self.solarcharge.get_charge_current(charger)
             return (new_charge_current, old_charge_current)
+
+        #####################################
+        # Device can set and read current
+        #####################################
+        # Always read old current here in case device current is out of sync.
+        old_charge_current = self.solarcharge.get_charge_current(charger)
 
         #####################################
         # Charge at max current if fast charge
@@ -282,7 +290,6 @@ class StateCharge(SolarChargeState):
             self.solarcharge.is_fast_charge_mode()
             or self.solarcharge.is_calibrate_max_charge_speed()
             or (goal.has_charge_endtime and goal.max_charge_now)
-            or not self.solarcharge.can_set_current  # Device does not support setting current.
         ):
             new_charge_current = charger_max_current
             return (new_charge_current, old_charge_current)
