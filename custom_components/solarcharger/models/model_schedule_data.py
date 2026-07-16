@@ -45,6 +45,12 @@ class ScheduleData:
     # New charge limit or from schedule
     new_charge_limit: float = -1
 
+    # Next charge limit
+    # Only set when current session has charge end time with SOC at 1% below charge limit,
+    # and with a higher look-ahead charge limit for the next session.
+    # This is so that charge limit can be increased without device turning off the charger.
+    next_charge_limit: float | None = None
+
     # Charge limit for max charge speed calibration, which is set once on start of calibration, otherwise None.
     calibrate_max_charge_limit: float = -1
 
@@ -85,6 +91,8 @@ class ScheduleData:
     # This means charging can still pause during the day, but not at night.
     # Once started charging at max current, it will add 30-minute grace period to
     # avoid time drift stopping charge while charging.
+    # max_charge_now is only valid if has_charge_endtime is true, so always
+    # check has_charge_endtime before using it.
     max_charge_now: bool = False
 
     # Next charge session
@@ -112,6 +120,7 @@ class ScheduleData:
             f"exit_condition={self.exit_condition}, "
             f"consumed_energy={self.consumed_energy}, self_paused={self.self_paused}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
+            f"next_charge_limit={self.next_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "
             f"sun_trigger={self.sun_trigger}, "
             f"sun_above_start_end_elevations={self.sun_above_start_end_elevations}, sun_elevation={self.sun_elevation}, "

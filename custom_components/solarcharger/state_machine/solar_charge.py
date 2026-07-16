@@ -715,21 +715,46 @@ class SolarCharge(ScOptionState):
         await self.async_option_sleep(NUMBER_WAIT_CHARGEE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
+    # async def async_set_charge_limit_if_required(
+    #     self, chargeable: Chargeable, goal: ScheduleData
+    # ) -> bool:
+    #     """Set new charge limit if changed, otherwise use existing charge limit."""
+
+    #     if charge_limit_changed := (goal.old_charge_limit != goal.new_charge_limit):
+    #         _LOGGER.warning(
+    #             "%s: Changing charge limit from %.1f %% to %.1f %% for %s",
+    #             self.caller,
+    #             goal.old_charge_limit,
+    #             goal.new_charge_limit,
+    #             # now_time.strftime("%A"),
+    #             goal.weekly_schedule[goal.day_index].charge_day,
+    #         )
+    #         await self.async_set_charge_limit(chargeable, goal.new_charge_limit)
+
+    #     return charge_limit_changed
+
+    # ----------------------------------------------------------------------------
     async def async_set_charge_limit_if_required(
         self, chargeable: Chargeable, goal: ScheduleData
     ) -> bool:
         """Set new charge limit if changed, otherwise use existing charge limit."""
 
-        if charge_limit_changed := (goal.old_charge_limit != goal.new_charge_limit):
+        final_charge_limit = goal.new_charge_limit
+        if goal.next_charge_limit is not None:
+            final_charge_limit = goal.next_charge_limit
+
+        if charge_limit_changed := (goal.old_charge_limit != final_charge_limit):
             _LOGGER.warning(
-                "%s: Changing charge limit from %.1f %% to %.1f %% for %s",
+                "%s: Changing charge limit from %.0f%% to %.0f%% (new=%.0f, next=%.0f) for %s",
                 self.caller,
                 goal.old_charge_limit,
+                final_charge_limit,
                 goal.new_charge_limit,
+                goal.next_charge_limit,
                 # now_time.strftime("%A"),
                 goal.weekly_schedule[goal.day_index].charge_day,
             )
-            await self.async_set_charge_limit(chargeable, goal.new_charge_limit)
+            await self.async_set_charge_limit(chargeable, final_charge_limit)
 
         return charge_limit_changed
 

@@ -114,11 +114,50 @@ class ChargeScheduler(ScOptionState):
         return charge_limit
 
     # ----------------------------------------------------------------------------
-    def _look_ahead_to_reduce_charge_limit_difference(self, goal: ScheduleData) -> None:
+    # def _look_ahead_to_reduce_charge_limit_difference(self, goal: ScheduleData) -> None:
+    #     """Look ahead to reduce charge limit difference between days."""
+
+    #     # Automatically charge more today if today has no charge end time and next 3 days have much higher charge limit.
+    #     # Or goal has charge end time and just 1% before reaching required SOC.
+    #     if not goal.has_charge_endtime:
+    #         look_ahead_schedule: list[ChargeSchedule] = []
+    #         today_index = goal.day_index
+
+    #         for i in range(0, LOOK_AHEAD_CHARGE_LIMIT_DAYS, 1):
+    #             day_index = (today_index + i) % 7
+    #             look_ahead_schedule.append(goal.weekly_schedule[day_index])
+
+    #         # Find first occurance of maximum charge limit
+    #         look_ahead_max_charge_limit = -1
+    #         look_ahead_max_charge_limit_index = -1
+    #         for i in range(len(look_ahead_schedule)):
+    #             if look_ahead_schedule[i].charge_limit > look_ahead_max_charge_limit:
+    #                 look_ahead_max_charge_limit = look_ahead_schedule[i].charge_limit
+    #                 look_ahead_max_charge_limit_index = i
+
+    #         if look_ahead_max_charge_limit_index == 1:
+    #             look_ahead_charge_limit = (
+    #                 look_ahead_max_charge_limit - MIN_CHARGE_LIMIT_DIFF
+    #             )
+    #         else:
+    #             look_ahead_charge_limit = look_ahead_max_charge_limit - (
+    #                 look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
+    #             )
+
+    #         if look_ahead_charge_limit > goal.new_charge_limit:  # noqa: PLR1730
+    #             goal.new_charge_limit = look_ahead_charge_limit
+
+    # ----------------------------------------------------------------------------
+    def _get_look_ahead_charge_limit(self, goal: ScheduleData) -> float:
         """Look ahead to reduce charge limit difference between days."""
 
+        look_ahead_charge_limit = goal.new_charge_limit
+
         # Automatically charge more today if today has no charge end time and next 3 days have much higher charge limit.
-        if not goal.has_charge_endtime:
+        # Or goal has charge end time and just 1% before reaching required SOC.
+        if not goal.has_charge_endtime or (
+            goal.has_charge_endtime and goal.new_charge_limit == goal.battery_soc + 1
+        ):
             look_ahead_schedule: list[ChargeSchedule] = []
             today_index = goal.day_index
 
@@ -143,8 +182,21 @@ class ChargeScheduler(ScOptionState):
                     look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
                 )
 
-            if look_ahead_charge_limit > goal.new_charge_limit:  # noqa: PLR1730
-                goal.new_charge_limit = look_ahead_charge_limit
+        return look_ahead_charge_limit
+
+    # ----------------------------------------------------------------------------
+    def _look_ahead_to_reduce_charge_limit_difference(self, goal: ScheduleData) -> None:
+        """Look ahead to reduce charge limit difference between days."""
+
+        next_charge_limit = self._get_look_ahead_charge_limit(goal)
+
+        if not goal.has_charge_endtime:
+            if next_charge_limit > goal.new_charge_limit:  # noqa: PLR1730
+                goal.new_charge_limit = next_charge_limit
+
+        elif goal.has_charge_endtime and goal.new_charge_limit == goal.battery_soc + 1:
+            if next_charge_limit > goal.new_charge_limit:
+                goal.next_charge_limit = next_charge_limit
 
     # ----------------------------------------------------------------------------
     def _get_one_percent_charge_duration(self) -> float:
@@ -375,17 +427,25 @@ class ChargeScheduler(ScOptionState):
             goal.new_charge_limit = today_charge_limit
 
             # Get today's schedule
+            goal.battery_soc = chargeable.get_state_of_charge()
             today_endtime = goal.weekly_schedule[today_index].charge_end_time
             if today_endtime != time.min:
                 goal.charge_endtime = self.combine_local_date_time(
                     now_time.date(), today_endtime
                 )
-                if goal.charge_endtime > now_time:
+                if (
+                    goal.charge_endtime > now_time
+                    and goal.battery_soc < today_charge_limit
+                ):
                     goal.has_charge_endtime = True
 
-            goal.battery_soc = chargeable.get_state_of_charge()
-
-            # If today has no schedule or passed schedule, or if include_tomorrow, then get tomorrow's schedule.
+            #####################################
+            # If today has no schedule or passed schedule/completed SOC, or if include_tomorrow,
+            # then get tomorrow's schedule.
+            # If tomorrow has higher charge limit and reduce charge limit difference is on,
+            # charger will be switched off on reaching today's charge limit but setting
+            # the new charge limit should turn back on the charger.
+            #####################################
             if not goal.has_charge_endtime:
                 tomorrow_index = (today_index + 1) % 7
                 tomorrow_charge_limit = goal.weekly_schedule[
