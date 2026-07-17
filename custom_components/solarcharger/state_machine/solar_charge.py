@@ -50,7 +50,7 @@ from ..const import (
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
-    SENSOR_SELF_PAUSED_TODAY,
+    SENSOR_SELF_DERATED_TODAY,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     ChargeStatus,
@@ -145,7 +145,7 @@ class SolarCharge(ScOptionState):
         # Entity backed by variable for efficiency. Ok if re-direction is not required.
         self._share_allocation: int = 0
         self._consumed_power: float = 0.0
-        self._self_paused: bool = False
+        self._self_derated: bool = False
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -181,9 +181,9 @@ class SolarCharge(ScOptionState):
         return self._machine_state
 
     @property
-    def is_self_paused(self) -> bool:
-        """Return True if the charger is self-paused."""
-        return self._self_paused
+    def is_self_derated(self) -> bool:
+        """Return True if device reduced power consumption by itself."""
+        return self._self_derated
 
     # ----------------------------------------------------------------------------
     # State machine methods
@@ -214,10 +214,10 @@ class SolarCharge(ScOptionState):
         self.entities.sensors[SENSOR_RUN_STATE].set_state(state.value)
 
     # ----------------------------------------------------------------------------
-    def set_self_paused(self, self_paused: bool) -> None:
-        """Set the self-paused state of the object."""
+    def set_self_derated(self, self_derated: bool) -> None:
+        """Set the self-derated state of the object."""
 
-        self._self_paused = self_paused
+        self._self_derated = self_derated
 
     # ----------------------------------------------------------------------------
     # Global utils
@@ -344,10 +344,10 @@ class SolarCharge(ScOptionState):
         self.update_sensor(SENSOR_CONSUMED_ENERGY_TODAY, val)
 
     # ----------------------------------------------------------------------------
-    def set_self_paused_today(self, val: int) -> None:
-        """Set self-paused today."""
+    def set_self_derated_today(self, val: int) -> None:
+        """Set self-derated today."""
 
-        self.update_sensor(SENSOR_SELF_PAUSED_TODAY, val)
+        self.update_sensor(SENSOR_SELF_DERATED_TODAY, val)
 
     # ----------------------------------------------------------------------------
     def set_pause_count(self, val: int) -> None:
@@ -705,7 +705,7 @@ class SolarCharge(ScOptionState):
         # Must reset time here to avoid possible wrong energy calculation if pausing.
         self.charge_current_updatetime = datetime.min
         self.started_max_charge = 0
-        self.set_self_paused(False)
+        self.set_self_derated(False)
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_limit(

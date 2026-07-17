@@ -15,6 +15,8 @@ class PowerAllocation:
     # Environment data:
     # Maximum power the charger can consume.
     max_power: float
+    # Not used. FYI only.
+    max_current: float
     # Minimum power required for the charger to operate. Must be -ve for surplus power.
     activation_power: float
     adjusted_activation_power: float
@@ -39,8 +41,8 @@ class PowerAllocation:
 
     # Device allows pause state?
     max_speed_charge: bool = False
-    # Device paused by itself, eg. themostat.
-    self_paused: bool = False
+    # Device derated by itself, eg. themostat.
+    self_derated: bool = False
     # Charger effective voltage.
     voltage: float = 0.0
     # Power currently consumed by the charger.
@@ -68,6 +70,7 @@ class PowerAllocation:
         return (
             f"name={self.name}, "
             f"max_power={self.max_power}, "
+            f"max_current={self.max_current}, "
             f"adjusted_activation_power={self.adjusted_activation_power} ("
             f"{self.activation_power}), "
             f"priority={self.priority}, "
@@ -76,7 +79,7 @@ class PowerAllocation:
             f"share_allocation={self.share_allocation}, "
             f"can_set_current={self.can_set_current}, "
             f"max_speed_charge={self.max_speed_charge}, "
-            f"self_paused={self.self_paused}, "
+            f"self_derated={self.self_derated}, "
             f"voltage={self.voltage}, "
             f"consumed_power={self.consumed_power}, "
             f"need_power={self.need_power}, "

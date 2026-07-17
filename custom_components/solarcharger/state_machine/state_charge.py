@@ -33,8 +33,10 @@ from .state_tidyup import StateTidyUp
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
-# Allow 0.5% of max current as leak current when turned off.
-LEAK_CURRENT_PERCENTAGE = 0.5
+# Allow 5% variation off max current.
+# Hot water max current can vary between 14.617A and 14.996A.
+# ie. 14.996 - 14.617 = 0.379, 0.379 / 14.996 = 0.0253, ie. 2.53%
+CURRENT_VARIATION_PERCENTAGE = 5
 
 
 # ----------------------------------------------------------------------------
@@ -208,55 +210,104 @@ class StateCharge(SolarChargeState):
     def _set_charging_substate(self) -> None:
         """Set the charging sub-state of the object."""
 
-        if self.solarcharge.is_self_paused:
-            self.solarcharge.set_run_state(RunState.SELF_PAUSED)
+        if self.solarcharge.is_self_derated:
+            self.solarcharge.set_run_state(RunState.SELF_DERATED)
         else:
             self.solarcharge.set_run_state(RunState.CHARGING)
 
     # ----------------------------------------------------------------------------
-    def _set_self_paused_state(self, self_paused: bool) -> None:
-        """Set the self-paused state of the object."""
+    def _set_self_derated_state(self, self_derated: bool) -> None:
+        """Set the self-derated state of the object."""
 
-        self.solarcharge.set_self_paused(self_paused)
+        self.solarcharge.set_self_derated(self_derated)
         self._set_charging_substate()
 
     # ----------------------------------------------------------------------------
-    def _get_leak_current(self) -> float:
-        """Get leak current for device that do not support setting current."""
+    def _get_allowed_current_variation(self) -> float:
+        """Get allowed current variation for device that do not support setting current."""
 
         max_current = self.solarcharge.get_charger_max_current()
-        return max_current * LEAK_CURRENT_PERCENTAGE / 100
+        return max_current * CURRENT_VARIATION_PERCENTAGE / 100
 
     # ----------------------------------------------------------------------------
-    def _is_zero_current(
-        self, current: float, leak_current: float | None = None
+    def _is_same_current(
+        self,
+        new_current: float,
+        old_current: float,
+        current_variation: float | None = None,
     ) -> bool:
-        """Is zero current?"""
+        """Is the current the same?"""
 
-        if leak_current is None:
-            leak_current = self._get_leak_current()
+        if current_variation is None:
+            current_variation = self._get_allowed_current_variation()
 
-        return -leak_current < current < +leak_current
+        return (
+            old_current - current_variation
+            <= new_current
+            <= old_current + current_variation
+        )
+
+    # ----------------------------------------------------------------------------
+    def _is_device_at_zero_current(
+        self, current: float, current_variation: float | None = None
+    ) -> bool:
+        """Is device at zero current?"""
+
+        if current_variation is None:
+            current_variation = self._get_allowed_current_variation()
+
+        return -current_variation < current < +current_variation
+
+    # ----------------------------------------------------------------------------
+    def _is_device_at_max_current(
+        self, current: float, current_variation: float | None = None
+    ) -> bool:
+        """Is device at max current?"""
+
+        max_current = self.solarcharge.get_charger_max_current()
+        return self._is_same_current(current, max_current, current_variation)
+
+    # ----------------------------------------------------------------------------
+    def _is_device_reduced_current_by_itself(
+        self, new_current: float, old_current: float, current_variation: float
+    ) -> bool:
+        """Device reduced current by itself?"""
+
+        return (
+            not self._is_same_current(new_current, old_current, current_variation)
+            and new_current < old_current
+        )
+
+    # ----------------------------------------------------------------------------
+    def _is_device_increased_current_by_itself(
+        self, new_current: float, old_current: float, current_variation: float
+    ) -> bool:
+        """Device increased current by itself?"""
+
+        return (
+            not self._is_same_current(new_current, old_current, current_variation)
+            and new_current > old_current
+        )
 
     # ----------------------------------------------------------------------------
     def _is_device_turn_off_by_itself(
-        self, new_current: float, old_current: float, leak_current: float
+        self, new_current: float, old_current: float, current_variation: float
     ) -> bool:
         """Device turned off by itself?"""
 
-        return self._is_zero_current(
-            new_current, leak_current
-        ) and not self._is_zero_current(old_current, leak_current)
+        return self._is_device_at_zero_current(
+            new_current, current_variation
+        ) and not self._is_device_at_zero_current(old_current, current_variation)
 
     # ----------------------------------------------------------------------------
     def _is_device_turn_on_by_itself(
-        self, new_current: float, old_current: float, leak_current: float
+        self, new_current: float, old_current: float, current_variation: float
     ) -> bool:
         """Device turned on by itself?"""
 
-        return self._is_zero_current(
-            old_current, leak_current
-        ) and not self._is_zero_current(new_current, leak_current)
+        return self._is_device_at_zero_current(
+            old_current, current_variation
+        ) and not self._is_device_at_zero_current(new_current, current_variation)
 
     # ----------------------------------------------------------------------------
     def _calc_current_change(
@@ -353,29 +404,29 @@ class StateCharge(SolarChargeState):
         return (new_charge_current, old_charge_current)
 
     # ----------------------------------------------------------------------------
-    def _update_self_paused_state(self, new_current: float, old_current: float) -> None:
-        """Update self-paused state for device that do not support setting current."""
+    def _update_self_derated_state(
+        self, new_current: float, old_current: float
+    ) -> None:
+        """Update self-derated state for device that do not support setting current."""
 
-        # Check if device turned off by itself for device that do not support setting current.
-        # Self-paused state is communicated directly to allocator via set_self_paused(),
+        # Check if device reduced current by itself for device that do not support setting current.
+        # Self-derated state is communicated directly to allocator via set_self_derated(),
         # or indirectly via consumed power set in async_set_charge_current().
         # Allocator is triggered by net power update on another thread set up by the coordinator.
         if not self.solarcharge.can_set_current:
-            leak_current = self._get_leak_current()
+            current_variation = self._get_allowed_current_variation()
 
-            if self._is_device_turn_off_by_itself(
-                new_current, old_current, leak_current
+            if self._is_device_reduced_current_by_itself(
+                new_current, old_current, current_variation
             ):
-                self._set_self_paused_state(True)
+                self._set_self_derated_state(True)
 
-                self_paused_today = self.solarcharge.get_self_paused_today()
-                self_paused_today += 1
-                self.solarcharge.set_self_paused_today(self_paused_today)
+                self_derated_today = self.solarcharge.get_self_derated_today()
+                self_derated_today += 1
+                self.solarcharge.set_self_derated_today(self_derated_today)
 
-            elif self._is_device_turn_on_by_itself(
-                new_current, old_current, leak_current
-            ):
-                self._set_self_paused_state(False)
+            elif self._is_device_at_max_current(new_current, current_variation):
+                self._set_self_derated_state(False)
 
     # ----------------------------------------------------------------------------
     async def _async_adjust_charge_current(
@@ -387,7 +438,7 @@ class StateCharge(SolarChargeState):
             charger, delta_allocated_power, self.solarcharge.running_goal
         )
 
-        self._update_self_paused_state(new_current, old_current)
+        self._update_self_derated_state(new_current, old_current)
 
         _LOGGER.info(
             "%s: delta_allocated_power=%.2f, old_current=%s, new_current=%s",
@@ -507,10 +558,10 @@ class StateCharge(SolarChargeState):
         if not self.solarcharge.can_set_current:
             # Device do not support setting current.
             initial_current = self.solarcharge.get_charge_current(charger)
-            if self._is_zero_current(initial_current):
-                self._set_self_paused_state(True)
+            if self._is_device_at_max_current(initial_current):
+                self._set_self_derated_state(False)
             else:
-                self._set_self_paused_state(False)
+                self._set_self_derated_state(True)
         else:
             initial_current = self.solarcharge.validate_current(CHARGER_INITIAL_CURRENT)
         await self.solarcharge.async_set_charge_current(charger, initial_current)

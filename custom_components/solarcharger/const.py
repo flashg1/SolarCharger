@@ -93,8 +93,8 @@ class RunState(Enum):
     INITIALISING = "initialising"
 
     CHARGING = "charging"
-    # SELF_PAUSED is a sub-state of CHARGING state.
-    SELF_PAUSED = "self-paused"
+    # SELF_DERATED is a sub-state of CHARGING state.
+    SELF_DERATED = "self-derated"
 
     PAUSED = "paused"
     ABORTING = "aborting"
@@ -245,7 +245,8 @@ SENSOR_CONSUMED_POWER = "consumed_power"
 SENSOR_CONSUMED_ENERGY_TODAY = "consumed_energy_today"
 SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
 SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
-SENSOR_SELF_PAUSED_TODAY = "self_paused_today"
+# Count the number of time device derated by itself today
+SENSOR_SELF_DERATED_TODAY = "self_derated_today"
 # Pause count per session
 SENSOR_PAUSE_COUNT = "pause_count"
 # Pause avg duration per session

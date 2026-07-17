@@ -91,26 +91,34 @@ class PowerAllocator:
 
         # Participate in power allocation.
         instance = control.controller.charge_control.instance_count
-
-        # Device pause state.
         can_set_current = control.controller.solar_charge.can_set_current
+        # Device pause state.
         share_allocation = control.controller.solar_charge.get_share_allocation()
-        self_paused = control.controller.solar_charge.is_self_paused
-        if (
-            # not can_set_current
-            # and share_allocation == 1
-            # and self._is_zero_power(consumed_power)
-            self_paused
-        ):
-            #####################################
-            # Device in charging state but consumed 0 power,
-            # and can read current but not set current, so no participation,
-            # ie. device is in self-imposed paused state.
-            # Setting share_allocation=0 to ensure device do not participate
-            # in allocation/deallocation and receives planned allocations.
-            #####################################
-            share_allocation = 0
-            consumed_power = 0
+        self_derated = control.controller.solar_charge.is_self_derated
+
+        if instance > 0 and not can_set_current:
+            # Device cannot set current, so allocate whatever power is consumed.
+            if self._is_zero_power(consumed_power):
+                consumed_power = 0
+            if share_allocation == 1:
+                max_power = consumed_power
+            max_current = max_power / voltage if voltage > 0 else 0
+
+        # if (
+        #     # not can_set_current
+        #     # and share_allocation == 1
+        #     # and self._is_zero_power(consumed_power)
+        #     self_derated
+        # ):
+        #     #####################################
+        #     # Device in charging state but consumed 0 power,
+        #     # and can read current but not set current, so no participation,
+        #     # ie. device is in self-imposed derated state.
+        #     # Setting share_allocation=0 to ensure device do not participate
+        #     # in allocation/deallocation and receives planned allocations.
+        #     #####################################
+        #     share_allocation = 0
+        #     consumed_power = 0
 
         adjusted_activation_power, activation_power = (
             control.controller.solar_charge.get_adjusted_activation_power(
@@ -130,6 +138,7 @@ class PowerAllocator:
             subentry_id=control.subentry_id,
             name=control.config_name,
             max_power=max_power,
+            max_current=max_current,
             activation_power=activation_power,
             adjusted_activation_power=adjusted_activation_power,
             priority=priority,
@@ -138,7 +147,7 @@ class PowerAllocator:
             share_allocation=share_allocation,
             can_set_current=can_set_current,
             max_speed_charge=max_speed_charge,
-            self_paused=self_paused,
+            self_derated=self_derated,
             voltage=voltage,
         )
         member.consumed_power = consumed_power
@@ -532,8 +541,8 @@ class PowerAllocator:
         """Get member state string."""
 
         if member.share_allocation == 0:
-            if member.self_paused:
-                member_state = "Self-paused"
+            if member.self_derated:
+                member_state = "Self-derated"
             else:
                 member_state = "Paused"
         else:

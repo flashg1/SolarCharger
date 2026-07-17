@@ -63,7 +63,7 @@ class ContextData:
             f"connected={self.connected}, "
             f"below_charge_limit={self.below_charge_limit} ({self.goal.battery_soc}/{self.goal.new_charge_limit}), "
             f"end_on_condition={self.goal.end_on_condition}, "
-            f"exit_condition={self.goal.exit_condition} ({self.goal.consumed_energy},{self.goal.self_paused}), "
+            f"exit_condition={self.goal.exit_condition} ({self.goal.consumed_energy},{self.goal.self_derated}), "
             f"charging={self.charging} ({self.charging_status}), "
             f"sun_trigger={self.goal.sun_trigger}, "
             f"sun_above_start_end_elevations={self.goal.sun_above_start_end_elevations} ({self.goal.sun_elevation}), "
