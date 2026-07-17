@@ -45,10 +45,11 @@ class ScheduleData:
     # New charge limit or from schedule
     new_charge_limit: float = -1
 
-    # Next charge limit
+    # Next charge limit for next session
     # Only set when current session has charge end time with SOC at 1% below charge limit,
     # and with a higher look-ahead charge limit for the next session.
-    # This is so that charge limit can be increased without device turning off the charger.
+    # Usually device will turn off the charger when reaching charge limit.
+    # So plan for next session and increase charge limit before device turns off the charger.
     next_charge_limit: float | None = None
 
     # Charge limit for max charge speed calibration, which is set once on start of calibration, otherwise None.
@@ -79,12 +80,9 @@ class ScheduleData:
     # Include tomorrow for scheduling?
     include_tomorrow: bool = False
 
-    # Started charging at max current. 0=not started, 1=started
-    started_max_charge: int = 0
-
     # Current charge session
     # ======================
-    # Is charge at max current now?
+    # Charge at max current now to meet charge end time?
     # If charge end time is set, then set this to true if:
     # - there is not enough time to meet charge end time goal, or
     # - session is triggered by timer and it is night time.
@@ -94,6 +92,8 @@ class ScheduleData:
     # max_charge_now is only valid if has_charge_endtime is true, so always
     # check has_charge_endtime before using it.
     max_charge_now: bool = False
+    # Started charging at max current (set from global variable). 0=not started, 1=started
+    started_max_charge: int = 0
 
     # Next charge session
     # ===================

@@ -132,6 +132,8 @@ class SolarCharge(ScOptionState):
         self.net_allocations: MedianData | None = None
 
         self.stats = ChargeStats()
+
+        # Global flag to indicate if max charge current has been started for this session.
         self.started_max_charge: int = 0
 
         # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
@@ -1090,8 +1092,10 @@ class SolarCharge(ScOptionState):
             msg=state.value,
         )
 
-        if self.running_goal.max_charge_now and self.started_max_charge == 0:
+        if self.running_goal.has_charge_endtime and self.running_goal.max_charge_now:
             self.started_max_charge = 1
+        elif not self.running_goal.has_charge_endtime:
+            self.started_max_charge = 0
 
         # Only set charge limit when in charging state because it can turn on the charger.
         # Once set, the latest and correct state can be requested without calling _async_update_ha() first.
