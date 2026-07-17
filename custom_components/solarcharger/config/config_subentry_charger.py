@@ -236,8 +236,13 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     raise ValueError(
                         f"{thirdparty_charger.name}: Charger config entry not found"
                     )
+                # HA device display name is `name_by_user` or `name`.
+                # Fall back to the user-assigned name before rejecting the selection.
+                thirdparty_charger_name = (
+                    thirdparty_charger.name_by_user or thirdparty_charger.name
+                )
                 thirdparty_display_name = (
-                    f"{thirdparty_config_entry.domain} {thirdparty_charger.name}"
+                    f"{thirdparty_config_entry.domain} {thirdparty_charger_name}"
                 )
                 thirdparty_config_name = slugify(f"{thirdparty_display_name}")
                 thirdparty_charger_subdomain = compose_subdomain(
@@ -249,7 +254,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 _LOGGER.info(
                     "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
                     len(config_entry.subentries) + 1,
-                    thirdparty_charger.name,
+                    thirdparty_charger_name,
                     thirdparty_config_name,
                     thirdparty_charger_subdomain,
                 )
@@ -262,12 +267,12 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # Create new subentry
                 if (
                     not thirdparty_config_entry.domain
-                    or not thirdparty_charger.name
+                    or not thirdparty_charger_name
                     or not thirdparty_charger_id
                 ):
                     raise ValueError(
                         f"Charger config entry domain, name, or ID is missing: "
-                        f"{thirdparty_config_entry.domain=}, {thirdparty_charger.name=}, {thirdparty_charger_id=}"
+                        f"{thirdparty_config_entry.domain=}, {thirdparty_charger_name=}, {thirdparty_charger_id=}"
                     )
 
                 self.hass.config_entries.async_add_subentry(
@@ -280,7 +285,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                             {
                                 SUBENTRY_CHARGER_DEVICE_DOMAIN: thirdparty_config_entry.domain,  # Integration domain
                                 SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: thirdparty_charger_subdomain,  # Integration sub-domain
-                                SUBENTRY_CHARGER_DEVICE_NAME: thirdparty_charger.name,  # Integration-specific device name
+                                SUBENTRY_CHARGER_DEVICE_NAME: thirdparty_charger_name,  # Integration-specific device name
                                 SUBENTRY_CHARGER_DEVICE_ID: thirdparty_charger_id,  # Integration-specific device ID
                             }
                         ),
@@ -290,13 +295,13 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 self.setup_options(
                     config_entry,
                     thirdparty_config_name,
-                    slugify(thirdparty_charger.name),
+                    slugify(thirdparty_charger_name),
                 )
 
                 _LOGGER.info(
                     "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
                     len(config_entry.subentries),
-                    thirdparty_charger.name,
+                    thirdparty_charger_name,
                     thirdparty_config_name,
                     thirdparty_charger_subdomain,
                 )
