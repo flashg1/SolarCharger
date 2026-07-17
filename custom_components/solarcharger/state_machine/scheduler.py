@@ -151,10 +151,11 @@ class ChargeScheduler(ScOptionState):
     def _get_look_ahead_charge_limit(self, goal: ScheduleData) -> float:
         """Get next session charge limit to reduce charge limit difference between days."""
 
+        # Look ahead to reduce charge limit difference between days.
+        # Automatically charge more today if next 3 days have much higher charge limit and today has no charge end time,
+        # or if today has charge end time and SOC is just 1% below the required charge limit.
         look_ahead_charge_limit = goal.new_charge_limit
 
-        # Automatically charge more today if today has no charge end time and next 3 days have much higher charge limit.
-        # Or goal has charge end time and just 1% before reaching required SOC, ie. almost done.
         if not goal.has_charge_endtime or (
             goal.has_charge_endtime and goal.new_charge_limit == goal.battery_soc + 1
         ):
