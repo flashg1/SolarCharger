@@ -747,11 +747,12 @@ class SolarCharge(ScOptionState):
 
         if charge_limit_changed := (goal.old_charge_limit != final_charge_limit):
             _LOGGER.warning(
-                "%s: Changing charge limit from %.0f%% to %.0f%% (new=%.0f, next=%.0f) for %s",
+                "%s: Changing charge limit from %.0f%% to %.0f%% (new=%.0f, next=%s) for %s",
                 self.caller,
                 goal.old_charge_limit,
                 final_charge_limit,
                 goal.new_charge_limit,
+                # next_charge_limit can be None causing %.0f format exception, so use %s.
                 goal.next_charge_limit,
                 # now_time.strftime("%A"),
                 goal.weekly_schedule[goal.day_index].charge_day,
