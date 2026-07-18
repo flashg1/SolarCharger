@@ -4,7 +4,7 @@
 from datetime import datetime, time, timedelta
 import inspect
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from propcache.api import cached_property
 
@@ -14,6 +14,7 @@ from homeassistant.core import (
     Event,
     EventStateChangedData,
     HomeAssistant,
+    callback,
 )
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_time_interval
@@ -31,6 +32,7 @@ from ..const import (
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
     SENSOR_SYNC_UPDATE,
+    SENSOR_WEATHER_UPDATE,
     WEEKLY_CHARGE_ENDTIMES,
 )
 
@@ -38,8 +40,13 @@ from ..const import (
 from ..helpers.utils import log_is_event_loop
 from ..models.model_charge_control import ChargeControl
 from ..models.model_device_control import DeviceControl
+
+# from ..sensor import SolarChargerSensorAttributeEntity
 from .allocator import PowerAllocator
 from .tracker import Tracker
+
+if TYPE_CHECKING:
+    from ..sensor import SolarChargerSensorAttributeEntity
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -452,6 +459,98 @@ class SolarChargerCoordinator(ScOptionState):
             # raise EntityExceptionError("Invalid net power sensor")
 
     # ----------------------------------------------------------------------------
+    def _update_attribute_sensor(
+        self, config_item: str, state_value: str, attributes: dict[str, Any]
+    ) -> None:
+        """Update attribute sensor."""
+
+        try:
+            # Coordinator has global defaults subentry
+            control = self.device_controls[self._subentry.subentry_id]
+
+            assert control.controller.charge_control.entities.sensors is not None
+            # attribute_sensor: SolarChargerSensorAttributeEntity = (
+            #     control.controller.charge_control.entities.sensors[config_item]
+            # )
+            # attribute_sensor.set_complete_state(state_value, attributes)
+
+            # from ..sensor import SolarChargerSensorAttributeEntity
+
+            attribute_sensor: SolarChargerSensorAttributeEntity = (
+                control.controller.charge_control.entities.sensors[config_item]
+            )
+            attribute_sensor.set_complete_state(state_value, attributes)
+
+            # control.controller.charge_control.entities.sensors[
+            #     config_item
+            # ].set_complete_state(state_value, attributes)
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to update attribute sensor data: %s",
+                self.caller,
+                e,
+            )
+
+    # ----------------------------------------------------------------------------
+    async def _async_update_weather_sensor(self, entity_id: str) -> None:
+        """Update weather sensor."""
+
+        state_obj = self._hass.states.get(entity_id)
+        if not state_obj:
+            return
+
+        attributes = dict(state_obj.attributes)
+
+        # Request weather forecast data correctly via the standard service engine
+        try:
+            # Setting blocking=True with return_response=True satisfies HA execution rules
+            response = await self._hass.services.async_call(
+                domain="weather",
+                service="get_forecasts",
+                service_data={"type": "daily"},
+                target={"entity_id": entity_id},
+                blocking=True,  # Required when returning a response
+                return_response=True,  # Tells HA to expect data payload mapping
+            )
+
+            # Safely extract and map the forecast list to attributes
+            if response and entity_id in response:
+                attributes["forecast"] = response[entity_id].get("forecast", [])
+            else:
+                attributes["forecast"] = []
+
+        except Exception as err:
+            _LOGGER.warning(
+                "Could not call get_forecasts action for %s: %s", entity_id, err
+            )
+
+        # Assign and commit the newly bundled metadata state
+        self._update_attribute_sensor(
+            SENSOR_WEATHER_UPDATE, state_obj.state, attributes
+        )
+
+    # ----------------------------------------------------------------------------
+    @callback
+    def _async_handle_weather_update(
+        self, event: Event[EventStateChangedData] | None
+    ) -> None:
+        """Handle weather update."""
+
+        entity_id = self.get_weather_provider()
+        if entity_id is not None:
+            self._hass.async_create_task(self._async_update_weather_sensor(entity_id))
+
+    # ----------------------------------------------------------------------------
+    def _track_weather_update(self) -> None:
+        """Track weather update."""
+
+        ok = self._tracker.track_weather_update(self._async_handle_weather_update)
+        if ok:
+            # Populate weather sensor with data.
+            self._async_handle_weather_update(None)
+
+    # ----------------------------------------------------------------------------
     # Periodic functions
     # ----------------------------------------------------------------------------
     # @callback
@@ -537,6 +636,7 @@ class SolarChargerCoordinator(ScOptionState):
         await self._tracker.async_setup()
 
         self._track_net_power_update()
+        self._track_weather_update()
         self._start_periodic_maintenance()
 
         # Enable system config flow callbacks after completing local setup.

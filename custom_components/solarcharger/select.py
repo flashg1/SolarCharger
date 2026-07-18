@@ -4,12 +4,16 @@ from collections.abc import Callable
 from typing import Any
 
 from homeassistant import config_entries, core
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.binary_sensor import (
+    DOMAIN as BINARY_SENSOR_DOMAIN,
+    BinarySensorDeviceClass,
+)
 from homeassistant.components.select import (
     # ENTITY_ID_FORMAT,
     SelectEntity,
     SelectEntityDescription,
 )
+from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import State
 from homeassistant.helpers import entity_registry as er
@@ -27,6 +31,7 @@ from .const import (
     SELECT_EXIT_CONDITION_SENSOR,
     SELECT_NONE,
     SELECT_START_STATE,
+    SELECT_WEATHER_PROVIDER,
     START_STATE_LIST,
 )
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
@@ -148,7 +153,7 @@ def option_presence_sensor(self) -> list[str]:  # type: ignore[override]
 
     for entry in registry.entities.values():
         # 1. Ensure it is a binary sensor
-        if entry.domain != "binary_sensor":
+        if entry.domain != BINARY_SENSOR_DOMAIN:
             continue
 
         # 2. Check Device Class from the Registry (static configuration)
@@ -183,7 +188,7 @@ def option_template_binary_sensor(self) -> list[str]:
 
     for entry in registry.entities.values():
         # 1. Ensure it is a binary sensor
-        if entry.domain != "binary_sensor":
+        if entry.domain != BINARY_SENSOR_DOMAIN:
             continue
 
         # 2. Check Device Class from the Registry (static configuration)
@@ -195,6 +200,25 @@ def option_template_binary_sensor(self) -> list[str]:
 
         if reg_class in target_classes or state_class in target_classes:
             filtered_entities.append(entry.entity_id)
+
+    return [SELECT_NONE, *sorted(filtered_entities)]
+
+
+# ----------------------------------------------------------------------------
+def option_weather_provider(self) -> list[str]:
+    """Return a dynamic list of available weather entity IDs."""
+
+    # Query the state machine for all entities in the weather domain
+    # weather_entities = self.hass.states.async_entity_ids(WEATHER_DOMAIN)
+    registry = er.async_get(self.hass)
+
+    filtered_entities = []
+    for entry in registry.entities.values():
+        # 1. Ensure it is a weather entity
+        if entry.domain != WEATHER_DOMAIN:
+            continue
+
+        filtered_entities.append(entry.entity_id)
 
     return [SELECT_NONE, *sorted(filtered_entities)]
 
@@ -247,6 +271,17 @@ CONFIG_SELECT_LIST: tuple[
         SolarChargerEntityType.TYPE_LOCAL,
         SelectEntityDescription(
             key=SELECT_EXIT_CONDITION_SENSOR,
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+    (
+        SELECT_WEATHER_PROVIDER,
+        SolarChargerSelectEntity,
+        RESTORE_ON_START_TRUE,
+        option_weather_provider,
+        SolarChargerEntityType.TYPE_GLOBAL,
+        SelectEntityDescription(
+            key=SELECT_WEATHER_PROVIDER,
             entity_category=EntityCategory.CONFIG,
         ),
     ),

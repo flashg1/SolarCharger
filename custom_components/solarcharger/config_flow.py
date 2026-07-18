@@ -20,7 +20,11 @@ from homeassistant.core import HomeAssistant, callback
 from .config.config_options_flow import ConfigOptionsFlowHandler
 from .config.config_subentry_charger import AddChargerSubEntryFlowHandler
 from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
-from .config.config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
+from .config.config_utils import (
+    POWER_ENTITY_SELECTOR,
+    WAIT_TIME_SELECTOR,
+    # WEATHER_ENTITY_SELECTOR,
+)
 from .const import (
     CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
     CONFIG_NET_POWER_SENSOR,
@@ -29,6 +33,7 @@ from .const import (
     ERROR_CURRENT_UPDATE_PERIOD,
     MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD,
     NAME,
+    # SELECT_WEATHER_PROVIDER,
     SUBENTRY_TYPE_CHARGER,
     SUBENTRY_TYPE_CUSTOM,
 )
@@ -152,6 +157,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             current_update_period: float = user_input.get(
                 CONFIG_CHARGER_CURRENT_UPDATE_PERIOD
             )
+            # weather_provider: str = user_input.get(SELECT_WEATHER_PROVIDER)
 
         elif self.source == SOURCE_RECONFIGURE:
             # Starting reconfigure step, user_input is None.
@@ -163,11 +169,15 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             current_update_period: float = self._get_reconfigure_entry().data[
                 CONFIG_CHARGER_CURRENT_UPDATE_PERIOD
             ]
+            # weather_provider: str = self._get_reconfigure_entry().data[
+            #     SELECT_WEATHER_PROVIDER
+            # ]
 
         else:
             # Starting initial user step, user_input is None.
             net_power_sensor: str | None = None
             current_update_period: float = DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD
+            # weather_provider: str | None = None
 
         # Create schema with default values.
         step_user_schema = vol.Schema(
@@ -178,6 +188,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 vol.Optional(
                     CONFIG_CHARGER_CURRENT_UPDATE_PERIOD, default=current_update_period
                 ): WAIT_TIME_SELECTOR,
+                # vol.Required(
+                #     SELECT_WEATHER_PROVIDER, default=weather_provider
+                # ): WEATHER_ENTITY_SELECTOR,
             }
         )
 

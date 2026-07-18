@@ -228,6 +228,9 @@
             "sync_update": {
                 "name": "Sync update"
             },
+            "weather_update": {
+                "name": "Weather update"
+            },
             "last_check": {
                 "name": "Last check"
             }
@@ -270,6 +273,9 @@
             }
         },
         "select": {
+            "weather_provider": {
+                "name": "Weather provider"
+            },
             "device_presence_sensor": {
                 "name": "Device presence sensor"
             },

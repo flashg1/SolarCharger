@@ -199,6 +199,13 @@ TIME_ENTITY_SELECTOR = EntitySelector(
     )
 )
 
+WEATHER_ENTITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        multiple=False,
+        domain=["weather"],
+    )
+)
+
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

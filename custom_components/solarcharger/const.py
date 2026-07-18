@@ -400,6 +400,8 @@ SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
 SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 SELECT_START_STATE = "start_state"
 SELECT_EXIT_CONDITION_SENSOR = "exit_condition_sensor"
+SELECT_WEATHER_PROVIDER = "weather_provider"
+SENSOR_WEATHER_UPDATE = "weather_update"
 
 #####################################
 # Charge schedule entities
@@ -616,6 +618,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     # Global defaults: Charger configs
     #####################################
     NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
+    SELECT_WEATHER_PROVIDER: "weather.forecast_home",
     #####################################
     # Local device required defaults
     #####################################
@@ -786,6 +789,7 @@ OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
     # Global entities
     #####################################
     # SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
+    SELECT_WEATHER_PROVIDER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SELECT_WEATHER_PROVIDER}",
     #####################################
     # Local entities
     #####################################
@@ -1048,6 +1052,7 @@ CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
 CALLBACK_NET_POWER_UPDATE = "callback_net_power_update"
 CALLBACK_DELTA_ALLOCATED_POWER = "callback_delta_allocated_power"
 CALLBACK_SYNC_UPDATE = "callback_sync_update"
+CALLBACK_WEATHER_UPDATE = "callback_weather_update"
 CALLBACK_NEXT_CHARGE_TIME_UPDATE = "callback_next_charge_time_update"
 CALLBACK_NEXT_CHARGE_TIME_TRIGGER = "callback_next_charge_time_trigger"
 CALLBACK_SOC_UPDATE = "callback_soc_update"

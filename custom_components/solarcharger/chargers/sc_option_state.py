@@ -10,6 +10,7 @@ from typing import Any
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
 
 from ..config.config_utils import get_saved_option_value
@@ -38,6 +39,7 @@ from ..const import (
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
     SELECT_START_STATE,
+    SELECT_WEATHER_PROVIDER,
     SENSOR,
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
@@ -105,6 +107,13 @@ class ScOptionState(ScConfigState):
         """Return sync update entity ID used by chargers to synchronise charge current updates."""
         return compose_entity_id(
             SENSOR, CONFIG_NAME_GLOBAL_DEFAULTS, SENSOR_SYNC_UPDATE
+        )
+
+    @cached_property
+    def weather_provider_selector_entity_id(self) -> str:
+        """Return weather provider selector entity ID."""
+        return compose_entity_id(
+            SELECT, CONFIG_NAME_GLOBAL_DEFAULTS, SELECT_WEATHER_PROVIDER
         )
 
     @cached_property
@@ -789,6 +798,16 @@ class ScOptionState(ScConfigState):
         """Get power monitor duration."""
 
         return self.option_get_entity_number_or_abort(NUMBER_POWER_MONITOR_DURATION)
+
+    # ----------------------------------------------------------------------------
+    def get_weather_provider(self) -> str | None:
+        """Get weather provider entity ID."""
+
+        entity_id = self.get_string(self.weather_provider_selector_entity_id)
+        if entity_id in [STATE_UNKNOWN, STATE_UNAVAILABLE]:
+            entity_id = None
+
+        return entity_id
 
     # ----------------------------------------------------------------------------
     def is_reduce_charge_limit_difference_between_days(self) -> bool:

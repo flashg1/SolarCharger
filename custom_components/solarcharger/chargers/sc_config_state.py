@@ -7,7 +7,11 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from ..const import CONFIG_CHARGER_CURRENT_UPDATE_PERIOD, CONFIG_NET_POWER_SENSOR
+from ..const import (
+    CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
+    CONFIG_NET_POWER_SENSOR,
+    SELECT_WEATHER_PROVIDER,
+)
 from .sc_state import ScState
 
 # ----------------------------------------------------------------------------
@@ -106,3 +110,9 @@ class ScConfigState(ScState):
         """Get charger current update period in seconds."""
 
         return self.config_get_number_or_abort(CONFIG_CHARGER_CURRENT_UPDATE_PERIOD)
+
+    # ----------------------------------------------------------------------------
+    # def get_weather_provider(self) -> str:
+    #     """Get weather provider entity ID."""
+
+    #     return self.config_get_id(SELECT_WEATHER_PROVIDER)
