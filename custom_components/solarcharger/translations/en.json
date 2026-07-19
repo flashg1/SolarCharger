@@ -228,8 +228,8 @@
             "sync_update": {
                 "name": "Sync update"
             },
-            "weather_update": {
-                "name": "Weather update"
+            "weather_forecast": {
+                "name": "Weather forecast"
             },
             "last_check": {
                 "name": "Last check"

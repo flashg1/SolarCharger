@@ -23,6 +23,9 @@ from typing import TYPE_CHECKING
 # if TYPE_CHECKING:
 #   Specifically targets imports that are only needed for type checking, preventing them from being executed at runtime.
 #   You still need to use string literals for forward references if the type isn't available at runtime.
+# Import locally among code just before using:
+#   from ..sensor import SolarChargerSensorAttributeEntity
+#   attribute_sensor: SolarChargerSensorAttributeEntity
 #######################################################
 if TYPE_CHECKING:
     from ..button import SolarChargerButtonActionEntity

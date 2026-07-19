@@ -1,14 +1,15 @@
-# ruff: noqa: TRY401, TID252
+# ruff: noqa: TRY401, TID252, PLR5501
 """Solar charger coordinator."""
 
 from datetime import datetime, time, timedelta
 import inspect
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import (
     CALLBACK_TYPE,
     Event,
@@ -32,7 +33,7 @@ from ..const import (
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
     SENSOR_SYNC_UPDATE,
-    SENSOR_WEATHER_UPDATE,
+    SENSOR_WEATHER_FORECAST,
     WEEKLY_CHARGE_ENDTIMES,
 )
 
@@ -45,8 +46,9 @@ from ..models.model_device_control import DeviceControl
 from .allocator import PowerAllocator
 from .tracker import Tracker
 
-if TYPE_CHECKING:
-    from ..sensor import SolarChargerSensorAttributeEntity
+# from typing import TYPE_CHECKING
+# if TYPE_CHECKING:
+#     from ..sensor import SolarChargerSensorAttributeEntity
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -105,6 +107,9 @@ class SolarChargerCoordinator(ScOptionState):
 
         # Net power update count
         self._net_power_update_count: int = 0
+
+        # Started tracking weather
+        self._tracking_weather: bool = False
 
     # ----------------------------------------------------------------------------
     @cached_property
@@ -459,8 +464,8 @@ class SolarChargerCoordinator(ScOptionState):
             # raise EntityExceptionError("Invalid net power sensor")
 
     # ----------------------------------------------------------------------------
-    def _update_attribute_sensor(
-        self, config_item: str, state_value: str, attributes: dict[str, Any]
+    def _update_sensor_attribute(
+        self, config_item: str, state_value: str, attributes: dict[str, Any] | None
     ) -> None:
         """Update attribute sensor."""
 
@@ -469,21 +474,9 @@ class SolarChargerCoordinator(ScOptionState):
             control = self.device_controls[self._subentry.subentry_id]
 
             assert control.controller.charge_control.entities.sensors is not None
-            # attribute_sensor: SolarChargerSensorAttributeEntity = (
-            #     control.controller.charge_control.entities.sensors[config_item]
-            # )
-            # attribute_sensor.set_complete_state(state_value, attributes)
-
-            # from ..sensor import SolarChargerSensorAttributeEntity
-
-            attribute_sensor: SolarChargerSensorAttributeEntity = (
-                control.controller.charge_control.entities.sensors[config_item]
-            )
-            attribute_sensor.set_complete_state(state_value, attributes)
-
-            # control.controller.charge_control.entities.sensors[
-            #     config_item
-            # ].set_complete_state(state_value, attributes)
+            control.controller.charge_control.entities.sensors[
+                config_item
+            ].set_complete_state(state_value, attributes)
 
         except Exception as e:
             _LOGGER.exception(
@@ -500,6 +493,8 @@ class SolarChargerCoordinator(ScOptionState):
         if not state_obj:
             return
 
+        # The attributes has current weather condition but no daily data, so get
+        # daily data separately below.
         attributes = dict(state_obj.attributes)
 
         # Request weather forecast data correctly via the standard service engine
@@ -516,9 +511,9 @@ class SolarChargerCoordinator(ScOptionState):
 
             # Safely extract and map the forecast list to attributes
             if response and entity_id in response:
-                attributes["forecast"] = response[entity_id].get("forecast", [])
+                attributes["daily_forecast"] = response[entity_id].get("forecast", [])
             else:
-                attributes["forecast"] = []
+                attributes["daily_forecast"] = []
 
         except Exception as err:
             _LOGGER.warning(
@@ -526,8 +521,8 @@ class SolarChargerCoordinator(ScOptionState):
             )
 
         # Assign and commit the newly bundled metadata state
-        self._update_attribute_sensor(
-            SENSOR_WEATHER_UPDATE, state_obj.state, attributes
+        self._update_sensor_attribute(
+            SENSOR_WEATHER_FORECAST, state_obj.state, attributes
         )
 
     # ----------------------------------------------------------------------------
@@ -542,13 +537,25 @@ class SolarChargerCoordinator(ScOptionState):
             self._hass.async_create_task(self._async_update_weather_sensor(entity_id))
 
     # ----------------------------------------------------------------------------
-    def _track_weather_update(self) -> None:
-        """Track weather update."""
+    def _check_weather_provider(self) -> None:
+        """Track weather if weather provider is defined."""
 
-        ok = self._tracker.track_weather_update(self._async_handle_weather_update)
-        if ok:
-            # Populate weather sensor with data.
-            self._async_handle_weather_update(None)
+        entity_id = self.get_weather_provider()
+        if entity_id is not None:
+            if not self._tracking_weather:
+                if self._tracker.track_weather_update(
+                    self._async_handle_weather_update
+                ):
+                    # Populate weather sensor with data.
+                    self._async_handle_weather_update(None)
+                    self._tracking_weather = True
+        else:
+            if self._tracking_weather:
+                self._tracker.untrack_weather_update()
+                self._update_sensor_attribute(
+                    SENSOR_WEATHER_FORECAST, STATE_UNKNOWN, None
+                )
+                self._tracking_weather = False
 
     # ----------------------------------------------------------------------------
     # Periodic functions
@@ -583,6 +590,11 @@ class SolarChargerCoordinator(ScOptionState):
                     continue
 
                 await control.controller.async_check_if_need_to_reschedule_charge()
+
+            #####################################
+            # Misc
+            #####################################
+            self._check_weather_provider()
 
         except Exception as e:
             _LOGGER.exception(
@@ -635,8 +647,10 @@ class SolarChargerCoordinator(ScOptionState):
         # Otherwise cannot get entity config values here.
         await self._tracker.async_setup()
 
+        # Update weather sensor now because periodic maintenance is delayed by 60 seconds.
+        self._check_weather_provider()
+
         self._track_net_power_update()
-        self._track_weather_update()
         self._start_periodic_maintenance()
 
         # Enable system config flow callbacks after completing local setup.

@@ -57,7 +57,7 @@ from .const import (
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     SENSOR_SYNC_UPDATE,
-    SENSOR_WEATHER_UPDATE,
+    SENSOR_WEATHER_FORECAST,
     MedianDataState,
     RunState,
 )
@@ -95,11 +95,31 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity, RestoreEntity):
         self._starting_state = starting_state
         self._is_restore_state = is_restore_state
 
+        self._extra_attributes: dict[str, Any] | None = None
+
+    # ----------------------------------------------------------------------------
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return sensor extra attributes."""
+        return self._extra_attributes
+
     # ----------------------------------------------------------------------------
     def set_state(self, new_state: StateType | date | datetime | Decimal):
         """Set new status."""
 
         self._attr_native_value = new_state
+        self.update_ha_state()
+
+    # ----------------------------------------------------------------------------
+    def set_complete_state(
+        self,
+        new_state: StateType | date | datetime | Decimal,
+        extra_attributes: dict[str, Any] | None,
+    ) -> None:
+        """Set all values for state."""
+
+        self._attr_native_value = new_state
+        self._extra_attributes = extra_attributes
         self.update_ha_state()
 
     # ----------------------------------------------------------------------------
@@ -229,115 +249,115 @@ class SolarChargerSensorResetAtMidnightEntity(SolarChargerSensorEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class SolarChargerSensorAttributeEntity(SolarChargerSensorEntity):
-    """Solar Charger weather sensor class."""
+# class SolarChargerSensorAttributeEntity(SolarChargerSensorEntity):
+#     """Solar Charger weather sensor class."""
 
-    def __init__(
-        self,
-        config_item: str,
-        subentry: ConfigSubentry,
-        config_entry: ConfigEntry,
-        entity_type: SolarChargerEntityType,
-        desc: SensorEntityDescription,
-        starting_state: StateType | date | datetime | Decimal,
-        is_restore_state: bool,
-    ) -> None:
-        """Initialise sensor."""
+#     def __init__(
+#         self,
+#         config_item: str,
+#         subentry: ConfigSubentry,
+#         config_entry: ConfigEntry,
+#         entity_type: SolarChargerEntityType,
+#         desc: SensorEntityDescription,
+#         starting_state: StateType | date | datetime | Decimal,
+#         is_restore_state: bool,
+#     ) -> None:
+#         """Initialise sensor."""
 
-        super().__init__(
-            config_item,
-            subentry,
-            config_entry,
-            entity_type,
-            desc,
-            starting_state,
-            is_restore_state,
-        )
+#         super().__init__(
+#             config_item,
+#             subentry,
+#             config_entry,
+#             entity_type,
+#             desc,
+#             starting_state,
+#             is_restore_state,
+#         )
 
-        # Internal state tracking variables
-        # self._weather_provider_entity = self._config_entry.data.get(
-        #     SELECT_WEATHER_PROVIDER
-        # )
-        self._state_value: str | None = None
-        self._extra_attributes: dict[str, Any] = {}
+#         # Internal state tracking variables
+#         # self._weather_provider_entity = self._config_entry.data.get(
+#         #     SELECT_WEATHER_PROVIDER
+#         # )
+#         self._state_value: str | None = None
+#         self._extra_attributes: dict[str, Any] = {}
 
-    # ----------------------------------------------------------------------------
-    @property
-    def native_value(self) -> str | None:
-        """Return the main state value (e.g., sunny, rainy)."""
-        return self._state_value
+#     # ----------------------------------------------------------------------------
+#     @property
+#     def native_value(self) -> str | None:
+#         """Return the main state value (e.g., sunny, rainy)."""
+#         return self._state_value
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return base data mixed with the recovered daily forecast list."""
-        return self._extra_attributes
+#     @property
+#     def extra_state_attributes(self) -> dict[str, Any]:
+#         """Return base data mixed with the recovered daily forecast list."""
+#         return self._extra_attributes
 
-    # ----------------------------------------------------------------------------
-    def set_complete_state(
-        self, state_value: str | None, extra_attributes: dict[str, Any]
-    ) -> None:
-        """Set all values for state."""
+#     # ----------------------------------------------------------------------------
+#     def set_complete_state(
+#         self, state_value: str | None, extra_attributes: dict[str, Any]
+#     ) -> None:
+#         """Set all values for state."""
 
-        self._state_value = state_value
-        self._extra_attributes = extra_attributes
-        self.update_ha_state()
+#         self._state_value = state_value
+#         self._extra_attributes = extra_attributes
+#         self.update_ha_state()
 
-    # ----------------------------------------------------------------------------
-    # async def async_added_to_hass(self) -> None:
-    #     """Handle entity pipeline subscriptions."""
+#     # # ----------------------------------------------------------------------------
+#     # async def async_added_to_hass(self) -> None:
+#     #     """Handle entity pipeline subscriptions."""
 
-    #     await super().async_added_to_hass()
+#     #     await super().async_added_to_hass()
 
-    #     async def _async_update_sensor_data(entity_id: str) -> None:
-    #         state_obj = self.hass.states.get(entity_id)
-    #         if not state_obj:
-    #             return
+#     #     async def _async_update_sensor_data(entity_id: str) -> None:
+#     #         state_obj = self.hass.states.get(entity_id)
+#     #         if not state_obj:
+#     #             return
 
-    #         self._state_value = state_obj.state
-    #         attributes = dict(state_obj.attributes)
+#     #         self._state_value = state_obj.state
+#     #         attributes = dict(state_obj.attributes)
 
-    #         # Request weather forecast data correctly via the standard service engine
-    #         try:
-    #             # Setting blocking=True with return_response=True satisfies HA execution rules
-    #             response = await self.hass.services.async_call(
-    #                 domain="weather",
-    #                 service="get_forecasts",
-    #                 service_data={"type": "daily"},
-    #                 target={"entity_id": entity_id},
-    #                 blocking=True,  # Required when returning a response
-    #                 return_response=True,  # Tells HA to expect data payload mapping
-    #             )
+#     #         # Request weather forecast data correctly via the standard service engine
+#     #         try:
+#     #             # Setting blocking=True with return_response=True satisfies HA execution rules
+#     #             response = await self.hass.services.async_call(
+#     #                 domain="weather",
+#     #                 service="get_forecasts",
+#     #                 service_data={"type": "daily"},
+#     #                 target={"entity_id": entity_id},
+#     #                 blocking=True,  # Required when returning a response
+#     #                 return_response=True,  # Tells HA to expect data payload mapping
+#     #             )
 
-    #             # Safely extract and map the forecast list to attributes
-    #             if response and entity_id in response:
-    #                 attributes["forecast"] = response[entity_id].get("forecast", [])
-    #             else:
-    #                 attributes["forecast"] = []
+#     #             # Safely extract and map the forecast list to attributes
+#     #             if response and entity_id in response:
+#     #                 attributes["forecast"] = response[entity_id].get("forecast", [])
+#     #             else:
+#     #                 attributes["forecast"] = []
 
-    #         except Exception as err:
-    #             _LOGGER.warning(
-    #                 "Could not call get_forecasts action for %s: %s", entity_id, err
-    #             )
+#     #         except Exception as err:
+#     #             _LOGGER.warning(
+#     #                 "Could not call get_forecasts action for %s: %s", entity_id, err
+#     #             )
 
-    #         # Assign and commit the newly bundled metadata state
-    #         self._extra_attributes = attributes
-    #         self.async_write_ha_state()
+#     #         # Assign and commit the newly bundled metadata state
+#     #         self._extra_attributes = attributes
+#     #         self.async_write_ha_state()
 
-    #     # Run immediately on component launch
-    #     await _async_update_sensor_data(self._weather_provider_entity)
+#     #     # Run immediately on component launch
+#     #     await _async_update_sensor_data(self._weather_provider_entity)
 
-    #     # Monitor state triggers for cloud configuration refreshes
-    #     @callback
-    #     def _async_on_weather_change(event: Event[EventStateChangedData]) -> None:
-    #         self.hass.async_create_task(
-    #             _async_update_sensor_data(self._weather_provider_entity)
-    #         )
+#     #     # Monitor state triggers for cloud configuration refreshes
+#     #     @callback
+#     #     def _async_on_weather_change(event: Event[EventStateChangedData]) -> None:
+#     #         self.hass.async_create_task(
+#     #             _async_update_sensor_data(self._weather_provider_entity)
+#     #         )
 
-    #     self.async_on_remove(
-    #         async_track_state_change_event(
-    #             self.hass, [self._weather_provider_entity], _async_on_weather_change
-    #         )
-    #     )
+#     #     self.async_on_remove(
+#     #         async_track_state_change_event(
+#     #             self.hass, [self._weather_provider_entity], _async_on_weather_change
+#     #         )
+#     #     )
 
 
 # ----------------------------------------------------------------------------
@@ -577,11 +597,11 @@ CONFIG_SENSOR_LIST: tuple[
         RESTORE_ON_START_FALSE,
     ),
     (
-        SENSOR_WEATHER_UPDATE,
-        SolarChargerSensorAttributeEntity,
+        SENSOR_WEATHER_FORECAST,
+        SolarChargerSensorStateEntity,
         SolarChargerEntityType.TYPE_GLOBAL,
         SensorEntityDescription(
-            key=SENSOR_WEATHER_UPDATE,
+            key=SENSOR_WEATHER_FORECAST,
         ),
         None,
         RESTORE_ON_START_FALSE,

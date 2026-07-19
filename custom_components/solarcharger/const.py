@@ -401,7 +401,7 @@ SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 SELECT_START_STATE = "start_state"
 SELECT_EXIT_CONDITION_SENSOR = "exit_condition_sensor"
 SELECT_WEATHER_PROVIDER = "weather_provider"
-SENSOR_WEATHER_UPDATE = "weather_update"
+SENSOR_WEATHER_FORECAST = "weather_forecast"
 
 #####################################
 # Charge schedule entities
@@ -1052,7 +1052,7 @@ CALLBACK_SUNSET_DAILY_MAINTENANCE = "callback_sunset_daily_maintenance"
 CALLBACK_NET_POWER_UPDATE = "callback_net_power_update"
 CALLBACK_DELTA_ALLOCATED_POWER = "callback_delta_allocated_power"
 CALLBACK_SYNC_UPDATE = "callback_sync_update"
-CALLBACK_WEATHER_UPDATE = "callback_weather_update"
+CALLBACK_WEATHER_FORECAST = "callback_weather_forecast"
 CALLBACK_NEXT_CHARGE_TIME_UPDATE = "callback_next_charge_time_update"
 CALLBACK_NEXT_CHARGE_TIME_TRIGGER = "callback_next_charge_time_trigger"
 CALLBACK_SOC_UPDATE = "callback_soc_update"
