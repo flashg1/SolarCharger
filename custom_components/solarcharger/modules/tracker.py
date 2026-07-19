@@ -51,7 +51,6 @@ from ..const import (
     ENTITY_CHARGEE_SOC_SENSOR,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
     HA_SUN_ENTITY,
-    SELECT_WEATHER_PROVIDER,
     SENSOR_DELTA_ALLOCATED_POWER,
 )
 from ..helpers.utils import (

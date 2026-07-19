@@ -790,7 +790,7 @@ OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
     # Global entities
     #####################################
     # SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
-    SELECT_WEATHER_PROVIDER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SELECT_WEATHER_PROVIDER}",
+    SELECT_WEATHER_PROVIDER: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SELECT_WEATHER_PROVIDER}",
     #####################################
     # Local entities
     #####################################
