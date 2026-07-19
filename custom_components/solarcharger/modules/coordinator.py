@@ -41,14 +41,8 @@ from ..const import (
 from ..helpers.utils import log_is_event_loop
 from ..models.model_charge_control import ChargeControl
 from ..models.model_device_control import DeviceControl
-
-# from ..sensor import SolarChargerSensorAttributeEntity
 from .allocator import PowerAllocator
 from .tracker import Tracker
-
-# from typing import TYPE_CHECKING
-# if TYPE_CHECKING:
-#     from ..sensor import SolarChargerSensorAttributeEntity
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
