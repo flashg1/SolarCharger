@@ -515,9 +515,9 @@ class SolarChargerCoordinator(ScOptionState):
             else:
                 attributes["daily_forecast"] = []
 
-        except Exception as err:
+        except Exception as e:
             _LOGGER.warning(
-                "Could not call get_forecasts action for %s: %s", entity_id, err
+                "%s: Failed get_forecasts: %s: %s", self.caller, entity_id, e
             )
 
         # Assign and commit the newly bundled metadata state
@@ -647,7 +647,7 @@ class SolarChargerCoordinator(ScOptionState):
         # Otherwise cannot get entity config values here.
         await self._tracker.async_setup()
 
-        # Update weather sensor now because periodic maintenance is delayed by 60 seconds.
+        # Update weather sensor now because the one in periodic maintenance is delayed by 60 sec.
         self._check_weather_provider()
 
         self._track_net_power_update()

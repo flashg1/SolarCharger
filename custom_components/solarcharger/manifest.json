@@ -12,6 +12,7 @@
     "switch",
     "time",
     "sun",
+    "weather",
     "ping",
     "mqtt",
     "esphome",

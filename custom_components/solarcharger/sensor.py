@@ -20,13 +20,9 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfTime,
 )
-from homeassistant.core import Event, EventStateChangedData, callback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.event import (
-    async_track_state_change_event,
-    async_track_time_change,
-)
+from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import StateType
 from homeassistant.util.dt import as_local
@@ -37,7 +33,6 @@ from .const import (
     RESTORE_ON_START_FALSE,
     RESTORE_ON_START_TRUE,
     RUN_STATE_LIST,
-    SELECT_WEATHER_PROVIDER,
     SENSOR,
     SENSOR_AVERAGE_PAUSE_DURATION,
     SENSOR_CONSUMED_ENERGY_TODAY,
@@ -249,6 +244,9 @@ class SolarChargerSensorResetAtMidnightEntity(SolarChargerSensorEntity):
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+# from homeassistant.core import Event, EventStateChangedData, callback
+# from homeassistant.helpers.event import async_track_state_change_event
+
 # class SolarChargerSensorAttributeEntity(SolarChargerSensorEntity):
 #     """Solar Charger weather sensor class."""
 
@@ -358,42 +356,6 @@ class SolarChargerSensorResetAtMidnightEntity(SolarChargerSensorEntity):
 #     #             self.hass, [self._weather_provider_entity], _async_on_weather_change
 #     #         )
 #     #     )
-
-
-# ----------------------------------------------------------------------------
-# Has most recent data but has no forecast days.
-# async def async_added_to_hass(self) -> None:
-#     """Handle entity trout when added to Home Assistant."""
-
-#     await super().async_added_to_hass()
-
-#     # 1. Read initial state on startup so the sensor isn't blank
-#     initial_state = self.hass.states.get(self._weather_provider_entity_id)
-#     if initial_state:
-#         self._state_value = initial_state.state
-#         self._weather_attributes = dict(initial_state.attributes)
-
-#     # 2. Track real-time state changes of the target weather entity
-#     @callback
-#     def _async_on_weather_change(event: Event[EventStateChangedData]) -> None:
-#         """Callback triggered whenever the target weather entity updates."""
-#         new_state = event.data.get("new_state")
-#         if not new_state:
-#             return
-
-#         # Capture the new state value and clone all attributes safely
-#         self._state_value = new_state.state
-#         self._weather_attributes = dict(new_state.attributes)
-
-#         # Inform Home Assistant to write changes and re-render the UI
-#         self.async_write_ha_state()
-
-#     # Register the state change listener
-#     self.async_on_remove(
-#         async_track_state_change_event(
-#             self.hass, [self._weather_provider_entity_id], _async_on_weather_change
-#         )
-#     )
 
 
 # ----------------------------------------------------------------------------
@@ -603,7 +565,7 @@ CONFIG_SENSOR_LIST: tuple[
         SensorEntityDescription(
             key=SENSOR_WEATHER_FORECAST,
         ),
-        None,
+        STATE_UNKNOWN,
         RESTORE_ON_START_FALSE,
     ),
     (

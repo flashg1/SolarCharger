@@ -618,7 +618,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     # Global defaults: Charger configs
     #####################################
     NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
-    SELECT_WEATHER_PROVIDER: "weather.forecast_home",
+    SELECT_WEATHER_PROVIDER: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     #####################################
     # Local device required defaults
     #####################################
@@ -658,6 +658,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
 
 CONFIG_WITH_NO_DEFAULTS: list[str] = [
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    SELECT_WEATHER_PROVIDER,
     NUMBER_CHARGER_MAX_CURRENT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,

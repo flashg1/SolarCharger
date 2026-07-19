@@ -13,6 +13,7 @@
 - Fixed missing caller in state_charge.py during exception handling.
 - Need to set started_max_charge=0 when switching off charger.
 ### New feature
+- Added "Weather provider" selector and "Weather forecast" sensor in global defaults.
 - If [Reduce charge limit difference](https://github.com/flashg1/SolarCharger/wiki/User-guide#reduce-charge-limit-difference) between days is enabled, then continue charge session to reduce charge limit difference for tomorrow after achieving today's end time goal.
 - Added "[Start state](https://github.com/flashg1/SolarCharger/wiki/User-guide#start-state)" selector for Auto, Charge or Pause start states.
 - Added "[Exit condition sensor](https://github.com/flashg1/SolarCharger/wiki/User-guide#exit-condition-sensor)" selector and "End on condition" switch.
