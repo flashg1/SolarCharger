@@ -10,6 +10,7 @@
 - Removed "Max consumed energy limit" number.
 - Removed "End on max consumed energy" switch.
 ### Fix
+- Use name_by_user to form SC device name if name is not available. Thanks @shuch3ng for the fix. [issue 30](https://github.com/flashg1/SolarCharger/issues/30)
 - Fixed missing caller in state_charge.py during exception handling.
 - Need to set started_max_charge=0 when switching off charger.
 ### New feature
