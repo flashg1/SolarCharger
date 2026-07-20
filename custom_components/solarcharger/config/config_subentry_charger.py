@@ -236,11 +236,35 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     raise ValueError(
                         f"{thirdparty_charger.name}: Charger config entry not found"
                     )
+
+                #######################################################
+                # If thirdparty_charger.name_by_user is the first choice, user will also need
+                # to apply the name change to the device's entity IDs in order for SC to work.
+                # This is an issue for the following reasons,
+                #
+                # - User might just want to change the device name and not the names for the
+                # device's entities for a number of reasons.
+                # - The device entities might have historical data, and there is risk involved
+                # in changing these orphaned entities.
+                # - The device entities might be used in automation and scripts, and a pain to
+                # change them all.
+                # - The device name is also used to create SC entities to form part of the SC
+                # entity name, which means user will need to delete and readd the integration
+                # when they changed the device name.
+                # - Other custom integrations might not allow renaming of their entities even
+                # though their device name can be renamed, eg. OCPP. (Tested "Tesla Custom"
+                # integration do allow renaming of entities.)
+                #
+                #######################################################
                 # HA device display name is `name_by_user` or `name`.
                 # Fall back to the user-assigned name before rejecting the selection.
+                # thirdparty_charger_name = (
+                #     thirdparty_charger.name_by_user or thirdparty_charger.name
+                # )
                 thirdparty_charger_name = (
-                    thirdparty_charger.name_by_user or thirdparty_charger.name
+                    thirdparty_charger.name or thirdparty_charger.name_by_user
                 )
+
                 thirdparty_display_name = (
                     f"{thirdparty_config_entry.domain} {thirdparty_charger_name}"
                 )
