@@ -256,11 +256,6 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # integration do allow renaming of entities.)
                 #
                 #######################################################
-                # HA device display name is `name_by_user` or `name`.
-                # Fall back to the user-assigned name before rejecting the selection.
-                # thirdparty_charger_name = (
-                #     thirdparty_charger.name_by_user or thirdparty_charger.name
-                # )
                 thirdparty_charger_name = (
                     thirdparty_charger.name or thirdparty_charger.name_by_user
                 )
