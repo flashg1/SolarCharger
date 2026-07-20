@@ -38,7 +38,7 @@ from ..const import (
     DOMAIN_TESLEMETRY,
     DOMAIN_TESSIE,
     ERROR_DEVICE_ALREADY_ADDED,
-    ERROR_DEVICE_NAME_ERROR,
+    ERROR_MISSING_DEVICE_NAME,
     ERROR_SELECT_CHARGER,
     ERROR_SUBENTRY_CREATED,
     ESPHOME_TESLA_BLE_MANUFACTURER,
@@ -269,7 +269,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 #######################################################
                 thirdparty_charger_name = thirdparty_charger.name
                 if not thirdparty_charger_name:
-                    return self.async_abort(reason=ERROR_DEVICE_NAME_ERROR)
+                    return self.async_abort(reason=ERROR_MISSING_DEVICE_NAME)
 
                 thirdparty_display_name = (
                     f"{thirdparty_config_entry.domain} {thirdparty_charger_name}"

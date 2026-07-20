@@ -46,7 +46,7 @@
             },
             "entry_type": "Charger device",
             "abort": {
-                "device_name_error": "Error: Integration missing device name\n\nPlease add name using following instruction and then reboot Home Assistant.\n\nTelsa: Official Tesla mobile app > Menu > My products > Select car > Edit\nOthers: Check with integration owner.",
+                "missing_device_name": "Error: Integration missing device name\n\nPlease add name using following instruction and then reboot Home Assistant.\n\nTelsa: Official Tesla mobile app > Menu > My products > Select car > Edit\nOthers: Check with integration owner.",
                 "device_already_added": "Error: Device already added",
                 "device_subentry_created": "Added charger device.\n\n\u23F9 IMPORTANT\n\nPlease set charger voltage in \"Global defaults\", max current in charger device, and configs in Settings (cog wheel) if required.\n\nIn Settings (cog wheel), please note that device local configs, if defined, will always take precedence over global defaults."
             }
