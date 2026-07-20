@@ -251,10 +251,12 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     thirdparty_charger.model,
                 )
 
-                _LOGGER.info(
-                    "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
+                _LOGGER.warning(
+                    "Create subentry %d: charger='%s' (name_by_user='%s', name='%s'), unique_id='%s', sub-domain='%s'",
                     len(config_entry.subentries) + 1,
                     thirdparty_charger_name,
+                    thirdparty_charger.name_by_user,
+                    thirdparty_charger.name,
                     thirdparty_config_name,
                     thirdparty_charger_subdomain,
                 )

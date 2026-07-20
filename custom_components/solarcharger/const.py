@@ -348,7 +348,10 @@ NUMBER_WAIT_CHARGEE_UPDATE_HA = "wait_chargee_update_ha"  # 5 seconds
 NUMBER_WAIT_CHARGEE_LIMIT_CHANGE = "wait_chargee_limit_change"  # 5 seconds
 NUMBER_WAIT_CHARGER_ON = "wait_charger_on"  # 11 seconds
 NUMBER_WAIT_CHARGER_OFF = "wait_charger_off"  # 5 seconds
-NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 second
+
+# Time to wait after switching on charger and set initial current.  Default 1 second.
+# Tesla Fleet, Tessie and Teslemetry will wait 5 seconds.
+NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 or 5 seconds
 
 # 0 minutes=disabled, suggest 15 minutes to capture allocated power and turn off if average is below min power.
 NUMBER_POWER_MONITOR_DURATION = "power_monitor_duration"  # 10 minutes
@@ -689,7 +692,7 @@ TESLA_ESPBLE_DEFAULT_VALUES: dict[str, Any] = {
 
 TESLA_FLEET_DEFAULT_VALUES: dict[str, Any] = {
     **TESLA_DEFAULT_VALUES,
-    SWITCH_POLL_CHARGER_UPDATE: DEFAULT_ON,
+    NUMBER_WAIT_CHARGER_AMP_CHANGE: 5,
 }
 TESSIE_DEFAULT_VALUES: dict[str, Any] = TESLA_FLEET_DEFAULT_VALUES
 TESLEMETRY_DEFAULT_VALUES: dict[str, Any] = TESLA_FLEET_DEFAULT_VALUES

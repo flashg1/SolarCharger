@@ -2,7 +2,8 @@
 
 ## v0.9.0 2026-07-11
 ### Breaking change
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- **Important notice:** If you have renamed you Tesla device in Home Assistant, please do not upgrade to this version until you have read and understood the [implications](https://github.com/flashg1/SolarCharger/wiki/Renaming-Home-Assistant-device) of this change.
+- Once you have read and understood the [implications](https://github.com/flashg1/SolarCharger/wiki/Renaming-Home-Assistant-device) of this change. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 - Renamed charge sub-state from "Self-paused" to "Self-derated".
 - Renamed counter "Self-paused today" to "Self-derated today" to support device that can vary current by itself.
 - Replaced "Start on pause" switch with "Start state" selector.
@@ -19,6 +20,7 @@
 - Added "[Start state](https://github.com/flashg1/SolarCharger/wiki/User-guide#start-state)" selector for Auto, Charge or Pause start states.
 - Added "[Exit condition sensor](https://github.com/flashg1/SolarCharger/wiki/User-guide#exit-condition-sensor)" selector and "End on condition" switch.
 ### Improvement
+- Changed "Wait current change" default from 1 sec to 5 sec for Tesla Fleet, Tessie and Teslemetry.
 - Support power allocation to device that can vary current by itself without SolarCharger intervention.
 - Always read current before setting new current in case device current is out of sync with SolarCharger.
 - Refactored select.py to pass in available options as a class parameter.
