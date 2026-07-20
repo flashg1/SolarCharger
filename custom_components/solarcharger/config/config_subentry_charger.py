@@ -236,10 +236,12 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     raise ValueError(
                         f"{thirdparty_charger.name}: Charger config entry not found"
                     )
-                # HA device display name is `name_by_user` or `name`.
-                # Fall back to the user-assigned name before rejecting the selection.
+                # HA device display name is `name` or `name_by_user`.
+                # Prefer the integration's default `name` over `name_by_user`
+                # (some integrations, eg. OCPP, don't allow renaming entities
+                # to match). Fall back to `name_by_user` only if `name` is empty.
                 thirdparty_charger_name = (
-                    thirdparty_charger.name_by_user or thirdparty_charger.name
+                    thirdparty_charger.name or thirdparty_charger.name_by_user
                 )
                 thirdparty_display_name = (
                     f"{thirdparty_config_entry.domain} {thirdparty_charger_name}"
