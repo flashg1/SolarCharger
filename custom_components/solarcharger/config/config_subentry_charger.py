@@ -250,8 +250,8 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # - The device entities might be used in automation and scripts, and a pain to
                 # change them all.
                 # - The device name is also used to create SC entities to form part of the SC
-                # entity name, which means user will need to delete and re-add the SC when
-                # they changed the device name.
+                # entity name, which means user will need to delete and re-add SC when they
+                # changed the device name.
                 # - Other custom integrations might not allow renaming of their entities even
                 # though their device name can be renamed, eg. OCPP. (Tested "Tesla Custom"
                 # integration do allow renaming of entities.)
