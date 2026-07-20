@@ -259,14 +259,14 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # HA device display name is `name` or `name_by_user`.
                 # Prefer the integration's default `name` over `name_by_user`
                 # Fall back to `name_by_user` only if `name` is empty.
-                #######################################################
                 # thirdparty_charger_name = (
                 #     thirdparty_charger.name or thirdparty_charger.name_by_user
                 # )
-
-                # To avoid complications in case of user setting name in official Tesla app sometime
-                # in the future, ensure SC just get name from single source.  This will ensure direct
-                # cause and effect, and avoid confusion in the future.
+                #
+                # To avoid complications in case of user setting different name in official
+                # Tesla app sometime in the future, ensure SC just get name from single source.
+                # This will ensure direct cause and effect, and avoid confusion in the future.
+                #######################################################
                 thirdparty_charger_name = thirdparty_charger.name
                 if not thirdparty_charger_name:
                     return self.async_abort(reason=ERROR_DEVICE_NAME_ERROR)
