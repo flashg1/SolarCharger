@@ -41,8 +41,8 @@ class PowerAllocation:
 
     # Device allows pause state?
     max_speed_charge: bool = False
-    # Device derated by itself, eg. themostat.
-    self_derated: bool = False
+    # Device depower by itself, eg. themostat.
+    self_depower: bool = False
     # Charger effective voltage.
     voltage: float = 0.0
     # Power currently consumed by the charger.
@@ -79,7 +79,7 @@ class PowerAllocation:
             f"share_allocation={self.share_allocation}, "
             f"can_set_current={self.can_set_current}, "
             f"max_speed_charge={self.max_speed_charge}, "
-            f"self_derated={self.self_derated}, "
+            f"self_depower={self.self_depower}, "
             f"voltage={self.voltage}, "
             f"consumed_power={self.consumed_power}, "
             f"need_power={self.need_power}, "

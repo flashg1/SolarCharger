@@ -210,16 +210,16 @@ class StateCharge(SolarChargeState):
     def _set_charging_substate(self) -> None:
         """Set the charging sub-state of the object."""
 
-        if self.solarcharge.is_self_derated:
-            self.solarcharge.set_run_state(RunState.SELF_DERATED)
+        if self.solarcharge.is_self_depower:
+            self.solarcharge.set_run_state(RunState.SELF_DEPOWER)
         else:
             self.solarcharge.set_run_state(RunState.CHARGING)
 
     # ----------------------------------------------------------------------------
-    def _set_self_derated_state(self, self_derated: bool) -> None:
-        """Set the self-derated state of the object."""
+    def _set_self_depower_state(self, self_depower: bool) -> None:
+        """Set the self-depower state of the object."""
 
-        self.solarcharge.set_self_derated(self_derated)
+        self.solarcharge.set_self_depower(self_depower)
         self._set_charging_substate()
 
     # ----------------------------------------------------------------------------
@@ -404,13 +404,13 @@ class StateCharge(SolarChargeState):
         return (new_charge_current, old_charge_current)
 
     # ----------------------------------------------------------------------------
-    def _update_self_derated_state(
+    def _update_self_depower_state(
         self, new_current: float, old_current: float
     ) -> None:
-        """Update self-derated state for device that do not support setting current."""
+        """Update self-depower state for device that do not support setting current."""
 
         # Check if device reduced current by itself for device that do not support setting current.
-        # Self-derated state is communicated directly to allocator via set_self_derated(),
+        # Self-depower state is communicated directly to allocator via set_self_depower(),
         # or indirectly via consumed power set in async_set_charge_current().
         # Allocator is triggered by net power update on another thread set up by the coordinator.
         if not self.solarcharge.can_set_current:
@@ -419,14 +419,14 @@ class StateCharge(SolarChargeState):
             if self._is_device_reduced_current_by_itself(
                 new_current, old_current, current_variation
             ):
-                self._set_self_derated_state(True)
+                self._set_self_depower_state(True)
 
-                self_derated_today = self.solarcharge.get_self_derated_today()
-                self_derated_today += 1
-                self.solarcharge.set_self_derated_today(self_derated_today)
+                self_depower_today = self.solarcharge.get_self_depower_today()
+                self_depower_today += 1
+                self.solarcharge.set_self_depower_today(self_depower_today)
 
             elif self._is_device_at_max_current(new_current, current_variation):
-                self._set_self_derated_state(False)
+                self._set_self_depower_state(False)
 
     # ----------------------------------------------------------------------------
     async def _async_adjust_charge_current(
@@ -438,7 +438,7 @@ class StateCharge(SolarChargeState):
             charger, delta_allocated_power, self.solarcharge.running_goal
         )
 
-        self._update_self_derated_state(new_current, old_current)
+        self._update_self_depower_state(new_current, old_current)
 
         _LOGGER.info(
             "%s: delta_allocated_power=%.2f, old_current=%s, new_current=%s",
@@ -558,9 +558,9 @@ class StateCharge(SolarChargeState):
             # Device do not support setting current.
             initial_current = self.solarcharge.get_charge_current(charger)
             if self._is_device_at_max_current(initial_current):
-                self._set_self_derated_state(False)
+                self._set_self_depower_state(False)
             else:
-                self._set_self_derated_state(True)
+                self._set_self_depower_state(True)
         else:
             initial_current = self.solarcharge.validate_current(CHARGER_INITIAL_CURRENT)
 

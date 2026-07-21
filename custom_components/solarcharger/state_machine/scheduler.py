@@ -396,7 +396,7 @@ class ChargeScheduler(ScOptionState):
         )
 
         goal.consumed_energy = self.get_consumed_energy_today()
-        goal.self_derated = self.get_self_derated_today()
+        goal.self_depower = self.get_self_depower_today()
         goal.end_on_condition = self.is_end_on_condition()
         if goal.end_on_condition:
             entity_id = self.get_string(self.exit_condition_sensor_selector_entity_id)

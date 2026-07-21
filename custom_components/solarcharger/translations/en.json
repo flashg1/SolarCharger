@@ -171,7 +171,7 @@
                     "starting": "Starting",
                     "initialising": "Initialising",
                     "charging": "Charging",
-                    "self-derated": "Self-derated",
+                    "self-depower": "Self-depower",
                     "paused": "Paused",
                     "ending": "Ending",
                     "ended": "Ended"
@@ -214,8 +214,8 @@
             "share_allocation": {
                 "name": "Share allocation"
             },
-            "self_derated_today": {
-                "name": "Self-derated today"
+            "self_depower_today": {
+                "name": "Self-depower today"
             },
             "pause_count": {
                 "name": "Pause count"

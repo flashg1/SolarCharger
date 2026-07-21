@@ -48,7 +48,7 @@ from .const import (
     SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
     SENSOR_PAUSE_COUNT,
     SENSOR_RUN_STATE,
-    SENSOR_SELF_DERATED_TODAY,
+    SENSOR_SELF_DEPOWER_TODAY,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SMA_NET_ALLOCATED_POWER,
     SENSOR_SYNC_UPDATE,
@@ -607,11 +607,11 @@ CONFIG_SENSOR_LIST: tuple[
         RESTORE_ON_START_FALSE,
     ),
     (
-        SENSOR_SELF_DERATED_TODAY,
+        SENSOR_SELF_DEPOWER_TODAY,
         SolarChargerSensorResetAtMidnightEntity,
         SolarChargerEntityType.TYPE_LOCAL,
         SensorEntityDescription(
-            key=SENSOR_SELF_DERATED_TODAY,
+            key=SENSOR_SELF_DEPOWER_TODAY,
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
         ),

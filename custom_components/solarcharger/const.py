@@ -93,8 +93,8 @@ class RunState(Enum):
     INITIALISING = "initialising"
 
     CHARGING = "charging"
-    # SELF_DERATED is a sub-state of CHARGING state.
-    SELF_DERATED = "self-derated"
+    # SELF_DEPOWER is a sub-state of CHARGING state.
+    SELF_DEPOWER = "self-depower"
 
     PAUSED = "paused"
     ABORTING = "aborting"
@@ -246,8 +246,10 @@ SENSOR_CONSUMED_POWER = "consumed_power"
 SENSOR_CONSUMED_ENERGY_TODAY = "consumed_energy_today"
 SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
 SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
-# Count the number of time device derated by itself today
-SENSOR_SELF_DERATED_TODAY = "self_derated_today"
+# Count the number of time device reduce power by itself today
+SENSOR_SELF_DEPOWER_TODAY = "self_depower_today"
+# Count the number of time device increase power by itself today
+# SENSOR_SELF_REPOWER_TODAY = "self_repower_today"
 # Pause count per session
 SENSOR_PAUSE_COUNT = "pause_count"
 # Pause avg duration per session
@@ -351,8 +353,7 @@ NUMBER_WAIT_CHARGER_ON = "wait_charger_on"  # 11 seconds
 NUMBER_WAIT_CHARGER_OFF = "wait_charger_off"  # 5 seconds
 
 # Time to wait after switching on charger and set initial current.  Default 1 second.
-# Tesla Fleet, Tessie and Teslemetry will wait 5 seconds.
-NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 or 5 seconds
+NUMBER_WAIT_CHARGER_AMP_CHANGE = "wait_charger_amp_change"  # 1 second
 
 # 0 minutes=disabled, suggest 15 minutes to capture allocated power and turn off if average is below min power.
 NUMBER_POWER_MONITOR_DURATION = "power_monitor_duration"  # 10 minutes
@@ -691,9 +692,10 @@ TESLA_ESPBLE_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_WAIT_CHARGEE_UPDATE_HA: 25,
 }
 
+# Tesla Fleet, Tessie and Teslemetry have no polling button.
 TESLA_FLEET_DEFAULT_VALUES: dict[str, Any] = {
     **TESLA_DEFAULT_VALUES,
-    NUMBER_WAIT_CHARGER_AMP_CHANGE: 5,
+    SWITCH_POLL_CHARGER_UPDATE: DEFAULT_ON,
 }
 TESSIE_DEFAULT_VALUES: dict[str, Any] = TESLA_FLEET_DEFAULT_VALUES
 TESLEMETRY_DEFAULT_VALUES: dict[str, Any] = TESLA_FLEET_DEFAULT_VALUES

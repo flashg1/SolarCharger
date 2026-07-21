@@ -3,8 +3,8 @@
 ## v0.9.0 2026-07-11
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
-- Renamed charge sub-state from "Self-paused" to "Self-derated".
-- Renamed counter "Self-paused today" to "Self-derated today" to support device that can vary current by itself.
+- Renamed charge sub-state from "Self-paused" to "Self-depower".
+- Renamed counter "Self-paused today" to "Self-depower today" to support device that can vary current by itself.
 - Replaced "Start on pause" switch with "Start state" selector.
 - Replaced "End on max consumed energy" switch with a more general "End on condition" switch.
 - Removed "Max consumed energy limit" number.
@@ -19,7 +19,8 @@
 - Added "[Start state](https://github.com/flashg1/SolarCharger/wiki/User-guide#start-state)" selector for Auto, Charge or Pause start states.
 - Added "[Exit condition sensor](https://github.com/flashg1/SolarCharger/wiki/User-guide#exit-condition-sensor)" selector and "End on condition" switch.
 ### Improvement
-- Changed "Wait current change" default from 1 sec to 5 sec for Tesla Fleet, Tessie and Teslemetry.
+- Enable polling by default for Tesla Fleet, Tessie and Teslemetry.
+- Added configurable "Wait current change" after switching on charger and set current. Default 1 second.
 - Support power allocation to device that can vary current by itself without SolarCharger intervention.
 - Always read current before setting new current in case device current is out of sync with SolarCharger.
 - Refactored select.py to pass in available options as a class parameter.

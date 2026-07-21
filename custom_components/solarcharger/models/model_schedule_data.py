@@ -62,7 +62,7 @@ class ScheduleData:
 
     # Energy management
     consumed_energy: float = 0
-    self_derated: int = 0
+    self_depower: int = 0
 
     # End session if exit condition evaluates to True.
     end_on_condition: bool = False
@@ -118,7 +118,7 @@ class ScheduleData:
             f"one_percent_charge_duration={self.one_percent_charge_duration}, battery_soc={self.battery_soc}, "
             f"end_on_condition={self.end_on_condition}, "
             f"exit_condition={self.exit_condition}, "
-            f"consumed_energy={self.consumed_energy}, self_derated={self.self_derated}, "
+            f"consumed_energy={self.consumed_energy}, self_depower={self.self_depower}, "
             f"old_charge_limit={self.old_charge_limit}, new_charge_limit={self.new_charge_limit}, "
             f"next_charge_limit={self.next_charge_limit}, "
             f"calibrate_max_charge_limit={self.calibrate_max_charge_limit}, "
