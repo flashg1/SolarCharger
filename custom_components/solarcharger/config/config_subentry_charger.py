@@ -239,6 +239,11 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     )
 
                 #######################################################
+                # thirdparty_charger.name is set by official Tesla mobile app.  Need reboot
+                # HA for name change to take effect.
+                # thirdparty_charger.name_by_user is set by HA.  Original value=None.  Can be
+                # set to any string including blank by HA.
+                #
                 # If thirdparty_charger.name_by_user is the first choice, user will also need
                 # to apply the name change to the device's entity IDs in order for SC to work.
                 # This is an issue for the following reasons,
@@ -255,6 +260,9 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # - Other custom integrations might not allow renaming of their entities even
                 # though their device name can be renamed, eg. OCPP. (Tested "Tesla Custom"
                 # integration do allow renaming of entities.)
+                # - The name once set in the official Tesla mobile app cannot be "unnamed".
+                # The name can be changed in the app, but cannot be deleted to put it back to
+                # its original empty state.
                 #
                 # HA device display name is `name` or `name_by_user`.
                 # Prefer the integration's default `name` over `name_by_user`
