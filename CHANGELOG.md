@@ -19,7 +19,7 @@
 - Added "[Start state](https://github.com/flashg1/SolarCharger/wiki/User-guide#start-state)" selector for Auto, Charge or Pause start states.
 - Added "[Exit condition sensor](https://github.com/flashg1/SolarCharger/wiki/User-guide#exit-condition-sensor)" selector and "End on condition" switch.
 ### Improvement
-- Enable polling by default for Tesla Fleet, Tessie and Teslemetry.
+- Enabled polling by default for Tesla Fleet, Tessie and Teslemetry.
 - Added configurable "Wait current change" after switching on charger and set current. Default 1 second.
 - Support power allocation to device that can vary current by itself without SolarCharger intervention.
 - Always read current before setting new current in case device current is out of sync with SolarCharger.
