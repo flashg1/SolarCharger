@@ -241,8 +241,8 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 #######################################################
                 # thirdparty_charger.name is set by official Tesla mobile app.  Need reboot
                 # HA for name change to take effect.
-                # thirdparty_charger.name_by_user is set by HA.  Original value=None.  Can be
-                # set to any string including blank by HA.
+                # thirdparty_charger.name_by_user is set in HA.  Original value=None.  Can be
+                # set to any string including blank in HA.
                 #
                 # If thirdparty_charger.name_by_user is the first choice, user will also need
                 # to apply the name change to the device's entity IDs in order for SC to work.
