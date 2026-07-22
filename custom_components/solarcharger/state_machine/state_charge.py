@@ -200,7 +200,7 @@ class StateCharge(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     def _subscribe_sync_update(self) -> None:
-        """Subscribe for sync update."""
+        """Subscribe for charge current synchronise update signal."""
 
         self.solarcharge.tracker.track_sync_update(self._async_handle_sync_update)
 
@@ -563,19 +563,18 @@ class StateCharge(SolarChargeState):
                 self._set_self_depower_state(True)
         else:
             initial_current = self.solarcharge.validate_current(CHARGER_INITIAL_CURRENT)
-
-        # Time to wait after switching on charger and set initial current.  Default 1 second.
-        # Tesla Fleet, Tessie and Teslemetry will wait 5 seconds because they do not
-        # have poll for update button and SWITCH_POLL_CHARGER_UPDATE is off by default
-        # and hence no wait HA update time.  If switching on charger with fast charge
-        # mode on, the current can change immediately from 6A to max current which
-        # the API might not be able to handle.  So wait 5 seconds here after changing
-        # current to 6A.
         await self.solarcharge.async_set_charge_current(charger, initial_current)
-        await self.solarcharge.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
+        # Time to wait after switching on charger and set initial current.
+        # Tesla Fleet, Tessie and Teslemetry do not have poll for update button and hence
+        # SWITCH_POLL_CHARGER_UPDATE is on by default, which will invoke wait HA update time.
+        # If switching on charger with fast charge mode on, changing current immediately from
+        # 6A to max current can cause API throttling.  So wait between current change is
+        # required.
+        await self.solarcharge.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
         await self.solarcharge.async_update_ha(chargeable)
 
+        # Subscribe for charge current synchronise update signal.
         self._subscribe_sync_update()
 
         self._log_charging_status(charger, "Charger ON")
