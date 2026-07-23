@@ -574,6 +574,11 @@ class StateCharge(SolarChargeState):
         await self.solarcharge.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
         await self.solarcharge.async_update_ha(chargeable)
 
+        # Step up to max current after switching on charger in case there is no net power update.
+        if self.solarcharge.can_set_current and self.solarcharge.is_max_speed_charge():
+            max_current = self.get_charger_max_current()
+            await self.solarcharge.async_set_charge_current(charger, max_current)
+
         # Subscribe for charge current synchronise update signal.
         self._subscribe_sync_update()
 
