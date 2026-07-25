@@ -6,6 +6,7 @@
 ### Fix
 ### New feature
 ### Improvement
+- Changing weather provider will unsubscribe previous provider before subscribing to new provider.
 - Step up to max current after switching on charger in case there is no net power update.
 
 ## v0.9.0 2026-07-11

@@ -153,8 +153,9 @@ class Tracker(ScOptionState):
         ok: bool = True
 
         if entity_ids:
+            # HA_SUN_ENTITY is not a true entity, so don't check it.
             if check_entity:
-                # Check entity ID does exist in system
+                # Check entity ID does exist in system.
                 if isinstance(entity_ids, str):
                     entity_entry = self.get_entity_entry(entity_ids)
                     if not entity_entry:
@@ -170,6 +171,9 @@ class Tracker(ScOptionState):
                 _LOGGER.info(
                     "%s: %s: Track entity: %s", self.caller, callback_id, entity_ids
                 )
+                # Always remove old callback if exist before re-subscribing.
+                self.remove_callback(callback_id)
+
                 subscription = async_track_state_change_event(
                     self._hass, entity_ids, action
                 )
