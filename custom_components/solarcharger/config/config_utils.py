@@ -250,7 +250,7 @@ def choose_selector(
 # ----------------------------------------------------------------------------
 # Config storage utils
 # ----------------------------------------------------------------------------
-def _get_storage_key(config_name: str) -> str:
+def _ha_store_get_key(config_name: str) -> str:
     """Get config storage key."""
 
     name = slugify(config_name.strip())
@@ -258,15 +258,30 @@ def _get_storage_key(config_name: str) -> str:
 
 
 # ----------------------------------------------------------------------------
-def open_ha_store(hass: HomeAssistant, config_name: str) -> Store:
+def ha_store_open(hass: HomeAssistant, config_name: str) -> Store:
     """Open device settings file storage."""
 
-    storage_key = _get_storage_key(config_name)
+    storage_key = _ha_store_get_key(config_name)
     return Store(hass, STORAGE_VERSION, storage_key)
 
 
 # ----------------------------------------------------------------------------
-async def save_ha_store(store: Store, data: dict[str, Any]) -> None:
+def _ha_store_migrate_config(data: dict[str, Any]) -> None:
+    """Migrate and delete old config settings."""
+
+
+# ----------------------------------------------------------------------------
+async def async_ha_store_load(store: Store) -> dict[str, Any]:
+    """Open device settings file storage."""
+
+    data = await store.async_load()
+    _ha_store_migrate_config(data)
+
+    return data
+
+
+# ----------------------------------------------------------------------------
+async def async_ha_store_save(store: Store, data: dict[str, Any]) -> None:
     """Save device settings to file storage."""
 
     # sorted_by_key = {k: v for k, v in sorted(data.items())}

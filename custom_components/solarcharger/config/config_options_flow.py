@@ -106,13 +106,13 @@ from .config_utils import (
     TEXT_SELECTOR,
     TEXT_SELECTOR_READ_ONLY,
     TIME_ENTITY_SELECTOR,
+    async_ha_store_save,
     choose_selector,
     get_device_api_entities,
     get_saved_option_value,
     get_subentry_id,
-    open_ha_store,
+    ha_store_open,
     process_api_config,
-    save_ha_store,
 )
 
 # if TYPE_CHECKING:
@@ -645,8 +645,8 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                     device_options.update(input_data)
 
                     # Save device settings to file storage.
-                    store = open_ha_store(self.hass, config_name)
-                    await save_ha_store(store, device_options)
+                    store = ha_store_open(self.hass, config_name)
+                    await async_ha_store_save(store, device_options)
 
                     return self.async_create_entry(data=options_config)
 

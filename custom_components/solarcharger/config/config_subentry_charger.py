@@ -56,7 +56,12 @@ from ..const import (
 from ..exceptions.validation_exception import ValidationExceptionError
 from ..helpers.utils import compose_subdomain
 from .config_options_flow import process_api_config
-from .config_utils import get_subentry_id, open_ha_store, save_ha_store
+from .config_utils import (
+    async_ha_store_load,
+    async_ha_store_save,
+    get_subentry_id,
+    ha_store_open,
+)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -162,15 +167,15 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         }
 
         # Look for historical config left behind by a previous installation
-        store = open_ha_store(self.hass, subentry_unique_id)
-        store_config = await store.async_load()
+        store = ha_store_open(self.hass, subentry_unique_id)
+        store_config = await async_ha_store_load(store)
         if store_config is not None:
             data.update(store_config)
 
         process_api_config(config_entry, subentry_unique_id, data, is_init_all=True)
 
         # Save device settings to file storage.
-        await save_ha_store(store, data)
+        await async_ha_store_save(store, data)
 
         # Use | (union) to replace or add key:data pair.
         self.hass.config_entries.async_update_entry(
