@@ -6,7 +6,7 @@
 ### Fix
 ### New feature
 ### Improvement
-- Save config settings to file for faster reload in case of delete/re-add integration.
+- Save config settings to file for faster configuration in case of delete/re-add integration.
 - Changing weather provider will unsubscribe previous provider before subscribing to new provider.
 - Step up to max current after switching on charger in case there is no net power update.
 

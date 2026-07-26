@@ -8,18 +8,16 @@ from typing import Any, cast
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.storage import Store
 
 from .chargers import Charger, charger_factory
 from .chargers.chargeable import Chargeable
-from .config.config_utils import get_storage_key, get_subentry
+from .config.config_utils import get_subentry, open_ha_store, save_ha_store
 from .const import (
     DOMAIN,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_GLOBAL_DEFAULTS_NAME,
     PLATFORMS,
-    STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -73,14 +71,13 @@ async def async_create_global_defaults_subentry(
         data: dict[str, Any] = OPTION_GLOBAL_DEFAULT_ENTITIES
 
         # Look for historical config left behind by a previous installation
-        storage_key = get_storage_key(OPTION_GLOBAL_DEFAULTS_ID)
-        store = Store(hass, STORAGE_VERSION, storage_key)
+        store = open_ha_store(hass, OPTION_GLOBAL_DEFAULTS_ID)
         store_config = await store.async_load()
         if store_config is not None:
             data.update(store_config)
 
         # Save device settings to file storage.
-        await store.async_save(data)
+        await save_ha_store(store, data)
 
         hass.config_entries.async_update_entry(
             config_entry,

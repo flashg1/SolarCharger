@@ -17,7 +17,6 @@ from homeassistant.config_entries import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
-from homeassistant.helpers.storage import Store
 from homeassistant.util import slugify
 
 from ..const import (
@@ -29,7 +28,6 @@ from ..const import (
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR,
     SENSOR_DELTA_ALLOCATED_POWER,
-    STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -40,7 +38,7 @@ from ..entity import compose_entity_id
 from ..exceptions.validation_exception import ValidationExceptionError
 from ..helpers.utils import compose_subdomain
 from .config_options_flow import process_api_config
-from .config_utils import TEXT_SELECTOR, get_storage_key, get_subentry_id
+from .config_utils import TEXT_SELECTOR, get_subentry_id, open_ha_store, save_ha_store
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -99,8 +97,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
         }
 
         # Look for historical config left behind by a previous installation
-        storage_key = get_storage_key(subentry_unique_id)
-        store = Store(self.hass, STORAGE_VERSION, storage_key)
+        store = open_ha_store(self.hass, subentry_unique_id)
         store_config = await store.async_load()
         if store_config is not None:
             data.update(store_config)
@@ -108,7 +105,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
         process_api_config(config_entry, subentry_unique_id, data, is_init_all=True)
 
         # Save device settings to file storage.
-        await store.async_save(data)
+        await save_ha_store(store, data)
 
         self.hass.config_entries.async_update_entry(
             config_entry,

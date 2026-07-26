@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.selector import (
     BooleanSelector,
     EntitySelector,
@@ -22,6 +23,7 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
+from homeassistant.helpers.storage import Store
 from homeassistant.util import slugify
 
 from ..const import (
@@ -37,6 +39,7 @@ from ..const import (
     NON_ENTITY_CONFIGS,
     OPTION_CHARGER_NAME,
     OPTION_GLOBAL_DEFAULTS_ID,
+    STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
 )
@@ -245,11 +248,28 @@ def choose_selector(
 
 
 # ----------------------------------------------------------------------------
-def get_storage_key(config_name: str) -> str:
+def _get_storage_key(config_name: str) -> str:
     """Get config storage key."""
 
     name = slugify(config_name.strip())
-    return f"{DOMAIN}.{name}.json"
+    return f"{DOMAIN}.{name}.config"
+
+
+# ----------------------------------------------------------------------------
+def open_ha_store(hass: HomeAssistant, config_name: str) -> Store:
+    """Open device settings file storage."""
+
+    storage_key = _get_storage_key(config_name)
+    return Store(hass, STORAGE_VERSION, storage_key)
+
+
+# ----------------------------------------------------------------------------
+async def save_ha_store(store: Store, data: dict[str, Any]) -> None:
+    """Save device settings to file storage."""
+
+    # sorted_by_key = {k: v for k, v in sorted(data.items())}
+    sorted_by_key = dict(sorted(data.items()))
+    await store.async_save(sorted_by_key)
 
 
 # ----------------------------------------------------------------------------

@@ -27,7 +27,6 @@ from homeassistant.helpers.selector import (
     #    EntitySelectorConfig,
     #    NumberSelector,
 )
-from homeassistant.helpers.storage import Store
 from homeassistant.util import slugify
 
 from ..const import (
@@ -47,7 +46,6 @@ from ..const import (
     MQTT_TESLA_BLE_MANUFACTURER,
     MQTT_TESLA_BLE_MODEL,
     OPTION_CHARGER_NAME,
-    STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -58,7 +56,7 @@ from ..const import (
 from ..exceptions.validation_exception import ValidationExceptionError
 from ..helpers.utils import compose_subdomain
 from .config_options_flow import process_api_config
-from .config_utils import get_storage_key, get_subentry_id
+from .config_utils import get_subentry_id, open_ha_store, save_ha_store
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -164,8 +162,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         }
 
         # Look for historical config left behind by a previous installation
-        storage_key = get_storage_key(subentry_unique_id)
-        store = Store(self.hass, STORAGE_VERSION, storage_key)
+        store = open_ha_store(self.hass, subentry_unique_id)
         store_config = await store.async_load()
         if store_config is not None:
             data.update(store_config)
@@ -173,7 +170,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         process_api_config(config_entry, subentry_unique_id, data, is_init_all=True)
 
         # Save device settings to file storage.
-        await store.async_save(data)
+        await save_ha_store(store, data)
 
         # Use | (union) to replace or add key:data pair.
         self.hass.config_entries.async_update_entry(
