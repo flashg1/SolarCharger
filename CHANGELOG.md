@@ -5,8 +5,8 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.8.3 or prior.
 ### Fix
 ### New feature
+- Save configs to HA config/.storage directory in order to reload config after delete/re-add integration. If upgrading from v0.9.0 with customised configs in SC settings (cog wheel), please submit the configs to trigger the save once you have completed the upgrade to v0.9.1.
 ### Improvement
-- Save config settings to file for faster configuration in case of delete/re-add integration.
 - Changing weather provider will unsubscribe previous provider before subscribing to new provider.
 - Step up to max current after switching on charger in case there is no net power update.
 
