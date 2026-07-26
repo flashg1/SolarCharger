@@ -248,6 +248,8 @@ def choose_selector(
 
 
 # ----------------------------------------------------------------------------
+# Config storage utils
+# ----------------------------------------------------------------------------
 def _get_storage_key(config_name: str) -> str:
     """Get config storage key."""
 
