@@ -27,6 +27,7 @@ from homeassistant.helpers.selector import (
     #    EntitySelectorConfig,
     #    NumberSelector,
 )
+from homeassistant.helpers.storage import Store
 from homeassistant.util import slugify
 
 from ..const import (
@@ -46,6 +47,7 @@ from ..const import (
     MQTT_TESLA_BLE_MANUFACTURER,
     MQTT_TESLA_BLE_MODEL,
     OPTION_CHARGER_NAME,
+    STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -56,7 +58,7 @@ from ..const import (
 from ..exceptions.validation_exception import ValidationExceptionError
 from ..helpers.utils import compose_subdomain
 from .config_options_flow import process_api_config
-from .config_utils import get_subentry_id
+from .config_utils import get_storage_key, get_subentry_id
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -134,7 +136,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
     #     self.cf_data = data or {}
 
     # ----------------------------------------------------------------------------
-    def setup_options(
+    async def _async_setup_options(
         self, config_entry: ConfigEntry, subentry_unique_id: str, device_name: str
     ) -> None:
         """Set up default options for the new subentry."""
@@ -160,7 +162,18 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         data: dict[str, Any] = {
             OPTION_CHARGER_NAME: device_name,
         }
+
+        # Look for historical config left behind by a previous installation
+        storage_key = get_storage_key(subentry_unique_id)
+        store = Store(self.hass, STORAGE_VERSION, storage_key)
+        store_config = await store.async_load()
+        if store_config is not None:
+            data.update(store_config)
+
         process_api_config(config_entry, subentry_unique_id, data, is_init_all=True)
+
+        # Save device settings to file storage.
+        await store.async_save(data)
 
         # Use | (union) to replace or add key:data pair.
         self.hass.config_entries.async_update_entry(
@@ -332,7 +345,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     ),
                 )
 
-                self.setup_options(
+                await self._async_setup_options(
                     config_entry,
                     thirdparty_config_name,
                     slugify(thirdparty_charger_name),

@@ -17,6 +17,7 @@ from homeassistant.config_entries import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
+from homeassistant.helpers.storage import Store
 from homeassistant.util import slugify
 
 from ..const import (
@@ -28,6 +29,7 @@ from ..const import (
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR,
     SENSOR_DELTA_ALLOCATED_POWER,
+    STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -38,7 +40,7 @@ from ..entity import compose_entity_id
 from ..exceptions.validation_exception import ValidationExceptionError
 from ..helpers.utils import compose_subdomain
 from .config_options_flow import process_api_config
-from .config_utils import TEXT_SELECTOR, get_subentry_id
+from .config_utils import TEXT_SELECTOR, get_storage_key, get_subentry_id
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -82,7 +84,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
     """Handles subentry flow for creating charger."""
 
     # ----------------------------------------------------------------------------
-    def setup_options(
+    async def _async_setup_options(
         self, config_entry: ConfigEntry, subentry_unique_id: str, device_name: str
     ) -> None:
         """Set up default options for the new subentry."""
@@ -95,7 +97,18 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
         data: dict[str, Any] = {
             OPTION_CHARGER_NAME: device_name,
         }
+
+        # Look for historical config left behind by a previous installation
+        storage_key = get_storage_key(subentry_unique_id)
+        store = Store(self.hass, STORAGE_VERSION, storage_key)
+        store_config = await store.async_load()
+        if store_config is not None:
+            data.update(store_config)
+
         process_api_config(config_entry, subentry_unique_id, data, is_init_all=True)
+
+        # Save device settings to file storage.
+        await store.async_save(data)
 
         self.hass.config_entries.async_update_entry(
             config_entry,
@@ -198,7 +211,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                     ),
                 )
 
-                self.setup_options(
+                await self._async_setup_options(
                     config_entry,
                     custom_charger_config_name,
                     slugify(custom_charger_name),

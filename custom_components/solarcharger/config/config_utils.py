@@ -245,6 +245,14 @@ def choose_selector(
 
 
 # ----------------------------------------------------------------------------
+def get_storage_key(config_name: str) -> str:
+    """Get config storage key."""
+
+    name = slugify(config_name.strip())
+    return f"{DOMAIN}.{name}.json"
+
+
+# ----------------------------------------------------------------------------
 # Subentry options utils
 # ----------------------------------------------------------------------------
 def get_device_domain(subentry: ConfigSubentry) -> str | None:

@@ -17,6 +17,7 @@ from homeassistant.config_entries import (
 
 # from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
+from homeassistant.helpers.storage import Store
 
 from ..const import (
     DOMAIN,
@@ -80,6 +81,7 @@ from ..const import (
     OPTION_NAME,
     OPTION_SELECT_SETTINGS,
     SENSOR_DELTA_ALLOCATED_POWER,
+    STORAGE_VERSION,
     SUBENTRY_CHARGER_TYPES,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     TIME_CHARGE_ENDTIME_FRIDAY,
@@ -109,6 +111,7 @@ from .config_utils import (
     choose_selector,
     get_device_api_entities,
     get_saved_option_value,
+    get_storage_key,
     get_subentry_id,
     process_api_config,
 )
@@ -641,6 +644,11 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                         options_config[config_name] = device_options
 
                     device_options.update(input_data)
+
+                    # Save device settings to file storage.
+                    storage_key = get_storage_key(config_name)
+                    store = Store(self.hass, STORAGE_VERSION, storage_key)
+                    await store.async_save(device_options)
 
                     return self.async_create_entry(data=options_config)
 
