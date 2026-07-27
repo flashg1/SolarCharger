@@ -16,17 +16,27 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import __version__ as ha_version
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity_registry import RegistryEntry
 
 from .config.config_options_flow import ConfigOptionsFlowHandler
 from .config.config_subentry_charger import AddChargerSubEntryFlowHandler
 from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
-from .config.config_utils import POWER_ENTITY_SELECTOR, WAIT_TIME_SELECTOR
+from .config.config_utils import (
+    POWER_ENTITY_SELECTOR,
+    WAIT_TIME_SELECTOR,
+    async_ha_store_load,
+    async_ha_store_save,
+    ha_store_open,
+)
 from .const import (
     CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
     CONFIG_NET_POWER_SENSOR,
+    CONFIG_SOURCE_NAME,
     DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD,
     DOMAIN,
     ERROR_CURRENT_UPDATE_PERIOD,
+    ERROR_NET_POWER_SENSOR,
     MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD,
     NAME,
     SUBENTRY_TYPE_CHARGER,
@@ -101,18 +111,35 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         }
 
     # ----------------------------------------------------------------------------
+    def _get_entity_entry(self, entity_id: str) -> RegistryEntry | None:
+        """Get entity entry from entity registry."""
+
+        entity_registry = er.async_get(self.hass)
+        return entity_registry.async_get(entity_id)
+
+    # ----------------------------------------------------------------------------
     def _validate_user_config(
         self, data: dict[str, Any], errors: dict[str, str]
     ) -> dict[str, Any]:
         """Validate the user input for the power collection step."""
 
-        current_update_period: float = data[CONFIG_CHARGER_CURRENT_UPDATE_PERIOD]
+        net_power_sensor: str = data.get(CONFIG_NET_POWER_SENSOR)
+        if not self._get_entity_entry(net_power_sensor):
+            errors[CONFIG_NET_POWER_SENSOR] = ERROR_NET_POWER_SENSOR
 
+        current_update_period: float = data[CONFIG_CHARGER_CURRENT_UPDATE_PERIOD]
         if current_update_period < MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD:
             errors[CONFIG_CHARGER_CURRENT_UPDATE_PERIOD] = ERROR_CURRENT_UPDATE_PERIOD
 
         # Return info that you want to store in the config entry.
         return data
+
+    # ----------------------------------------------------------------------------
+    async def _async_save_config(self, config_data: dict[str, Any]) -> None:
+        """Save source config to file storage."""
+
+        store = ha_store_open(self.hass, CONFIG_SOURCE_NAME)
+        await async_ha_store_save(store, config_data)
 
     # ----------------------------------------------------------------------------
     async def async_step_user(
@@ -128,6 +155,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 # Reconfigure step: reconfigure entry.
                 if self.source == SOURCE_RECONFIGURE:
                     self._abort_if_unique_id_mismatch()
+                    await self._async_save_config(config_data)
 
                     # https://developers.home-assistant.io/blog/2026/05/07/config-entry-listener-together-with-reloading-methods/
                     # Using a config entry listener together with any reloading methods in a config
@@ -138,6 +166,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     )
 
                 # Initial user step: create entry.
+                await self._async_save_config(config_data)
                 return self.async_create_entry(title=NAME, data=config_data)
 
         # The following is not required since single_config_entry is set in manifest.json.
@@ -168,6 +197,15 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             # Starting initial user step, user_input is None.
             net_power_sensor: str | None = None
             current_update_period: float = DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD
+
+            # Look for historical config left behind by a previous installation.
+            store = ha_store_open(self.hass, CONFIG_SOURCE_NAME)
+            store_config = await async_ha_store_load(store)
+            if store_config is not None:
+                net_power_sensor = store_config.get(CONFIG_NET_POWER_SENSOR)
+                current_update_period = store_config.get(
+                    CONFIG_CHARGER_CURRENT_UPDATE_PERIOD
+                )
 
         # Create schema with default values.
         step_user_schema = vol.Schema(

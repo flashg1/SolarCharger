@@ -218,6 +218,7 @@ DEVICE_MODEL_MAP: dict[str, str] = {
 #######################################################
 # Error codes
 #######################################################
+ERROR_NET_POWER_SENSOR = "invalid_net_power_sensor"
 ERROR_CURRENT_UPDATE_PERIOD = "invalid_current_update_period"
 ERROR_EMPTY_CHARGER_LIST = "empty_charger_device_list"
 ERROR_SELECT_CHARGER = "select_charger_error"
@@ -313,6 +314,7 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 #####################################
 # Power import/export sensor
 #####################################
+CONFIG_SOURCE_NAME = "Source"
 CONFIG_NET_POWER_SENSOR = "net_power_sensor"
 
 CONFIG_CHARGER_CURRENT_UPDATE_PERIOD = "charger_current_update_period"

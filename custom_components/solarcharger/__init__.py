@@ -75,7 +75,7 @@ async def async_create_global_defaults_subentry(
 
         data: dict[str, Any] = OPTION_GLOBAL_DEFAULT_ENTITIES
 
-        # Look for historical config left behind by a previous installation
+        # Look for historical config left behind by a previous installation.
         store = ha_store_open(hass, OPTION_GLOBAL_DEFAULTS_ID)
         store_config = await async_ha_store_load(store)
         if store_config is not None:

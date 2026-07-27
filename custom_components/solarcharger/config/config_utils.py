@@ -254,7 +254,7 @@ def _ha_store_get_key(config_name: str) -> str:
     """Get config storage key."""
 
     name = slugify(config_name.strip())
-    return f"{DOMAIN}.{name}.config"
+    return f"{DOMAIN}.{name}"
 
 
 # ----------------------------------------------------------------------------

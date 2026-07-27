@@ -102,7 +102,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
             OPTION_CHARGER_NAME: device_name,
         }
 
-        # Look for historical config left behind by a previous installation
+        # Look for historical config left behind by a previous installation.
         store = ha_store_open(self.hass, subentry_unique_id)
         store_config = await async_ha_store_load(store)
         if store_config is not None:

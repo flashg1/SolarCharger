@@ -2,6 +2,7 @@
     "title": "SolarCharger",
     "config": {
         "error": {
+            "invalid_net_power_sensor": "Invalid net power sensor entity.",
             "invalid_current_update_period": "The charger current update period must not be less than 5 seconds."
         },
         "step": {
