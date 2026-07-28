@@ -147,7 +147,7 @@ CONFIG_DATETIME_LIST: tuple[
     tuple[str, SolarChargerEntityType, DateTimeEntityDescription], ...
 ] = (
     #####################################
-    # Control entities
+    # Local non-overridable entities
     # Must haves, ie. not hidden for all
     # entity_category=None
     #####################################

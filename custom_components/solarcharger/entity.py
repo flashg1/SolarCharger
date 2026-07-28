@@ -61,7 +61,7 @@ class SolarChargerEntityType(Enum):
     #####################################
     # For all devices
     TYPE_LOCAL = "local_default"
-    TYPE_LOCALHIDDEN = "local_hidden"
+    TYPE_LOCALHIDDEN = "local_hidden"  # Only hidden if replaced by device entity
 
     # For specify device
     # Only the following can be placed in a list when defining entities. All others must be single entity type.

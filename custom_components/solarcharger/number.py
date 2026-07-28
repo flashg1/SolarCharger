@@ -16,7 +16,7 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
-    UnitOfEnergy,
+    # UnitOfEnergy,
     UnitOfTime,
 )
 from homeassistant.helpers.entity import EntityCategory
@@ -44,6 +44,7 @@ from .const import (
     NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
     NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
@@ -182,6 +183,22 @@ CONFIG_NUMBER_LIST: tuple[
     ],
     ...,
 ] = (
+    #####################################
+    # Local non-overridable entities
+    # Must haves, ie. not hidden for all
+    # entity_category=EntityCategory.CONFIG
+    #####################################
+    (
+        NUMBER_CHARGER_POWER_FACTOR,
+        SolarChargerEntityType.TYPE_LOCAL,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_POWER_FACTOR,
+            entity_category=EntityCategory.CONFIG,
+            native_min_value=0.0,
+            native_max_value=1.0,
+            native_step=0.01,
+        ),
+    ),
     #####################################
     # Global defaults or local device entities
     # Hidden if not device entities, except for global defaults.

@@ -5,6 +5,7 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.8.3 or prior.
 ### Fix
 ### New feature
+- Added "Power factor" entity for reactive and non-linear loads.
 - Save configs to HA config/.storage directory in order to reload config after delete/re-add integration. If upgrading from v0.9.0 with customised configs in SC settings (cog wheel), please submit again to trigger the save once you have completed the upgrade to v0.9.1.
 ### Improvement
 - Changing weather provider will unsubscribe previous provider before subscribing to new provider.

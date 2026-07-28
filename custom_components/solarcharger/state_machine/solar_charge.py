@@ -21,6 +21,7 @@ from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
 from ..const import (
+    CURRENT_VARIATION_PERCENTAGE,
     DOMAIN,
     ENTITY_CHARGEE_LOCATION_SENSOR,
     ENTITY_CHARGEE_SOC_SENSOR,
@@ -545,6 +546,23 @@ class SolarCharge(ScOptionState):
         return current
 
     # ----------------------------------------------------------------------------
+    def get_allowed_current_variation(self) -> float:
+        """Get allowed current variation for device that do not support setting current."""
+
+        max_current = self.get_charger_max_current()
+        return max_current * CURRENT_VARIATION_PERCENTAGE / 100
+
+    # ----------------------------------------------------------------------------
+    def get_allowed_power_variation(self) -> float:
+        """Get allowed power variation for device that do not support setting current."""
+
+        effective_voltage = self.get_charger_effective_voltage()
+        power_factor = self.get_charger_power_factor()
+        max_current = self.get_charger_max_current()
+        max_real_power = max_current * effective_voltage * power_factor
+        return max_real_power * CURRENT_VARIATION_PERCENTAGE / 100
+
+    # ----------------------------------------------------------------------------
     def get_charger_min_current(
         self, max_current: float | None = None, direct: bool = False
     ) -> float:
@@ -560,18 +578,22 @@ class SolarCharge(ScOptionState):
         return self.validate_current(config_min_current, max_current)
 
     # ----------------------------------------------------------------------------
+    def get_charger_power_factor(self) -> float:
+        """Get charger power factor."""
+
+        return self.get_number_or_abort(self.charger_power_factor_entity_id)
+
+    # ----------------------------------------------------------------------------
     def get_charger_effective_voltage(self) -> float:
         """Get charger effective voltage."""
 
-        charger_effective_voltage = self.option_get_entity_number_or_abort(
+        effective_voltage = self.option_get_entity_number_or_abort(
             NUMBER_CHARGER_EFFECTIVE_VOLTAGE
         )
-        if charger_effective_voltage <= 0:
-            raise ValueError(
-                f"Invalid charger effective voltage {charger_effective_voltage}"
-            )
+        if effective_voltage <= 0:
+            raise ValueError(f"Invalid charger effective voltage {effective_voltage}")
 
-        return charger_effective_voltage
+        return effective_voltage
 
     # ----------------------------------------------------------------------------
     def get_charge_current(
@@ -666,7 +688,8 @@ class SolarCharge(ScOptionState):
             # Set energy consumed since last current update
             #####################################
             effective_voltage = self.get_charger_effective_voltage()
-            old_consumed_power = old_charge_current * effective_voltage
+            power_factor = self.get_charger_power_factor()
+            old_consumed_power = old_charge_current * effective_voltage * power_factor
             if old_consumed_power > 0 and old_charge_current_duration != timedelta.min:
                 # Energy in kWh = Power in kW * time in hours
                 consumed_energy_last_period = (old_consumed_power / 1000) * (
@@ -679,7 +702,9 @@ class SolarCharge(ScOptionState):
             #####################################
             # Set consumed power
             #####################################
-            self.set_consumed_power(new_charge_current * effective_voltage)
+            self.set_consumed_power(
+                new_charge_current * effective_voltage * power_factor
+            )
 
             # Do not hold up callback
             # if self.can_set_current:
@@ -908,11 +933,12 @@ class SolarCharge(ScOptionState):
     def get_adjusted_activation_power(self, run_state: RunState) -> tuple[float, float]:
         """Get adjusted activation power based on min workable current."""
 
-        charger_min_workable_current = self.get_charger_min_workable_current()
-        charger_effective_voltage = self.get_charger_effective_voltage()
+        min_workable_current = self.get_charger_min_workable_current()
+        effective_voltage = self.get_charger_effective_voltage()
+        power_factor = self.get_charger_power_factor()
 
         # Note surplus power is negative.
-        activation_power = charger_min_workable_current * charger_effective_voltage * -1
+        activation_power = min_workable_current * effective_voltage * power_factor * -1
 
         #######################################################
         # Raise the bar by extra percentage to avoid borderline cases where the charger might keep switching on and off.

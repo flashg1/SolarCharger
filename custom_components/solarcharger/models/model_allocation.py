@@ -45,6 +45,8 @@ class PowerAllocation:
     self_depower: bool = False
     # Charger effective voltage.
     voltage: float = 0.0
+    # Charger power factor
+    power_factor: float = 1.0
     # Power currently consumed by the charger.
     consumed_power: float = 0.0
 
@@ -81,6 +83,7 @@ class PowerAllocation:
             f"max_speed_charge={self.max_speed_charge}, "
             f"self_depower={self.self_depower}, "
             f"voltage={self.voltage}, "
+            f"power_factor={self.power_factor}, "
             f"consumed_power={self.consumed_power}, "
             f"need_power={self.need_power}, "
             f"lack_power={self.lack_power}, "

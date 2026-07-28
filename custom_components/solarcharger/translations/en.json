@@ -297,6 +297,9 @@
             "charger_effective_voltage": {
                 "name": "Effective voltage"
             },
+            "charger_power_factor":{
+                "name": "Power factor"
+            },
             "charger_max_current": {
                 "name": "Max current"
             },

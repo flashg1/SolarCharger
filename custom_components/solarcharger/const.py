@@ -136,6 +136,11 @@ MAX_CONSECUTIVE_FAILURE_COUNT = 10
 SELECT_NONE = "None"
 CHARGER_INITIAL_CURRENT = 6.0
 
+# Allow 5% variation off max current.
+# Hot water max current can vary between 14.617A and 14.996A.
+# ie. 14.996 - 14.617 = 0.379, 0.379 / 14.996 = 0.0253, ie. 2.53%
+CURRENT_VARIATION_PERCENTAGE = 5
+
 #######################################################
 # Subentry constants
 #######################################################
@@ -328,6 +333,7 @@ OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 # Charger general configs
 #####################################
 NUMBER_CHARGER_EFFECTIVE_VOLTAGE = "charger_effective_voltage"  # No defaults
+NUMBER_CHARGER_POWER_FACTOR = "charger_power_factor"  # 1
 NUMBER_CHARGER_MAX_SPEED = "charger_max_speed"  # 6.1448 %/hr
 NUMBER_CHARGER_MIN_CURRENT = "charger_min_current"  # 1 Amps
 NUMBER_CHARGER_MIN_WORKABLE_CURRENT = "charger_min_workable_current"  # 1 Amps
@@ -490,7 +496,7 @@ DEFAULT_CHARGE_LIMIT_MAP: dict[str, str] = {
 #######################################################
 # Lists for debug logging of entity configuration
 #######################################################
-# Config for entity IDs.
+# Entity IDs that are saved in options config.
 CONFIG_ENTITY_ID_LIST: list[str] = [
     #####################################
     # Charger general configs
@@ -630,6 +636,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Local device required defaults
     #####################################
+    NUMBER_CHARGER_POWER_FACTOR: 1.0,
     NUMBER_CHARGER_MAX_SPEED: 6.1448,
     NUMBER_CHARGER_MIN_CURRENT: 0,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT: 5,
@@ -793,7 +800,7 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
 
 #####################################
 # Internal non-configurable entities
-# Link between config_time and entity name.
+# Link between config_name and entity name for debug listing.
 #####################################
 # Non-configurable entities: Local device internal control entities.
 # No point in listing sensors since they have no config to show.
@@ -808,6 +815,7 @@ OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
     #####################################
     # Pause sensors
     # Allocation sensors
+    NUMBER_CHARGER_POWER_FACTOR: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_FACTOR}",
     SWITCH_CHARGE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_CHARGE}",
     SWITCH_FAST_CHARGE_MODE: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_FAST_CHARGE_MODE}",
     DATETIME_NEXT_CHARGE_TIME: f"{DATETIME}.{DOMAIN}_{CONFIG_NAME_MARKER}_{DATETIME_NEXT_CHARGE_TIME}",

@@ -70,9 +70,9 @@ class PowerAllocator:
             control.controller.solar_charge.set_consumed_power(0.0)
 
     # ----------------------------------------------------------------------------
-    def _is_zero_power(self, power: float) -> bool:
+    def _is_zero_power(self, allowed_power_variation: float, power: float) -> bool:
 
-        return power > -20 and power < 20
+        return -allowed_power_variation < power < +allowed_power_variation
 
     # ----------------------------------------------------------------------------
     def _create_group_member(
@@ -87,7 +87,8 @@ class PowerAllocator:
         )
         max_current = control.controller.solar_charge.get_charger_max_current()
         voltage = control.controller.solar_charge.get_charger_effective_voltage()
-        max_power = max_current * voltage
+        power_factor = control.controller.solar_charge.get_charger_power_factor()
+        max_power = max_current * voltage * power_factor
 
         # Participate in power allocation.
         instance = control.controller.charge_control.instance_count
@@ -98,27 +99,15 @@ class PowerAllocator:
 
         if instance > 0 and not can_set_current:
             # Device cannot set current, so allocate whatever power is consumed.
-            if self._is_zero_power(consumed_power):
-                consumed_power = 0
+            if consumed_power < 0:
+                consumed_power = 0.0
             if share_allocation == 1:
                 max_power = consumed_power
-            max_current = max_power / voltage if voltage > 0 else 0
-
-        # if (
-        #     # not can_set_current
-        #     # and share_allocation == 1
-        #     # and self._is_zero_power(consumed_power)
-        #     self_depower
-        # ):
-        #     #####################################
-        #     # Device in charging state but consumed 0 power,
-        #     # and can read current but not set current, so no participation,
-        #     # ie. device is in self-imposed depower state.
-        #     # Setting share_allocation=0 to ensure device do not participate
-        #     # in allocation/deallocation and receives planned allocations.
-        #     #####################################
-        #     share_allocation = 0
-        #     consumed_power = 0
+            max_current = (
+                max_power / voltage / power_factor
+                if voltage > 0 and power_factor > 0
+                else 0
+            )
 
         adjusted_activation_power, activation_power = (
             control.controller.solar_charge.get_adjusted_activation_power(
@@ -149,6 +138,7 @@ class PowerAllocator:
             max_speed_charge=max_speed_charge,
             self_depower=self_depower,
             voltage=voltage,
+            power_factor=power_factor,
         )
         member.consumed_power = consumed_power
 
