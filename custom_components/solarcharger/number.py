@@ -196,7 +196,7 @@ CONFIG_NUMBER_LIST: tuple[
             entity_category=EntityCategory.CONFIG,
             native_min_value=0.0,
             native_max_value=1.0,
-            native_step=0.01,
+            native_step=0.0001,
         ),
     ),
     #####################################
