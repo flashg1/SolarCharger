@@ -25,12 +25,12 @@ from ..const import (
     NUMBER_CHARGE_LIMIT_THURSDAY,
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
-    NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
     NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
     NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
     NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
+    NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
@@ -791,7 +791,7 @@ class ScOptionState(ScConfigState):
     def get_min_charge_limit(self) -> float:
         """Get minimum charge limit."""
 
-        return self.option_get_entity_number_or_abort(NUMBER_CHARGEE_MIN_CHARGE_LIMIT)
+        return self.option_get_entity_number_or_abort(NUMBER_DEVICE_MIN_CHARGE_LIMIT)
 
     # ----------------------------------------------------------------------------
     def get_power_monitor_duration(self) -> float:

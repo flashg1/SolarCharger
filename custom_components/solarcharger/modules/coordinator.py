@@ -28,8 +28,8 @@ from ..const import (
     DELTA_CHARGER_CURRENT_UPDATE_PERIOD,
     DOMAIN,
     ERROR_DEFAULT_CHARGE_LIMIT,
-    NUMBER_CHARGEE_MAX_CHARGE_LIMIT,
-    NUMBER_CHARGEE_MIN_CHARGE_LIMIT,
+    NUMBER_DEVICE_MAX_CHARGE_LIMIT,
+    NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR_LAST_CHECK,
     SENSOR_SYNC_UPDATE,
@@ -267,10 +267,10 @@ class SolarChargerCoordinator(ScOptionState):
                 )
 
                 min_charge_limit = self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGEE_MIN_CHARGE_LIMIT
+                    NUMBER_DEVICE_MIN_CHARGE_LIMIT
                 )
                 max_charge_limit = self.option_get_entity_number_or_abort(
-                    NUMBER_CHARGEE_MAX_CHARGE_LIMIT
+                    NUMBER_DEVICE_MAX_CHARGE_LIMIT
                 )
 
                 # Set charge limits

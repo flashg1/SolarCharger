@@ -48,8 +48,8 @@ from ..const import (
     CALLBACK_SYNC_UPDATE,
     CALLBACK_WEATHER_FORECAST,
     CONFIG_NET_POWER_SENSOR,
-    ENTITY_CHARGEE_SOC_SENSOR,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
+    ENTITY_DEVICE_SOC_SENSOR,
     HA_SUN_ENTITY,
     SENSOR_DELTA_ALLOCATED_POWER,
 )
@@ -327,7 +327,7 @@ class Tracker(ScOptionState):
         """Track SOC update events."""
 
         return self._track_config_item_state(
-            ENTITY_CHARGEE_SOC_SENSOR, CALLBACK_SOC_UPDATE, action
+            ENTITY_DEVICE_SOC_SENSOR, CALLBACK_SOC_UPDATE, action
         )
 
     # ----------------------------------------------------------------------------

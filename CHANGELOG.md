@@ -8,6 +8,7 @@
 - Added "Power factor" entity for reactive and non-linear loads.
 - Save configs to HA config/.storage directory in order to reload config after delete/re-add integration.
 ### Improvement
+- Rename and migrate SC chargee entities to device entities if exist.
 - Changing weather provider will unsubscribe previous provider before subscribing to new provider.
 - Step up to max current after switching on charger in case there is no net power update.
 

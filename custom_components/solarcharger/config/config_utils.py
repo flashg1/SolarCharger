@@ -36,8 +36,21 @@ from ..const import (
     DEVICE_NAME_MARKER,
     DOMAIN,
     DOMAIN_WITH_SUBDOMAINS,
+    ENTITY_DEVICE_GET_CHARGE_LIMIT,
+    ENTITY_DEVICE_LOCATION_SENSOR,
+    ENTITY_DEVICE_SET_CHARGE_LIMIT,
+    ENTITY_DEVICE_SOC_SENSOR,
+    ENTITY_DEVICE_UPDATE_HA_BUTTON,
+    ENTITY_DEVICE_WAKE_UP_BUTTON,
     NON_ENTITY_CONFIGS,
+    NUMBER_DEVICE_CHARGE_LIMIT,
+    NUMBER_DEVICE_MAX_CHARGE_LIMIT,
+    NUMBER_DEVICE_MIN_CHARGE_LIMIT,
+    NUMBER_WAIT_DEVICE_LIMIT_CHANGE,
+    NUMBER_WAIT_DEVICE_UPDATE_HA,
+    NUMBER_WAIT_DEVICE_WAKEUP,
     OPTION_CHARGER_NAME,
+    OPTION_DEVICE_LOCATION_STATE_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
     STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
@@ -266,18 +279,50 @@ def ha_store_open(hass: HomeAssistant, config_name: str) -> Store:
 
 
 # ----------------------------------------------------------------------------
-def _ha_store_migrate_config(data: dict[str, Any]) -> None:
+def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
     """Migrate and delete old config settings."""
+
+    migrate_list: dict[str, str] = {
+        # old name: new name
+        "chargee_min_charge_limit": NUMBER_DEVICE_MIN_CHARGE_LIMIT,
+        "chargee_max_charge_limit": NUMBER_DEVICE_MAX_CHARGE_LIMIT,
+        "wait_chargee_wakeup": NUMBER_WAIT_DEVICE_WAKEUP,
+        "wait_chargee_update_ha": NUMBER_WAIT_DEVICE_UPDATE_HA,
+        "wait_chargee_limit_change": NUMBER_WAIT_DEVICE_LIMIT_CHANGE,
+        "chargee_soc_sensor": ENTITY_DEVICE_SOC_SENSOR,
+        "chargee_charge_limit": NUMBER_DEVICE_CHARGE_LIMIT,
+        "chargee_get_charge_limit": ENTITY_DEVICE_GET_CHARGE_LIMIT,
+        "chargee_set_charge_limit": ENTITY_DEVICE_SET_CHARGE_LIMIT,
+        "chargee_location_sensor": ENTITY_DEVICE_LOCATION_SENSOR,
+        # string
+        "chargee_location_state_list": OPTION_DEVICE_LOCATION_STATE_LIST,
+        "chargee_wake_up_button": ENTITY_DEVICE_WAKE_UP_BUTTON,
+        "chargee_update_ha_button": ENTITY_DEVICE_UPDATE_HA_BUTTON,
+    }
+
+    # Do not directly modify data map in loop, so put in list first.
+    for old_name, old_config_val in list(store_config.items()):
+        new_name = migrate_list.get(old_name)
+        if new_name:
+            # old_config_val = data.pop(old_name)
+            del store_config[old_name]
+
+            # Only remove old solar charger entity ID.
+            # Need to handle separately for config string.
+            if not _is_solarcharger_entity(old_config_val):
+                # Save non-solarcharger entity ID or string config.
+                store_config[new_name] = old_config_val
 
 
 # ----------------------------------------------------------------------------
-async def async_ha_store_load(store: Store) -> dict[str, Any]:
+async def async_ha_store_load(store: Store) -> dict[str, Any] | None:
     """Open device settings file storage."""
 
-    data = await store.async_load()
-    _ha_store_migrate_config(data)
+    store_config = await store.async_load()
+    if store_config is not None:
+        _ha_store_migrate_config(store_config)
 
-    return data
+    return store_config
 
 
 # ----------------------------------------------------------------------------
