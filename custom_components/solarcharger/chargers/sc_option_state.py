@@ -18,7 +18,6 @@ from ..const import (
     CONFIG_NAME_GLOBAL_DEFAULTS,
     DATETIME,
     DATETIME_NEXT_CHARGE_TIME,
-    NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -31,7 +30,6 @@ from ..const import (
     NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
     NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
-    NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
@@ -144,13 +142,6 @@ class ScOptionState(ScConfigState):
         """Return the consumed energy today entity ID."""
         return compose_entity_id(
             SENSOR, self._subentry.unique_id, SENSOR_CONSUMED_ENERGY_TODAY
-        )
-
-    @cached_property
-    def charger_power_factor_entity_id(self) -> str:
-        """Return the charger power factor entity ID."""
-        return compose_entity_id(
-            NUMBER, self._subentry.unique_id, NUMBER_CHARGER_POWER_FACTOR
         )
 
     @cached_property

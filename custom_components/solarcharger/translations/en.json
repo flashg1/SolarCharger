@@ -126,6 +126,7 @@
                     "wait_charger_amp_change": "Wait charger AMP change (seconds)",
                     "adjust_charge_limit_based_on_weather": "Adjust charge limit based on weather forecast",
                     "charger_max_speed": "Charger max speed (%/hour)",
+                    "charger_power_factor": "Charger Power factor (0 <= PF <= 1)",
                     "charger_min_current": "Charger min current (AMP)",
                     "charger_min_workable_current": "Charger min workable current (AMP, current=0A for anything below this limit)",
                     "charger_min_workable_power_pause_threshold": "Min workable power pause threshold (%)",
@@ -297,14 +298,14 @@
             "charger_effective_voltage": {
                 "name": "Effective voltage"
             },
-            "charger_power_factor":{
-                "name": "Power factor"
-            },
             "charger_max_current": {
                 "name": "Max current"
             },
             "charger_max_speed": {
                 "name": "Max charge speed"
+            },
+            "charger_power_factor":{
+                "name": "Power factor"
             },
             "charger_min_current": {
                 "name": "Min current"

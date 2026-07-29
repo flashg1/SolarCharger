@@ -52,6 +52,7 @@ from ..const import (
     NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
     NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
@@ -356,6 +357,15 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             ): choose_selector(
                 api_entities,
                 NUMBER_CHARGER_MAX_SPEED,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+                modifiable_if_solarcharger_entity=True,
+            ),
+            self._optional(
+                subentry, NUMBER_CHARGER_POWER_FACTOR, use_default
+            ): choose_selector(
+                api_entities,
+                NUMBER_CHARGER_POWER_FACTOR,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,

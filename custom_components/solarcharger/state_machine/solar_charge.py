@@ -35,6 +35,7 @@ from ..const import (
     MAX_CONSECUTIVE_FAILURE_COUNT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MIN_CURRENT,
+    NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_WAIT_CHARGEE_LIMIT_CHANGE,
     NUMBER_WAIT_CHARGEE_UPDATE_HA,
     NUMBER_WAIT_CHARGEE_WAKEUP,
@@ -563,6 +564,20 @@ class SolarCharge(ScOptionState):
         return max_real_power * CURRENT_VARIATION_PERCENTAGE / 100
 
     # ----------------------------------------------------------------------------
+    def get_charger_power_factor(self) -> float:
+        """Get charger power factor."""
+
+        power_factor = self.option_get_entity_number_or_abort(
+            NUMBER_CHARGER_POWER_FACTOR
+        )
+
+        # Power factor can be 0.
+        if 0 > power_factor > 1:
+            raise ValueError(f"Invalid charger power factor {power_factor}")
+
+        return power_factor
+
+    # ----------------------------------------------------------------------------
     def get_charger_min_current(
         self, max_current: float | None = None, direct: bool = False
     ) -> float:
@@ -576,12 +591,6 @@ class SolarCharge(ScOptionState):
             )
 
         return self.validate_current(config_min_current, max_current)
-
-    # ----------------------------------------------------------------------------
-    def get_charger_power_factor(self) -> float:
-        """Get charger power factor."""
-
-        return self.get_number_or_abort(self.charger_power_factor_entity_id)
 
     # ----------------------------------------------------------------------------
     def get_charger_effective_voltage(self) -> float:

@@ -188,17 +188,6 @@ CONFIG_NUMBER_LIST: tuple[
     # Must haves, ie. not hidden for all
     # entity_category=EntityCategory.CONFIG
     #####################################
-    (
-        NUMBER_CHARGER_POWER_FACTOR,
-        SolarChargerEntityType.TYPE_LOCAL,
-        NumberEntityDescription(
-            key=NUMBER_CHARGER_POWER_FACTOR,
-            entity_category=EntityCategory.CONFIG,
-            native_min_value=0.0,
-            native_max_value=1.0,
-            native_step=0.0001,
-        ),
-    ),
     #####################################
     # Global defaults or local device entities
     # Hidden if not device entities, except for global defaults.
@@ -252,6 +241,17 @@ CONFIG_NUMBER_LIST: tuple[
             native_min_value=0.0,
             native_max_value=100.0,
             native_step=0.001,
+        ),
+    ),
+    (
+        NUMBER_CHARGER_POWER_FACTOR,
+        SolarChargerEntityType.TYPE_LOCAL,
+        NumberEntityDescription(
+            key=NUMBER_CHARGER_POWER_FACTOR,
+            entity_category=EntityCategory.CONFIG,
+            native_min_value=0.0,
+            native_max_value=1.0,
+            native_step=0.0001,
         ),
     ),
     (

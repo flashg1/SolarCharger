@@ -349,7 +349,11 @@ class StateCharge(SolarChargeState):
         one_amp_watt_step = effective_voltage * 1 * power_factor
         power_offset = 0
         all_power_net = delta_allocated_power + (one_amp_watt_step * 0.3) + power_offset
-        all_current_net = all_power_net / effective_voltage / power_factor
+        all_current_net = (
+            all_power_net / effective_voltage / power_factor
+            if effective_voltage > 0 and power_factor > 0
+            else 0
+        )
 
         if all_current_net > 0:
             propose_charge_current = round(
