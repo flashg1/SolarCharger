@@ -547,23 +547,6 @@ class SolarCharge(ScOptionState):
         return current
 
     # ----------------------------------------------------------------------------
-    def get_allowed_current_variation(self) -> float:
-        """Get allowed current variation for device that do not support setting current."""
-
-        max_current = self.get_charger_max_current()
-        return max_current * CURRENT_VARIATION_PERCENTAGE / 100
-
-    # ----------------------------------------------------------------------------
-    def get_allowed_power_variation(self) -> float:
-        """Get allowed power variation for device that do not support setting current."""
-
-        effective_voltage = self.get_charger_effective_voltage()
-        power_factor = self.get_charger_power_factor()
-        max_current = self.get_charger_max_current()
-        max_real_power = max_current * effective_voltage * power_factor
-        return max_real_power * CURRENT_VARIATION_PERCENTAGE / 100
-
-    # ----------------------------------------------------------------------------
     def get_charger_power_factor(self) -> float:
         """Get charger power factor."""
 
@@ -571,7 +554,7 @@ class SolarCharge(ScOptionState):
             NUMBER_CHARGER_POWER_FACTOR
         )
 
-        # Power factor can be 0.
+        # Power factor can in theory be 0.
         if 0 > power_factor > 1:
             raise ValueError(f"Invalid charger power factor {power_factor}")
 
@@ -603,6 +586,23 @@ class SolarCharge(ScOptionState):
             raise ValueError(f"Invalid charger effective voltage {effective_voltage}")
 
         return effective_voltage
+
+    # ----------------------------------------------------------------------------
+    def get_allowed_current_variation(self) -> float:
+        """Get allowed current variation for device that do not support setting current."""
+
+        max_current = self.get_charger_max_current()
+        return max_current * CURRENT_VARIATION_PERCENTAGE / 100
+
+    # ----------------------------------------------------------------------------
+    def get_allowed_power_variation(self) -> float:
+        """Get allowed power variation for device that do not support setting current."""
+
+        effective_voltage = self.get_charger_effective_voltage()
+        power_factor = self.get_charger_power_factor()
+        max_current = self.get_charger_max_current()
+        max_real_power = max_current * effective_voltage * power_factor
+        return max_real_power * CURRENT_VARIATION_PERCENTAGE / 100
 
     # ----------------------------------------------------------------------------
     def get_charge_current(
@@ -696,9 +696,7 @@ class SolarCharge(ScOptionState):
             #####################################
             # Set energy consumed since last current update
             #####################################
-            effective_voltage = self.get_charger_effective_voltage()
-            power_factor = self.get_charger_power_factor()
-            old_consumed_power = old_charge_current * effective_voltage * power_factor
+            old_consumed_power = self.get_consumed_power()
             if old_consumed_power > 0 and old_charge_current_duration != timedelta.min:
                 # Energy in kWh = Power in kW * time in hours
                 consumed_energy_last_period = (old_consumed_power / 1000) * (
@@ -711,9 +709,10 @@ class SolarCharge(ScOptionState):
             #####################################
             # Set consumed power
             #####################################
-            self.set_consumed_power(
-                new_charge_current * effective_voltage * power_factor
-            )
+            effective_voltage = self.get_charger_effective_voltage()
+            power_factor = self.get_charger_power_factor()
+            new_consumed_power = new_charge_current * effective_voltage * power_factor
+            self.set_consumed_power(new_consumed_power)
 
             # Do not hold up callback
             # if self.can_set_current:
