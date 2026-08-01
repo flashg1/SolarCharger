@@ -5,7 +5,7 @@
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
 - Rename and migrate SC chargee entities to device entities if config files exist.
 ### New feature
-- Added "Power factor" entity for power calculation of reactive and non-linear loads.
+- Added "[Power factor](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-factor)" entity for real power calculation of reactive and non-linear loads.
 - Save configs to HA config/.storage directory to facilitate reload of configs after delete/re-add integration.
 ### Improvement
 - Changing weather provider will unsubscribe previous provider before subscribing to new provider.
