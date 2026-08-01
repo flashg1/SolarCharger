@@ -282,8 +282,11 @@ def ha_store_open(hass: HomeAssistant, config_name: str) -> Store:
 def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
     """Migrate and delete old config settings."""
 
+    # Since Python 3.7, standard dictionaries remember the order items were added.
+    # Converting a dictionary to a list keeps that same order for version migrations.
+    # old name (key): new name (value)
     migrate_list: dict[str, str] = {
-        # old name: new name
+        # Migrate from v0.9.0 to v0.10.0.
         "chargee_min_charge_limit": NUMBER_DEVICE_MIN_CHARGE_LIMIT,
         "chargee_max_charge_limit": NUMBER_DEVICE_MAX_CHARGE_LIMIT,
         "wait_chargee_wakeup": NUMBER_WAIT_DEVICE_WAKEUP,
@@ -294,8 +297,7 @@ def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
         "chargee_get_charge_limit": ENTITY_DEVICE_GET_CHARGE_LIMIT,
         "chargee_set_charge_limit": ENTITY_DEVICE_SET_CHARGE_LIMIT,
         "chargee_location_sensor": ENTITY_DEVICE_LOCATION_SENSOR,
-        # string
-        "chargee_location_state_list": OPTION_DEVICE_LOCATION_STATE_LIST,
+        "chargee_location_state_list": OPTION_DEVICE_LOCATION_STATE_LIST,  # string
         "chargee_wake_up_button": ENTITY_DEVICE_WAKE_UP_BUTTON,
         "chargee_update_ha_button": ENTITY_DEVICE_UPDATE_HA_BUTTON,
     }
@@ -310,7 +312,7 @@ def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
             # Only remove old solar charger entity ID.
             # Need to handle separately for config string.
             if not _is_solarcharger_entity(old_config_val):
-                # Save non-solarcharger entity ID or string config.
+                # Keep non-solarcharger entity ID, string config or None.
                 store_config[new_name] = old_config_val
 
 
