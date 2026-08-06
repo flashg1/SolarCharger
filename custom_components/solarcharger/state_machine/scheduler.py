@@ -65,43 +65,6 @@ class ChargeScheduler(ScOptionState):
         return self._calibration_charge_limit
 
     # ----------------------------------------------------------------------------
-    # Check if enough time to complete charge
-    # ----------------------------------------------------------------------------
-    # def is_not_enough_time_to_complete_charge(
-    #     self,
-    #     old_charge_current: float,
-    #     charger_max_current: float,
-    #     goal: ScheduleData,
-    # ) -> bool:
-    #     """Is there not enough time to complete charging before scheduled end time?"""
-    #     is_not_enough_time = False
-
-    #     if goal.has_charge_endtime:
-    #         if goal.timer_session and not goal.sun_above_start_end_elevations:
-    #             # If session is triggered by timer and it is night time, then charge at max current.
-    #             return True
-
-    #         # Maximise minimum charge current if charge end time is set and it is night time or
-    #         # there is not enough time to charge, but only before charge end time.
-    #         # chargerMinCurrent might bounce between 0 and chargerMaxCurrent due to
-    #         # battery level not up-to-date or decimal inaccuracy, so stablise it to chargerMaxCurrent
-    #         # if current is already at chargerMaxCurrent and needChargeDuration is only
-    #         # slightly less than availableChargeDuration.
-    #         available_charge_duration = goal.charge_endtime - goal.data_timestamp
-    #         is_not_enough_time = available_charge_duration.total_seconds() > 0 and (
-    #             # (self.is_sun_trigger() and not self.is_daytime())
-    #             (self.is_sun_trigger() and not goal.sun_above_start_end_elevations)
-    #             or goal.need_charge_duration >= available_charge_duration
-    #             or (
-    #                 (goal.need_charge_duration + goal.one_percent_charge_duration)
-    #                 >= available_charge_duration
-    #                 and round(old_charge_current) == round(charger_max_current)
-    #             )
-    #         )
-
-    #     return is_not_enough_time
-
-    # ----------------------------------------------------------------------------
     # Get schedule data
     # ----------------------------------------------------------------------------
     def _get_charge_limit_or_abort(self, chargeable: Chargeable) -> float:
@@ -112,40 +75,6 @@ class ChargeScheduler(ScOptionState):
             raise EntityExceptionError("Cannot get charge limit")
 
         return charge_limit
-
-    # ----------------------------------------------------------------------------
-    # def _look_ahead_to_reduce_charge_limit_difference(self, goal: ScheduleData) -> None:
-    #     """Look ahead to reduce charge limit difference between days."""
-
-    #     # Automatically charge more today if today has no charge end time and next 3 days have much higher charge limit.
-    #     # Or goal has charge end time and just 1% before reaching required SOC.
-    #     if not goal.has_charge_endtime:
-    #         look_ahead_schedule: list[ChargeSchedule] = []
-    #         today_index = goal.day_index
-
-    #         for i in range(0, LOOK_AHEAD_CHARGE_LIMIT_DAYS, 1):
-    #             day_index = (today_index + i) % 7
-    #             look_ahead_schedule.append(goal.weekly_schedule[day_index])
-
-    #         # Find first occurance of maximum charge limit
-    #         look_ahead_max_charge_limit = -1
-    #         look_ahead_max_charge_limit_index = -1
-    #         for i in range(len(look_ahead_schedule)):
-    #             if look_ahead_schedule[i].charge_limit > look_ahead_max_charge_limit:
-    #                 look_ahead_max_charge_limit = look_ahead_schedule[i].charge_limit
-    #                 look_ahead_max_charge_limit_index = i
-
-    #         if look_ahead_max_charge_limit_index == 1:
-    #             look_ahead_charge_limit = (
-    #                 look_ahead_max_charge_limit - MIN_CHARGE_LIMIT_DIFF
-    #             )
-    #         else:
-    #             look_ahead_charge_limit = look_ahead_max_charge_limit - (
-    #                 look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
-    #             )
-
-    #         if look_ahead_charge_limit > goal.new_charge_limit:  # noqa: PLR1730
-    #             goal.new_charge_limit = look_ahead_charge_limit
 
     # ----------------------------------------------------------------------------
     def _get_look_ahead_charge_limit(self, goal: ScheduleData) -> float:

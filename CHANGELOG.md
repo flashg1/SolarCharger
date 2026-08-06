@@ -4,6 +4,7 @@
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
 ### Fix
+- Fixed issue with not able to restore switch's "off" state after home assistant reboot.
 - Fixed issue with self-depowered device going into pause state unexpectedly.
 ### New feature
 ### Improvement

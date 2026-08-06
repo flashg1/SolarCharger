@@ -146,8 +146,12 @@ class SolarChargerSwitchActionEntity(SolarChargerSwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
 
-        if not self.is_on:
-            await super().async_turn_on(**kwargs)
+        was_on = self.is_on
+        # Always update the HA state
+        await super().async_turn_on(**kwargs)
+
+        # Only call the external action when we actually changed from off -> on
+        if not was_on:
             await self._action(
                 self._coordinator.device_controls[self._subentry.subentry_id],
                 True,
@@ -157,8 +161,12 @@ class SolarChargerSwitchActionEntity(SolarChargerSwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the entity off."""
 
-        if self.is_on:
-            await super().async_turn_off(**kwargs)
+        was_on = self.is_on
+        # Always update the HA state
+        await super().async_turn_off(**kwargs)
+
+        # Only call the external action when we actually changed from on -> off
+        if was_on:
             await self._action(
                 self._coordinator.device_controls[self._subentry.subentry_id],
                 False,
@@ -176,7 +184,7 @@ async def async_setup_entry(
     """Set up buttons based on config entry."""
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
-    CONFIG_SWITCH_LIST: tuple[
+    config_switch_list: tuple[
         tuple[
             str,
             Any,
@@ -318,7 +326,7 @@ async def async_setup_entry(
             action,
             entity_type,
             entity_description,
-        ) in CONFIG_SWITCH_LIST:
+        ) in config_switch_list:
             if is_create_entity(subentry, entity_type):
                 switches[config_item] = cls(
                     config_item,
