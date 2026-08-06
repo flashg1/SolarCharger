@@ -993,7 +993,7 @@ class SolarCharge(ScOptionState):
         self,
         net_allocations: MedianData,
         run_state: RunState,
-    ) -> bool:
+    ) -> bool | None:
         """Is median net allocated power more than minimum workable power? None=not enough data."""
         is_enough_power = None
 

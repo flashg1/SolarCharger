@@ -97,23 +97,36 @@ class PowerAllocator:
         share_allocation = control.controller.solar_charge.get_share_allocation()
         self_depower = control.controller.solar_charge.is_self_depower
 
+        adjusted_activation_power, activation_power = (
+            control.controller.solar_charge.get_adjusted_activation_power(
+                RunState.PAUSED if share_allocation == 0 else RunState.CHARGING
+            )
+        )
+
+        #######################################################
+        # Special handling for devices that cannot set current.
+        #######################################################
         if instance > 0 and not can_set_current:
-            # Device cannot set current, so allocate whatever power is consumed.
+            # Consumed power cannot be less than 0.
             if consumed_power < 0:
                 consumed_power = 0.0
+
+            # Device has self-depowered to below adjusted_activation_power, so do not allocate real power to it.
+            # Allocating real power to below adjusted_activation_power will cause device to go into pause state.
+            if (consumed_power * -1) > adjusted_activation_power:
+                share_allocation = 0
+
+            # Device cannot set current, so allocate whatever power is consumed.
             if share_allocation == 1:
                 max_power = consumed_power
+
+            # Max current is not used and just for information.
             max_current = (
                 max_power / voltage / power_factor
                 if voltage > 0 and power_factor > 0
                 else 0
             )
 
-        adjusted_activation_power, activation_power = (
-            control.controller.solar_charge.get_adjusted_activation_power(
-                RunState.PAUSED if share_allocation == 0 else RunState.CHARGING
-            )
-        )
         max_speed_charge = control.controller.solar_charge.is_max_speed_charge()
 
         # Chargers that requires charging at max speed has system priority and equal weight.
