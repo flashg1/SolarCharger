@@ -6,8 +6,6 @@
 ### Fix
 - Fixed issue with not able to restore switch's "off" state after home assistant reboot.
 - Fixed issue with self-depowered device going into pause state unexpectedly.
-### New feature
-### Improvement
 
 ## v0.10.0 2026-07-23
 ### Breaking change

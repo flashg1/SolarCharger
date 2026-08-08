@@ -113,7 +113,10 @@ class PowerAllocator:
 
             # Device has self-depowered to below adjusted_activation_power, so do not allocate real power to it.
             # Allocating real power to below adjusted_activation_power will cause device to go into pause state.
-            if (consumed_power * -1) > adjusted_activation_power:
+            if (
+                share_allocation == 1
+                and (consumed_power * -1) > adjusted_activation_power
+            ):
                 share_allocation = 0
 
             # Device cannot set current, so allocate whatever power is consumed.

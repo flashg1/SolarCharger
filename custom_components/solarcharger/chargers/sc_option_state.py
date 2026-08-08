@@ -848,16 +848,16 @@ class ScOptionState(ScConfigState):
         )
 
     # ----------------------------------------------------------------------------
-    def get_charger_min_workable_current_enter_pause_percent(self) -> float:
-        """Get charger minimum workable current extra percentage required to enter pause."""
+    def get_charger_min_workable_power_pause_charge_threshold(self) -> float:
+        """Get charger minimum workable power extra percentage required to enter pause."""
 
         return self.option_get_entity_number_or_abort(
             NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD
         )
 
     # ----------------------------------------------------------------------------
-    def get_charger_min_workable_current_exit_pause_percent(self) -> float:
-        """Get charger minimum workable current extra percentage required to exit pause."""
+    def get_charger_min_workable_power_resume_charge_threshold(self) -> float:
+        """Get charger minimum workable power extra percentage required to exit pause."""
 
         return self.option_get_entity_number_or_abort(
             NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD

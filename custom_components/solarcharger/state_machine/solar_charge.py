@@ -965,16 +965,18 @@ class SolarCharge(ScOptionState):
             # For exiting out of paused state.
             #####################################
             # Device is currently paused.
-            extra_percent = self.get_charger_min_workable_current_exit_pause_percent()
-            adjusted_activation_power = activation_power * (100 + extra_percent) / 100
+            extra_percent = (
+                self.get_charger_min_workable_power_resume_charge_threshold()
+            )
 
         else:
             #####################################
             # For entering pause state.
             #####################################
             # Device is currently charging.
-            extra_percent = self.get_charger_min_workable_current_enter_pause_percent()
-            adjusted_activation_power = activation_power * (100 + extra_percent) / 100
+            extra_percent = self.get_charger_min_workable_power_pause_charge_threshold()
+
+        adjusted_activation_power = activation_power * (100 + extra_percent) / 100
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(
