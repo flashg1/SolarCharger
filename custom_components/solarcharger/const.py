@@ -90,17 +90,17 @@ class RunState(Enum):
 
     # Sensor state attributes must be lower case. Translation will display state in OS language.
     UNDEFINED = "undefined"
-    STARTING = "starting"
-    INITIALISING = "initialising"
+    START = "start"
+    INITIALISE = "initialise"
 
-    CHARGING = "charging"
+    CHARGE = "charge"
     # SELF_DEPOWER is a sub-state of CHARGING state.
     SELF_DEPOWER = "self-depower"
 
-    PAUSED = "paused"
-    ABORTING = "aborting"
-    ENDING = "ending"
-    ENDED = "ended"
+    PAUSE = "pause"
+    ABORT = "abort"
+    TIDY_UP = "tidy-up"
+    END = "end"
 
 
 RUN_STATE_LIST: list[str] = [state.value for state in RunState]

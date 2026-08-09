@@ -23,7 +23,7 @@ class StateTidyUp(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.ENDING
+        self.state = RunState.TIDY_UP
 
     # ----------------------------------------------------------------------------
     def _unsubscribe_updates(self) -> None:

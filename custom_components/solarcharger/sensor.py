@@ -416,7 +416,7 @@ CONFIG_SENSOR_LIST: tuple[
             device_class=SensorDeviceClass.ENUM,
             options=RUN_STATE_LIST,
         ),
-        RunState.ENDED.value,  # str
+        RunState.END.value,  # str
         RESTORE_ON_START_FALSE,
     ),
     (

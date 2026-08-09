@@ -20,7 +20,7 @@ class StateEnd(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.ENDED
+        self.state = RunState.END
 
     # ----------------------------------------------------------------------------
     async def _async_end_session(self) -> None:

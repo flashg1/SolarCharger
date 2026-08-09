@@ -38,7 +38,7 @@ class StateStart(SolarChargeState):
         self,
     ) -> None:
         """Start machine state."""
-        self.state = RunState.STARTING
+        self.state = RunState.START
 
     # ----------------------------------------------------------------------------
     # Subscriptions

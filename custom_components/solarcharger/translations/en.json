@@ -170,13 +170,13 @@
             "run_state": {
                 "name": "Run state",
                 "state": {
-                    "starting": "Starting",
-                    "initialising": "Initialising",
-                    "charging": "Charging",
+                    "start": "Start",
+                    "initialise": "Initialise",
+                    "charge": "Charge",
                     "self-depower": "Self-depower",
-                    "paused": "Paused",
-                    "ending": "Ending",
-                    "ended": "Ended"
+                    "pause": "Pause",
+                    "tidy-up": "Tidy-up",
+                    "end": "End"
                 }
             },
             "delta_allocated_power": {

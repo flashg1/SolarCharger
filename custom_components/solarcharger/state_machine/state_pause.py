@@ -30,7 +30,7 @@ class StatePause(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.PAUSED
+        self.state = RunState.PAUSE
 
     # ----------------------------------------------------------------------------
     def _update_pause_stats(

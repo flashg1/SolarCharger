@@ -23,7 +23,7 @@ class StateInitialise(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.INITIALISING
+        self.state = RunState.INITIALISE
 
     # ----------------------------------------------------------------------------
     def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:

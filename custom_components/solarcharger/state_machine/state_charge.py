@@ -43,7 +43,7 @@ class StateCharge(SolarChargeState):
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.CHARGING
+        self.state = RunState.CHARGE
 
         # Use semaphore to ensure that only one thread can update update_ha_task_count and only one task running.
         self._semaphore_update_charge_current_task = threading.Semaphore(value=1)
@@ -208,7 +208,7 @@ class StateCharge(SolarChargeState):
         if self.solarcharge.is_self_depower:
             self.solarcharge.set_run_state(RunState.SELF_DEPOWER)
         else:
-            self.solarcharge.set_run_state(RunState.CHARGING)
+            self.solarcharge.set_run_state(RunState.CHARGE)
 
     # ----------------------------------------------------------------------------
     def _set_self_depower_state(self, self_depower: bool) -> None:

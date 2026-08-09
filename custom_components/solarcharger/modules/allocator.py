@@ -99,7 +99,7 @@ class PowerAllocator:
 
         adjusted_activation_power, activation_power = (
             control.controller.solar_charge.get_adjusted_activation_power(
-                RunState.PAUSED if share_allocation == 0 else RunState.CHARGING
+                RunState.PAUSE if share_allocation == 0 else RunState.CHARGE
             )
         )
 
@@ -585,8 +585,8 @@ class PowerAllocator:
                 control = self._device_controls[member.subentry_id]
 
                 if control.controller.solar_charge.machine_state.state in [
-                    RunState.ENDING,
-                    RunState.ENDED,
+                    RunState.TIDY_UP,
+                    RunState.END,
                 ]:
                     continue
 
