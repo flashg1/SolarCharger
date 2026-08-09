@@ -6,6 +6,8 @@
 ### Fix
 ### New feature
 ### Improvement
+- Deallocate from devices that can adjust current until such time devices that cannot adjust current is paused.
+- Only rebalance power when device enters charge state because devices that cannot set current do not release power immediately for rebalancing. So deallocate first, and only reallocate when power has been released.
 
 ## v0.10.1 2026-08-06
 ### Breaking change

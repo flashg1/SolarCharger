@@ -146,6 +146,7 @@ class SolarCharge(ScOptionState):
 
         # Entity backed by variable for efficiency. Ok if re-direction is not required.
         self._share_allocation: int = 0
+        self._need_rebalance: bool = False
         self._consumed_power: float = 0.0
         self._self_depower: bool = False
 
@@ -275,10 +276,23 @@ class SolarCharge(ScOptionState):
         )
 
     # ----------------------------------------------------------------------------
+    def set_need_rebalance(self, need_rebalance: bool) -> None:
+        """Set need rebalance."""
+
+        self._need_rebalance = need_rebalance
+
+    # ----------------------------------------------------------------------------
+    def need_rebalance(self) -> bool:
+        """Get need rebalance."""
+
+        return self._need_rebalance
+
+    # ----------------------------------------------------------------------------
     def participate_in_real_power_allocation(self) -> None:
         """Participate in real power allocation."""
 
         self._share_allocation = 1
+        self.set_need_rebalance(True)
         self.update_sensor(SENSOR_SHARE_ALLOCATION, 1)
 
     # ----------------------------------------------------------------------------
@@ -286,6 +300,7 @@ class SolarCharge(ScOptionState):
         """Participate in real power allocation."""
 
         self._share_allocation = 0
+        self.set_need_rebalance(False)
         self.update_sensor(SENSOR_SHARE_ALLOCATION, 0)
 
     # ----------------------------------------------------------------------------

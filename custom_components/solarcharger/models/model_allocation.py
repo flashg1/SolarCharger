@@ -173,6 +173,14 @@ class AllocationBook:
     # Sum of total_consumed_power and new net power update. -ve/+ve.
     gross_power: float = 0.0
 
+    # Only does rebalance power when share_allocation changes from 0 to 1. Why?
+    # Because rebalance assumes power can be released immediately, which is not
+    # the case for devices that cannot set current.
+    # For devices that cannot set current, power is only released when the device
+    # is paused, which takes time.
+    # So must keep doing deallocation until device is paused and power released.
+    need_rebalance: bool = False
+
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of AllocationBook."""
@@ -183,5 +191,6 @@ class AllocationBook:
             f"max_power={self.total_max_power}, "
             f"consumed_power={self.total_consumed_power}, "
             f"net_power={self.net_power}, "
-            f"gross_power={self.gross_power}"
+            f"gross_power={self.gross_power}, "
+            f"need_rebalance={self.need_rebalance}"
         )

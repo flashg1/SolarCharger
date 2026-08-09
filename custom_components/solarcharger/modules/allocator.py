@@ -76,7 +76,7 @@ class PowerAllocator:
 
     # ----------------------------------------------------------------------------
     def _create_group_member(
-        self, control: DeviceControl, consumed_power: float
+        self, book: AllocationBook, control: DeviceControl, consumed_power: float
     ) -> PowerAllocation:
         """Create member from config. Note allocation weight entity can be overriden."""
 
@@ -103,32 +103,41 @@ class PowerAllocator:
             )
         )
 
-        #######################################################
-        # Special handling for devices that cannot set current.
-        #######################################################
-        if instance > 0 and not can_set_current:
-            # Consumed power cannot be less than 0.
-            if consumed_power < 0:
-                consumed_power = 0.0
+        if instance > 0:
+            #####################################
+            # Rebalance allocation if share_allocation changes from 0 to 1.
+            #####################################
+            need_rebalance = control.controller.solar_charge.need_rebalance()
+            if need_rebalance:
+                control.controller.solar_charge.set_need_rebalance(False)
+                book.need_rebalance = True
 
-            # Device has self-depowered to below adjusted_activation_power, so do not allocate real power to it.
-            # Allocating real power to below adjusted_activation_power will cause device to go into pause state.
-            if (
-                share_allocation == 1
-                and (consumed_power * -1) > adjusted_activation_power
-            ):
-                share_allocation = 0
+            #####################################
+            # Special handling for devices that cannot set current.
+            #####################################
+            if not can_set_current:
+                # Consumed power cannot be less than 0.
+                if consumed_power < 0:
+                    consumed_power = 0.0
 
-            # Device cannot set current, so allocate whatever power is consumed.
-            if share_allocation == 1:
-                max_power = consumed_power
+                # Device has self-depowered to below adjusted_activation_power, so do not allocate real power to it.
+                # Allocating real power to below adjusted_activation_power will cause device to go into pause state.
+                if (
+                    share_allocation == 1
+                    and (consumed_power * -1) > adjusted_activation_power
+                ):
+                    share_allocation = 0
 
-            # Max current is not used and just for information.
-            max_current = (
-                max_power / voltage / power_factor
-                if voltage > 0 and power_factor > 0
-                else 0
-            )
+                # Device cannot set current, so allocate whatever power is consumed.
+                if share_allocation == 1:
+                    max_power = consumed_power
+
+                # Max current is not used and just for information.
+                max_current = (
+                    max_power / voltage / power_factor
+                    if voltage > 0 and power_factor > 0
+                    else 0
+                )
 
         max_speed_charge = control.controller.solar_charge.is_max_speed_charge()
 
@@ -253,7 +262,7 @@ class PowerAllocator:
 
             # Get final consumed power from member and then reset to 0.
             consumed_power = control.controller.solar_charge.get_consumed_power()
-            all_member = self._create_group_member(control, consumed_power)
+            all_member = self._create_group_member(book, control, consumed_power)
             consumed_power = all_member.consumed_power
             all_member.consumed_power = 0
 
@@ -362,6 +371,8 @@ class PowerAllocator:
                         -member.max_power,
                     )
 
+                remain_power = remain_power - member.final_power
+
             else:
                 #####################################
                 # Give back power, ie. +ve
@@ -375,7 +386,12 @@ class PowerAllocator:
                     -member.max_power,
                 )
 
-            remain_power = remain_power - member.final_power
+                # Only reduce remain_power if device can set current.
+                # Otherwise, pass it onto the next device to reduce power.
+                # Device that cannot set current will only release power when paused.
+                # So deallocate first, and only reallocate when power has been released.
+                if member.can_set_current:
+                    remain_power = remain_power - member.final_power
 
         rung.total_lack_power += member.lack_power
 
@@ -649,9 +665,9 @@ class PowerAllocator:
         )
 
         # Gross power less than or equal to zero is considered an allocation.
-        if book.gross_power <= 0:
+        if book.need_rebalance:
             #####################################
-            # Allocation - Rebalance
+            # Rebalance allocation
             #####################################
             active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
@@ -672,10 +688,9 @@ class PowerAllocator:
 
         else:
             #####################################
-            # Deallocation
+            # Allocation or deallocation
             #####################################
-            # Must deallocate using active group because it has consumed power info.
-            # Do not rebalance since those groups do not have consumed power info.
+            # Must allocate/deallocate using active group because it has consumed power info.
             active_ladder = self._process_allocation_group(
                 book.active_group_map,
                 book.net_power,
@@ -686,6 +701,58 @@ class PowerAllocator:
                 active_ladder, paused_only=False, log=True
             )
             await self._async_send_allocations(all_ladder, paused_only=True, log=True)
+
+    # # ----------------------------------------------------------------------------
+    # async def _async_process_allocation_book(self, book: AllocationBook) -> None:
+    #     """Process allocation book."""
+
+    #     _LOGGER.info("AllocationBook: %s", book)
+
+    #     # Allocation for all running chargers including both active and paused chargers.
+    #     all_ladder = self._process_allocation_group(
+    #         book.all_group_map,
+    #         book.gross_power,
+    #         allocation_type="Plan",
+    #     )
+
+    #     # Gross power less than or equal to zero is considered an allocation.
+    #     if book.gross_power <= 0:
+    #         #####################################
+    #         # Allocation - Rebalance
+    #         #####################################
+    #         active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
+
+    #         # Rebalance allocation for all active chargers.
+    #         self._process_allocation_group(
+    #             book.rebalance_group_map,
+    #             book.gross_power,
+    #             allocation_type="Rebalance",
+    #         )
+    #         rebalance_active_ladder = self._rebalance_allocation_among_active_chargers(
+    #             book, active_ladder
+    #         )
+
+    #         await self._async_send_allocations(
+    #             rebalance_active_ladder, paused_only=False, log=False
+    #         )
+    #         await self._async_send_allocations(all_ladder, paused_only=True, log=True)
+
+    #     else:
+    #         #####################################
+    #         # Deallocation
+    #         #####################################
+    #         # Must deallocate using active group because it has consumed power info.
+    #         # Do not rebalance since those groups do not have consumed power info.
+    #         active_ladder = self._process_allocation_group(
+    #             book.active_group_map,
+    #             book.net_power,
+    #             allocation_type="Delta",
+    #         )
+
+    #         await self._async_send_allocations(
+    #             active_ladder, paused_only=False, log=True
+    #         )
+    #         await self._async_send_allocations(all_ladder, paused_only=True, log=True)
 
     # ----------------------------------------------------------------------------
     async def async_allocate_net_power(self) -> None:
