@@ -386,12 +386,18 @@ class PowerAllocator:
                     -member.max_power,
                 )
 
+                #####################################
+                # Should not let higher priority device take the slack because no
+                # further deallocation would be required unless rebalanced, which
+                # is not what we want.
+                #####################################
                 # Only reduce remain_power if device can set current.
                 # Otherwise, pass it onto the next device to reduce power.
                 # Device that cannot set current will only release power when paused.
                 # So deallocate first, and only reallocate when power has been released.
-                if member.can_set_current:
-                    remain_power = remain_power - member.final_power
+                # if member.can_set_current:
+                #     remain_power = remain_power - member.final_power
+                remain_power = remain_power - member.final_power
 
         rung.total_lack_power += member.lack_power
 
@@ -566,7 +572,7 @@ class PowerAllocator:
             if member.self_depower:
                 member_state = "Self-depower"
             else:
-                member_state = "Paused"
+                member_state = "Pause"
         else:
             member_state = "Active"
 
@@ -615,6 +621,54 @@ class PowerAllocator:
                         )
 
     # ----------------------------------------------------------------------------
+    def _distribute_loan_power(
+        self, rebalance_active_ladder: list[AllocationGroup], loan_power: float
+    ) -> None:
+        """Distribute loaned power from lower to higher priority chargers that can adjust current."""
+
+        if loan_power > 0:
+            freeup_power = loan_power
+            for rung in range(len(rebalance_active_ladder) - 1, -1, -1):
+                for rebalance_active_member in rebalance_active_ladder[
+                    rung
+                ].member_map.values():
+                    # Reduce net allocated power from devices that can adjust current.
+                    # Should distribute load evenly amoung members, but for now just iterate.
+                    if rebalance_active_member.can_set_current:
+                        member_rebalance_power = (
+                            rebalance_active_member.final_power
+                            - rebalance_active_member.consumed_power
+                        )
+                        if member_rebalance_power < 0:
+                            freeup_power += member_rebalance_power
+                            if freeup_power <= 0:
+                                rebalance_active_member.final_power = (
+                                    freeup_power
+                                    + rebalance_active_member.consumed_power
+                                )
+                                freeup_power = 0
+                            else:
+                                rebalance_active_member.final_power = (
+                                    rebalance_active_member.consumed_power
+                                )
+
+                            _LOGGER.warning(
+                                "%s: priority=%s, state=%s, from=%.2f, was_to=%.2f, after_loan=%.2f",
+                                rebalance_active_member.name,
+                                rebalance_active_member.priority,
+                                self._get_member_state(rebalance_active_member),
+                                rebalance_active_member.consumed_power * -1,  # From
+                                member_rebalance_power,  # To
+                                rebalance_active_member.final_power,  # After loan
+                            )
+
+                    if freeup_power <= 0:
+                        break
+
+                if freeup_power <= 0:
+                    break
+
+    # ----------------------------------------------------------------------------
     def _rebalance_allocation_among_active_chargers(
         self,
         book: AllocationBook,
@@ -624,18 +678,29 @@ class PowerAllocator:
 
         rebalance_active_ladder = deepcopy(active_ladder)
 
+        total_loan_power = 0.0
         for rung in range(len(active_ladder)):
-            for active_member in active_ladder[rung].member_map.values():
+            for rebalance_active_member in active_ladder[rung].member_map.values():
                 rebalance_active_member = rebalance_active_ladder[rung].member_map[
-                    active_member.subentry_id
+                    rebalance_active_member.subentry_id
                 ]
                 rebalance_member = book.rebalance_group_map[
-                    active_member.priority
-                ].member_map[active_member.subentry_id]
+                    rebalance_active_member.priority
+                ].member_map[rebalance_active_member.subentry_id]
 
                 rebalance_active_member.final_power = rebalance_member.final_power - (
-                    active_member.consumed_power * -1
+                    rebalance_active_member.consumed_power * -1
                 )
+
+                # No need to loan power if monitor window is disabled.
+                control = self._device_controls[rebalance_member.subentry_id]
+                if (
+                    control.controller.solar_charge.power_monitor_duration > 0
+                    and not rebalance_member.can_set_current
+                    and rebalance_member.final_power
+                    > rebalance_member.adjusted_activation_power
+                ):
+                    total_loan_power += rebalance_active_member.consumed_power
 
                 _LOGGER.info(
                     "%s: priority=%s, state=%s, from=%.2f, to=%.2f, rebalance=%.2f, adjusted_activation_power=%.2f (%.2f)",
@@ -648,6 +713,8 @@ class PowerAllocator:
                     rebalance_active_member.adjusted_activation_power,
                     rebalance_active_member.activation_power,
                 )
+
+        self._distribute_loan_power(rebalance_active_ladder, total_loan_power)
 
         return rebalance_active_ladder
 
@@ -664,43 +731,25 @@ class PowerAllocator:
             allocation_type="Plan",
         )
 
-        # Gross power less than or equal to zero is considered an allocation.
-        if book.need_rebalance:
-            #####################################
-            # Rebalance allocation
-            #####################################
-            active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
+        #####################################
+        # Rebalance allocation
+        #####################################
+        active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
-            # Rebalance allocation for all active chargers.
-            self._process_allocation_group(
-                book.rebalance_group_map,
-                book.gross_power,
-                allocation_type="Rebalance",
-            )
-            rebalance_active_ladder = self._rebalance_allocation_among_active_chargers(
-                book, active_ladder
-            )
+        # Rebalance allocation for all active chargers.
+        self._process_allocation_group(
+            book.rebalance_group_map,
+            book.gross_power,
+            allocation_type="Rebalance",
+        )
+        rebalance_active_ladder = self._rebalance_allocation_among_active_chargers(
+            book, active_ladder
+        )
 
-            await self._async_send_allocations(
-                rebalance_active_ladder, paused_only=False, log=False
-            )
-            await self._async_send_allocations(all_ladder, paused_only=True, log=True)
-
-        else:
-            #####################################
-            # Allocation or deallocation
-            #####################################
-            # Must allocate/deallocate using active group because it has consumed power info.
-            active_ladder = self._process_allocation_group(
-                book.active_group_map,
-                book.net_power,
-                allocation_type="Delta",
-            )
-
-            await self._async_send_allocations(
-                active_ladder, paused_only=False, log=True
-            )
-            await self._async_send_allocations(all_ladder, paused_only=True, log=True)
+        await self._async_send_allocations(
+            rebalance_active_ladder, paused_only=False, log=False
+        )
+        await self._async_send_allocations(all_ladder, paused_only=True, log=True)
 
     # # ----------------------------------------------------------------------------
     # async def _async_process_allocation_book(self, book: AllocationBook) -> None:
@@ -715,10 +764,13 @@ class PowerAllocator:
     #         allocation_type="Plan",
     #     )
 
-    #     # Gross power less than or equal to zero is considered an allocation.
-    #     if book.gross_power <= 0:
+    #     # # Gross power less than or equal to zero is considered an allocation.
+    #     # if book.gross_power <= 0:
+
+    #     # Rebalance triggered by charger share_allocation changing from 0 to 1.
+    #     if book.need_rebalance:
     #         #####################################
-    #         # Allocation - Rebalance
+    #         # Rebalance allocation
     #         #####################################
     #         active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
@@ -739,10 +791,9 @@ class PowerAllocator:
 
     #     else:
     #         #####################################
-    #         # Deallocation
+    #         # Allocation or deallocation
     #         #####################################
-    #         # Must deallocate using active group because it has consumed power info.
-    #         # Do not rebalance since those groups do not have consumed power info.
+    #         # Must allocate/deallocate using active group because it has consumed power info.
     #         active_ladder = self._process_allocation_group(
     #             book.active_group_map,
     #             book.net_power,

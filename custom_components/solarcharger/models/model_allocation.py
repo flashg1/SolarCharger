@@ -170,7 +170,7 @@ class AllocationBook:
     # Latest net power update. -ve value means excess power, +ve value means power shortage.
     net_power: float = 0.0
 
-    # Sum of total_consumed_power and new net power update. -ve/+ve.
+    # gross power = net_power - total_consumed_power, can be -ve or +ve.
     gross_power: float = 0.0
 
     # Only does rebalance power when share_allocation changes from 0 to 1. Why?
@@ -179,7 +179,7 @@ class AllocationBook:
     # For devices that cannot set current, power is only released when the device
     # is paused, which takes time.
     # So must keep doing deallocation until device is paused and power released.
-    need_rebalance: bool = False
+    need_rebalance: bool = False  # Not used
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
