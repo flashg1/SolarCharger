@@ -27,6 +27,8 @@ class StateInitialise(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     def _check_if_at_location_or_abort(self, chargeable: Chargeable) -> None:
+        """Check if device is at charger location, or abort."""
+
         is_at_location = self.solarcharge.is_at_location(chargeable)
         if not is_at_location:
             raise RuntimeError("Device not at charger location")

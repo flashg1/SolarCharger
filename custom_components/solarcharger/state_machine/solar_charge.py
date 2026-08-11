@@ -1288,7 +1288,7 @@ class SolarCharge(ScOptionState):
             next_state = self.machine_state.state
 
             if next_state == current_state and current_state == RunState.END:
-                # Completed "Ended" state. No more states to run.
+                # Completed "End" state. No more states to run.
                 break
 
     # ----------------------------------------------------------------------------

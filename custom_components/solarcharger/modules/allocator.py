@@ -188,43 +188,50 @@ class PowerAllocator:
         # member.instance can only be 1 since we have excluded all non-running devices.
         final_weight = member.instance * member.allocation_weight
 
-        # Determine following variables:
-        member.allocation_final_weight = 0
-        member.deallocation_final_weight = 0
-        member.need_power = 0
-
         #######################################################
-        # If at less than max power but not zero, participate in both allocation and deallocation.
-        # If at zero power, participate only in allocation.
-        # If at max power, participate only in deallocation.
-        # The objective is to:
-        # - Ensure devices running at max power do not share in allocation, so that other devices
-        #   can get a bigger share. This is not perfect since device might just be at below max
-        #   power and get allocated more than required. So both remain power and total weight will
-        #   also be adjusted for subsequent allocations to fully utilize the power.
-        # - Ensure devices at zero power do not participate in deallocation, so that other devices
-        #   can get a bigger share. Similar to allocation, remain power and total weight will
-        #   also be adjusted for subsequent deallocations to fully utilize the power.
+        # For rebalance, all must participate in allocation and deallocation.
         #######################################################
-        if consumed_power < member.max_power:
-            #####################################
-            # Participate in allocation and possibly deallocation.
-            #####################################
-            member.allocation_final_weight = final_weight
+        member.allocation_final_weight = final_weight
+        member.deallocation_final_weight = final_weight
+        member.need_power = consumed_power - member.max_power
 
-            # Paused device has need_power = lack_power = consumed_power = 0.
-            if member.allocation_final_weight > 0:
-                member.need_power = consumed_power - member.max_power
+        # # Determine following variables:
+        # member.allocation_final_weight = 0
+        # member.deallocation_final_weight = 0
+        # member.need_power = 0
 
-            # Only participate in deallocation if consumed power > 0
-            if consumed_power > 0:
-                member.deallocation_final_weight = final_weight
+        # #######################################################
+        # # If at less than max power but not zero, participate in both allocation and deallocation.
+        # # If at zero power, participate only in allocation.
+        # # If at max power, participate only in deallocation.
+        # # The objective is to:
+        # # - Ensure devices running at max power do not share in allocation, so that other devices
+        # #   can get a bigger share. This is not perfect since device might just be at below max
+        # #   power and get allocated more than required. So both remain power and total weight will
+        # #   also be adjusted for subsequent allocations to fully utilize the power.
+        # # - Ensure devices at zero power do not participate in deallocation, so that other devices
+        # #   can get a bigger share. Similar to allocation, remain power and total weight will
+        # #   also be adjusted for subsequent deallocations to fully utilize the power.
+        # #######################################################
+        # if consumed_power < member.max_power:
+        #     #####################################
+        #     # Participate in allocation and possibly deallocation.
+        #     #####################################
+        #     member.allocation_final_weight = final_weight
 
-        else:
-            #####################################
-            # Participate in deallocation only.
-            #####################################
-            member.deallocation_final_weight = final_weight
+        #     # Paused device has need_power = lack_power = consumed_power = 0.
+        #     if member.allocation_final_weight > 0:
+        #         member.need_power = consumed_power - member.max_power
+
+        #     # Only participate in deallocation if consumed power > 0
+        #     if consumed_power > 0:
+        #         member.deallocation_final_weight = final_weight
+
+        # else:
+        #     #####################################
+        #     # Participate in deallocation only.
+        #     #####################################
+        #     member.deallocation_final_weight = final_weight
 
         group = group_map.get(member.priority)
         if group is None:
@@ -340,6 +347,10 @@ class PowerAllocator:
         member.lack_power = 0
 
         if total_weight > 0:
+            # Think about allocation using proportional max power, ie. device max power / total max power of all devices in group.
+            # eg. net_power = -6000, hot water max power = 3600, heater max power = 1500.
+            # If using weighted allocation, both will get -3000 each, but hot water gets 0 because it is below activation power.
+            # So heater will get -3000 and hot water will get 0, which is not optimal.
             allocated_power = remain_power * weight / total_weight
 
             # allocated_power can be -ve or +ve.
@@ -400,6 +411,14 @@ class PowerAllocator:
                 remain_power = remain_power - member.final_power
 
         rung.total_lack_power += member.lack_power
+
+        # _LOGGER.warning(
+        #     "PowerAllocation: %s, remain_power=%.2f, total_weight=%.2f, weight=%.2f",
+        #     member,
+        #     remain_power,
+        #     total_weight,
+        #     weight,
+        # )
 
         return remain_power
 
@@ -544,7 +563,7 @@ class PowerAllocator:
         group_map: dict[int, AllocationGroup],
         net_power: float,
         allocation_type: str,
-    ) -> list[AllocationGroup]:
+    ) -> tuple[float, list[AllocationGroup]]:
         """Process allocation group to determine final allocation for each device."""
 
         ladder = self._sorted_list_of_priority_level(group_map)
@@ -562,7 +581,7 @@ class PowerAllocator:
             unallocated_power,
         )
 
-        return ladder
+        return unallocated_power, ladder
 
     # ----------------------------------------------------------------------------
     def _get_member_state(self, member: PowerAllocation) -> str:
@@ -652,7 +671,7 @@ class PowerAllocator:
                                     rebalance_active_member.consumed_power
                                 )
 
-                            _LOGGER.warning(
+                            _LOGGER.info(
                                 "%s: priority=%s, state=%s, from=%.2f, was_to=%.2f, after_loan=%.2f",
                                 rebalance_active_member.name,
                                 rebalance_active_member.priority,
@@ -673,6 +692,7 @@ class PowerAllocator:
         self,
         book: AllocationBook,
         active_ladder: list[AllocationGroup],
+        unallocated_power: float,
     ) -> list[AllocationGroup]:
         """Rebalance allocation among active chargers only."""
 
@@ -714,6 +734,9 @@ class PowerAllocator:
                     rebalance_active_member.activation_power,
                 )
 
+        # Reduce total loan power with unallocated power from rebalance.
+        if total_loan_power > 0 and unallocated_power < 0:
+            total_loan_power = max(total_loan_power + unallocated_power, 0)
         self._distribute_loan_power(rebalance_active_ladder, total_loan_power)
 
         return rebalance_active_ladder
@@ -725,7 +748,7 @@ class PowerAllocator:
         _LOGGER.info("AllocationBook: %s", book)
 
         # Allocation for all running chargers including both active and paused chargers.
-        all_ladder = self._process_allocation_group(
+        _, all_ladder = self._process_allocation_group(
             book.all_group_map,
             book.gross_power,
             allocation_type="Plan",
@@ -737,13 +760,13 @@ class PowerAllocator:
         active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
         # Rebalance allocation for all active chargers.
-        self._process_allocation_group(
+        unallocated_power, _ = self._process_allocation_group(
             book.rebalance_group_map,
             book.gross_power,
             allocation_type="Rebalance",
         )
         rebalance_active_ladder = self._rebalance_allocation_among_active_chargers(
-            book, active_ladder
+            book, active_ladder, unallocated_power
         )
 
         await self._async_send_allocations(
