@@ -748,6 +748,7 @@ class PowerAllocator:
         _LOGGER.info("AllocationBook: %s", book)
 
         # Allocation for all running chargers including both active and paused chargers.
+        # This will be later used as theoretical allocation for paused chargers.
         _, all_ladder = self._process_allocation_group(
             book.all_group_map,
             book.gross_power,
@@ -756,6 +757,27 @@ class PowerAllocator:
 
         #####################################
         # Rebalance allocation
+        #####################################
+        # Characteristics of rebalance allocation:
+        # - Rebalance is good because power distribution is recalculated for all
+        # devices every time.
+        # - gross power = net_power - total_consumed_power
+        # - When gross power < 0, then there is surplus power for allocation.
+        # - Rebalance deallocation is easy, ie. when gross power >= 0, all devices
+        # will get 0 power.
+        # - Power is rebalanced assuming that power can be redistributed immediately,
+        # which is not the case for devices that cannot adjust current.
+        # - For devices that cannot adjust current, power is borrowed from devices
+        # that can adjust current until such time the borrower device is paused.
+        # - Pausing a device takes time.
+        # - This might also lead to the lender device being paused by lending out
+        # too much power for too long. **Think about this.**
+        # - In the case of only 2 devices and both cannot adjust current, there is
+        # no lending of power, so there will be an overlap period in which both devices
+        # are using up power until such time the lower priority deivce is paused.
+        # ** Think about whether rebalance can plan ahead doing both deallocation
+        # and allocation at the same time, so that the lower priority device can
+        # be paused before the higher priority device becomes active.
         #####################################
         active_ladder = self._sorted_list_of_priority_level(book.active_group_map)
 
@@ -769,9 +791,12 @@ class PowerAllocator:
             book, active_ladder, unallocated_power
         )
 
+        # Send allocation for active chargers.
         await self._async_send_allocations(
             rebalance_active_ladder, paused_only=False, log=False
         )
+
+        # Send allocation for paused chargers.
         await self._async_send_allocations(all_ladder, paused_only=True, log=True)
 
     # # ----------------------------------------------------------------------------
