@@ -179,7 +179,7 @@ class AllocationBook:
     # For devices that cannot set current, power is only released when the device
     # is paused, which takes time.
     # So must keep doing deallocation until device is paused and power released.
-    need_rebalance: bool = False  # Not used
+    need_rebalance: bool = False  # Not used, to be removed.
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:

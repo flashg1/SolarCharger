@@ -5,7 +5,7 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
 - Renamed run state names to Start, Initialise, Charge, Pause, Tidy-up and End.
 ### Fix
-- Stop turning off external charger when car is charging away from home. Thanks @Azarius-PA
+- Do not turn off external charger when car is charging away from home. Thanks @Azarius-PA
 ### Improvement
 - Deallocate from devices that can adjust current until such time devices that cannot adjust current is paused.
 - Use rebalance algorithm for both allocation and deallocation.
