@@ -144,11 +144,13 @@ class SolarCharge(ScOptionState):
 
         self.charge_current_update_period = self.get_charger_current_update_period()
 
+        # FYI only. Not used in any logic.
+        self._self_depower: bool = False
+        self._need_rebalance: bool = False  # To be removed.
+
         # Entity backed by variable for efficiency. Ok if re-direction is not required.
         self._share_allocation: int = 0
-        self._need_rebalance: bool = False
         self._consumed_power: float = 0.0
-        self._self_depower: bool = False
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -753,7 +755,6 @@ class SolarCharge(ScOptionState):
         # Must reset time here to avoid possible wrong energy calculation if pausing.
         self.charge_current_updatetime = datetime.min
         self.started_max_charge = 0
-        self.set_self_depower(False)
 
     # ----------------------------------------------------------------------------
     async def async_set_charge_limit(

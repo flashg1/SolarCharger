@@ -202,7 +202,7 @@ class StateCharge(SolarChargeState):
     # ----------------------------------------------------------------------------
     # Charge loop
     # ----------------------------------------------------------------------------
-    def _set_charging_substate(self) -> None:
+    def _set_charge_substate(self) -> None:
         """Set the charging sub-state of the object."""
 
         if self.solarcharge.is_self_depower:
@@ -215,7 +215,7 @@ class StateCharge(SolarChargeState):
         """Set the self-depower state of the object."""
 
         self.solarcharge.set_self_depower(self_depower)
-        self._set_charging_substate()
+        self._set_charge_substate()
 
     # ----------------------------------------------------------------------------
     def _is_same_current(
