@@ -6,6 +6,8 @@
 ### Fix
 ### New feature
 ### Improvement
+- Do not lend power from system priority devices.
+- Ensure lender can keep minimum activation power to avoid pausing.
 
 ## v0.10.2 2026-08-09
 ### Breaking change

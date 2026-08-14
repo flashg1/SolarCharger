@@ -64,6 +64,8 @@ from .const import (
     NUMBER_WAIT_DEVICE_LIMIT_CHANGE,
     NUMBER_WAIT_DEVICE_UPDATE_HA,
     NUMBER_WAIT_DEVICE_WAKEUP,
+    USER_DEVICE_PRIORITY_END,
+    USER_DEVICE_PRIORITY_START,
 )
 from .entity import (
     SolarChargerEntity,
@@ -310,8 +312,8 @@ CONFIG_NUMBER_LIST: tuple[
         SolarChargerEntityType.TYPE_LOCAL,
         NumberEntityDescription(
             key=NUMBER_CHARGER_PRIORITY,
-            native_min_value=5,  # Priority 0 to 4 reserved for system use.
-            native_max_value=100,
+            native_min_value=USER_DEVICE_PRIORITY_START,
+            native_max_value=USER_DEVICE_PRIORITY_END,
             native_step=1,
         ),
     ),

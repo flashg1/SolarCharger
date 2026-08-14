@@ -10,6 +10,7 @@ from ..const import (
     MAX_SPEED_CHARGE_PRIORITY,
     MAX_SPEED_CHARGE_PRIORITY_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
+    USER_DEVICE_PRIORITY_START,
     RunState,
 )
 from ..helpers.general import async_set_delta_allocated_power
@@ -495,7 +496,7 @@ class PowerAllocator:
         self,
         ladder: list[AllocationGroup],
         net_power: float,  # ie. net_power is positive to free up power.
-        end_rung: int = -1,  # inclusive, -1 means all the way to the top priority level.
+        end_rung: int = -1,  # inclusive, -1 means all the way from bottom to top inclduing index 0.
     ) -> float:
         """Release power from lower to higher priority chargers up to and not including the end_rung priority level."""
 
@@ -645,12 +646,18 @@ class PowerAllocator:
     ) -> None:
         """Distribute loaned power from lower to higher priority chargers that can adjust current."""
 
+        exit_loop = False
         if loan_power > 0:
             freeup_power = loan_power
             for rung in range(len(rebalance_active_ladder) - 1, -1, -1):
                 for rebalance_active_member in rebalance_active_ladder[
                     rung
                 ].member_map.values():
+                    # Do not lend power from system priority devices.
+                    if rebalance_active_member.priority < USER_DEVICE_PRIORITY_START:
+                        exit_loop = True
+                        break
+
                     # Reduce net allocated power from devices that can adjust current.
                     # Should distribute load evenly amoung members, but for now just iterate.
                     if rebalance_active_member.can_set_current:
@@ -658,17 +665,26 @@ class PowerAllocator:
                             rebalance_active_member.final_power
                             - rebalance_active_member.consumed_power
                         )
-                        if member_rebalance_power < 0:
-                            freeup_power += member_rebalance_power
+
+                        # Ensure lender can keep minimum activation power to avoid pausing.
+                        member_lend_power = (
+                            member_rebalance_power
+                            - rebalance_active_member.activation_power
+                        )
+                        if member_lend_power < 0:
+                            freeup_power += member_lend_power
                             if freeup_power <= 0:
                                 rebalance_active_member.final_power = (
                                     freeup_power
+                                    + rebalance_active_member.activation_power
                                     + rebalance_active_member.consumed_power
                                 )
                                 freeup_power = 0
+                                exit_loop = True
                             else:
                                 rebalance_active_member.final_power = (
-                                    rebalance_active_member.consumed_power
+                                    rebalance_active_member.activation_power
+                                    + rebalance_active_member.consumed_power
                                 )
 
                             _LOGGER.info(
@@ -681,10 +697,10 @@ class PowerAllocator:
                                 rebalance_active_member.final_power,  # After loan
                             )
 
-                    if freeup_power <= 0:
+                    if exit_loop:
                         break
 
-                if freeup_power <= 0:
+                if exit_loop:
                     break
 
     # ----------------------------------------------------------------------------
@@ -770,8 +786,9 @@ class PowerAllocator:
         # - For devices that cannot adjust current, power is borrowed from devices
         # that can adjust current until such time the borrower device is paused.
         # - Pausing a device takes time.
-        # - This might also lead to the lender device being paused by lending out
-        # too much power for too long. **Think about this.**
+        # - This can lead to the lender device being paused by lending out too much
+        # power for too long, so ensure lender can keep minimum activation power to
+        # avoid pausing.
         # - In the case of only 2 devices and both cannot adjust current, there is
         # no lending of power, so there will be an overlap period in which both devices
         # are using up power until such time the lower priority deivce is paused.
