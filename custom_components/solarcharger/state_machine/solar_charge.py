@@ -1078,6 +1078,9 @@ class SolarCharge(ScOptionState):
                 if context.enough_power is not None and not context.enough_power:
                     context.next_step = ChargeStatus.CHARGE_PAUSE
                     context.continue_state = False
+
+            # What to do if there is no monitor window and not enough power?
+            # Continue charging or stop?
         else:
             context.next_step = ChargeStatus.CHARGE_END
             context.continue_state = False

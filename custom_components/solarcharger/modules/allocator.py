@@ -641,14 +641,17 @@ class PowerAllocator:
                         )
 
     # ----------------------------------------------------------------------------
-    def _distribute_loan_power(
-        self, rebalance_active_ladder: list[AllocationGroup], loan_power: float
+    def _temporarily_lend_power_until_borrower_is_paused(
+        self, rebalance_active_ladder: list[AllocationGroup], total_loan_power: float
     ) -> None:
-        """Distribute loaned power from lower to higher priority chargers that can adjust current."""
+        """Temporarily lend power to devices that cannot adjust current until paused.
+
+        Distribute loan from lower to higher priority devices that can adjust current.
+        """
 
         exit_loop = False
-        if loan_power > 0:
-            freeup_power = loan_power
+        if total_loan_power > 0:
+            freeup_power = total_loan_power
             for rung in range(len(rebalance_active_ladder) - 1, -1, -1):
                 for rebalance_active_member in rebalance_active_ladder[
                     rung
@@ -728,11 +731,16 @@ class PowerAllocator:
                     rebalance_active_member.consumed_power * -1
                 )
 
-                # No need to loan power if monitor window is disabled.
-                control = self._device_controls[rebalance_member.subentry_id]
+                # Devices that cannot adjust current will borrow power from devices
+                # that can adjust current until such time the borrower device is paused.
                 if (
-                    control.controller.solar_charge.power_monitor_duration > 0
-                    and not rebalance_member.can_set_current
+                    # Note: If monitor window is disabled, currently devices will just
+                    # continue charging. **Need to think about this.**
+                    # self._device_controls[
+                    #     rebalance_member.subentry_id
+                    # ].controller.solar_charge.power_monitor_duration
+                    # > 0 and
+                    not rebalance_member.can_set_current
                     and rebalance_member.final_power
                     > rebalance_member.adjusted_activation_power
                 ):
@@ -753,7 +761,9 @@ class PowerAllocator:
         # Reduce total loan power with unallocated power from rebalance.
         if total_loan_power > 0 and unallocated_power < 0:
             total_loan_power = max(total_loan_power + unallocated_power, 0)
-        self._distribute_loan_power(rebalance_active_ladder, total_loan_power)
+        self._temporarily_lend_power_until_borrower_is_paused(
+            rebalance_active_ladder, total_loan_power
+        )
 
         return rebalance_active_ladder
 
