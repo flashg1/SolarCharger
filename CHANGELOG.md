@@ -2,16 +2,14 @@
 
 ## v0.10.3 2026-08-12
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
-### Fix
-### New feature
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
 ### Improvement
 - Do not lend power from system priority devices.
 - Ensure lender can keep minimum activation power to avoid pausing.
 
 ## v0.10.2 2026-08-09
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
 - Renamed run state names to Start, Initialise, Charge, Pause, Tidy-up and End.
 ### Fix
 - Do not turn off external charger when car is charging away from home. Thanks @Azarius-PA
@@ -21,14 +19,14 @@
 
 ## v0.10.1 2026-08-06
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
 ### Fix
 - Fixed issue with not able to restore switch's "off" state after home assistant reboot.
 - Fixed issue with self-depowered device going into pause state unexpectedly.
 
 ## v0.10.0 2026-07-23
 ### Breaking change
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 - Rename and migrate SC chargee entities to device entities if config files exist.
 - Added overridable power factor entity.
 ### New feature
@@ -40,7 +38,7 @@
 
 ## v0.9.0 2026-07-11
 ### Breaking change
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 - Renamed charge sub-state from "Self-paused" to "Self-depower".
 - Renamed counter "Self-paused today" to "Self-depower today" to support device that can vary current by itself.
 - Replaced "Start on pause" switch with "Start state" selector.
@@ -65,7 +63,7 @@
 
 ## v0.8.3 2026-07-07
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
 ### New feature
 - Added "[Self-paused](https://github.com/flashg1/SolarCharger/wiki/User-guide#self-paused)" sub-state as part of "Charging" state to indicate device turned off by itself while charging.
 - Added [Self-paused today](https://github.com/flashg1/SolarCharger/wiki/User-guide#self-paused-today) sensor to count number of times the device turned off by itself, eg. water heater.
@@ -74,13 +72,13 @@
 
 ## v0.8.2 2026-06-30
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
 ### Fix
 - Fix for Tesla Wall Connector charge current mismatch on startup. The fix is to set initial charge current to 6A. If SolarCharger attempts to set current to 1A after switching on Tesla Wall Connector, Tesla Wall Connector will set current to 5A causing the mismatch. Reference: [#27](https://github.com/flashg1/SolarCharger/releases/tag/v0.8.2)
 
 ## v0.8.1 2026-05-30
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.7.0 or prior.
 ### Improvement
 - Reduced logging.
 - Set default values for all Tesla APIs.
@@ -90,7 +88,7 @@
 
 ## v0.8.0 2026-05-12
 ### Breaking change
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 - Changed charger starting current from 6A to min workable current. Please ensure your min workable current is set.
 - Added [Min workable power pause threshold](https://github.com/flashg1/SolarCharger/wiki/User-guide#min-workable-power-pause-threshold) to local device config.
 - Renamed "Min workable current exit pause percent" to [Min workable power resume threshold](https://github.com/flashg1/SolarCharger/wiki/User-guide#min-workable-power-resume-threshold) and moved from global defaults to local device config.
@@ -113,7 +111,7 @@
 
 ## v0.7.0 2026-05-03
 ### Breaking change
-- Due to new features introduced in this release, a new parameter "Charger current update period" is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
+- Due to new features introduced in this release, a new parameter "Charger current update period" is now required in the config flow. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration). Please see [SolarCharger initial configuration](https://github.com/flashg1/SolarCharger/wiki/Installation#solarcharger-initial-configuration) for more information.
 - Renamed "Allocated power" sensor to "Delta allocated power" sensor.
 ### New feature
 - Decoupled net power update from current adjustments to,
@@ -138,7 +136,7 @@
 
 ## v0.6.1 2026-04-26
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.5.4 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.5.4 or prior.
 ### Improvement
 - Reduced debug logging.
 - Refactored data models and reorganised directory structure.
@@ -151,7 +149,7 @@
 ### Breaking change
 - Best to set max current locally in SolarCharger instead of reading from OCPP charger.
 - Moved default charge limits from settings (cog wheel) to device configuration section for database persistence. Please reset defaults if required.
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature
 - Added support for [charge priority](https://github.com/flashg1/SolarCharger/wiki/User-guide#priority).
 ### Fix
@@ -162,21 +160,21 @@
 
 ## v0.5.4 2026-04-19
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
 ### Improvement
 - Included PLUG and PRESENCE device class entities for "Device presence sensor" selection.
 
 ## v0.5.3 2026-04-11
 ### Breaking change
 - Moved "Device presence sensor" from settings (cog wheel) to device configuration section. Please reset "Device presence sensor" and turn on "Presence trigger" if required.
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
 ### Improvement
 - Log pause duration on pause exit.
 - Log start of device detection.
 
 ## v0.5.2 2026-04-04
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
 ### Fix
 - Fixed issue with SolarCharger not stopping after unplugging charger in paused state.
 ### Improvement
@@ -186,7 +184,7 @@
 
 ## v0.5.1 2026-04-04
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.4.3 or prior.
 ### Fix
 - Fixed issue with SolarCharger not stopping at sunset when in paused state.
 ### Improvement
@@ -194,7 +192,7 @@
 
 ## v0.5.0 2026-03-23
 ### Breaking change
-- Changed "Allocated power" from number to sensor. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- Changed "Allocated power" from number to sensor. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature
 - Added [power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) to turn off charger if average power in duration drops below "Min workable current". Requires "Min workable current" to be a non-zero value.
 ### Improvement
@@ -210,13 +208,13 @@
 
 ## v0.4.3 2026-03-18
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
 ### New feature
 - Added support for Teslemetry charger (beta release).
 
 ## v0.4.2 2026-03-14
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
 - With "Sun trigger" off, "Sunset elevation end trigger" will no longer stop SolarCharger.
 ### New feature
 - With "Sun trigger" off, SolarCharger will continue to adjust current as long as there is surplus power (eg. from battery, wind turbine, etc.) irrespective of time of day. Thanks @mrblond18 for the idea.
@@ -224,7 +222,7 @@
 
 ## v0.4.1 2026-03-11
 ### Breaking change
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.3.13 or prior.
 ### New feature
 - Added support for [ping ICMP](https://github.com/flashg1/SolarCharger/wiki/User-guide#use-ping-to-detect-car-and-update-ha-to-get-latest-status) to detect device presence.
 ### Fix
@@ -236,7 +234,7 @@
 
 ## v0.4.0 2026-02-22
 ### Breaking change
-- Created separate entities for get and set device charge limit. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-delete-and-re-add-the-solarcharger-integration).
+- Created separate entities for get and set device charge limit. Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 ### New feature
 - Added support for PedroKTFC esphome-tesla-ble charger (beta release).
 ### Improvement
