@@ -65,13 +65,11 @@ async def async_create_device_subentries(
         for device in device_list:
             domain, device_name, device_id = device
             if domain == DOMAIN:
-                # Unable to create custom device due to global default device not yet created.
-                continue
                 await async_create_custom_device(
                     hass,
                     config_entry,
                     {SUBENTRY_CHARGER_DEVICE_NAME: device_name},
-                    device_id,
+                    # device_id,    # Global default device ID is different if device is recreated.
                 )
             else:
                 # Third-party charger devices already exits, so can create SC charger device.
@@ -229,9 +227,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Create global defaults subentry
     #####################################
     create_all_subentry = await async_create_global_defaults_subentry(hass, entry)
-    if create_all_subentry:
-        # Unable to create custom device due to global default device not yet created.
-        await async_create_device_subentries(hass, entry)
 
     #####################################
     # Initialise all subentries
@@ -250,15 +245,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 device_controls,
             )
 
-    for subentry in entry.subentries.values():
-        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
-            # Initialize charger
-            await async_init_charger_subentry(
-                hass,
-                entry,
-                subentry,
-                device_controls,
-            )
+    # for subentry in entry.subentries.values():
+    #     if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
+    #         # Initialize charger
+    #         await async_init_charger_subentry(
+    #             hass,
+    #             entry,
+    #             subentry,
+    #             device_controls,
+    #         )
 
     # There are no subentries on first start
     if global_defaults_subentry is None:
@@ -279,7 +274,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     #####################################
-    # Create entites for each platform with dependency on coordinator
+    # Create entites for each platform with dependency on coordinator.
+    # Initially for global defaults device only.
     #####################################
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -287,6 +283,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # ValueError: tesla_custom_tesla23m3: charger_plugged_in_sensor: Failed to get entity ID
     # Most likely coordinator init had fail, or init had failed causing entities not to be available on first run.
     # Restart for second run and SolarCharger spinned up without issue.
+    await asyncio.sleep(3)
+
+    #####################################
+    # Recreate entities for all devices, ie. global defaults, chargers and custom devices.
+    #####################################
+    if create_all_subentry:
+        # Won't be able to create custom device until global default device has been created.
+        await async_create_device_subentries(hass, entry)
+
+    for subentry in entry.subentries.values():
+        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
+            # Initialize charger
+            await async_init_charger_subentry(
+                hass,
+                entry,
+                subentry,
+                device_controls,
+            )
+
+    await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    await asyncio.sleep(3)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await asyncio.sleep(3)
 
     #####################################
