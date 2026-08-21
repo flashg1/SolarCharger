@@ -117,15 +117,15 @@ class MedianDataState(Enum):
 MEDIAN_DATA_STATE_LIST: list[str] = [state.value for state in MedianDataState]
 
 
-class ChargeControlApi(Enum):
-    """Enumeration of supported ChargeControl APIs."""
+# class ChargeControlApi(Enum):
+#     """Enumeration of supported ChargeControl APIs."""
 
-    OCPP_CHARGER_API = "ocpp_charger_api"
-    TESLA_CUSTOM_API = "tesla_custom_api"
-    TESLA_MQTTBLE_API = "tesla_mqtt_ble_api"
-    TESLA_FLEET_API = "tesla_fleet_api"
-    TESLA_TESSIE_API = "tesla_tessie_api"
-    USER_CUSTOM_API = "user_custom_api"
+#     OCPP_CHARGER_API = "ocpp_charger_api"
+#     TESLA_CUSTOM_API = "tesla_custom_api"
+#     TESLA_MQTTBLE_API = "tesla_mqtt_ble_api"
+#     TESLA_FLEET_API = "tesla_fleet_api"
+#     TESLA_TESSIE_API = "tesla_tessie_api"
+#     USER_CUSTOM_API = "user_custom_api"
 
 
 #######################################################
@@ -219,6 +219,13 @@ DEVICE_MODEL_MAP: dict[str, str] = {
     DOMAIN_TESSIE: f"{DOMAIN}-{DOMAIN_TESSIE}",
     DOMAIN_TESLEMETRY: f"{DOMAIN}-{DOMAIN_TESLEMETRY}",
 }
+
+#####################################
+# SolarCharger config file names
+#####################################
+CONFIG_FILE_SOURCE = "Source"
+CONFIG_FILE_DEVICE = "Device"
+CONFIG_DEVICE_LIST = "device_list"
 
 #######################################################
 # Error codes
@@ -319,7 +326,6 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 #####################################
 # Power import/export sensor
 #####################################
-CONFIG_SOURCE_NAME = "Source"
 CONFIG_NET_POWER_SENSOR = "net_power_sensor"
 
 CONFIG_CHARGER_CURRENT_UPDATE_PERIOD = "charger_current_update_period"

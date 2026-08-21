@@ -42,6 +42,7 @@ from .config_utils import (
     TEXT_SELECTOR,
     async_ha_store_load,
     async_ha_store_save,
+    async_ha_store_update_device_list,
     get_subentry_id,
     ha_store_open,
 )
@@ -89,10 +90,11 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
 
     # ----------------------------------------------------------------------------
     async def _async_setup_options(
-        self, config_entry: ConfigEntry, subentry_unique_id: str, device_name: str
+        self, config_entry: ConfigEntry, subentry_unique_id: str, domain: str, name: str
     ) -> None:
         """Set up default options for the new subentry."""
 
+        device_name = slugify(name)
         _LOGGER.debug(
             "Setting up default options for subentry with unique_id: %s",
             subentry_unique_id,
@@ -112,6 +114,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
 
         # Save device settings to file storage.
         await async_ha_store_save(store, data)
+        await async_ha_store_update_device_list(self.hass, domain, name)
 
         self.hass.config_entries.async_update_entry(
             config_entry,
@@ -136,6 +139,192 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
 
         return device_entry
 
+    # # ----------------------------------------------------------------------------
+    # async def async_step_user(
+    #     self, user_input: dict[str, Any] | None = None
+    # ) -> SubentryFlowResult:
+    #     """Entry point for subentry config. Prompts for charger selection."""
+    #     errors: dict[str, str] = {}
+    #     input_data: dict[str, Any] | None = None
+
+    #     config_entry = self._get_entry()
+    #     # config_entry.solarcharger_data = {}
+    #     if user_input is not None:
+    #         try:
+    #             input_data = validate_charger_selection(self.hass, user_input)
+    #         except ValidationExceptionError as ex:
+    #             errors[ex.base] = ex.key
+
+    #         if not errors and input_data is not None:
+    #             # Get charger device subentry
+    #             custom_charger_name: str | None = input_data.get(
+    #                 SUBENTRY_CHARGER_DEVICE_NAME
+    #             )
+    #             if not custom_charger_name:
+    #                 raise ValueError(
+    #                     f"Subentry {SUBENTRY_CHARGER_DEVICE_NAME} not defined"
+    #                 )
+
+    #             global_defaults_net_power = compose_entity_id(
+    #                 SENSOR, OPTION_GLOBAL_DEFAULTS_ID, SENSOR_DELTA_ALLOCATED_POWER
+    #             )
+    #             global_defaults_device_entry: DeviceEntry | None = (
+    #                 self.get_device_entry(global_defaults_net_power)
+    #             )
+    #             if not global_defaults_device_entry:
+    #                 raise ValueError(
+    #                     f"Charger device {custom_charger_name} not found in device registry."
+    #                 )
+
+    #             custom_charger_display_name = (
+    #                 f"{SUBENTRY_TYPE_CUSTOM} {custom_charger_name}"
+    #             )
+    #             custom_charger_config_name = slugify(f"{custom_charger_display_name}")
+    #             custom_charger_subdomain = compose_subdomain(
+    #                 config_entry.domain,
+    #                 global_defaults_device_entry.manufacturer,
+    #                 global_defaults_device_entry.model,
+    #             )
+
+    #             _LOGGER.info(
+    #                 "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
+    #                 len(config_entry.subentries) + 1,
+    #                 custom_charger_name,
+    #                 custom_charger_config_name,
+    #                 custom_charger_subdomain,
+    #             )
+
+    #             # Check if subentry with this unique_id already exists
+    #             subentry_id = get_subentry_id(config_entry, custom_charger_config_name)
+    #             if subentry_id is not None:
+    #                 return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
+
+    #             # Create new subentry
+    #             self.hass.config_entries.async_add_subentry(
+    #                 config_entry,
+    #                 ConfigSubentry(
+    #                     subentry_type=SUBENTRY_TYPE_CUSTOM,
+    #                     title=custom_charger_display_name,
+    #                     unique_id=custom_charger_config_name,
+    #                     data=MappingProxyType(  # make data immutable
+    #                         {
+    #                             SUBENTRY_CHARGER_DEVICE_DOMAIN: DOMAIN,  # Integration domain
+    #                             SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: custom_charger_subdomain,  # Integration sub-domain
+    #                             SUBENTRY_CHARGER_DEVICE_NAME: custom_charger_name,  # Integration-specific device name
+    #                             SUBENTRY_CHARGER_DEVICE_ID: global_defaults_device_entry.id,  # Integration-specific device ID
+    #                         }
+    #                     ),
+    #                 ),
+    #             )
+
+    #             await self._async_setup_options(
+    #                 config_entry,
+    #                 custom_charger_config_name,
+    #                 DOMAIN,
+    #                 custom_charger_name,
+    #             )
+
+    #             _LOGGER.info(
+    #                 "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
+    #                 len(config_entry.subentries),
+    #                 custom_charger_name,
+    #                 custom_charger_config_name,
+    #                 custom_charger_subdomain,
+    #             )
+
+    #             # Must return with SubentryFlowResult as stipulated in the return type
+    #             return self.async_abort(
+    #                 reason=ERROR_SUBENTRY_CREATED,
+    #                 description_placeholders={
+    #                     "subentry": custom_charger_config_name,
+    #                     "subentry_count": f"{len(config_entry.subentries)}",
+    #                 },
+    #             )
+
+    #     return self.async_show_form(
+    #         step_id="user", data_schema=STEP_SELECT_CHARGER_SCHEMA, errors=errors
+    #     )
+
+    # ----------------------------------------------------------------------------
+    async def async_create_custom_device(
+        self,
+        config_entry: ConfigEntry[Any],
+        input_data: dict[str, Any],
+    ) -> str:
+        """Create custom device."""
+
+        # Get charger device subentry
+        custom_charger_name: str | None = input_data.get(SUBENTRY_CHARGER_DEVICE_NAME)
+        if not custom_charger_name:
+            raise ValueError(f"Subentry {SUBENTRY_CHARGER_DEVICE_NAME} not defined")
+
+        global_defaults_net_power = compose_entity_id(
+            SENSOR, OPTION_GLOBAL_DEFAULTS_ID, SENSOR_DELTA_ALLOCATED_POWER
+        )
+        global_defaults_device_entry: DeviceEntry | None = self.get_device_entry(
+            global_defaults_net_power
+        )
+        if not global_defaults_device_entry:
+            raise ValueError(
+                f"Charger device {custom_charger_name} not found in device registry."
+            )
+
+        custom_charger_display_name = f"{SUBENTRY_TYPE_CUSTOM} {custom_charger_name}"
+        custom_charger_config_name = slugify(f"{custom_charger_display_name}")
+        custom_charger_subdomain = compose_subdomain(
+            config_entry.domain,
+            global_defaults_device_entry.manufacturer,
+            global_defaults_device_entry.model,
+        )
+
+        _LOGGER.info(
+            "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
+            len(config_entry.subentries) + 1,
+            custom_charger_name,
+            custom_charger_config_name,
+            custom_charger_subdomain,
+        )
+
+        # Check if subentry with this unique_id already exists
+        subentry_id = get_subentry_id(config_entry, custom_charger_config_name)
+        if subentry_id is not None:
+            return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
+
+        # Create new subentry
+        self.hass.config_entries.async_add_subentry(
+            config_entry,
+            ConfigSubentry(
+                subentry_type=SUBENTRY_TYPE_CUSTOM,
+                title=custom_charger_display_name,
+                unique_id=custom_charger_config_name,
+                data=MappingProxyType(  # make data immutable
+                    {
+                        SUBENTRY_CHARGER_DEVICE_DOMAIN: DOMAIN,  # Integration domain
+                        SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: custom_charger_subdomain,  # Integration sub-domain
+                        SUBENTRY_CHARGER_DEVICE_NAME: custom_charger_name,  # Integration-specific device name
+                        SUBENTRY_CHARGER_DEVICE_ID: global_defaults_device_entry.id,  # Integration-specific device ID
+                    }
+                ),
+            ),
+        )
+
+        await self._async_setup_options(
+            config_entry,
+            custom_charger_config_name,
+            DOMAIN,
+            custom_charger_name,
+        )
+
+        _LOGGER.info(
+            "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
+            len(config_entry.subentries),
+            custom_charger_name,
+            custom_charger_config_name,
+            custom_charger_subdomain,
+        )
+
+        return custom_charger_config_name
+
     # ----------------------------------------------------------------------------
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -153,79 +342,8 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                 errors[ex.base] = ex.key
 
             if not errors and input_data is not None:
-                # Get charger device subentry
-                custom_charger_name: str | None = input_data.get(
-                    SUBENTRY_CHARGER_DEVICE_NAME
-                )
-                if not custom_charger_name:
-                    raise ValueError(
-                        f"Subentry {SUBENTRY_CHARGER_DEVICE_NAME} not defined"
-                    )
-
-                global_defaults_net_power = compose_entity_id(
-                    SENSOR, OPTION_GLOBAL_DEFAULTS_ID, SENSOR_DELTA_ALLOCATED_POWER
-                )
-                global_defaults_device_entry: DeviceEntry | None = (
-                    self.get_device_entry(global_defaults_net_power)
-                )
-                if not global_defaults_device_entry:
-                    raise ValueError(
-                        f"Charger device {custom_charger_name} not found in device registry."
-                    )
-
-                custom_charger_display_name = (
-                    f"{SUBENTRY_TYPE_CUSTOM} {custom_charger_name}"
-                )
-                custom_charger_config_name = slugify(f"{custom_charger_display_name}")
-                custom_charger_subdomain = compose_subdomain(
-                    config_entry.domain,
-                    global_defaults_device_entry.manufacturer,
-                    global_defaults_device_entry.model,
-                )
-
-                _LOGGER.info(
-                    "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
-                    len(config_entry.subentries) + 1,
-                    custom_charger_name,
-                    custom_charger_config_name,
-                    custom_charger_subdomain,
-                )
-
-                # Check if subentry with this unique_id already exists
-                subentry_id = get_subentry_id(config_entry, custom_charger_config_name)
-                if subentry_id is not None:
-                    return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
-
-                # Create new subentry
-                self.hass.config_entries.async_add_subentry(
-                    config_entry,
-                    ConfigSubentry(
-                        subentry_type=SUBENTRY_TYPE_CUSTOM,
-                        title=custom_charger_display_name,
-                        unique_id=custom_charger_config_name,
-                        data=MappingProxyType(  # make data immutable
-                            {
-                                SUBENTRY_CHARGER_DEVICE_DOMAIN: DOMAIN,  # Integration domain
-                                SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: custom_charger_subdomain,  # Integration sub-domain
-                                SUBENTRY_CHARGER_DEVICE_NAME: custom_charger_name,  # Integration-specific device name
-                                SUBENTRY_CHARGER_DEVICE_ID: global_defaults_device_entry.id,  # Integration-specific device ID
-                            }
-                        ),
-                    ),
-                )
-
-                await self._async_setup_options(
-                    config_entry,
-                    custom_charger_config_name,
-                    slugify(custom_charger_name),
-                )
-
-                _LOGGER.info(
-                    "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
-                    len(config_entry.subentries),
-                    custom_charger_name,
-                    custom_charger_config_name,
-                    custom_charger_subdomain,
+                custom_charger_config_name = await self.async_create_custom_device(
+                    config_entry, input_data
                 )
 
                 # Must return with SubentryFlowResult as stipulated in the return type

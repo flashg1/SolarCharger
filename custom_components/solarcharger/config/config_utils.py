@@ -29,6 +29,8 @@ from homeassistant.util import slugify
 from ..const import (
     CHARGE_API_DEFAULT_VALUES,
     CHARGE_API_ENTITIES,
+    CONFIG_DEVICE_LIST,
+    CONFIG_FILE_DEVICE,
     CONFIG_NAME_MARKER,
     CONFIG_WITH_NO_DEFAULTS,
     DELETE_ENTITY_MARKER,
@@ -276,6 +278,42 @@ def ha_store_open(hass: HomeAssistant, config_name: str) -> Store:
 
     storage_key = _ha_store_get_key(config_name)
     return Store(hass, STORAGE_VERSION, storage_key)
+
+
+# ----------------------------------------------------------------------------
+async def _async_ha_store_get_device_list(store: Store) -> list[tuple[str, str, str]]:
+    """Load device list from file storage."""
+
+    data = await store.async_load()
+    if data is None:
+        return []
+
+    device_list: list[tuple[str, str, str]] = data.get(CONFIG_DEVICE_LIST, [])
+    return device_list
+
+
+# ----------------------------------------------------------------------------
+async def async_ha_store_load_device_list(
+    hass: HomeAssistant,
+) -> list[tuple[str, str, str]]:
+    """Load device list from file storage."""
+
+    store = ha_store_open(hass, CONFIG_FILE_DEVICE)
+    return await _async_ha_store_get_device_list(store)
+
+
+# ----------------------------------------------------------------------------
+async def async_ha_store_update_device_list(
+    hass: HomeAssistant, domain: str, name: str, device_id: str = ""
+) -> None:
+    """Update device list in file storage."""
+
+    store = ha_store_open(hass, CONFIG_FILE_DEVICE)
+    device_list = await _async_ha_store_get_device_list(store)
+    item: tuple[str, str, str] = (domain, name, device_id)
+    if item not in device_list:
+        device_list.append(item)
+        await store.async_save({CONFIG_DEVICE_LIST: device_list})
 
 
 # ----------------------------------------------------------------------------

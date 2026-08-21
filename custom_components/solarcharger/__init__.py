@@ -11,8 +11,11 @@ from homeassistant.helpers import config_validation as cv
 
 from .chargers import Charger, charger_factory
 from .chargers.chargeable import Chargeable
+from .config.config_subentry_charger import AddChargerSubEntryFlowHandler
+from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
 from .config.config_utils import (
     async_ha_store_load,
+    async_ha_store_load_device_list,
     async_ha_store_save,
     get_subentry,
     ha_store_open,
@@ -47,6 +50,32 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up Solar Charger integration."""
     hass.data.setdefault(DOMAIN, {})
     return True
+
+
+# ----------------------------------------------------------------------------
+async def async_create_subentries(
+    hass: HomeAssistant, config_entry: ConfigEntry
+) -> None:
+    """Create charger subentries from device list."""
+
+    device_list = await async_ha_store_load_device_list(hass)
+    _LOGGER.error("device_list=%s", device_list)
+    if len(device_list) > 0:
+        charger_flow = AddChargerSubEntryFlowHandler()
+        custom_flow = AddCustomSubEntryFlowHandler()
+
+        for device in device_list:
+            domain, name, device_id = device
+            if domain == DOMAIN:
+                # Need self
+                await custom_flow.async_create_custom_device(
+                    config_entry, {SUBENTRY_CHARGER_DEVICE_NAME: name}
+                )
+            else:
+                # Need self
+                await charger_flow.async_create_charger_device(
+                    config_entry, {SUBENTRY_CHARGER_DEVICE_ID, device_id}
+                )
 
 
 # ----------------------------------------------------------------------------
@@ -91,6 +120,8 @@ async def async_create_global_defaults_subentry(
                 OPTION_GLOBAL_DEFAULTS_ID: data,
             },
         )
+
+        await async_create_subentries(hass, config_entry)
 
 
 # ----------------------------------------------------------------------------

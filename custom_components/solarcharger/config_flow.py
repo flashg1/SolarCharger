@@ -31,8 +31,8 @@ from .config.config_utils import (
 )
 from .const import (
     CONFIG_CHARGER_CURRENT_UPDATE_PERIOD,
+    CONFIG_FILE_SOURCE,
     CONFIG_NET_POWER_SENSOR,
-    CONFIG_SOURCE_NAME,
     DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD,
     DOMAIN,
     ERROR_CURRENT_UPDATE_PERIOD,
@@ -138,7 +138,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     async def _async_save_config(self, config_data: dict[str, Any]) -> None:
         """Save source config to file storage."""
 
-        store = ha_store_open(self.hass, CONFIG_SOURCE_NAME)
+        store = ha_store_open(self.hass, CONFIG_FILE_SOURCE)
         await async_ha_store_save(store, config_data)
 
     # ----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             current_update_period: float = DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD
 
             # Look for historical config left behind by a previous installation.
-            store = ha_store_open(self.hass, CONFIG_SOURCE_NAME)
+            store = ha_store_open(self.hass, CONFIG_FILE_SOURCE)
             store_config = await async_ha_store_load(store)
             if store_config is not None:
                 net_power_sensor = store_config.get(CONFIG_NET_POWER_SENSOR)
