@@ -11,8 +11,8 @@ from homeassistant.helpers import config_validation as cv
 
 from .chargers import Charger, charger_factory
 from .chargers.chargeable import Chargeable
-from .config.config_subentry_charger import AddChargerSubEntryFlowHandler
-from .config.config_subentry_custom import AddCustomSubEntryFlowHandler
+from .config.config_subentry_charger import async_create_charger_device
+from .config.config_subentry_custom import async_create_custom_device
 from .config.config_utils import (
     async_ha_store_load,
     async_ha_store_load_device_list,
@@ -53,39 +53,44 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 # ----------------------------------------------------------------------------
-async def async_create_subentries(
+async def async_create_device_subentries(
     hass: HomeAssistant, config_entry: ConfigEntry
 ) -> None:
     """Create charger subentries from device list."""
 
     device_list = await async_ha_store_load_device_list(hass)
-    _LOGGER.error("device_list=%s", device_list)
-    if len(device_list) > 0:
-        charger_flow = AddChargerSubEntryFlowHandler()
-        custom_flow = AddCustomSubEntryFlowHandler()
 
+    if len(device_list) > 0:
+        # for index, [domain, name, device_id] in enumerate(device_list):
         for device in device_list:
-            domain, name, device_id = device
+            domain, device_name, device_id = device
             if domain == DOMAIN:
-                # Need self
-                await custom_flow.async_create_custom_device(
-                    config_entry, {SUBENTRY_CHARGER_DEVICE_NAME: name}
+                # Unable to create custom device due to global default device not yet created.
+                continue
+                await async_create_custom_device(
+                    hass,
+                    config_entry,
+                    {SUBENTRY_CHARGER_DEVICE_NAME: device_name},
+                    device_id,
                 )
             else:
-                # Need self
-                await charger_flow.async_create_charger_device(
-                    config_entry, {SUBENTRY_CHARGER_DEVICE_ID, device_id}
+                # Third-party charger devices already exits, so can create SC charger device.
+                await async_create_charger_device(
+                    hass, config_entry, {SUBENTRY_CHARGER_DEVICE_ID: device_id}
                 )
 
 
 # ----------------------------------------------------------------------------
 async def async_create_global_defaults_subentry(
     hass: HomeAssistant, config_entry: ConfigEntry
-) -> None:
+) -> bool:
     """Initialize global defaults subentry if none exist."""
+    create_all_subentry = False
 
     global_defaults_subentry = get_subentry(config_entry, OPTION_GLOBAL_DEFAULTS_ID)
     if global_defaults_subentry is None:
+        create_all_subentry = True
+
         hass.config_entries.async_add_subentry(
             config_entry,
             ConfigSubentry(
@@ -121,7 +126,7 @@ async def async_create_global_defaults_subentry(
             },
         )
 
-        await async_create_subentries(hass, config_entry)
+    return create_all_subentry
 
 
 # ----------------------------------------------------------------------------
@@ -223,26 +228,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Object creation order and initialisation order are important.
     # Create global defaults subentry
     #####################################
-    await async_create_global_defaults_subentry(hass, entry)
+    create_all_subentry = await async_create_global_defaults_subentry(hass, entry)
+    if create_all_subentry:
+        # Unable to create custom device due to global default device not yet created.
+        await async_create_device_subentries(hass, entry)
 
     #####################################
     # Initialise all subentries
     #####################################
     global_defaults_subentry = None
     device_controls: dict[str, DeviceControl] = {}
+
     for subentry in entry.subentries.values():
-        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
-            # Initialize charger
-            await async_init_charger_subentry(
+        if subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
+            # Initialize global defaults
+            global_defaults_subentry = subentry
+            await async_init_global_defaults_subentry(
                 hass,
                 entry,
                 subentry,
                 device_controls,
             )
-        elif subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
-            # Initialize global defaults
-            global_defaults_subentry = subentry
-            await async_init_global_defaults_subentry(
+
+    for subentry in entry.subentries.values():
+        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
+            # Initialize charger
+            await async_init_charger_subentry(
                 hass,
                 entry,
                 subentry,

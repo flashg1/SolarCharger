@@ -281,21 +281,26 @@ def ha_store_open(hass: HomeAssistant, config_name: str) -> Store:
 
 
 # ----------------------------------------------------------------------------
-async def _async_ha_store_get_device_list(store: Store) -> list[tuple[str, str, str]]:
+# async def _async_ha_store_get_device_list(store: Store) -> list[tuple[str, str, str]]:
+async def _async_ha_store_get_device_list(store: Store) -> list[list[str]]:
     """Load device list from file storage."""
 
     data = await store.async_load()
     if data is None:
         return []
 
-    device_list: list[tuple[str, str, str]] = data.get(CONFIG_DEVICE_LIST, [])
+    # device_list: list[tuple[str, str, str]] = data.get(CONFIG_DEVICE_LIST, [])
+    device_list: list[list[str]] = data.get(CONFIG_DEVICE_LIST, [])
     return device_list
 
 
 # ----------------------------------------------------------------------------
+# async def async_ha_store_load_device_list(
+#     hass: HomeAssistant,
+# ) -> list[tuple[str, str, str]]:
 async def async_ha_store_load_device_list(
     hass: HomeAssistant,
-) -> list[tuple[str, str, str]]:
+) -> list[list[str]]:
     """Load device list from file storage."""
 
     store = ha_store_open(hass, CONFIG_FILE_DEVICE)
@@ -304,16 +309,39 @@ async def async_ha_store_load_device_list(
 
 # ----------------------------------------------------------------------------
 async def async_ha_store_update_device_list(
-    hass: HomeAssistant, domain: str, name: str, device_id: str = ""
+    hass: HomeAssistant, new_domain: str, new_name: str, new_device_id: str
 ) -> None:
     """Update device list in file storage."""
 
     store = ha_store_open(hass, CONFIG_FILE_DEVICE)
     device_list = await _async_ha_store_get_device_list(store)
-    item: tuple[str, str, str] = (domain, name, device_id)
-    if item not in device_list:
-        device_list.append(item)
-        await store.async_save({CONFIG_DEVICE_LIST: device_list})
+    # new_item = (new_domain, new_name, new_device_id)
+    new_item = [new_domain, new_name, new_device_id]
+
+    found = False
+    for index, [domain, name, device_id] in enumerate(device_list):
+        if domain == new_domain and name == new_name:
+            device_list[index] = new_item
+            found = True
+            break
+
+    if not found:
+        device_list.append(new_item)
+
+    await store.async_save({CONFIG_DEVICE_LIST: device_list})
+
+    #######################################################
+    # Problem with HA storing list[tuples[str,str,str]].
+    # Need to use list instead of tuples.
+    # It is stored as,
+    # "device_list": [["ocpp","charger1","5a75634604b1af16993777353f385926"],["ocpp","charger2","ee354487291c4dc05f9d86ae3b8cab70"]]
+    # It needs to be stored as,
+    # "device_list": [("ocpp","charger1","5a75634604b1af16993777353f385926"),("ocpp","charger2","ee354487291c4dc05f9d86ae3b8cab70")]
+    # Hence cannot match.
+    #######################################################
+    # if new_item not in device_list:
+    #     device_list.append(new_item)
+    #     await store.async_save({CONFIG_DEVICE_LIST: device_list})
 
 
 # ----------------------------------------------------------------------------

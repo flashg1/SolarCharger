@@ -6,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 
+# from ..const import DOMAIN, SUBENTRY_CHARGER_DEVICE_DOMAIN
 from .charger import Charger
 from .ocpp_charger import OcppCharger
 from .tesla_custom_charger import TeslaCustomCharger
@@ -39,6 +40,11 @@ async def charger_factory(
     if not device:
         msg = f"Device with ID {device_entry_id} not found in registry."
         raise ValueError(msg)
+
+    # Custom charger requires global defaults device!
+    # domain = subentry.data.get(SUBENTRY_CHARGER_DEVICE_DOMAIN)
+    # if domain == DOMAIN:
+    #     return UserCustomCharger(hass, entry, subentry, device)
 
     for charger_cls in [
         OcppCharger,
