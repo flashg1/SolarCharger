@@ -299,6 +299,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #####################################
     if not just_created_global_defaults_subentry:
         await _init_subentries(hass, entry, device_controls, SUBENTRY_CHARGER_TYPES)
+        # HA just re-initialise all subentries after addition or deletion.
+        # So deleted subentries can be found by comparing old and new list.
         await _recreate_device_list(hass, entry)
 
     # There are no subentries on first start
