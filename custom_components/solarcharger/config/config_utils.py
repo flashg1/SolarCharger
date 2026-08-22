@@ -281,7 +281,6 @@ def ha_store_open(hass: HomeAssistant, config_name: str) -> Store:
 
 
 # ----------------------------------------------------------------------------
-# async def _async_ha_store_get_device_list(store: Store) -> list[tuple[str, str, str]]:
 async def _async_ha_store_get_device_list(store: Store) -> list[list[str]]:
     """Load device list from file storage."""
 
@@ -289,15 +288,11 @@ async def _async_ha_store_get_device_list(store: Store) -> list[list[str]]:
     if data is None:
         return []
 
-    # device_list: list[tuple[str, str, str]] = data.get(CONFIG_DEVICE_LIST, [])
     device_list: list[list[str]] = data.get(CONFIG_DEVICE_LIST, [])
     return device_list
 
 
 # ----------------------------------------------------------------------------
-# async def async_ha_store_load_device_list(
-#     hass: HomeAssistant,
-# ) -> list[tuple[str, str, str]]:
 async def async_ha_store_load_device_list(
     hass: HomeAssistant,
 ) -> list[list[str]]:
@@ -315,7 +310,6 @@ async def async_ha_store_update_device_list(
 
     store = ha_store_open(hass, CONFIG_FILE_DEVICE)
     device_list = await _async_ha_store_get_device_list(store)
-    # new_item = (new_domain, new_name, new_device_id)
     new_item = [new_domain, new_name, new_device_id]
 
     found = False
@@ -331,8 +325,8 @@ async def async_ha_store_update_device_list(
     await store.async_save({CONFIG_DEVICE_LIST: device_list})
 
     #######################################################
-    # Problem with HA storing list[tuples[str,str,str]].
-    # Need to use list instead of tuples.
+    # Problem with HA storing list[tuples[str,str,str]]. It stores it as list[list[str]].
+    # So need to use list instead of tuples.
     # It is stored as,
     # "device_list": [["ocpp","charger1","5a75634604b1af16993777353f385926"],["ocpp","charger2","ee354487291c4dc05f9d86ae3b8cab70"]]
     # It needs to be stored as,
@@ -345,62 +339,62 @@ async def async_ha_store_update_device_list(
 
 
 # ----------------------------------------------------------------------------
-def _delete_member_not_in_reference(
-    result: list[list[str]], ref: list[list[str]]
+def _delete_member_not_in_new_list(
+    result: list[list[str]], new_list: list[list[str]]
 ) -> list[list[str]]:
-    # Create a lookup dictionary of {(domain, name): full_ref_item}
-    ref_lookup = {(r[0], r[1]): r for r in ref}
+    # Create a lookup dictionary of {(domain, name): full_new_list_item}
+    new_lookup = {(r[0], r[1]): r for r in new_list}
 
     # Filter and update elements safely using a list comprehension
     return [
-        ref_lookup[(domain, name)]
+        new_lookup[(domain, name)]
         for domain, name, _ in result
-        if (domain, name) in ref_lookup
+        if (domain, name) in new_lookup
     ]
 
 
 # ----------------------------------------------------------------------------
-def _add_member_not_in_result(
-    result: list[list[str]], ref: list[list[str]]
+def _add_new_member_from_new_list(
+    result: list[list[str]], new_list: list[list[str]]
 ) -> list[list[str]]:
     # Create a lookup dictionary of {(domain, name): ref_row}
-    ref_lookup = {(r[0], r[1]): r for r in ref}
+    new_lookup = {(r[0], r[1]): r for r in new_list}
 
     # 1. Update existing matches in 'result' and track what we've processed
     updated_result = []
-    seen_in_ref = set()
+    seen_in_new_list = set()
 
     for domain, name, device_id in result:
         key = (domain, name)
-        if key in ref_lookup:
+        if key in new_lookup:
             # Match found: update with a shallow copy from ref
-            updated_result.append(list(ref_lookup[key]))
-            seen_in_ref.add(key)
+            updated_result.append(list(new_lookup[key]))
+            seen_in_new_list.add(key)
         else:
             # No match: keep the original item as-is
             updated_result.append([domain, name, device_id])
 
     # 2. Append elements from 'ref' that were never found in 'result'
-    for ref_row in ref:
-        ref_key = (ref_row[0], ref_row[1])
-        if ref_key not in seen_in_ref:
-            updated_result.append(list(ref_row))  # Safe shallow copy
-            seen_in_ref.add(ref_key)  # Prevents duplicates if ref has duplicates
+    for new_row in new_list:
+        new_key = (new_row[0], new_row[1])
+        if new_key not in seen_in_new_list:
+            updated_result.append(list(new_row))  # Safe shallow copy
+            seen_in_new_list.add(new_key)  # Prevents duplicates if ref has duplicates
 
     return updated_result
 
 
 # ----------------------------------------------------------------------------
 async def async_ha_store_replace_device_list(
-    hass: HomeAssistant, ref: list[list[str]]
+    hass: HomeAssistant, new_list: list[list[str]]
 ) -> None:
     """Replace device list."""
 
     store = ha_store_open(hass, CONFIG_FILE_DEVICE)
     device_list = await _async_ha_store_get_device_list(store)
 
-    device_list = _delete_member_not_in_reference(device_list, ref)
-    device_list = _add_member_not_in_result(device_list, ref)
+    device_list = _delete_member_not_in_new_list(device_list, new_list)
+    device_list = _add_new_member_from_new_list(device_list, new_list)
 
     await store.async_save({CONFIG_DEVICE_LIST: device_list})
 
