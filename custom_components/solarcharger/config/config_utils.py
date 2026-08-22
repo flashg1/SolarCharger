@@ -345,6 +345,85 @@ async def async_ha_store_update_device_list(
 
 
 # ----------------------------------------------------------------------------
+def _delete_member_not_in_reference(
+    result: list[list[str]], ref: list[list[str]]
+) -> list[list[str]]:
+    # Create a lookup dictionary of {(domain, name): full_ref_item}
+    ref_lookup = {(r[0], r[1]): r for r in ref}
+
+    # Filter and update elements safely using a list comprehension
+    return [
+        ref_lookup[(domain, name)]
+        for domain, name, _ in result
+        if (domain, name) in ref_lookup
+    ]
+
+
+# ----------------------------------------------------------------------------
+def _add_member_not_in_result(
+    result: list[list[str]], ref: list[list[str]]
+) -> list[list[str]]:
+    # Create a lookup dictionary of {(domain, name): ref_row}
+    ref_lookup = {(r[0], r[1]): r for r in ref}
+
+    # 1. Update existing matches in 'result' and track what we've processed
+    updated_result = []
+    seen_in_ref = set()
+
+    for domain, name, device_id in result:
+        key = (domain, name)
+        if key in ref_lookup:
+            # Match found: update with a shallow copy from ref
+            updated_result.append(list(ref_lookup[key]))
+            seen_in_ref.add(key)
+        else:
+            # No match: keep the original item as-is
+            updated_result.append([domain, name, device_id])
+
+    # 2. Append elements from 'ref' that were never found in 'result'
+    for ref_row in ref:
+        ref_key = (ref_row[0], ref_row[1])
+        if ref_key not in seen_in_ref:
+            updated_result.append(list(ref_row))  # Safe shallow copy
+            seen_in_ref.add(ref_key)  # Prevents duplicates if ref has duplicates
+
+    return updated_result
+
+
+# ----------------------------------------------------------------------------
+async def async_ha_store_replace_device_list(
+    hass: HomeAssistant, ref: list[list[str]]
+) -> None:
+    """Replace device list."""
+
+    store = ha_store_open(hass, CONFIG_FILE_DEVICE)
+    device_list = await _async_ha_store_get_device_list(store)
+
+    device_list = _delete_member_not_in_reference(device_list, ref)
+    device_list = _add_member_not_in_result(device_list, ref)
+
+    await store.async_save({CONFIG_DEVICE_LIST: device_list})
+
+
+# ----------------------------------------------------------------------------
+async def async_ha_store_delete_device_list(
+    hass: HomeAssistant, device_domain: str, device_name: str
+) -> None:
+    """Delete device from device list in file storage."""
+
+    store = ha_store_open(hass, CONFIG_FILE_DEVICE)
+    device_list = await _async_ha_store_get_device_list(store)
+
+    # Remove device matching domain and name
+    for index, [domain, name, device_id] in enumerate(device_list):
+        if domain == device_domain and name == device_name:
+            device_list.pop(index)
+            break
+
+    await store.async_save({CONFIG_DEVICE_LIST: device_list})
+
+
+# ----------------------------------------------------------------------------
 def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
     """Migrate and delete old config settings."""
 

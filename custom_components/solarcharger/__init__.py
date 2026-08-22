@@ -16,6 +16,7 @@ from .config.config_subentry_custom import async_create_custom_device
 from .config.config_utils import (
     async_ha_store_load,
     async_ha_store_load_device_list,
+    async_ha_store_replace_device_list,
     async_ha_store_save,
     get_subentry,
     ha_store_open,
@@ -256,6 +257,27 @@ async def _init_subentries(
 
 
 # ----------------------------------------------------------------------------
+async def _recreate_device_list(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+) -> None:
+    new_device_list: list[list[str]] = []
+
+    for subentry in entry.subentries.values():
+        if subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
+            continue
+
+        if subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
+            device_domain = subentry.data.get(SUBENTRY_CHARGER_DEVICE_DOMAIN)
+            device_name = subentry.data.get(SUBENTRY_CHARGER_DEVICE_NAME)
+            device_id = subentry.data.get(SUBENTRY_CHARGER_DEVICE_ID)
+            new_device = [device_domain, device_name, device_id]
+            new_device_list.append(new_device)
+
+    await async_ha_store_replace_device_list(hass, new_device_list)
+
+
+# ----------------------------------------------------------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Solar Charger from a config entry."""
 
@@ -277,6 +299,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     #####################################
     if not just_created_global_defaults_subentry:
         await _init_subentries(hass, entry, device_controls, SUBENTRY_CHARGER_TYPES)
+        await _recreate_device_list(hass, entry)
 
     # There are no subentries on first start
     if global_defaults_subentry is None:
@@ -292,9 +315,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     coordinator.device_controls = device_controls
     hass.data[DOMAIN][entry.entry_id] = coordinator
-
-    # Registers update listener to update config entry when options are updated.
-    # entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     #####################################
     # Create entites for each platform with dependency on coordinator.
@@ -329,6 +349,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Initialise coordinator and charge control after _PLATFORMS entities
     #####################################
     await coordinator.async_setup()
+
+    # Registers update listener to update config entry when options are updated.
+    # entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     _LOGGER.info("SolarCharger initialized (config_entry_id=%s)", entry.entry_id)
     return True
