@@ -1,7 +1,6 @@
 # ruff: noqa: TID252
 """Config subentry flow to create charger using supported integrations."""
 
-# from collections.abc import Mapping
 import logging
 from types import MappingProxyType
 from typing import Any
@@ -65,12 +64,9 @@ from .config_utils import (
 )
 
 # ----------------------------------------------------------------------------
+# Local constants and variables
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
-
-# Not used
-# SUBENTRY_DEVICE_ORIGIN = "device_origin"
-# SUBENTRY_DEVICE_NAME_DEFAULT = "device_name_default"
 
 _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
     DeviceFilterSelectorConfig(integration=DOMAIN_OCPP),
@@ -103,8 +99,9 @@ STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
 
 
 # ----------------------------------------------------------------------------
+# Global functions
 # ----------------------------------------------------------------------------
-def validate_charger_selection(
+def _validate_charger_selection(
     _hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
     """Validate user input for charger selection step."""
@@ -114,20 +111,21 @@ def validate_charger_selection(
     return data
 
 
-def validate_charger_config(
+# ----------------------------------------------------------------------------
+def _validate_charger_config(
     _hass: HomeAssistant, data: dict[str, Any]
 ) -> dict[str, Any]:
     """Validate user input for charger config step."""
     return data
 
 
-def validate_power_input(_hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
+# ----------------------------------------------------------------------------
+def _validate_power_input(_hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input for the power collection step."""
     # Return info that you want to store in the config entry.
     return data
 
 
-# ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 async def _async_setup_options(
     hass: HomeAssistant,
@@ -269,7 +267,6 @@ async def async_create_charger_device(
     thirdparty_charger_name = thirdparty_charger.name
     if not thirdparty_charger_name:
         return ERROR_MISSING_DEVICE_NAME
-        # return self.async_abort(reason=ERROR_MISSING_DEVICE_NAME)
 
     thirdparty_display_name = (
         f"{thirdparty_config_entry.domain} {thirdparty_charger_name}"
@@ -295,7 +292,6 @@ async def async_create_charger_device(
     subentry_id = get_subentry_id(config_entry, thirdparty_config_name)
     if subentry_id is not None:
         return ERROR_DEVICE_ALREADY_ADDED
-        # return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
 
     # Create new subentry
     if (
@@ -343,7 +339,6 @@ async def async_create_charger_device(
     )
 
     return None
-    # return thirdparty_config_name
 
 
 # ----------------------------------------------------------------------------
@@ -358,224 +353,6 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
     #     """Set global data for the config flow."""
     #     self.cf_data = data or {}
 
-    # # ----------------------------------------------------------------------------
-    # async def _async_setup_options(
-    #     self,
-    #     config_entry: ConfigEntry,
-    #     subentry_unique_id: str,
-    #     domain: str,
-    #     name: str,
-    #     device_id: str,
-    # ) -> None:
-    #     """Set up default options for the new subentry."""
-
-    #     _LOGGER.debug(
-    #         "Setting up default options for subentry with unique_id: %s",
-    #         subentry_unique_id,
-    #     )
-
-    #     # entry.options = {
-    #     #     **entry.options,
-    #     #     subentry_unique_id: {
-    #     #         OPTION_CHARGER_DEVICE_NAME: device_name,
-    #     #     },
-    #     # }
-
-    #     # await self.reset_api_entities(
-    #     #     config_name,
-    #     #     device_name,
-    #     #     data,
-    #     # )
-
-    #     device_name = slugify(name)
-    #     data: dict[str, Any] = {
-    #         OPTION_CHARGER_NAME: device_name,
-    #     }
-
-    #     # Look for historical config left behind by a previous installation.
-    #     store = ha_store_open(self.hass, subentry_unique_id)
-    #     store_config = await async_ha_store_load(store)
-    #     if store_config is not None:
-    #         data.update(store_config)
-
-    #     process_api_config(config_entry, subentry_unique_id, data, is_init_all=True)
-
-    #     # Save device settings to file storage.
-    #     await async_ha_store_save(store, data)
-    #     await async_ha_store_update_device_list(self.hass, domain, name, device_id)
-
-    #     # Use | (union) to replace or add key:data pair.
-    #     self.hass.config_entries.async_update_entry(
-    #         config_entry,
-    #         options=config_entry.options
-    #         | {
-    #             subentry_unique_id: data,
-    #         },
-    #     )
-
-    # # ----------------------------------------------------------------------------
-    # async def async_create_charger_device(
-    #     self,
-    #     config_entry: ConfigEntry[Any],
-    #     input_data: dict[str, Any],
-    # ) -> str:
-    #     """Create charger device."""
-
-    #     # Get charger device subentry
-    #     thirdparty_charger_id: str | None = input_data.get(SUBENTRY_CHARGER_DEVICE_ID)
-    #     if not thirdparty_charger_id:
-    #         raise ValueError(f"Subentry {SUBENTRY_CHARGER_DEVICE_ID} not defined")
-    #     registry: DeviceRegistry = dr.async_get(self.hass)
-    #     thirdparty_charger: DeviceEntry | None = registry.async_get(
-    #         thirdparty_charger_id
-    #     )
-    #     if not thirdparty_charger:
-    #         raise ValueError(
-    #             f"Charger device {thirdparty_charger_id} not found in device registry."
-    #         )
-
-    #     # Get charger domain and name to create unique_id
-    #     # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
-    #     # thirdparty_config_entry_id: str | None = None
-    #     thirdparty_config_entry: ConfigEntry | None = None
-
-    #     for entry_id in thirdparty_charger.config_entries:
-    #         entry: ConfigEntry | None = self.hass.config_entries.async_get_entry(
-    #             entry_id
-    #         )
-    #         if entry is not None:
-    #             # Best guess to match
-    #             if entry.domain in SUPPORTED_CHARGER_DOMAIN_LIST:
-    #                 # thirdparty_config_entry_id = entry_id
-    #                 thirdparty_config_entry = entry
-    #                 break
-
-    #     # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
-    #     # So following can sometimes can get Template as domain name!
-    #     # thirdparty_config_entry_id: str = next(
-    #     #     iter(thirdparty_charger.config_entries)
-    #     # )
-    #     # thirdparty_config_entry: ConfigEntry | None = (
-    #     #     self.hass.config_entries.async_get_entry(thirdparty_config_entry_id)
-    #     # )
-
-    #     if not thirdparty_config_entry:
-    #         raise ValueError(
-    #             f"{thirdparty_charger.name}: Charger config entry not found"
-    #         )
-
-    #     #######################################################
-    #     # thirdparty_charger.name is set by official Tesla mobile app.  Need reboot
-    #     # HA for name change to take effect.
-    #     # thirdparty_charger.name_by_user is set in HA.  Original value=None.  Can be
-    #     # set to any string including blank in HA.
-    #     #
-    #     # If thirdparty_charger.name_by_user is the first choice, user will also need
-    #     # to apply the name change to the device's entity IDs in order for SC to work.
-    #     # This is an issue for the following reasons,
-    #     #
-    #     # - User might just want to change the device name and not the names for the
-    #     # device's entities for a number of reasons.
-    #     # - The device entities might have historical data, and there is risk involved
-    #     # in changing these orphaned entities.
-    #     # - The device entities might be used in automation and scripts, and a pain to
-    #     # change them all.
-    #     # - The device name is also used to create SC entities to form part of the SC
-    #     # entity name, which means user will need to delete and re-add SC when they
-    #     # changed the device name.
-    #     # - Other custom integrations might not allow renaming of their entities even
-    #     # though their device name can be renamed, eg. OCPP. (Tested "Tesla Custom"
-    #     # integration do allow renaming of entities.)
-    #     # - The name once set in the official Tesla mobile app cannot be "unnamed".
-    #     # The name can be changed in the app, but cannot be deleted to put it back to
-    #     # its original empty state.
-    #     #
-    #     # HA device display name is `name` or `name_by_user`.
-    #     # Prefer the integration's default `name` over `name_by_user`
-    #     # Fall back to `name_by_user` only if `name` is empty.
-    #     # thirdparty_charger_name = (
-    #     #     thirdparty_charger.name or thirdparty_charger.name_by_user
-    #     # )
-    #     #
-    #     # To avoid complications in case of user setting different name in official
-    #     # Tesla app sometime in the future, ensure SC just get name from single source.
-    #     # This will ensure direct cause and effect, and avoid confusion in the future.
-    #     #######################################################
-    #     thirdparty_charger_name = thirdparty_charger.name
-    #     if not thirdparty_charger_name:
-    #         return self.async_abort(reason=ERROR_MISSING_DEVICE_NAME)
-
-    #     thirdparty_display_name = (
-    #         f"{thirdparty_config_entry.domain} {thirdparty_charger_name}"
-    #     )
-    #     thirdparty_config_name = slugify(f"{thirdparty_display_name}")
-    #     thirdparty_charger_subdomain = compose_subdomain(
-    #         thirdparty_config_entry.domain,
-    #         thirdparty_charger.manufacturer,
-    #         thirdparty_charger.model,
-    #     )
-
-    #     _LOGGER.warning(
-    #         "Create subentry %d: charger='%s' (name_by_user='%s', name='%s'), unique_id='%s', sub-domain='%s'",
-    #         len(config_entry.subentries) + 1,
-    #         thirdparty_charger_name,
-    #         thirdparty_charger.name_by_user,
-    #         thirdparty_charger.name,
-    #         thirdparty_config_name,
-    #         thirdparty_charger_subdomain,
-    #     )
-
-    #     # Check if subentry with this unique_id already exists
-    #     subentry_id = get_subentry_id(config_entry, thirdparty_config_name)
-    #     if subentry_id is not None:
-    #         return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
-
-    #     # Create new subentry
-    #     if (
-    #         not thirdparty_config_entry.domain
-    #         or not thirdparty_charger_name
-    #         or not thirdparty_charger_id
-    #     ):
-    #         raise ValueError(
-    #             f"Charger config entry domain, name, or ID is missing: "
-    #             f"{thirdparty_config_entry.domain=}, {thirdparty_charger_name=}, {thirdparty_charger_id=}"
-    #         )
-
-    #     self.hass.config_entries.async_add_subentry(
-    #         config_entry,
-    #         ConfigSubentry(
-    #             subentry_type=SUBENTRY_TYPE_CHARGER,
-    #             title=thirdparty_display_name,
-    #             unique_id=thirdparty_config_name,
-    #             data=MappingProxyType(  # make data immutable
-    #                 {
-    #                     SUBENTRY_CHARGER_DEVICE_DOMAIN: thirdparty_config_entry.domain,  # Integration domain
-    #                     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: thirdparty_charger_subdomain,  # Integration sub-domain
-    #                     SUBENTRY_CHARGER_DEVICE_NAME: thirdparty_charger_name,  # Integration-specific device name
-    #                     SUBENTRY_CHARGER_DEVICE_ID: thirdparty_charger_id,  # Integration-specific device ID
-    #                 }
-    #             ),
-    #         ),
-    #     )
-
-    #     await self._async_setup_options(
-    #         config_entry,
-    #         thirdparty_config_name,
-    #         thirdparty_config_entry.domain,
-    #         thirdparty_charger_name,
-    #         thirdparty_charger_id,
-    #     )
-
-    #     _LOGGER.info(
-    #         "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
-    #         len(config_entry.subentries),
-    #         thirdparty_charger_name,
-    #         thirdparty_config_name,
-    #         thirdparty_charger_subdomain,
-    #     )
-
-    #     return thirdparty_config_name
-
     # ----------------------------------------------------------------------------
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -588,7 +365,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         # config_entry.solarcharger_data = {}
         if user_input is not None:
             try:
-                input_data = validate_charger_selection(self.hass, user_input)
+                input_data = _validate_charger_selection(self.hass, user_input)
             except ValidationExceptionError as ex:
                 errors[ex.base] = ex.key
 
@@ -596,9 +373,6 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                 # self.cf_data = input_data
                 # await self.async_step_config_charger()
 
-                # thirdparty_config_name = await self.async_create_charger_device(
-                #     config_entry, input_data
-                # )
                 error_msg = await async_create_charger_device(
                     self.hass, config_entry, input_data
                 )
@@ -617,193 +391,3 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
         return self.async_show_form(
             step_id="user", data_schema=STEP_SELECT_CHARGER_SCHEMA, errors=errors
         )
-
-    # # ----------------------------------------------------------------------------
-    # async def async_step_user(
-    #     self, user_input: dict[str, Any] | None = None
-    # ) -> SubentryFlowResult:
-    #     """Entry point for subentry config. Prompts for charger selection."""
-    #     errors: dict[str, str] = {}
-    #     input_data: dict[str, Any] | None = None
-
-    #     config_entry = self._get_entry()
-    #     # config_entry.solarcharger_data = {}
-    #     if user_input is not None:
-    #         try:
-    #             input_data = validate_charger_selection(self.hass, user_input)
-    #         except ValidationExceptionError as ex:
-    #             errors[ex.base] = ex.key
-
-    #         if not errors and input_data is not None:
-    #             # self.cf_data = input_data
-    #             # await self.async_step_config_charger()
-
-    #             # Get charger device subentry
-    #             thirdparty_charger_id: str | None = input_data.get(
-    #                 SUBENTRY_CHARGER_DEVICE_ID
-    #             )
-    #             if not thirdparty_charger_id:
-    #                 raise ValueError(
-    #                     f"Subentry {SUBENTRY_CHARGER_DEVICE_ID} not defined"
-    #                 )
-    #             registry: DeviceRegistry = dr.async_get(self.hass)
-    #             thirdparty_charger: DeviceEntry | None = registry.async_get(
-    #                 thirdparty_charger_id
-    #             )
-    #             if not thirdparty_charger:
-    #                 raise ValueError(
-    #                     f"Charger device {thirdparty_charger_id} not found in device registry."
-    #                 )
-
-    #             # Get charger domain and name to create unique_id
-    #             # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
-    #             # thirdparty_config_entry_id: str | None = None
-    #             thirdparty_config_entry: ConfigEntry | None = None
-
-    #             for entry_id in thirdparty_charger.config_entries:
-    #                 entry: ConfigEntry | None = (
-    #                     self.hass.config_entries.async_get_entry(entry_id)
-    #                 )
-    #                 if entry is not None:
-    #                     # Best guess to match
-    #                     if entry.domain in SUPPORTED_CHARGER_DOMAIN_LIST:
-    #                         # thirdparty_config_entry_id = entry_id
-    #                         thirdparty_config_entry = entry
-    #                         break
-
-    #             # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
-    #             # So following can sometimes can get Template as domain name!
-    #             # thirdparty_config_entry_id: str = next(
-    #             #     iter(thirdparty_charger.config_entries)
-    #             # )
-    #             # thirdparty_config_entry: ConfigEntry | None = (
-    #             #     self.hass.config_entries.async_get_entry(thirdparty_config_entry_id)
-    #             # )
-
-    #             if not thirdparty_config_entry:
-    #                 raise ValueError(
-    #                     f"{thirdparty_charger.name}: Charger config entry not found"
-    #                 )
-
-    #             #######################################################
-    #             # thirdparty_charger.name is set by official Tesla mobile app.  Need reboot
-    #             # HA for name change to take effect.
-    #             # thirdparty_charger.name_by_user is set in HA.  Original value=None.  Can be
-    #             # set to any string including blank in HA.
-    #             #
-    #             # If thirdparty_charger.name_by_user is the first choice, user will also need
-    #             # to apply the name change to the device's entity IDs in order for SC to work.
-    #             # This is an issue for the following reasons,
-    #             #
-    #             # - User might just want to change the device name and not the names for the
-    #             # device's entities for a number of reasons.
-    #             # - The device entities might have historical data, and there is risk involved
-    #             # in changing these orphaned entities.
-    #             # - The device entities might be used in automation and scripts, and a pain to
-    #             # change them all.
-    #             # - The device name is also used to create SC entities to form part of the SC
-    #             # entity name, which means user will need to delete and re-add SC when they
-    #             # changed the device name.
-    #             # - Other custom integrations might not allow renaming of their entities even
-    #             # though their device name can be renamed, eg. OCPP. (Tested "Tesla Custom"
-    #             # integration do allow renaming of entities.)
-    #             # - The name once set in the official Tesla mobile app cannot be "unnamed".
-    #             # The name can be changed in the app, but cannot be deleted to put it back to
-    #             # its original empty state.
-    #             #
-    #             # HA device display name is `name` or `name_by_user`.
-    #             # Prefer the integration's default `name` over `name_by_user`
-    #             # Fall back to `name_by_user` only if `name` is empty.
-    #             # thirdparty_charger_name = (
-    #             #     thirdparty_charger.name or thirdparty_charger.name_by_user
-    #             # )
-    #             #
-    #             # To avoid complications in case of user setting different name in official
-    #             # Tesla app sometime in the future, ensure SC just get name from single source.
-    #             # This will ensure direct cause and effect, and avoid confusion in the future.
-    #             #######################################################
-    #             thirdparty_charger_name = thirdparty_charger.name
-    #             if not thirdparty_charger_name:
-    #                 return self.async_abort(reason=ERROR_MISSING_DEVICE_NAME)
-
-    #             thirdparty_display_name = (
-    #                 f"{thirdparty_config_entry.domain} {thirdparty_charger_name}"
-    #             )
-    #             thirdparty_config_name = slugify(f"{thirdparty_display_name}")
-    #             thirdparty_charger_subdomain = compose_subdomain(
-    #                 thirdparty_config_entry.domain,
-    #                 thirdparty_charger.manufacturer,
-    #                 thirdparty_charger.model,
-    #             )
-
-    #             _LOGGER.warning(
-    #                 "Create subentry %d: charger='%s' (name_by_user='%s', name='%s'), unique_id='%s', sub-domain='%s'",
-    #                 len(config_entry.subentries) + 1,
-    #                 thirdparty_charger_name,
-    #                 thirdparty_charger.name_by_user,
-    #                 thirdparty_charger.name,
-    #                 thirdparty_config_name,
-    #                 thirdparty_charger_subdomain,
-    #             )
-
-    #             # Check if subentry with this unique_id already exists
-    #             subentry_id = get_subentry_id(config_entry, thirdparty_config_name)
-    #             if subentry_id is not None:
-    #                 return self.async_abort(reason=ERROR_DEVICE_ALREADY_ADDED)
-
-    #             # Create new subentry
-    #             if (
-    #                 not thirdparty_config_entry.domain
-    #                 or not thirdparty_charger_name
-    #                 or not thirdparty_charger_id
-    #             ):
-    #                 raise ValueError(
-    #                     f"Charger config entry domain, name, or ID is missing: "
-    #                     f"{thirdparty_config_entry.domain=}, {thirdparty_charger_name=}, {thirdparty_charger_id=}"
-    #                 )
-
-    #             self.hass.config_entries.async_add_subentry(
-    #                 config_entry,
-    #                 ConfigSubentry(
-    #                     subentry_type=SUBENTRY_TYPE_CHARGER,
-    #                     title=thirdparty_display_name,
-    #                     unique_id=thirdparty_config_name,
-    #                     data=MappingProxyType(  # make data immutable
-    #                         {
-    #                             SUBENTRY_CHARGER_DEVICE_DOMAIN: thirdparty_config_entry.domain,  # Integration domain
-    #                             SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: thirdparty_charger_subdomain,  # Integration sub-domain
-    #                             SUBENTRY_CHARGER_DEVICE_NAME: thirdparty_charger_name,  # Integration-specific device name
-    #                             SUBENTRY_CHARGER_DEVICE_ID: thirdparty_charger_id,  # Integration-specific device ID
-    #                         }
-    #                     ),
-    #                 ),
-    #             )
-
-    #             await self._async_setup_options(
-    #                 config_entry,
-    #                 thirdparty_config_name,
-    #                 thirdparty_config_entry.domain,
-    #                 thirdparty_charger_name,
-    #                 thirdparty_charger_id,
-    #             )
-
-    #             _LOGGER.info(
-    #                 "Created subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
-    #                 len(config_entry.subentries),
-    #                 thirdparty_charger_name,
-    #                 thirdparty_config_name,
-    #                 thirdparty_charger_subdomain,
-    #             )
-
-    #             # Must return with SubentryFlowResult as stipulated in the return type
-    #             return self.async_abort(
-    #                 reason=ERROR_SUBENTRY_CREATED,
-    #                 description_placeholders={
-    #                     "subentry": thirdparty_config_name,
-    #                     "subentry_count": f"{len(config_entry.subentries)}",
-    #                 },
-    #             )
-
-    #     return self.async_show_form(
-    #         step_id="user", data_schema=STEP_SELECT_CHARGER_SCHEMA, errors=errors
-    #     )

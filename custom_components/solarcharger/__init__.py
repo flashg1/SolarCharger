@@ -54,35 +54,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 
 # ----------------------------------------------------------------------------
-async def _async_create_charger_subentries_from_config_file(
-    hass: HomeAssistant, config_entry: ConfigEntry
-) -> int:
-    """Create charger subentries from device list."""
-
-    device_list = await async_ha_store_load_device_list(hass)
-    device_count = len(device_list)
-
-    if device_count > 0:
-        # for index, [domain, name, device_id] in enumerate(device_list):
-        for device in device_list:
-            domain, device_name, device_id = device
-            if domain == DOMAIN:
-                await async_create_custom_device(
-                    hass,
-                    config_entry,
-                    {SUBENTRY_CHARGER_DEVICE_NAME: device_name},
-                    # device_id,    # Global default device ID is different if device is recreated.
-                )
-            else:
-                # Third-party charger devices already exits, so can create SC charger device.
-                await async_create_charger_device(
-                    hass, config_entry, {SUBENTRY_CHARGER_DEVICE_ID: device_id}
-                )
-
-    return device_count
-
-
-# ----------------------------------------------------------------------------
 async def _async_create_global_defaults_subentry(
     hass: HomeAssistant, config_entry: ConfigEntry
 ) -> bool:
@@ -223,17 +194,18 @@ async def _async_init_global_defaults_subentry(
 
 
 # ----------------------------------------------------------------------------
-async def _init_subentries(
+async def _async_init_subentries(
     hass: HomeAssistant,
     entry: ConfigEntry,
     device_controls: dict[str, DeviceControl],
-    subentry_types: list[str],
+    subentry_type_list: list[str],
 ) -> ConfigSubentry | None:
+    """Initialise subentries depending on the subentry type."""
 
     global_defaults_subentry: ConfigSubentry | None = None
 
     for subentry in entry.subentries.values():
-        if subentry.subentry_type in subentry_types:
+        if subentry.subentry_type in subentry_type_list:
             if subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
                 # Initialize global defaults
                 global_defaults_subentry = subentry
@@ -257,7 +229,7 @@ async def _init_subentries(
 
 
 # ----------------------------------------------------------------------------
-async def _recreate_device_list(
+async def _async_recreate_device_list(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> None:
@@ -278,6 +250,32 @@ async def _recreate_device_list(
 
 
 # ----------------------------------------------------------------------------
+async def _async_create_charger_subentries_from_config_file(
+    hass: HomeAssistant, config_entry: ConfigEntry
+) -> int:
+    """Create charger subentries from device list."""
+
+    device_list = await async_ha_store_load_device_list(hass)
+    device_count = len(device_list)
+
+    if device_count > 0:
+        for device in device_list:
+            domain, device_name, device_id = device
+            if domain == DOMAIN:
+                # Global defaults device must exists before custom chargers can be created.
+                await async_create_custom_device(
+                    hass, config_entry, {SUBENTRY_CHARGER_DEVICE_NAME: device_name}
+                )
+            else:
+                # Third-party charger devices already exits, so can create SC charger device.
+                await async_create_charger_device(
+                    hass, config_entry, {SUBENTRY_CHARGER_DEVICE_ID: device_id}
+                )
+
+    return device_count
+
+
+# ----------------------------------------------------------------------------
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Solar Charger from a config entry."""
 
@@ -290,18 +288,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     just_created_global_defaults_subentry = (
         await _async_create_global_defaults_subentry(hass, entry)
     )
-    global_defaults_subentry = await _init_subentries(
+    global_defaults_subentry = await _async_init_subentries(
         hass, entry, device_controls, [SUBENTRY_TYPE_DEFAULTS]
     )
 
     #####################################
-    # Do not init custom chargers until global defaults device exits
+    # Do not init custom chargers until global defaults device exists.
     #####################################
     if not just_created_global_defaults_subentry:
-        await _init_subentries(hass, entry, device_controls, SUBENTRY_CHARGER_TYPES)
+        await _async_init_subentries(
+            hass, entry, device_controls, SUBENTRY_CHARGER_TYPES
+        )
         # HA just re-initialise all subentries after addition or deletion.
         # So deleted subentries can be found by comparing old and new list.
-        await _recreate_device_list(hass, entry)
+        await _async_recreate_device_list(hass, entry)
 
     # There are no subentries on first start
     if global_defaults_subentry is None:
@@ -339,7 +339,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass, entry
         )
         if device_count > 0:
-            await _init_subentries(hass, entry, device_controls, SUBENTRY_CHARGER_TYPES)
+            await _async_init_subentries(
+                hass, entry, device_controls, SUBENTRY_CHARGER_TYPES
+            )
 
             await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
             await asyncio.sleep(3)
