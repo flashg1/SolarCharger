@@ -373,29 +373,29 @@ def _add_new_member_from_new_list(
 
     # Create a lookup dictionary of {(domain, name): new_list_device}
     new_lookup = {(d[CONFIG_DEVICE_DOMAIN], d[CONFIG_DEVICE_NAME]): d for d in new_list}
+    updated_list = []
+    updated_list_keys = set()
 
     # 1. Update existing matches in 'old_list' and track what we've processed.
-    updated_list = []
-    seen_in_old_list = set()
     for old_device in old_list:
         old_key = (old_device[CONFIG_DEVICE_DOMAIN], old_device[CONFIG_DEVICE_NAME])
         if old_key in new_lookup:
             # Match found: update with a shallow copy from new_list.
             updated_list.append(new_lookup[old_key])
-            seen_in_old_list.add(old_key)
+            updated_list_keys.add(old_key)
         elif merge:
             # No match: keep the original item as-is if merging.
             updated_list.append(old_device)
-            seen_in_old_list.add(old_key)
+            updated_list_keys.add(old_key)
 
     # 2. Append elements from 'new_list' that were never found in 'old_list'.
     for new_device in new_list:
         new_key = (new_device[CONFIG_DEVICE_DOMAIN], new_device[CONFIG_DEVICE_NAME])
-        if new_key not in seen_in_old_list:
+        if new_key not in updated_list_keys:
             # Safe shallow copy.
             updated_list.append(new_device)
             # Prevents duplicates if new_list has duplicates.
-            seen_in_old_list.add(new_key)
+            updated_list_keys.add(new_key)
 
     return updated_list
 
