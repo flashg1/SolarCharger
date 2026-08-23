@@ -29,7 +29,10 @@ from homeassistant.util import slugify
 from ..const import (
     CHARGE_API_DEFAULT_VALUES,
     CHARGE_API_ENTITIES,
+    CONFIG_DEVICE_DOMAIN,
+    CONFIG_DEVICE_ID,
     CONFIG_DEVICE_LIST,
+    CONFIG_DEVICE_NAME,
     CONFIG_FILE_DEVICE,
     CONFIG_NAME_MARKER,
     CONFIG_WITH_NO_DEFAULTS,
@@ -281,21 +284,21 @@ def ha_store_open(hass: HomeAssistant, config_name: str) -> Store:
 
 
 # ----------------------------------------------------------------------------
-async def _async_ha_store_get_device_list(store: Store) -> list[list[str]]:
+async def _async_ha_store_get_device_list(store: Store) -> list[dict[str, str]]:
     """Load device list from file storage."""
 
     data = await store.async_load()
     if data is None:
         return []
 
-    device_list: list[list[str]] = data.get(CONFIG_DEVICE_LIST, [])
+    device_list: list[dict[str, str]] = data.get(CONFIG_DEVICE_LIST, [])
     return device_list
 
 
 # ----------------------------------------------------------------------------
 async def async_ha_store_load_device_list(
     hass: HomeAssistant,
-) -> list[list[str]]:
+) -> list[dict[str, str]]:
     """Load device list from file storage."""
 
     store = ha_store_open(hass, CONFIG_FILE_DEVICE)
@@ -304,23 +307,30 @@ async def async_ha_store_load_device_list(
 
 # ----------------------------------------------------------------------------
 async def async_ha_store_update_device_list(
-    hass: HomeAssistant, new_domain: str, new_name: str, new_device_id: str
+    hass: HomeAssistant, device_domain: str, device_name: str, device_id: str
 ) -> None:
     """Update device list in file storage."""
 
     store = ha_store_open(hass, CONFIG_FILE_DEVICE)
     device_list = await _async_ha_store_get_device_list(store)
-    new_item = [new_domain, new_name, new_device_id]
+    new_device = {
+        CONFIG_DEVICE_DOMAIN: device_domain,
+        CONFIG_DEVICE_NAME: device_name,
+        CONFIG_DEVICE_ID: device_id,
+    }
 
     found = False
-    for index, [domain, name, device_id] in enumerate(device_list):
-        if domain == new_domain and name == new_name:
-            device_list[index] = new_item
+    for index, device in enumerate(device_list):
+        if (
+            device[CONFIG_DEVICE_DOMAIN] == device_domain
+            and device[CONFIG_DEVICE_NAME] == device_name
+        ):
+            device_list[index] = new_device
             found = True
             break
 
     if not found:
-        device_list.append(new_item)
+        device_list.append(new_device)
 
     await store.async_save({CONFIG_DEVICE_LIST: device_list})
 
@@ -340,62 +350,65 @@ async def async_ha_store_update_device_list(
 
 # ----------------------------------------------------------------------------
 def _delete_member_not_in_new_list(
-    result: list[list[str]], new_list: list[list[str]]
-) -> list[list[str]]:
-    # Create a lookup dictionary of {(domain, name): full_new_list_item}
-    new_lookup = {(r[0], r[1]): r for r in new_list}
+    old_list: list[dict[str, str]], new_list: list[dict[str, str]]
+) -> list[dict[str, str]]:
+    """Delete member not in new list."""
+
+    # Create a lookup dictionary of {(domain, name): new_list_device}
+    new_lookup = {(d[CONFIG_DEVICE_DOMAIN], d[CONFIG_DEVICE_NAME]): d for d in new_list}
 
     # Filter and update elements safely using a list comprehension
     return [
-        new_lookup[(domain, name)]
-        for domain, name, _ in result
-        if (domain, name) in new_lookup
+        new_lookup[(device[CONFIG_DEVICE_DOMAIN], device[CONFIG_DEVICE_NAME])]
+        for device in old_list
+        if (device[CONFIG_DEVICE_DOMAIN], device[CONFIG_DEVICE_NAME]) in new_lookup
     ]
 
 
 # ----------------------------------------------------------------------------
 def _add_new_member_from_new_list(
-    result: list[list[str]], new_list: list[list[str]]
-) -> list[list[str]]:
-    # Create a lookup dictionary of {(domain, name): ref_row}
-    new_lookup = {(r[0], r[1]): r for r in new_list}
+    old_list: list[dict[str, str]], new_list: list[dict[str, str]], merge: bool
+) -> list[dict[str, str]]:
+    """Add or update member from new list keeping old list order. Delete member not in new list if not merging."""
 
-    # 1. Update existing matches in 'result' and track what we've processed
-    updated_result = []
-    seen_in_new_list = set()
+    # Create a lookup dictionary of {(domain, name): new_list_device}
+    new_lookup = {(d[CONFIG_DEVICE_DOMAIN], d[CONFIG_DEVICE_NAME]): d for d in new_list}
 
-    for domain, name, device_id in result:
-        key = (domain, name)
-        if key in new_lookup:
-            # Match found: update with a shallow copy from ref
-            updated_result.append(list(new_lookup[key]))
-            seen_in_new_list.add(key)
-        else:
-            # No match: keep the original item as-is
-            updated_result.append([domain, name, device_id])
+    # 1. Update existing matches in 'old_list' and track what we've processed.
+    updated_list = []
+    seen_in_old_list = set()
+    for old_device in old_list:
+        old_key = (old_device[CONFIG_DEVICE_DOMAIN], old_device[CONFIG_DEVICE_NAME])
+        if old_key in new_lookup:
+            # Match found: update with a shallow copy from new_list.
+            updated_list.append(new_lookup[old_key])
+            seen_in_old_list.add(old_key)
+        elif merge:
+            # No match: keep the original item as-is if merging.
+            updated_list.append(old_device)
+            seen_in_old_list.add(old_key)
 
-    # 2. Append elements from 'ref' that were never found in 'result'
-    for new_row in new_list:
-        new_key = (new_row[0], new_row[1])
-        if new_key not in seen_in_new_list:
-            updated_result.append(list(new_row))  # Safe shallow copy
-            seen_in_new_list.add(new_key)  # Prevents duplicates if ref has duplicates
+    # 2. Append elements from 'new_list' that were never found in 'old_list'.
+    for new_device in new_list:
+        new_key = (new_device[CONFIG_DEVICE_DOMAIN], new_device[CONFIG_DEVICE_NAME])
+        if new_key not in seen_in_old_list:
+            # Safe shallow copy.
+            updated_list.append(new_device)
+            # Prevents duplicates if new_list has duplicates.
+            seen_in_old_list.add(new_key)
 
-    return updated_result
+    return updated_list
 
 
 # ----------------------------------------------------------------------------
 async def async_ha_store_replace_device_list(
-    hass: HomeAssistant, new_list: list[list[str]]
+    hass: HomeAssistant, new_list: list[dict[str, str]]
 ) -> None:
     """Replace device list."""
 
     store = ha_store_open(hass, CONFIG_FILE_DEVICE)
     device_list = await _async_ha_store_get_device_list(store)
-
-    device_list = _delete_member_not_in_new_list(device_list, new_list)
-    device_list = _add_new_member_from_new_list(device_list, new_list)
-
+    device_list = _add_new_member_from_new_list(device_list, new_list, merge=False)
     await store.async_save({CONFIG_DEVICE_LIST: device_list})
 
 
@@ -409,8 +422,11 @@ async def async_ha_store_delete_device_list(
     device_list = await _async_ha_store_get_device_list(store)
 
     # Remove device matching domain and name
-    for index, [domain, name, device_id] in enumerate(device_list):
-        if domain == device_domain and name == device_name:
+    for index, device in enumerate(device_list):
+        if (
+            device[CONFIG_DEVICE_DOMAIN] == device_domain
+            and device[CONFIG_DEVICE_NAME] == device_name
+        ):
             device_list.pop(index)
             break
 

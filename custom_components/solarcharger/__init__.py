@@ -22,6 +22,9 @@ from .config.config_utils import (
     ha_store_open,
 )
 from .const import (
+    CONFIG_DEVICE_DOMAIN,
+    CONFIG_DEVICE_ID,
+    CONFIG_DEVICE_NAME,
     DOMAIN,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
@@ -233,7 +236,7 @@ async def _async_recreate_device_list(
     hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> None:
-    new_device_list: list[list[str]] = []
+    new_device_list: list[dict[str, str]] = []
 
     for subentry in entry.subentries.values():
         if subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
@@ -243,8 +246,13 @@ async def _async_recreate_device_list(
             device_domain = subentry.data.get(SUBENTRY_CHARGER_DEVICE_DOMAIN)
             device_name = subentry.data.get(SUBENTRY_CHARGER_DEVICE_NAME)
             device_id = subentry.data.get(SUBENTRY_CHARGER_DEVICE_ID)
-            new_device = [device_domain, device_name, device_id]
-            new_device_list.append(new_device)
+            device = {
+                CONFIG_DEVICE_DOMAIN: device_domain,
+                CONFIG_DEVICE_NAME: device_name,
+                CONFIG_DEVICE_ID: device_id,
+            }
+
+            new_device_list.append(device)
 
     await async_ha_store_replace_device_list(hass, new_device_list)
 
@@ -260,16 +268,19 @@ async def _async_create_charger_subentries_from_config_file(
 
     if device_count > 0:
         for device in device_list:
-            domain, device_name, device_id = device
-            if domain == DOMAIN:
+            if device[CONFIG_DEVICE_DOMAIN] == DOMAIN:
                 # Global defaults device must exists before custom chargers can be created.
                 await async_create_custom_device(
-                    hass, config_entry, {SUBENTRY_CHARGER_DEVICE_NAME: device_name}
+                    hass,
+                    config_entry,
+                    {SUBENTRY_CHARGER_DEVICE_NAME: device[CONFIG_DEVICE_NAME]},
                 )
             else:
                 # Third-party charger devices already exits, so can create SC charger device.
                 await async_create_charger_device(
-                    hass, config_entry, {SUBENTRY_CHARGER_DEVICE_ID: device_id}
+                    hass,
+                    config_entry,
+                    {SUBENTRY_CHARGER_DEVICE_ID: device[CONFIG_DEVICE_ID]},
                 )
 
     return device_count

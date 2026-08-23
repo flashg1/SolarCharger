@@ -141,6 +141,16 @@ CHARGER_INITIAL_CURRENT = 6.0
 # ie. 14.996 - 14.617 = 0.379, 0.379 / 14.996 = 0.0253, ie. 2.53%
 CURRENT_VARIATION_PERCENTAGE = 5
 
+#####################################
+# SolarCharger config file names
+#####################################
+CONFIG_FILE_SOURCE = "Source"
+CONFIG_FILE_DEVICE = "Device"
+CONFIG_DEVICE_LIST = "device_list"
+CONFIG_DEVICE_DOMAIN = "device_domain"
+CONFIG_DEVICE_NAME = "device_name"
+CONFIG_DEVICE_ID = "device_id"
+
 #######################################################
 # Subentry constants
 #######################################################
@@ -219,13 +229,6 @@ DEVICE_MODEL_MAP: dict[str, str] = {
     DOMAIN_TESSIE: f"{DOMAIN}-{DOMAIN_TESSIE}",
     DOMAIN_TESLEMETRY: f"{DOMAIN}-{DOMAIN_TESLEMETRY}",
 }
-
-#####################################
-# SolarCharger config file names
-#####################################
-CONFIG_FILE_SOURCE = "Source"
-CONFIG_FILE_DEVICE = "Device"
-CONFIG_DEVICE_LIST = "device_list"
 
 #######################################################
 # Error codes
