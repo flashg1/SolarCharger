@@ -1,4 +1,4 @@
-# ruff: noqa: TID252
+# ruff: noqa: TID252, RET504
 """Config subentry flow to create charger using supported integrations."""
 
 import logging
@@ -193,13 +193,18 @@ async def async_create_charger_device(
     # Get charger device subentry
     thirdparty_charger_id: str | None = input_data.get(SUBENTRY_CHARGER_DEVICE_ID)
     if not thirdparty_charger_id:
-        raise ValueError(f"Subentry {SUBENTRY_CHARGER_DEVICE_ID} not defined")
+        error_msg = f"Subentry {SUBENTRY_CHARGER_DEVICE_ID} not defined"
+        # raise ValueError(error_msg)
+        return error_msg
+
     registry: DeviceRegistry = dr.async_get(hass)
     thirdparty_charger: DeviceEntry | None = registry.async_get(thirdparty_charger_id)
     if not thirdparty_charger:
-        raise ValueError(
+        error_msg = (
             f"Charger device {thirdparty_charger_id} not found in device registry."
         )
+        # raise ValueError(error_msg)
+        return error_msg
 
     # Get charger domain and name to create unique_id
     # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
@@ -225,7 +230,9 @@ async def async_create_charger_device(
     # )
 
     if not thirdparty_config_entry:
-        raise ValueError(f"{thirdparty_charger.name}: Charger config entry not found")
+        error_msg = f"{thirdparty_charger.name}: Charger config entry not found"
+        # raise ValueError(error_msg)
+        return error_msg
 
     #######################################################
     # thirdparty_charger.name is set by official Tesla mobile app.  Need reboot
@@ -299,10 +306,12 @@ async def async_create_charger_device(
         or not thirdparty_charger_name
         or not thirdparty_charger_id
     ):
-        raise ValueError(
-            f"Charger config entry domain, name, or ID is missing: "
+        error_msg = (
+            f"Missing config entry domain, name, or ID: "
             f"{thirdparty_config_entry.domain=}, {thirdparty_charger_name=}, {thirdparty_charger_id=}"
         )
+        # raise ValueError(error_msg)
+        return error_msg
 
     hass.config_entries.async_add_subentry(
         config_entry,
@@ -377,6 +386,7 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     self.hass, config_entry, input_data
                 )
                 if error_msg is not None:
+                    _LOGGER.error("%s", error_msg)
                     return self.async_abort(reason=error_msg)
 
                 # Must return with SubentryFlowResult as stipulated in the return type

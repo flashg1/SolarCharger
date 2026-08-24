@@ -270,17 +270,25 @@ async def _async_create_charger_subentries_from_config_file(
         for device in device_list:
             if device[CONFIG_DEVICE_DOMAIN] == DOMAIN:
                 # Global defaults device must exists before custom chargers can be created.
-                await async_create_custom_device(
+                error_msg = await async_create_custom_device(
                     hass,
                     config_entry,
                     {SUBENTRY_CHARGER_DEVICE_NAME: device[CONFIG_DEVICE_NAME]},
                 )
             else:
                 # Third-party charger devices already exits, so can create SC charger device.
-                await async_create_charger_device(
+                error_msg = await async_create_charger_device(
                     hass,
                     config_entry,
                     {SUBENTRY_CHARGER_DEVICE_ID: device[CONFIG_DEVICE_ID]},
+                )
+
+            if error_msg is not None:
+                _LOGGER.error(
+                    "%s %s: %s",
+                    device[CONFIG_DEVICE_DOMAIN],
+                    device[CONFIG_DEVICE_NAME],
+                    error_msg,
                 )
 
     return device_count
@@ -302,21 +310,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     global_defaults_subentry = await _async_init_subentries(
         hass, entry, device_controls, [SUBENTRY_TYPE_DEFAULTS]
     )
+    if global_defaults_subentry is None:
+        raise RuntimeError("Global defaults subentry not found")
 
     #####################################
     # Do not init custom chargers until global defaults device exists.
     #####################################
     if not just_created_global_defaults_subentry:
+        # Global defaults device already exists, so init other subentries.
         await _async_init_subentries(
             hass, entry, device_controls, SUBENTRY_CHARGER_TYPES
         )
-        # HA just re-initialise all subentries after addition or deletion.
-        # So deleted subentries can be found by comparing old and new list.
-        await _async_recreate_device_list(hass, entry)
 
-    # There are no subentries on first start
-    if global_defaults_subentry is None:
-        raise RuntimeError("Global defaults subentry not found")
+        # async_setup_entry() is called when HA re-initialise all subentries
+        # after addition/deletion. So deleted subentries can be found by
+        # comparing old and new list.
+        # CAUTION: If add or delete device, can lose original device list here
+        # if there were errors creating devices after reboot.
+        await _async_recreate_device_list(hass, entry)
 
     #####################################
     # Create the coordinator and charge controls but not initialized
@@ -331,7 +342,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     #####################################
     # Create entites for each platform with dependency on coordinator.
-    # Initially for global defaults device only.
+    # Initially for global defaults device only if creating for the first time.
     #####################################
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -346,6 +357,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Won't be able to create custom devices until global defaults device has been created.
     #####################################
     if just_created_global_defaults_subentry:
+        # There are no other subentries if global defaults has just been created.
         device_count = await _async_create_charger_subentries_from_config_file(
             hass, entry
         )

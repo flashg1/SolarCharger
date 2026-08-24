@@ -1,4 +1,4 @@
-# ruff: noqa: TID252
+# ruff: noqa: TID252, RET504
 """Config subentry flow to create user custom charger."""
 
 import logging
@@ -155,7 +155,10 @@ async def async_create_custom_device(
     # Get charger device subentry
     custom_charger_name: str | None = input_data.get(SUBENTRY_CHARGER_DEVICE_NAME)
     if not custom_charger_name:
-        raise ValueError(f"Subentry {SUBENTRY_CHARGER_DEVICE_NAME} not defined")
+        error_msg = f"Subentry {SUBENTRY_CHARGER_DEVICE_NAME} not defined"
+        # raise ValueError(error_msg)
+        return error_msg
+
     custom_charger_display_name = f"{SUBENTRY_TYPE_CUSTOM} {custom_charger_name}"
     custom_charger_config_name = slugify(f"{custom_charger_display_name}")
 
@@ -166,9 +169,9 @@ async def async_create_custom_device(
         hass, global_defaults_net_power
     )
     if not global_defaults_device_entry:
-        raise ValueError(
-            f"{OPTION_GLOBAL_DEFAULTS_ID} entry not found in device registry."
-        )
+        error_msg = f"{OPTION_GLOBAL_DEFAULTS_ID} entry not found in device registry."
+        # raise ValueError(error_msg)
+        return error_msg
 
     #######################################################
     # Global defaults device must be created first in order to get global_defaults_device_entry.id
@@ -177,17 +180,16 @@ async def async_create_custom_device(
     #######################################################
     device_id = global_defaults_device_entry.id
 
-    custom_charger_subdomain = compose_subdomain(
-        config_entry.domain,
-        global_defaults_device_entry.manufacturer,
-        global_defaults_device_entry.model,
-    )
-
     # custom_charger_subdomain = compose_subdomain(
     #     config_entry.domain,
     #     MANUFACTURER,
     #     DEVICE_MODEL_MAP[CONFIG_NAME_GLOBAL_DEFAULTS],
     # )
+    custom_charger_subdomain = compose_subdomain(
+        config_entry.domain,
+        global_defaults_device_entry.manufacturer,
+        global_defaults_device_entry.model,
+    )
 
     _LOGGER.info(
         "Creating subentry %d: charger='%s', unique_id='%s', sub-domain='%s'",
@@ -266,6 +268,7 @@ class AddCustomSubEntryFlowHandler(ConfigSubentryFlow):
                     self.hass, config_entry, input_data
                 )
                 if error_msg is not None:
+                    _LOGGER.error("%s", error_msg)
                     return self.async_abort(reason=error_msg)
 
                 # Must return with SubentryFlowResult as stipulated in the return type

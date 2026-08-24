@@ -7,6 +7,7 @@
 ### New feature
 - Automatically recreate all devices following delete and re-add integration.
 ### Improvement
+- Improved error handling when creating devices.
 
 ## v0.10.3 2026-08-12
 ### Breaking change
