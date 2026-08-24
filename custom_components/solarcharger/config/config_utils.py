@@ -812,7 +812,7 @@ def create_entity_ids_from_templates(
             is_api_entity = (
                 False if template is None else DEVICE_NAME_MARKER in template
             )
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "%s: is_api_entity=%s, user_config='%s', sc_entity_id='%s'",
                 config_item,
                 is_api_entity,
@@ -854,7 +854,7 @@ def process_api_config(
     """Reset entity names using new device name and config name substitutions. Delete marked entities."""
 
     if config_name != OPTION_GLOBAL_DEFAULTS_ID:
-        _LOGGER.warning("Original config: %s", data)
+        # _LOGGER.warning("Original config: %s", data)
         # Delete marked entities and config strings
         data = delete_marked_config(data)
 
@@ -882,5 +882,7 @@ def process_api_config(
                 create_entity_ids_from_templates(
                     data, api_entities, device_name, subentry.unique_id, is_init_all
                 )
+
+        _LOGGER.warning("Device config: %s", data)
 
     return data

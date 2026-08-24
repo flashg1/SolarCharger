@@ -330,7 +330,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await _async_recreate_device_list(hass, entry)
 
     #####################################
-    # Create the coordinator and charge controls but not initialized
+    # Create the coordinator and charge controls but not initialized.
     #####################################
     coordinator = SolarChargerCoordinator(
         hass=hass,
@@ -342,22 +342,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     #####################################
     # Create entites for each platform with dependency on coordinator.
-    # Initially for global defaults device only if creating for the first time.
+    # Initially for global defaults device only if created for the first time.
     #####################################
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Must wait for entities to be created, otherwise will fail after adding Tesla or OCPP charger, eg.
+    # Must wait for entities to be created, otherwise will fail after adding
+    # Tesla or OCPP charger, eg.
     # ValueError: tesla_custom_tesla23m3: charger_plugged_in_sensor: Failed to get entity ID
-    # Most likely coordinator init had fail, or init had failed causing entities not to be available on first run.
-    # Restart for second run and SolarCharger spinned up without issue.
+    # Most likely coordinator init had fail, or init had failed causing
+    # entities not to be available on first run. Restart for second run and
+    # SolarCharger spinned up without issue.
     await asyncio.sleep(3)
 
     #####################################
-    # If created global defaults device for first time, now can create chargers and custom devices.
-    # Won't be able to create custom devices until global defaults device has been created.
+    # If created global defaults device for first time, now can create chargers
+    # and custom devices. Won't be able to create custom devices until global
+    # defaults device has been created.
     #####################################
     if just_created_global_defaults_subentry:
-        # There are no other subentries if global defaults has just been created.
         device_count = await _async_create_charger_subentries_from_config_file(
             hass, entry
         )
