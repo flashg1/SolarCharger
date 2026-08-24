@@ -3,7 +3,6 @@
 ## v0.10.4 2026-08-21
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
-### Fix
 ### New feature
 - Automatically recreate all devices following delete and re-add integration.
 ### Improvement
