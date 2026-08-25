@@ -21,7 +21,8 @@
     "tessie",
     "teslemetry",
     "ocpp",
-    "myskoda"
+    "myskoda",
+    "byd_vehicle"
   ],
   "codeowners": [
     "@flashg1"

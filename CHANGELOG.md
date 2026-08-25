@@ -8,6 +8,7 @@
 - Beta release for [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) support. Need charger device to set current.
 - Beta release for [BYD vehicle](https://github.com/jkaberg/hass-byd-vehicle) support. Need charger device to set current.
 ### Improvement
+- Removed "OCPP Central System" from "Add charger" selection.
 
 ## v0.10.4 2026-08-21
 ### Breaking change

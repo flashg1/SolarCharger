@@ -181,6 +181,8 @@ OPTION_NAME = "option_name"
 # Don't forget to add charger to the charger factory.
 
 DOMAIN_OCPP = "ocpp"
+OCPP_CENTRAL_SYSTEM_MODEL = "OCPP Central System"
+
 DOMAIN_TESLA_CUSTOM = "tesla_custom"
 
 DOMAIN_MQTT = "mqtt"
@@ -401,11 +403,13 @@ NUMBER_CHARGER_MAX_CURRENT = "charger_max_current"
 ENTITY_CHARGER_GET_CHARGE_CURRENT = "charger_get_charge_current"
 ENTITY_CHARGER_SET_CHARGE_CURRENT = "charger_set_charge_current"
 
+# OCPP entities
 ENTITY_OCPP_CHARGER_ID = "charger_specific_id"
 ENTITY_OCPP_TRANSACTION_ID = "charger_transaction_id"
 NUMBER_OCPP_PROFILE_ID = "ocpp_profile_id"
 NUMBER_OCPP_PROFILE_STACK_LEVEL = "ocpp_profile_stack_level"
 
+# BYD entities
 BUTTON_BYD_START_CHARGE = "byd_start_charge"
 BUTTON_BYD_STOP_CHARGE = "byd_stop_charge"
 
@@ -1065,8 +1069,8 @@ MYSKODA_ENTITIES: dict[str, str | None] = {
     ENTITY_DEVICE_SOC_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}battery_percentage",
     ENTITY_DEVICE_GET_CHARGE_LIMIT: f"{SENSOR}.{DEVICE_NAME_MARKER}target_battery_percentage",
     ENTITY_DEVICE_SET_CHARGE_LIMIT: f"{NUMBER}.{DEVICE_NAME_MARKER}charge_limit",
-    ENTITY_DEVICE_LOCATION_SENSOR: None,
-    OPTION_DEVICE_LOCATION_STATE_LIST: None,
+    ENTITY_DEVICE_LOCATION_SENSOR: f"{DEVICE_TRACKER}.{DEVICE_NAME_MARKER}position",
+    OPTION_DEVICE_LOCATION_STATE_LIST: '["home"]',
     ENTITY_DEVICE_WAKE_UP_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}wakeup",
     ENTITY_DEVICE_UPDATE_HA_BUTTON: None,
     # Non-configurable entities: Device specific entities
@@ -1085,7 +1089,7 @@ MYSKODA_ENTITIES: dict[str, str | None] = {
 BYD_VEHICLE_ENTITIES: dict[str, str | None] = {
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     # Use charging.connectState instead of realtime.connectState. (15=connected, 1=charging)
-    ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}is_charger_connected",
+    ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}is_charger_connected",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["on"]',
     ENTITY_CHARGER_ON_OFF_SWITCH: None,

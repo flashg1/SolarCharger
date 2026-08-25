@@ -46,6 +46,7 @@ from ..const import (
     ESPHOME_TESLA_BLE_MODEL,
     MQTT_TESLA_BLE_MANUFACTURER,
     MQTT_TESLA_BLE_MODEL,
+    OCPP_CENTRAL_SYSTEM_MODEL,
     OPTION_CHARGER_NAME,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
@@ -70,36 +71,25 @@ from .config_utils import (
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
-_charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
-    DeviceFilterSelectorConfig(integration=DOMAIN_OCPP),
-    DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_CUSTOM),
-    DeviceFilterSelectorConfig(
-        integration=DOMAIN_MQTT,
-        manufacturer=MQTT_TESLA_BLE_MANUFACTURER,
-        model=MQTT_TESLA_BLE_MODEL,
-    ),
-    DeviceFilterSelectorConfig(
-        integration=DOMAIN_ESPHOME,
-        manufacturer=ESPHOME_TESLA_BLE_MANUFACTURER,
-        model=ESPHOME_TESLA_BLE_MODEL,
-    ),
-    DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_FLEET),
-    DeviceFilterSelectorConfig(integration=DOMAIN_TESSIE),
-    DeviceFilterSelectorConfig(integration=DOMAIN_TESLEMETRY),
-    DeviceFilterSelectorConfig(integration=DOMAIN_MYSKODA),
-    DeviceFilterSelectorConfig(integration=DOMAIN_BYD_VEHICLE),
-]
-
-STEP_SELECT_CHARGER_SCHEMA = vol.Schema(
-    {
-        vol.Required(SUBENTRY_CHARGER_DEVICE_ID): DeviceSelector(
-            DeviceSelectorConfig(
-                multiple=False,
-                filter=_charger_integration_filter_list,
-            )
-        ),
-    }
-)
+# _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
+#     DeviceFilterSelectorConfig(integration=DOMAIN_OCPP),
+#     DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_CUSTOM),
+#     DeviceFilterSelectorConfig(
+#         integration=DOMAIN_MQTT,
+#         manufacturer=MQTT_TESLA_BLE_MANUFACTURER,
+#         model=MQTT_TESLA_BLE_MODEL,
+#     ),
+#     DeviceFilterSelectorConfig(
+#         integration=DOMAIN_ESPHOME,
+#         manufacturer=ESPHOME_TESLA_BLE_MANUFACTURER,
+#         model=ESPHOME_TESLA_BLE_MODEL,
+#     ),
+#     DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_FLEET),
+#     DeviceFilterSelectorConfig(integration=DOMAIN_TESSIE),
+#     DeviceFilterSelectorConfig(integration=DOMAIN_TESLEMETRY),
+#     DeviceFilterSelectorConfig(integration=DOMAIN_MYSKODA),
+#     DeviceFilterSelectorConfig(integration=DOMAIN_BYD_VEHICLE),
+# ]
 
 
 # ----------------------------------------------------------------------------
@@ -355,6 +345,57 @@ async def async_create_charger_device(
 
 
 # ----------------------------------------------------------------------------
+def _get_charger_integration_filter_list(
+    hass: HomeAssistant,
+) -> list[DeviceFilterSelectorConfig]:
+    """Dynamically build the selector filters, excluding the OCPP Central System."""
+
+    # 1. Start with your base explicit/static integrations
+    filters: list[DeviceFilterSelectorConfig] = [
+        DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_CUSTOM),
+        DeviceFilterSelectorConfig(
+            integration=DOMAIN_MQTT,
+            manufacturer=MQTT_TESLA_BLE_MANUFACTURER,
+            model=MQTT_TESLA_BLE_MODEL,
+        ),
+        DeviceFilterSelectorConfig(
+            integration=DOMAIN_ESPHOME,
+            manufacturer=ESPHOME_TESLA_BLE_MANUFACTURER,
+            model=ESPHOME_TESLA_BLE_MODEL,
+        ),
+        DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_FLEET),
+        DeviceFilterSelectorConfig(integration=DOMAIN_TESSIE),
+        DeviceFilterSelectorConfig(integration=DOMAIN_TESLEMETRY),
+        DeviceFilterSelectorConfig(integration=DOMAIN_MYSKODA),
+        DeviceFilterSelectorConfig(integration=DOMAIN_BYD_VEHICLE),
+    ]
+
+    # 2. Query the Device Registry to explicitly find allowed OCPP models
+    dev_reg = dr.async_get(hass)
+    allowed_ocpp_models: set[str] = set()
+
+    for device in dev_reg.devices.values():
+        # Check if this device belongs to the OCPP integration
+        is_ocpp = any(identifier[0] == DOMAIN_OCPP for identifier in device.identifiers)
+
+        if is_ocpp and device.model:
+            # Drop the specific management model you want to hide
+            if device.model != OCPP_CENTRAL_SYSTEM_MODEL:
+                allowed_ocpp_models.add(device.model)
+
+    # 3. Add explicit inclusive filters for only the valid OCPP models found
+    if allowed_ocpp_models:
+        filters.extend(
+            [
+                DeviceFilterSelectorConfig(integration=DOMAIN_OCPP, model=model_name)
+                for model_name in allowed_ocpp_models
+            ]
+        )
+
+    return filters
+
+
+# ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
     """Handles subentry flow for creating charger."""
@@ -402,6 +443,17 @@ class AddChargerSubEntryFlowHandler(ConfigSubentryFlow):
                     # },
                 )
 
+        select_charger_schema = vol.Schema(
+            {
+                vol.Required(SUBENTRY_CHARGER_DEVICE_ID): DeviceSelector(
+                    DeviceSelectorConfig(
+                        multiple=False,
+                        filter=_get_charger_integration_filter_list(self.hass),
+                    )
+                ),
+            }
+        )
+
         return self.async_show_form(
-            step_id="user", data_schema=STEP_SELECT_CHARGER_SCHEMA, errors=errors
+            step_id="user", data_schema=select_charger_schema, errors=errors
         )
