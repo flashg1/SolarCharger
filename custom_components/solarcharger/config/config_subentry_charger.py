@@ -29,8 +29,10 @@ from homeassistant.helpers.selector import (
 from homeassistant.util import slugify
 
 from ..const import (
+    DOMAIN_BYD_VEHICLE,
     DOMAIN_ESPHOME,
     DOMAIN_MQTT,
+    DOMAIN_MYSKODA,
     DOMAIN_OCPP,
     DOMAIN_TESLA_CUSTOM,
     DOMAIN_TESLA_FLEET,
@@ -84,6 +86,8 @@ _charger_integration_filter_list: list[DeviceFilterSelectorConfig] = [
     DeviceFilterSelectorConfig(integration=DOMAIN_TESLA_FLEET),
     DeviceFilterSelectorConfig(integration=DOMAIN_TESSIE),
     DeviceFilterSelectorConfig(integration=DOMAIN_TESLEMETRY),
+    DeviceFilterSelectorConfig(integration=DOMAIN_MYSKODA),
+    DeviceFilterSelectorConfig(integration=DOMAIN_BYD_VEHICLE),
 ]
 
 STEP_SELECT_CHARGER_SCHEMA = vol.Schema(

@@ -29,7 +29,12 @@ from .const import (
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_SUN_TRIGGER,
 )
-from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
+from .entity import (
+    SolarChargerEntity,
+    SolarChargerEntityType,
+    get_single_entity_type,
+    is_create_entity,
+)
 from .models.model_device_control import DeviceControl
 
 type SWITCH_ACTION_TYPE = Callable[[DeviceControl, bool], Coroutine[Any, Any, None]]
@@ -190,7 +195,7 @@ async def async_setup_entry(
             Any,
             bool,
             SWITCH_ACTION_TYPE,
-            SolarChargerEntityType,
+            SolarChargerEntityType | list[SolarChargerEntityType],
             SwitchEntityDescription,
         ],
         ...,
@@ -324,14 +329,17 @@ async def async_setup_entry(
             cls,
             is_restore_state,
             action,
-            entity_type,
+            entity_type_or_list,
             entity_description,
         ) in config_switch_list:
-            if is_create_entity(subentry, entity_type):
+            if is_create_entity(subentry, entity_type_or_list):
+                single_entity_type = get_single_entity_type(
+                    subentry, entity_type_or_list
+                )
                 switches[config_item] = cls(
                     config_item,
                     subentry,
-                    entity_type,
+                    single_entity_type,
                     entity_description,
                     coordinator,
                     get_device_config_default_value(subentry, config_item),

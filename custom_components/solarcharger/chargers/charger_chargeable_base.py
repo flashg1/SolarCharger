@@ -1,8 +1,6 @@
 # ruff: noqa: TID252
 """Charger and Chargeable base class implementation."""
 
-import logging
-
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import STATE_ON
 from homeassistant.core import HomeAssistant
@@ -32,8 +30,6 @@ from .chargeable import Chargeable
 from .charger import Charger
 from .ha_device import HaDevice
 from .sc_option_state import ScOptionState
-
-_LOGGER = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------------

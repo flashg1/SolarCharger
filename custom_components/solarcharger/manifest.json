@@ -20,7 +20,8 @@
     "tesla_fleet",
     "tessie",
     "teslemetry",
-    "ocpp"
+    "ocpp",
+    "myskoda"
   ],
   "codeowners": [
     "@flashg1"
@@ -30,6 +31,7 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/flashg1/solarcharger/issues",
+  "loggers": ["custom_components.solarcharger", "solarcharger"],
   "requirements": [],
   "single_config_entry": true,
   "version": "0.10.5"

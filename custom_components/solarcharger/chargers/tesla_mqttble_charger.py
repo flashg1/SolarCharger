@@ -10,9 +10,13 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from ..const import MQTT_TESLA_BLE_MANUFACTURER, MQTT_TESLA_BLE_MODEL
 from .charger_chargeable_base import ChargerChargeableBase
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class TeslaMqttBleCharger(ChargerChargeableBase):
     """Implementation of the Charger class for Tesla MQTT BLE chargers."""
 

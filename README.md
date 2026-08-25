@@ -94,6 +94,8 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [Tesla Fleet](https://www.home-assistant.io/integrations/tesla_fleet)*
 - [Tessie](https://www.home-assistant.io/integrations/tessie)*
 - [Teslemetry](https://www.home-assistant.io/integrations/teslemetry/)* beta release.
+- [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) beta release.  Need charger device to set current.
+- [BYD vehicle](https://github.com/jkaberg/hass-byd-vehicle) beta release.  Need charger device to set current.
 
 Integration APIs requiring paid subscription for most countries are marked with *.  Please see [charger current update period](https://github.com/flashg1/SolarCharger/wiki/Installation#charger-current-update-period) in relation to API polling interval.
 

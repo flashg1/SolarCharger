@@ -200,6 +200,7 @@ CONFIG_NUMBER_LIST: tuple[
         NUMBER_DEVICE_CHARGE_LIMIT,
         [
             SolarChargerEntityType.TYPE_LOCAL_OCPP,
+            SolarChargerEntityType.TYPE_LOCAL_BYD_VEHICLE,
             SolarChargerEntityType.TYPE_LOCAL_USER_CUSTOM,
         ],
         NumberEntityDescription(

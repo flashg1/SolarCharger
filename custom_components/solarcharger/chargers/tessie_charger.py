@@ -10,9 +10,13 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from ..const import DOMAIN_TESSIE
 from .charger_chargeable_base import ChargerChargeableBase
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class TessieCharger(ChargerChargeableBase):
     """Implementation of the Charger class for Tessie chargers."""
 

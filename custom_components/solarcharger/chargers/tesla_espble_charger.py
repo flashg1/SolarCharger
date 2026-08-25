@@ -10,9 +10,13 @@ from homeassistant.helpers.device_registry import DeviceEntry
 from ..const import ESPHOME_TESLA_BLE_MANUFACTURER, ESPHOME_TESLA_BLE_MODEL
 from .charger_chargeable_base import ChargerChargeableBase
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 class TeslaEspBleCharger(ChargerChargeableBase):
     """Implementation of the Charger class for Tesla ESPHome BLE chargers."""
 
