@@ -12,7 +12,7 @@ NAME = "SolarCharger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json, README.md and CHANGELOG.md.
-VERSION = "0.10.6"
+VERSION = "0.10.5"
 STORAGE_VERSION = 1
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
@@ -397,6 +397,7 @@ DELTA_POWER_MONITOR_DURATION = 20  # +/- 20%
 # Charger control entities
 # OPTION_* => Option values saved in subentry config.
 # ENTITY_* => Entity IDs saved in subentry config for control entities.
+# BUTTON/NUMBER/SELECT/SENSOR/SWITCH/TIME => SolarCharger entities.
 #####################################
 OPTION_CHARGER_NAME = "charger_name"
 ENTITY_CHARGER_PLUGGED_IN_SENSOR = "charger_plugged_in_sensor"
@@ -416,8 +417,8 @@ NUMBER_OCPP_PROFILE_ID = "ocpp_profile_id"
 NUMBER_OCPP_PROFILE_STACK_LEVEL = "ocpp_profile_stack_level"
 
 # BYD entities
-BUTTON_BYD_START_CHARGE = "byd_start_charge"
-BUTTON_BYD_STOP_CHARGE = "byd_stop_charge"
+ENTITY_BYD_START_CHARGE_BUTTON = "byd_start_charge"
+ENTITY_BYD_STOP_CHARGE_BUTTON = "byd_stop_charge"
 
 #####################################
 # Chargeable device control entities
@@ -562,8 +563,10 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     ENTITY_CHARGER_SET_CHARGE_CURRENT,
     ENTITY_OCPP_CHARGER_ID,
     ENTITY_OCPP_TRANSACTION_ID,
+    ENTITY_BYD_START_CHARGE_BUTTON,
+    ENTITY_BYD_STOP_CHARGE_BUTTON,
     #####################################
-    # Chargee control entities
+    # Device control entities
     #####################################
     ENTITY_DEVICE_SOC_SENSOR,
     ENTITY_DEVICE_GET_CHARGE_LIMIT,
@@ -746,7 +749,9 @@ MYSKODA_DEFAULT_VALUES: dict[str, Any] = {
 
 BYD_VEHICLE_DEFAULT_VALUES: dict[str, Any] = {}
 
-GWM_ORA_DEFAULT_VALUES: dict[str, Any] = {}
+GWM_ORA_DEFAULT_VALUES: dict[str, Any] = {
+    SWITCH_POLL_CHARGER_UPDATE: DEFAULT_ON,
+}
 
 KIA_UVO_DEFAULT_VALUES: dict[str, Any] = {}
 
@@ -1118,8 +1123,8 @@ BYD_VEHICLE_ENTITIES: dict[str, str | None] = {
     ENTITY_DEVICE_WAKE_UP_BUTTON: None,
     ENTITY_DEVICE_UPDATE_HA_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}force_poll",
     # Non-configurable entities: Device specific entities
-    BUTTON_BYD_START_CHARGE: f"{BUTTON}.{DEVICE_NAME_MARKER}start_charging",
-    BUTTON_BYD_STOP_CHARGE: f"{BUTTON}.{DEVICE_NAME_MARKER}stop_charging",
+    ENTITY_BYD_START_CHARGE_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}start_charging",
+    ENTITY_BYD_STOP_CHARGE_BUTTON: f"{BUTTON}.{DEVICE_NAME_MARKER}stop_charging",
     # Configurable entities: Extra device specific entities
     NUMBER_CHARGER_MAX_SPEED: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MAX_SPEED}",
     NUMBER_CHARGER_POWER_FACTOR: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_FACTOR}",

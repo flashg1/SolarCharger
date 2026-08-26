@@ -7,7 +7,11 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import BUTTON_BYD_START_CHARGE, BUTTON_BYD_STOP_CHARGE, DOMAIN_BYD_VEHICLE
+from ..const import (
+    DOMAIN_BYD_VEHICLE,
+    ENTITY_BYD_START_CHARGE_BUTTON,
+    ENTITY_BYD_STOP_CHARGE_BUTTON,
+)
 from ..models.model_config import ConfigValueDict
 from .charger_chargeable_base import ChargerChargeableBase
 
@@ -70,9 +74,9 @@ class BYDVehicleCharger(ChargerChargeableBase):
 
         if turn_on:
             await self.async_option_press_entity_button(
-                BUTTON_BYD_START_CHARGE, val_dict=val_dict
+                ENTITY_BYD_START_CHARGE_BUTTON, val_dict=val_dict
             )
         else:
             await self.async_option_press_entity_button(
-                BUTTON_BYD_STOP_CHARGE, val_dict=val_dict
+                ENTITY_BYD_STOP_CHARGE_BUTTON, val_dict=val_dict
             )
