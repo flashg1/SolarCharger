@@ -1,0 +1,56 @@
+# ruff: noqa: TID252
+"""Geely Connect charger implementation."""
+
+import logging
+
+from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntry
+
+from ..const import DOMAIN_GEELY_CONNECT
+from .charger_chargeable_base import ChargerChargeableBase
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+_LOGGER = logging.getLogger(__name__)
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+class GeelyConnectCharger(ChargerChargeableBase):
+    """Implementation of the Charger class for Geely Connect chargers."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        subentry: ConfigSubentry,
+        device: DeviceEntry,
+    ) -> None:
+        """Initialize the Geely Connect charger."""
+
+        ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
+
+    # ----------------------------------------------------------------------------
+    # Chargeable interface implementation
+    # ----------------------------------------------------------------------------
+    @staticmethod
+    def is_chargeable_device(device: DeviceEntry) -> bool:
+        """Check if the given device is an Geely Connect charger."""
+
+        _LOGGER.debug("%s: %s", device.name, device)
+        return any(
+            id_domain == DOMAIN_GEELY_CONNECT for id_domain, _ in device.identifiers
+        )
+
+    # ----------------------------------------------------------------------------
+    # Charger interface implementation
+    # ----------------------------------------------------------------------------
+    @staticmethod
+    def is_charger_device(device: DeviceEntry) -> bool:
+        """Check if device is a Geely Connect charger."""
+
+        _LOGGER.debug("%s: %s", device.name, device)
+        return any(
+            id_domain == DOMAIN_GEELY_CONNECT for id_domain, _ in device.identifiers
+        )

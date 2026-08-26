@@ -5,6 +5,7 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
 ### Fix
 ### New feature
+- [Geely Connect](https://github.com/YossiKon/geely-connect) beta release. Current can only be adjusted by charger and not car.
 ### Improvement
 
 ## v0.10.5 2026-08-25

@@ -8,6 +8,7 @@ from homeassistant.helpers import device_registry as dr
 
 from .byd_vehicle_charger import BYDVehicleCharger
 from .charger import Charger
+from .geely_connect_charger import GeelyConnectCharger
 from .gwm_ora_charger import GWMOraCharger
 from .kia_uvo_charger import KiaUVOCharger
 from .myskoda_charger import MySkodaCharger
@@ -56,6 +57,7 @@ async def charger_factory(
         BYDVehicleCharger,
         GWMOraCharger,
         KiaUVOCharger,
+        GeelyConnectCharger,
         # Custom charger requires global defaults device!
         UserCustomCharger,
     ]:

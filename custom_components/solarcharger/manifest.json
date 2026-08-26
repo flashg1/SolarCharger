@@ -24,7 +24,8 @@
     "myskoda",
     "byd_vehicle",
     "gwm_ora",
-    "kia_uvo"
+    "kia_uvo",
+    "geely_connect"
   ],
   "codeowners": [
     "@flashg1"
