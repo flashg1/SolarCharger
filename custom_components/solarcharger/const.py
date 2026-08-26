@@ -899,8 +899,8 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_MAX_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MAX_CURRENT}",
     ENTITY_CHARGER_GET_CHARGE_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}current_import",
     # OCPP set current entity does not exist. OCPP charge current is set by custom service call with charge profile.
-    # Setting this to blank string "" or None to disallow configuration in settings. Both will return None for entity string.
-    ENTITY_CHARGER_SET_CHARGE_CURRENT: None,
+    # Setting this to blank string "" to disallow configuration in settings. Set to None to make it overridable in settings.
+    ENTITY_CHARGER_SET_CHARGE_CURRENT: "",
     ENTITY_DEVICE_SOC_SENSOR: None,
     ENTITY_DEVICE_GET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_DEVICE_CHARGE_LIMIT}",
     ENTITY_DEVICE_SET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_DEVICE_CHARGE_LIMIT}",
@@ -1092,7 +1092,7 @@ BYD_VEHICLE_ENTITIES: dict[str, str | None] = {
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}is_charger_connected",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
     OPTION_CHARGER_CONNECT_STATE_LIST: '["on"]',
-    ENTITY_CHARGER_ON_OFF_SWITCH: None,
+    ENTITY_CHARGER_ON_OFF_SWITCH: "",
     ENTITY_CHARGER_CHARGING_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}is_charging",
     OPTION_CHARGER_CHARGING_STATE_LIST: '["on"]',
     NUMBER_CHARGER_MAX_CURRENT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_MAX_CURRENT}",

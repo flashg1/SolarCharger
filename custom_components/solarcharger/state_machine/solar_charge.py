@@ -417,11 +417,11 @@ class SolarCharge(ScOptionState):
     async def _async_poll_charger_update(self, wait_after_update: bool) -> None:
         """Poll charger for update using charger switch entity since every charger must have one."""
 
-        charger_entity = self.option_get_id(ENTITY_CHARGER_ON_OFF_SWITCH)
-        if charger_entity is None:
-            charger_entity = self.option_get_id(ENTITY_CHARGER_PLUGGED_IN_SENSOR)
-
-        if charger_entity:
+        if (
+            (charger_entity := self.option_get_id(ENTITY_CHARGER_ON_OFF_SWITCH))
+            or (charger_entity := self.option_get_id(ENTITY_CHARGER_PLUGGED_IN_SENSOR))
+            or (charger_entity := self.option_get_id(ENTITY_DEVICE_SOC_SENSOR))
+        ):
             await self.async_poll_entity_id(charger_entity)
             if wait_after_update:
                 await self.async_option_sleep(NUMBER_WAIT_DEVICE_UPDATE_HA)
