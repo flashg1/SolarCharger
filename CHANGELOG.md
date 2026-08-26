@@ -3,7 +3,6 @@
 ## v0.10.5 2026-08-25
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
-### Fix
 ### New feature
 - [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) beta release. Current can only be adjusted by charger and not car.
 - [BYD vehicle](https://github.com/jkaberg/hass-byd-vehicle) beta release. Current can only be adjusted by charger and not car.
