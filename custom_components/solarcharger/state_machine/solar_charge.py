@@ -419,8 +419,8 @@ class SolarCharge(ScOptionState):
 
         if (
             (charger_entity := self.option_get_id(ENTITY_CHARGER_ON_OFF_SWITCH))
-            or (charger_entity := self.option_get_id(ENTITY_CHARGER_PLUGGED_IN_SENSOR))
             or (charger_entity := self.option_get_id(ENTITY_DEVICE_SOC_SENSOR))
+            or (charger_entity := self.option_get_id(ENTITY_CHARGER_PLUGGED_IN_SENSOR))
         ):
             await self.async_poll_entity_id(charger_entity)
             if wait_after_update:

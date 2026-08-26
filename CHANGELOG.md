@@ -5,8 +5,10 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
 ### Fix
 ### New feature
-- Beta release for [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) support. Current can only be adjusted by charger and not car.
-- Beta release for [BYD vehicle](https://github.com/jkaberg/hass-byd-vehicle) support. Current can only be adjusted by charger and not car.
+- [MySkoda](https://github.com/skodaconnect/homeassistant-myskoda) beta release. Current can only be adjusted by charger and not car.
+- [BYD vehicle](https://github.com/jkaberg/hass-byd-vehicle) beta release. Current can only be adjusted by charger and not car.
+- [GWM Ora](https://github.com/moryoav/ha-gwm) beta release.  Current can only be adjusted by charger and not car.
+- [Hyundai Kia Connect](https://github.com/Hyundai-Kia-Connect/kia_uvo) beta release.  Current can only be adjusted by charger and not car.
 ### Improvement
 - Removed "OCPP Central System" from "Add charger" selection.
 

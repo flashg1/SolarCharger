@@ -22,7 +22,9 @@
     "teslemetry",
     "ocpp",
     "myskoda",
-    "byd_vehicle"
+    "byd_vehicle",
+    "gwm_ora",
+    "kia_uvo"
   ],
   "codeowners": [
     "@flashg1"

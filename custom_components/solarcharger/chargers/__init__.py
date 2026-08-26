@@ -6,7 +6,11 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 
+from .byd_vehicle_charger import BYDVehicleCharger
 from .charger import Charger
+from .gwm_ora_charger import GWMOraCharger
+from .kia_uvo_charger import KiaUVOCharger
+from .myskoda_charger import MySkodaCharger
 from .ocpp_charger import OcppCharger
 from .tesla_custom_charger import TeslaCustomCharger
 from .tesla_espble_charger import TeslaEspBleCharger
@@ -48,6 +52,10 @@ async def charger_factory(
         TeslaFleetCharger,
         TessieCharger,
         TeslemetryCharger,
+        MySkodaCharger,
+        BYDVehicleCharger,
+        GWMOraCharger,
+        KiaUVOCharger,
         # Custom charger requires global defaults device!
         UserCustomCharger,
     ]:

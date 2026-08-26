@@ -31,6 +31,8 @@ from homeassistant.util import slugify
 from ..const import (
     DOMAIN_BYD_VEHICLE,
     DOMAIN_ESPHOME,
+    DOMAIN_GWM_ORA,
+    DOMAIN_KIA_UVO,
     DOMAIN_MQTT,
     DOMAIN_MYSKODA,
     DOMAIN_OCPP,
@@ -348,6 +350,8 @@ def _get_supported_devices(
         DeviceFilterSelectorConfig(integration=DOMAIN_TESLEMETRY),
         DeviceFilterSelectorConfig(integration=DOMAIN_MYSKODA),
         DeviceFilterSelectorConfig(integration=DOMAIN_BYD_VEHICLE),
+        DeviceFilterSelectorConfig(integration=DOMAIN_GWM_ORA),
+        DeviceFilterSelectorConfig(integration=DOMAIN_KIA_UVO),
     ]
 
     # 2. Query the Device Registry to explicitly find allowed OCPP models.
