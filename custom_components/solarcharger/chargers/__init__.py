@@ -20,6 +20,7 @@ from .tesla_mqttble_charger import TeslaMqttBleCharger
 from .teslemetry_charger import TeslemetryCharger
 from .tessie_charger import TessieCharger
 from .user_custom_charger import UserCustomCharger
+from .volvo_charger import VolvoCharger
 
 if TYPE_CHECKING:
     from homeassistant.helpers.device_registry import DeviceEntry
@@ -58,6 +59,7 @@ async def charger_factory(
         GWMOraCharger,
         KiaUVOCharger,
         GeelyConnectCharger,
+        VolvoCharger,
         # Custom charger requires global defaults device!
         UserCustomCharger,
     ]:

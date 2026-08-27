@@ -203,6 +203,7 @@ CONFIG_NUMBER_LIST: tuple[
             SolarChargerEntityType.TYPE_LOCAL_BYD_VEHICLE,
             SolarChargerEntityType.TYPE_LOCAL_GWM_ORA,
             SolarChargerEntityType.TYPE_LOCAL_GEELY_CONNECT,
+            SolarChargerEntityType.TYPE_LOCAL_VOLVO,
             SolarChargerEntityType.TYPE_LOCAL_USER_CUSTOM,
         ],
         NumberEntityDescription(

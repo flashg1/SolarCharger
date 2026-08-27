@@ -41,6 +41,7 @@ from ..const import (
     DOMAIN_TESLA_FLEET,
     DOMAIN_TESLEMETRY,
     DOMAIN_TESSIE,
+    DOMAIN_VOLVO,
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_MISSING_DEVICE_NAME,
     ERROR_SELECT_CHARGER,
@@ -354,6 +355,7 @@ def _get_supported_devices(
         DeviceFilterSelectorConfig(integration=DOMAIN_GWM_ORA),
         DeviceFilterSelectorConfig(integration=DOMAIN_KIA_UVO),
         DeviceFilterSelectorConfig(integration=DOMAIN_GEELY_CONNECT),
+        DeviceFilterSelectorConfig(integration=DOMAIN_VOLVO),
     ]
 
     # 2. Query the Device Registry to explicitly find allowed OCPP models.

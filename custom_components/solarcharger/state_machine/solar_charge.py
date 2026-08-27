@@ -417,10 +417,13 @@ class SolarCharge(ScOptionState):
     async def _async_poll_charger_update(self, wait_after_update: bool) -> None:
         """Poll charger for update using charger switch entity since every charger must have one."""
 
+        # Best to check SOC first because all EV integrations should have SOC.
+        # All EVs should have plugged-in sensor.
+        # All chargers should have on/off switch (except BYD vehicle).
         if (
-            (charger_entity := self.option_get_id(ENTITY_CHARGER_ON_OFF_SWITCH))
-            or (charger_entity := self.option_get_id(ENTITY_DEVICE_SOC_SENSOR))
+            (charger_entity := self.option_get_id(ENTITY_DEVICE_SOC_SENSOR))
             or (charger_entity := self.option_get_id(ENTITY_CHARGER_PLUGGED_IN_SENSOR))
+            or (charger_entity := self.option_get_id(ENTITY_CHARGER_ON_OFF_SWITCH))
         ):
             await self.async_poll_entity_id(charger_entity)
             if wait_after_update:
