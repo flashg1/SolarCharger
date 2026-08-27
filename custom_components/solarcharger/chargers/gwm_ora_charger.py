@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class GWMOraCharger(ChargerChargeableBase):
+class GwmOraCharger(ChargerChargeableBase):
     """Implementation of the Charger class for GWM Ora chargers."""
 
     def __init__(

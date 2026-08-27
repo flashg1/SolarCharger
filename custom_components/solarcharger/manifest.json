@@ -25,7 +25,9 @@
     "byd_vehicle",
     "gwm_ora",
     "kia_uvo",
-    "geely_connect"
+    "geely_connect",
+    "volvo",
+    "mg_saic"
   ],
   "codeowners": [
     "@flashg1"

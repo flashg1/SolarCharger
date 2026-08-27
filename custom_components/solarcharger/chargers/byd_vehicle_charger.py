@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class BYDVehicleCharger(ChargerChargeableBase):
+class BydVehicleCharger(ChargerChargeableBase):
     """Implementation of the Charger class for BYD vehicle chargers."""
 
     def __init__(

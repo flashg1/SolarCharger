@@ -7,6 +7,7 @@
 ### New feature
 - [Geely Connect](https://github.com/YossiKon/geely-connect) beta release. Current can only be adjusted by charger and not car.
 - [Volvo](https://www.home-assistant.io/integrations/volvo) beta release. Current can only be adjusted by charger and not car.
+- [MG SAIC](https://github.com/townsmcp/mg-saic-ha) beta release. Current can only be adjusted by charger and not car.
 ### Improvement
 
 ## v0.10.5 2026-08-25

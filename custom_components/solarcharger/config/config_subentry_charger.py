@@ -34,6 +34,7 @@ from ..const import (
     DOMAIN_GEELY_CONNECT,
     DOMAIN_GWM_ORA,
     DOMAIN_KIA_UVO,
+    DOMAIN_MG_SAIC,
     DOMAIN_MQTT,
     DOMAIN_MYSKODA,
     DOMAIN_OCPP,
@@ -356,6 +357,7 @@ def _get_supported_devices(
         DeviceFilterSelectorConfig(integration=DOMAIN_KIA_UVO),
         DeviceFilterSelectorConfig(integration=DOMAIN_GEELY_CONNECT),
         DeviceFilterSelectorConfig(integration=DOMAIN_VOLVO),
+        DeviceFilterSelectorConfig(integration=DOMAIN_MG_SAIC),
     ]
 
     # 2. Query the Device Registry to explicitly find allowed OCPP models.

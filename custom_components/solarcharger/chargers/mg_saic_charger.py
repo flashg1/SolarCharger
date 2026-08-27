@@ -1,5 +1,5 @@
 # ruff: noqa: TID252
-"""Kia UVO charger implementation."""
+"""MG SAIC charger implementation."""
 
 import logging
 
@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import DOMAIN_KIA_UVO
+from ..const import DOMAIN_MG_SAIC
 from .charger_chargeable_base import ChargerChargeableBase
 
 # ----------------------------------------------------------------------------
@@ -17,8 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class KiaUvoCharger(ChargerChargeableBase):
-    """Implementation of the Charger class for Kia UVO chargers."""
+class MgSaicCharger(ChargerChargeableBase):
+    """Implementation of the Charger class for MG SAIC chargers."""
 
     def __init__(
         self,
@@ -27,7 +27,7 @@ class KiaUvoCharger(ChargerChargeableBase):
         subentry: ConfigSubentry,
         device: DeviceEntry,
     ) -> None:
-        """Initialize the Kia UVO charger."""
+        """Initialize the MG SAIC charger."""
 
         ChargerChargeableBase.__init__(self, hass, entry, subentry, device)
 
@@ -36,17 +36,17 @@ class KiaUvoCharger(ChargerChargeableBase):
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_chargeable_device(device: DeviceEntry) -> bool:
-        """Check if the given device is an Kia UVO charger."""
+        """Check if the given device is an MG SAIC charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
-        return any(id_domain == DOMAIN_KIA_UVO for id_domain, _ in device.identifiers)
+        return any(id_domain == DOMAIN_MG_SAIC for id_domain, _ in device.identifiers)
 
     # ----------------------------------------------------------------------------
     # Charger interface implementation
     # ----------------------------------------------------------------------------
     @staticmethod
     def is_charger_device(device: DeviceEntry) -> bool:
-        """Check if device is a Kia UVO charger."""
+        """Check if device is a MG SAIC charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
-        return any(id_domain == DOMAIN_KIA_UVO for id_domain, _ in device.identifiers)
+        return any(id_domain == DOMAIN_MG_SAIC for id_domain, _ in device.identifiers)

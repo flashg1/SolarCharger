@@ -100,6 +100,7 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 - [Hyundai Kia Connect](https://github.com/Hyundai-Kia-Connect/kia_uvo) beta release.  Current can only be adjusted by charger and not car.
 - [Geely Connect](https://github.com/YossiKon/geely-connect) beta release. Current can only be adjusted by charger and not car.
 - [Volvo](https://www.home-assistant.io/integrations/volvo) beta release. Current can only be adjusted by charger and not car.
+- [MG SAIC](https://github.com/townsmcp/mg-saic-ha) beta release. Current can only be adjusted by charger and not car.
 
 Integration APIs requiring paid subscription for most countries are marked with *.  Please see [charger current update period](https://github.com/flashg1/SolarCharger/wiki/Installation#charger-current-update-period) in relation to API polling interval.
 
