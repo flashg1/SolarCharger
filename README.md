@@ -104,7 +104,7 @@ Entities from following integrations are also pre-configured in SolarCharger, ie
 
 Integration APIs requiring paid subscription for most countries are marked with *.  Please see [charger current update period](https://github.com/flashg1/SolarCharger/wiki/Installation#charger-current-update-period) in relation to API polling interval.
 
-Please see [here](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-control-vehicle-charge-current) for possible work-around for vehicles that cannot adjust charge current.
+For vehicles that do not support adjusting charge current, please see [here](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-control-vehicle-charge-current) for possible work-around.
 
 If your integration is not listed above, you might want to try "[Add custom device](https://github.com/flashg1/SolarCharger/wiki/Configuration#example-config-for-a-heater)" button and define your own charge control entities, ie. Settings > Devices & services > SolarCharger > Settings (cog wheel) > Select your custom device > Select your charge control entities (device on/off switch is required as a minimum) > Submit
 
