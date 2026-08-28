@@ -316,11 +316,18 @@ class ChargeController(ScOptionState):
                 STATE_UNKNOWN,
                 STATE_UNAVAILABLE,
             ) and old_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-                new_starttime = self.parse_local_datetime(new_state.state)
-
-                self._tracker.schedule_next_charge_time(
-                    new_starttime, self._async_turn_on_charger_switch
-                )
+                try:
+                    new_starttime = self.parse_local_datetime(new_state.state)
+                    self._tracker.schedule_next_charge_time(
+                        new_starttime, self._async_turn_on_charger_switch
+                    )
+                except (ValueError, TypeError) as e:
+                    _LOGGER.error(
+                        "%s: Failed to schedule next charge time '%s': %s",
+                        self.caller,
+                        new_state.state,
+                        e,
+                    )
 
     # ----------------------------------------------------------------------------
     def _subscribe_next_charge_time_update(self) -> None:

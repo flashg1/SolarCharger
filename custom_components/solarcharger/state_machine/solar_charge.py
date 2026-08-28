@@ -260,10 +260,11 @@ class SolarCharge(ScOptionState):
         self.entities.sensors[config_item].set_state(new_state)
 
     # ----------------------------------------------------------------------------
-    def set_median_data_not_ready(self, data: MedianData) -> None:
+    def set_median_data_not_ready(self, data: MedianData | None) -> None:
         """Set the median data set not ready."""
 
-        data.data_set_ready = False
+        if data is not None:
+            data.data_set_ready = False
         self.update_sensor(
             SENSOR_NET_ALLOCATED_POWER_DATA_SET, MedianDataState.NOT_READY.value
         )

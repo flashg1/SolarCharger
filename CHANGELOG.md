@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.10.7 2026-08-28
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
+### Fix
+- Fixed "date value out of range" OverflowError exception. Thanks @luisfosoares
+
 ## v0.10.6 2026-08-26
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.

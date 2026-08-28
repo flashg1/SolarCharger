@@ -99,9 +99,24 @@ class ScState:
 
         # Stored string is in ISO format UTC or local (eg. 2025-12-28T05:51:05+00:00).
         # Convert to local timezone (eg. 2025-12-28 16:51:05+11:00)
-        return datetime.fromisoformat(datetime_str).astimezone(
-            self.get_local_timezone()
-        )
+        try:
+            return datetime.fromisoformat(datetime_str).astimezone(
+                self.get_local_timezone()
+            )
+
+        # OverflowError exception: date value out of range
+        # The root cause of the issue is the .astimezone() shift combined with
+        # boundary dates (like year 0001 or 9999), eg. uninitialised entity
+        # value datetime.min from HA database.
+        # When datetime.fromisoformat() successfully reads a string, it creates
+        # a valid UTC object. However, when .astimezone() attempts to shift
+        # that time into your Home Assistant local timezone, it can push the
+        # year past Python's hard limits (below 0001 or above 9999), triggering
+        # the OverflowError.
+        except OverflowError as e:
+            raise ValueError(
+                f"Datetime shifts out of supported Python range (0001-9999): {e}"
+            ) from e
 
     # ----------------------------------------------------------------------------
     def parse_local_time(self, time_str: str) -> time:
