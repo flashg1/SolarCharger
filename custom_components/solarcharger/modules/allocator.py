@@ -881,7 +881,7 @@ class PowerAllocator:
     #         await self._async_send_allocations(all_ladder, paused_only=True, log=True)
 
     # ----------------------------------------------------------------------------
-    async def async_allocate_net_power(self) -> None:
+    async def async_allocate_net_power(self) -> bool:
         """Calculate power allocation. Power allocation weight can be 0."""
         ok: bool = False
 
