@@ -23,6 +23,7 @@ from ..const import (
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
+    OPTION_CHARGER_STEP_CURRENT_LIST,
     OPTION_DEVICE_LOCATION_STATE_LIST,
 )
 from ..models.model_config import ConfigValueDict
@@ -186,6 +187,47 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         )
 
     # ----------------------------------------------------------------------------
+    def get_step_current_list(
+        self, val_dict: ConfigValueDict | None = None
+    ) -> list[float]:
+        """Get the step current given ideal current."""
+
+        step_current_list: list[float] = []
+
+        step_list = self.option_get_list(
+            OPTION_CHARGER_STEP_CURRENT_LIST, val_dict=val_dict
+        )
+        if step_list is not None and len(step_list) > 0:
+            step_current_list = sorted(step_list)
+            max_current = self.get_max_charge_current(val_dict=val_dict)
+            if max_current is not None:
+                if step_current_list[len(step_current_list) - 1] != max_current:
+                    step_current_list.append(max_current)
+            if step_current_list[0] != 0:
+                step_current_list.insert(0, 0)
+
+        return step_current_list
+
+    # ----------------------------------------------------------------------------
+    def get_step_current(
+        self, ideal_current: float, val_dict: ConfigValueDict | None = None
+    ) -> float:
+        """Get the step current given ideal current."""
+
+        step_list = self.get_step_current_list(val_dict=val_dict)
+        if len(step_list) > 0:
+            # Snap to the closest step which can be higher or lower than ideal_current.
+            # step_current = min(step_list, key=lambda x: abs(x - ideal_current))
+
+            # Always snap down to the closest step which is lower than ideal_current.
+            step_current = max(x for x in step_list if x <= ideal_current)
+
+        else:
+            step_current = round(ideal_current)
+
+        return step_current
+
+    # ----------------------------------------------------------------------------
     def is_connected(self, val_dict: ConfigValueDict | None = None) -> bool:
         """Is charger connected to chargeable device?"""
         is_connected = False
@@ -260,7 +302,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     ) -> float:
         """Set charger charge current in AMPS."""
 
-        new_current = round(charge_current)
+        new_current = self.get_step_current(charge_current, val_dict=val_dict)
         await self.async_option_set_entity_integer(
             ENTITY_CHARGER_SET_CHARGE_CURRENT, new_current, val_dict=val_dict
         )

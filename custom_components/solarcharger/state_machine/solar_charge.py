@@ -555,6 +555,27 @@ class SolarCharge(ScOptionState):
         return max_current
 
     # ----------------------------------------------------------------------------
+    def get_charger_step_current_list(self) -> list[float]:
+        """Get charger step current list."""
+
+        step_current_list = self.charger.get_step_current_list()
+        if not step_current_list:
+            raise ValueError("Failed to get charger step current list")
+
+        return step_current_list
+
+    # ----------------------------------------------------------------------------
+    def get_charger_step_power_list(self) -> list[float]:
+        """Get charger step power list."""
+
+        step_current_list = self.get_charger_step_current_list()
+        effective_voltage = self.get_charger_effective_voltage()
+        power_factor = self.get_charger_power_factor()
+        return [
+            current * effective_voltage * power_factor for current in step_current_list
+        ]
+
+    # ----------------------------------------------------------------------------
     def validate_current(
         self, current: float, max_current: float | None = None
     ) -> float:

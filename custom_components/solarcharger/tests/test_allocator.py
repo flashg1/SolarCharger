@@ -136,6 +136,107 @@ def test_allocate_power_to_device_zero_total_weight_is_a_noop() -> None:
 
 
 # ----------------------------------------------------------------------------
+# Tier 1: step power snapping (_allocate_step_power / _release_step_power)
+# ----------------------------------------------------------------------------
+STEP_POWER_LIST = [0, 6, 9, 12, 15]
+
+
+def test_allocate_step_power_snaps_down_to_nearest_covered_step() -> None:
+    """Allocation snaps down to the closest step at or below the ideal magnitude."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._allocate_step_power(-10, STEP_POWER_LIST) == -9
+
+
+def test_allocate_step_power_exact_match_returns_same_value() -> None:
+    """A magnitude that exactly matches a step is returned unchanged."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._allocate_step_power(-12, STEP_POWER_LIST) == -12
+
+
+def test_allocate_step_power_falls_back_to_zero_when_no_step_is_low_enough() -> None:
+    """A magnitude below every step (no 0 floor configured) allocates nothing rather than crashing."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._allocate_step_power(-3, [6, 9, 12, 15]) == 0
+
+
+def test_allocate_step_power_passthrough_when_no_steps_configured() -> None:
+    """With no step list, the ideal power is used as-is."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._allocate_step_power(-1000, []) == -1000
+
+
+def test_release_step_power_snaps_up_to_nearest_covered_step() -> None:
+    """Release snaps up to the closest step at or above the ideal magnitude."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._release_step_power(10, STEP_POWER_LIST) == 12
+
+
+def test_release_step_power_exact_match_returns_same_value() -> None:
+    """A magnitude that exactly matches a step is returned unchanged."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._release_step_power(12, STEP_POWER_LIST) == 12
+
+
+def test_release_step_power_falls_back_to_highest_step_when_target_exceeds_every_step() -> (
+    None
+):
+    """A magnitude above every step releases the largest step rather than crashing."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._release_step_power(20, STEP_POWER_LIST) == 15
+
+
+def test_release_step_power_passthrough_when_no_steps_configured() -> None:
+    """With no step list, the ideal power is used as-is."""
+    allocator: PowerAllocator = make_allocator()
+
+    assert allocator._release_step_power(10, []) == 10
+
+
+def test_allocate_power_to_device_snaps_allocation_to_a_lower_step() -> None:
+    """A stepped charger takes power in whole steps, never more than what was allocated."""
+    allocator: PowerAllocator = make_allocator()
+    rung: AllocationGroup = make_group()
+    member = make_power_allocation(
+        consumed_power=0,
+        need_power=-2000,
+        max_power=2000,
+        adjusted_activation_power=-100,
+        step_power_list=STEP_POWER_LIST,
+    )
+
+    remain_power = allocator._allocate_power_to_device(rung, member, -1000, 1, 1)
+
+    assert member.final_power == -15  # Largest step at or below the 1000W share.
+    assert member.lack_power == -1985
+    assert remain_power == -985
+
+
+def test_allocate_power_to_device_snaps_give_back_to_a_higher_step() -> None:
+    """A stepped charger gives back power in whole steps, at least as much as was asked."""
+    allocator: PowerAllocator = make_allocator()
+    rung: AllocationGroup = make_group()
+    member = make_power_allocation(
+        consumed_power=15,
+        need_power=0,
+        max_power=15,
+        adjusted_activation_power=-100,
+        step_power_list=STEP_POWER_LIST,
+    )
+
+    remain_power = allocator._allocate_power_to_device(rung, member, 10, 1, 1)
+
+    assert member.final_power == 12  # Smallest step at or above the requested 10W.
+    assert remain_power == -2  # Slightly over-released; steps can't hit 10W exactly.
+
+
+# ----------------------------------------------------------------------------
 # Tier 1: multi-priority ladder cascading
 # ----------------------------------------------------------------------------
 def test_top_down_allocate_power_cascades_past_a_group_with_no_weight() -> None:
@@ -365,6 +466,31 @@ async def test_async_allocate_net_power_splits_surplus_by_weight(
 
     assert allocation_calls[id(dev_a.controller.charge_control)] == -500
     assert allocation_calls[id(dev_b.controller.charge_control)] == -500
+
+
+@pytest.mark.asyncio
+async def test_async_allocate_net_power_snaps_allocation_to_nearest_step(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A stepped charger's real allocated delta lands on a configured step, not a raw fraction."""
+    device = make_device_control(
+        "a",
+        "A",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-1,
+        activation_power=-1,
+        step_power_list=STEP_POWER_LIST,
+    )
+    allocator = make_allocator(device, net_power=-10)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(device.controller.charge_control)] == -9
 
 
 @pytest.mark.asyncio

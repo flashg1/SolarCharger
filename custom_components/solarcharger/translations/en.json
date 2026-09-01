@@ -144,6 +144,7 @@
                     "charger_charging_sensor": "Charger charging sensor",
                     "charger_charging_state_list": "Charger charging state list",
                     "charger_max_current": "Charger max current (AMP)",
+                    "charger_step_current_list": "Charger step current list (must start from 0)",
                     "charger_get_charge_current": "Charger get charge current (AMP)",
                     "charger_set_charge_current": "Charger set charge current (AMP)",
                     "device_soc_sensor": "Device state-of-charge sensor (%)",

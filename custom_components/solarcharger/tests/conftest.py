@@ -5,7 +5,7 @@ PowerAllocator only ever touches DeviceControl.controller.solar_charge and
 instead of constructing real ChargeController/HomeAssistant objects.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -58,6 +58,7 @@ class FakeSolarCharge:
     net_power: float | None = 0.0
     run_state: RunState = RunState.CHARGE
     rebalance_needed: bool = False
+    step_power_list: list[float] = field(default_factory=list)
 
     def get_charger_priority(self) -> int:
         """Return configured priority."""
@@ -66,6 +67,10 @@ class FakeSolarCharge:
     def get_charger_power_allocation_weight(self) -> float:
         """Return configured allocation weight."""
         return self.allocation_weight
+
+    def get_charger_step_power_list(self) -> list[float]:
+        """Return configured step power list."""
+        return self.step_power_list
 
     def get_charger_max_current(self) -> float:
         """Return configured max current."""
@@ -179,6 +184,7 @@ def make_power_allocation(**overrides: Any) -> PowerAllocation:
         "name": "Member",
         "max_power": 2000.0,
         "max_current": 8.7,
+        "step_power_list": [],
         "activation_power": -100.0,
         "adjusted_activation_power": -100.0,
         "priority": 10,

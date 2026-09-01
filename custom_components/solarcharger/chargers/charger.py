@@ -81,6 +81,18 @@ class Charger(ABC):
         """Is device charging?"""
 
     @abstractmethod
+    def get_step_current_list(
+        self, val_dict: ConfigValueDict | None = None
+    ) -> list[float]:
+        """Get the list of available step currents."""
+
+    @abstractmethod
+    def get_step_current(
+        self, ideal_current: float, val_dict: ConfigValueDict | None = None
+    ) -> float:
+        """Get the step current given ideal current."""
+
+    @abstractmethod
     def get_charge_current(
         self, val_dict: ConfigValueDict | None = None
     ) -> float | None:

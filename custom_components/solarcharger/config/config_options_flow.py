@@ -74,6 +74,7 @@ from ..const import (
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
     OPTION_CHARGER_NAME,
+    OPTION_CHARGER_STEP_CURRENT_LIST,
     OPTION_DEVICE_LOCATION_STATE_LIST,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
@@ -502,6 +503,14 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 modifiable_if_solarcharger_entity=True,
+            ),
+            self._optional(
+                subentry, OPTION_CHARGER_STEP_CURRENT_LIST, use_default
+            ): choose_selector(
+                api_entities,
+                OPTION_CHARGER_STEP_CURRENT_LIST,
+                TEXT_SELECTOR_READ_ONLY,
+                TEXT_SELECTOR,
             ),
             self._optional(
                 subentry, ENTITY_CHARGER_GET_CHARGE_CURRENT, use_default

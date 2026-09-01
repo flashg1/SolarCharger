@@ -139,7 +139,8 @@ class OcppCharger(ChargerChargeableBase):
             )
             return 0
 
-        new_charge_current = round(charge_current)
+        # new_charge_current = round(charge_current)
+        new_charge_current = self.get_step_current(charge_current)
 
         # Get OCPP charger ID
         ocpp_charger_id = self.option_get_entity_string(ENTITY_OCPP_CHARGER_ID)

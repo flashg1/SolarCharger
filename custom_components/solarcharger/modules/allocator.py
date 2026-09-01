@@ -76,6 +76,23 @@ class PowerAllocator:
         return -allowed_power_variation < power < +allowed_power_variation
 
     # ----------------------------------------------------------------------------
+    # def get_charger_step_current(self, ideal_current: float) -> float:
+    #     """Get the step current given ideal current."""
+
+    #     step_list = self.charger.get_step_current_list()
+    #     if len(step_list) > 0:
+    #         # Snap to the closest step which can be higher or lower than ideal_current.
+    #         # step_current = min(step_list, key=lambda x: abs(x - ideal_current))
+
+    #         # Always snap down to the closest step which is lower than ideal_current.
+    #         step_current = max(x for x in step_list if x <= ideal_current)
+
+    #     else:
+    #         step_current = round(ideal_current)
+
+    #     return step_current
+
+    # ----------------------------------------------------------------------------
     def _create_group_member(
         self, book: AllocationBook, control: DeviceControl, consumed_power: float
     ) -> PowerAllocation:
@@ -90,6 +107,7 @@ class PowerAllocator:
         voltage = control.controller.solar_charge.get_charger_effective_voltage()
         power_factor = control.controller.solar_charge.get_charger_power_factor()
         max_power = max_current * voltage * power_factor
+        step_power_list = control.controller.solar_charge.get_charger_step_power_list()
 
         # Participate in power allocation.
         instance = control.controller.charge_control.instance_count
@@ -154,6 +172,7 @@ class PowerAllocator:
             name=control.config_name,
             max_power=max_power,
             max_current=max_current,
+            step_power_list=step_power_list,
             activation_power=activation_power,
             adjusted_activation_power=adjusted_activation_power,
             priority=priority,
@@ -334,6 +353,44 @@ class PowerAllocator:
         return [group_map[priority] for priority in sorted(group_map.keys())]
 
     # ----------------------------------------------------------------------------
+    def _allocate_step_power(
+        self, ideal_power: float, step_power_list: list[float]
+    ) -> float:
+        """Allocate step power given ideal power."""
+
+        if len(step_power_list) > 0:
+            # Always snap down to the closest step which is lower than or equal to
+            # ideal_power. Falls back to 0 if even the smallest step is too large.
+            step_power = max(
+                (x for x in step_power_list if x <= abs(ideal_power)), default=0
+            )
+            # ideal_power is always <= 0 here (this is the "allocate power" branch),
+            # so restore that sign on the magnitude picked from step_power_list.
+            step_power = -step_power
+        else:
+            step_power = ideal_power
+
+        return step_power
+
+    # ----------------------------------------------------------------------------
+    def _release_step_power(
+        self, ideal_power: float, step_power_list: list[float]
+    ) -> float:
+        """Release step power given ideal power."""
+
+        if len(step_power_list) > 0:
+            # Always snap up to the closest step which is higher than or equal to
+            # ideal_power. Falls back to the highest step if even that is too small.
+            step_power = min(
+                (x for x in step_power_list if x >= abs(ideal_power)),
+                default=max(step_power_list),
+            )
+        else:
+            step_power = ideal_power
+
+        return step_power
+
+    # ----------------------------------------------------------------------------
     def _allocate_power_to_device(
         self,
         rung: AllocationGroup,
@@ -367,7 +424,12 @@ class PowerAllocator:
                     #####################################
                     # Only allocate if charge at max speed or above activation power.
                     #####################################
-                    member.final_power = max(allocated_power, member.need_power)
+                    # member.final_power = max(allocated_power, member.need_power)
+                    # Snap to step power.
+                    ideal_power = max(allocated_power, member.need_power)
+                    member.final_power = self._allocate_step_power(
+                        ideal_power, member.step_power_list
+                    )
                     member.lack_power = max(
                         member.need_power - member.final_power,
                         -member.max_power,
@@ -392,7 +454,12 @@ class PowerAllocator:
                 # Up to the charger to decide what to do if charger is below
                 # min workable power after deallocation.
                 # Should not try to take back all power here.
-                member.final_power = min(allocated_power, member.consumed_power)
+                # member.final_power = min(allocated_power, member.consumed_power)
+                # Snap to step power.
+                step_power = self._release_step_power(
+                    allocated_power, member.step_power_list
+                )
+                member.final_power = min(step_power, member.consumed_power)
                 member.lack_power = max(
                     member.need_power - member.final_power,
                     -member.max_power,
