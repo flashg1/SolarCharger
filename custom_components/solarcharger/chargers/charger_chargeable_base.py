@@ -220,7 +220,7 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
             # step_current = min(step_list, key=lambda x: abs(x - ideal_current))
 
             # Always snap down to the closest step which is lower than ideal_current.
-            step_current = max(x for x in step_list if x <= ideal_current)
+            step_current = max((x for x in step_list if x <= ideal_current), default=0)
 
         else:
             step_current = round(ideal_current)
