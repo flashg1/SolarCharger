@@ -558,11 +558,11 @@ class SolarCharge(ScOptionState):
     def get_charger_step_current_list(self) -> list[float]:
         """Get charger step current list."""
 
-        step_current_list = self.charger.get_step_current_list()
-        if not step_current_list:
-            raise ValueError("Failed to get charger step current list")
-
-        return step_current_list
+        # A list or a blank list will always be returned, so no need to check.
+        # Below checks for a blank list, ie. [] will trigger ValueError!
+        # if not step_current_list:
+        #     raise ValueError("Failed to get charger step current list")
+        return self.charger.get_step_current_list()
 
     # ----------------------------------------------------------------------------
     def get_charger_step_power_list(self) -> list[float]:
