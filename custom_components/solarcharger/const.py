@@ -569,7 +569,6 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     ENTITY_CHARGER_ON_OFF_SWITCH,
     ENTITY_CHARGER_CHARGING_SENSOR,
     NUMBER_CHARGER_MAX_CURRENT,
-    OPTION_CHARGER_STEP_CURRENT_LIST,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     ENTITY_CHARGER_SET_CHARGE_CURRENT,
     ENTITY_OCPP_CHARGER_ID,
@@ -612,19 +611,20 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     TIME_CHARGE_ENDTIME_SUNDAY,
 ]
 
-# Config option with local values.
+# Config option with local values, ie. not stored by entities.
 CONFIG_LOCAL_OPTION_LIST: list[str] = [
     OPTION_CHARGER_NAME,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_CHARGING_STATE_LIST,
+    OPTION_CHARGER_STEP_CURRENT_LIST,
     OPTION_DEVICE_LOCATION_STATE_LIST,
 ]
 
 # See OPTION_LOCAL_INTERNAL_ENTITIES for internal non-configurable entities
 
 #######################################################
-# Default values
+# Default value for entities only
 #######################################################
 # Switch defaults
 DEFAULT_ON = True
@@ -694,7 +694,6 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     # Local device optional defaults
     #####################################
     NUMBER_CHARGER_MAX_CURRENT: None,  # Also update CONFIG_WITH_NO_DEFAULTS
-    OPTION_CHARGER_STEP_CURRENT_LIST: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     NUMBER_DEVICE_CHARGE_LIMIT: 70,
     #####################################
     # Local device switch defaults
@@ -720,7 +719,6 @@ CONFIG_WITH_NO_DEFAULTS: list[str] = [
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     SELECT_WEATHER_PROVIDER,
     NUMBER_CHARGER_MAX_CURRENT,
-    OPTION_CHARGER_STEP_CURRENT_LIST,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
 ]
