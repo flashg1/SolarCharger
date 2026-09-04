@@ -530,6 +530,175 @@ async def test_async_allocate_net_power_higher_priority_is_filled_before_lower(
     assert allocation_calls[id(dev_low.controller.charge_control)] == -600
 
 
+# ----------------------------------------------------------------------------
+# Tier 2: allocation with two current-settable devices
+# ----------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_allocate_surplus_splits_evenly_between_two_settable_devices_of_equal_weight(
+    allocation_calls: dict[int, float],
+) -> None:
+    """Two devices that can both adjust current split surplus in proportion to their weight."""
+    dev_a = make_device_control(
+        "a",
+        "A",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=True,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    dev_b = make_device_control(
+        "b",
+        "B",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=True,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    allocator = make_allocator(dev_a, dev_b, net_power=-1200)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(dev_a.controller.charge_control)] == -600
+    assert allocation_calls[id(dev_b.controller.charge_control)] == -600
+
+
+@pytest.mark.asyncio
+async def test_allocate_surplus_splits_proportionally_by_weight_between_two_settable_devices(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A device with twice the allocation weight takes twice the share of surplus."""
+    dev_a = make_device_control(
+        "a",
+        "A",
+        instance_count=1,
+        priority=10,
+        allocation_weight=2,
+        can_set_current=True,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    dev_b = make_device_control(
+        "b",
+        "B",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=True,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    allocator = make_allocator(dev_a, dev_b, net_power=-900)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(dev_a.controller.charge_control)] == -600
+    assert allocation_calls[id(dev_b.controller.charge_control)] == -300
+
+
+# ----------------------------------------------------------------------------
+# Tier 2: allocation with only one current-settable device
+# ----------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_allocate_surplus_skips_fixed_current_device_at_same_priority(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A fixed-current device that is already running never receives *more* allocation.
+
+    Its max_power is pinned to what it is already consuming (see
+    _create_group_member's "cannot set current" handling), so its need_power is
+    always 0 and it cannot absorb any of a surplus. The settable device gets the
+    whole surplus, not just its nominal weighted share.
+    """
+    fixed_current_device = make_device_control(
+        "x",
+        "X",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=False,
+        consumed_power=500,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    settable_device = make_device_control(
+        "y",
+        "Y",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=True,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-50,
+        activation_power=-50,
+    )
+    allocator = make_allocator(fixed_current_device, settable_device, net_power=-1000)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(fixed_current_device.controller.charge_control)] == 0
+    assert allocation_calls[id(settable_device.controller.charge_control)] == -1000
+
+
+@pytest.mark.asyncio
+async def test_allocate_surplus_skips_fixed_current_device_regardless_of_its_priority(
+    allocation_calls: dict[int, float],
+) -> None:
+    """The fixed-current device is skipped even when it has the higher priority.
+
+    Unlike a device blocked by a zero allocation weight, this device is excluded
+    by its need_power being pinned to 0, not by its priority rung being unable to
+    absorb power -- so it does not matter which priority tier it sits in.
+    """
+    fixed_current_device = make_device_control(
+        "x",
+        "X",
+        instance_count=1,
+        priority=5,
+        allocation_weight=1,
+        can_set_current=False,
+        consumed_power=500,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    settable_device = make_device_control(
+        "y",
+        "Y",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=True,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-50,
+        activation_power=-50,
+    )
+    allocator = make_allocator(fixed_current_device, settable_device, net_power=-1500)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(fixed_current_device.controller.charge_control)] == 0
+    assert allocation_calls[id(settable_device.controller.charge_control)] == -1500
+
+
 @pytest.mark.asyncio
 async def test_async_allocate_net_power_shortage_triggers_give_back(
     allocation_calls: dict[int, float],
