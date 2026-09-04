@@ -14,6 +14,10 @@ behavior as a regression net; if the underlying algorithm is intentionally
 reworked, these expected values will need to be recomputed, not just patched.
 """
 
+from custom_components.solarcharger.const import (
+    MAX_SPEED_CHARGE_PRIORITY,
+    MAX_SPEED_CHARGE_PRIORITY_WEIGHT,
+)
 from custom_components.solarcharger.models.model_allocation import AllocationGroup
 from custom_components.solarcharger.modules.allocator import PowerAllocator
 import pytest
@@ -408,6 +412,39 @@ def test_get_allocation_pool_pins_max_power_to_consumed_power_for_fixed_current_
     assert member.max_current == pytest.approx(150 / 230)
 
 
+def test_get_allocation_pool_propagates_need_rebalance_flag_to_the_book() -> None:
+    """A device flagged for rebalance clears its own flag and marks the whole book."""
+    device = make_device_control("a", "A", instance_count=1, priority=10)
+    device.controller.solar_charge.rebalance_needed = True
+    allocator = make_allocator(device, net_power=-1000)
+
+    book = allocator._get_allocation_pool(-1000)
+
+    assert book.need_rebalance is True
+    assert device.controller.solar_charge.rebalance_needed is False
+
+
+def test_get_allocation_pool_overrides_priority_and_weight_for_max_speed_charge() -> (
+    None
+):
+    """A max_speed_charge device gets system priority and weight, ignoring its own config."""
+    device = make_device_control(
+        "a",
+        "A",
+        instance_count=1,
+        priority=99,
+        allocation_weight=5,
+        max_speed_charge=True,
+    )
+    allocator = make_allocator(device, net_power=-1000)
+
+    book = allocator._get_allocation_pool(-1000)
+
+    member = book.all_group_map[MAX_SPEED_CHARGE_PRIORITY].member_map["a"]
+    assert member.priority == MAX_SPEED_CHARGE_PRIORITY
+    assert member.allocation_weight == MAX_SPEED_CHARGE_PRIORITY_WEIGHT
+
+
 # ----------------------------------------------------------------------------
 # Tier 1: init_allocator
 # ----------------------------------------------------------------------------
@@ -725,6 +762,39 @@ async def test_async_allocate_net_power_shortage_triggers_give_back(
 
 
 @pytest.mark.asyncio
+async def test_async_allocate_net_power_dispatches_bottom_up_when_gross_power_is_positive(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A shortage that exceeds current consumption is dispatched to _bottom_up_release_power.
+
+    gross_power = net_power - total_consumed_power. Every other end-to-end test
+    in this file keeps gross_power <= 0 (dispatched to _top_down_allocate_power),
+    even the "shortage" test above, because its net_power is still less than the
+    device's own consumption. Here net_power exceeds total consumption, so
+    _process_allocation_group takes its net_power > 0 branch for real -- though
+    with nothing currently consumed, there is nothing to give back either way.
+    """
+    device = make_device_control(
+        "a",
+        "A",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-50,
+        activation_power=-50,
+        consumed_power=0,
+    )
+    allocator = make_allocator(device, net_power=1000)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(device.controller.charge_control)] == 0
+
+
+@pytest.mark.asyncio
 async def test_async_allocate_net_power_sends_nothing_with_no_running_chargers(
     allocation_calls: dict[int, float],
 ) -> None:
@@ -752,10 +822,19 @@ async def test_async_allocate_net_power_returns_false_when_net_power_unavailable
 # Tier 2: rebalance loan-power for fixed-current devices (characterization)
 # ----------------------------------------------------------------------------
 @pytest.mark.asyncio
-async def test_loan_not_used_when_lender_has_no_spare_headroom(
+async def test_loan_partially_covers_the_gap_when_lender_has_limited_headroom(
     allocation_calls: dict[int, float],
 ) -> None:
-    """A fixed-current device that must be gated off is cut immediately if no lender can help."""
+    """A lender with only a little spare headroom lends that much, not the full loan.
+
+    The fixed-current device is gated off (its ideal target is above its own
+    activation power), so it needs 400W "loaned" from somewhere so other devices
+    absorb the gap while it winds down. The lender here only has 10W of headroom
+    above its own activation power, so it gives back 10W more than its own ideal
+    target would ask for -- covering a fraction of the 400W loan, not all of it.
+    This was previously (and misleadingly) named as if no lending occurred here;
+    lending happens in every one of these tests, just by different amounts.
+    """
     fixed_current_device = make_device_control(
         "x",
         "X",
@@ -793,12 +872,11 @@ async def test_loan_not_used_when_lender_has_no_spare_headroom(
 async def test_loan_absorbed_by_lender_with_spare_headroom(
     allocation_calls: dict[int, float],
 ) -> None:
-    """A lender with spare headroom above its own activation power absorbs part of the loan.
+    """A smaller activation-power floor lets the lender give back correspondingly more.
 
-    Identical to test_loan_not_used_when_lender_has_no_spare_headroom except the
-    lender's activation power is 5W lower, giving it 5W of spare headroom. That
-    headroom is lent to the fixed-current device being gated off, so the lender
-    gives back 5W more than it otherwise would.
+    Identical to the previous test except the lender's activation power is -5
+    instead of -10: a smaller minimum-power floor, so it can safely give back
+    5W more (795 instead of 790) while still staying above its own floor.
     """
     fixed_current_device = make_device_control(
         "x",
@@ -831,3 +909,210 @@ async def test_loan_absorbed_by_lender_with_spare_headroom(
 
     assert allocation_calls[id(fixed_current_device.controller.charge_control)] == 400
     assert allocation_calls[id(lender.controller.charge_control)] == 795
+
+
+@pytest.mark.asyncio
+async def test_loan_not_needed_when_lender_has_ample_headroom(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A lender whose own target already clears its activation power lends nothing.
+
+    Unlike the previous two tests, this lender's activation power (-1000) is far
+    below its ideal target, so _temporarily_lend_power_until_borrower_is_paused's
+    "member_lend_power < 0" check is false for it -- it is left completely
+    unmodified even though the fixed-current device still needed a 400W loan
+    that nobody ends up providing.
+    """
+    fixed_current_device = make_device_control(
+        "x",
+        "X",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=False,
+        consumed_power=400,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    lender = make_device_control(
+        "y",
+        "Y",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=True,
+        consumed_power=800,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-10,
+        activation_power=-1000,
+    )
+    allocator = make_allocator(fixed_current_device, lender, net_power=1100)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(fixed_current_device.controller.charge_control)] == 400
+    assert allocation_calls[id(lender.controller.charge_control)] == 700
+
+
+@pytest.mark.asyncio
+async def test_loan_fully_satisfied_by_a_single_lender(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A lender with enough headroom covers the entire loan in one go.
+
+    activation_power=310 here is not a physically realistic value (it should
+    normally be negative -- see PowerAllocation.activation_power's docstring),
+    but it is the cleanest way to push this lender's spare headroom past the
+    400W loan so _temporarily_lend_power_until_borrower_is_paused's
+    "freeup_power <= 0" branch (the loan is fully covered before the lending
+    loop runs out of members) actually executes; every other test in this file
+    lands in the partial-coverage branch instead.
+    """
+    fixed_current_device = make_device_control(
+        "x",
+        "X",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=False,
+        consumed_power=400,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    lender = make_device_control(
+        "y",
+        "Y",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=True,
+        consumed_power=800,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-10,
+        activation_power=310,
+    )
+    allocator = make_allocator(fixed_current_device, lender, net_power=1100)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(fixed_current_device.controller.charge_control)] == 400
+    assert allocation_calls[id(lender.controller.charge_control)] == 1100
+
+
+@pytest.mark.asyncio
+async def test_loan_skips_a_lender_below_the_system_priority_threshold(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A would-be lender at system priority (e.g. max-speed-charge) is never tapped for a loan.
+
+    Same setup as test_loan_partially_covers_the_gap_when_lender_has_limited_headroom,
+    except the lender's priority (3) is below USER_DEVICE_PRIORITY_START (5).
+    _temporarily_lend_power_until_borrower_is_paused refuses to lend from system
+    priority devices, so the lender is left at its own ideal target (700) instead
+    of the 790 it would give back if it were an ordinary user-priority device.
+    """
+    fixed_current_device = make_device_control(
+        "x",
+        "X",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=False,
+        consumed_power=400,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    system_priority_lender = make_device_control(
+        "y",
+        "Y",
+        instance_count=1,
+        priority=3,
+        allocation_weight=1,
+        can_set_current=True,
+        consumed_power=800,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-10,
+        activation_power=-10,
+    )
+    allocator = make_allocator(
+        fixed_current_device, system_priority_lender, net_power=1100
+    )
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(fixed_current_device.controller.charge_control)] == 400
+    assert allocation_calls[id(system_priority_lender.controller.charge_control)] == 700
+
+
+@pytest.mark.asyncio
+async def test_loan_is_reduced_by_leftover_surplus_from_the_rebalance_pass(
+    allocation_calls: dict[int, float],
+) -> None:
+    """Surplus left over after the rebalance pass shrinks the loan before it is distributed.
+
+    Three devices: Z is a small, high-priority device that saturates at its own
+    100W cap; Y is the lender, priority below Z but capacity far above what it
+    needs, so its own ideal target is stable regardless of how much trickles
+    past it; X is the fixed-current borrower, lowest priority, needing a 400W
+    loan. With this net_power, 50W of surplus reaches X's priority tier and is
+    rejected (X can only take whole steps of its own consumption, not a mid-size
+    top-up), leaving _process_allocation_group's rebalance pass with 50W
+    unallocated. _rebalance_allocation_among_active_chargers reduces the 400W
+    loan by that leftover before lending it out, so Y only has to cover 350W
+    instead of 400W -- 50W less than test_loan_fully_satisfied_by_a_single_lender's
+    sibling scenario without this leftover would give it.
+    """
+    saturating_device = make_device_control(
+        "z",
+        "Z",
+        instance_count=1,
+        priority=6,
+        allocation_weight=1,
+        can_set_current=True,
+        consumed_power=0,
+        max_current=100 / 230,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-1,
+        activation_power=-1,
+    )
+    lender = make_device_control(
+        "y",
+        "Y",
+        instance_count=1,
+        priority=7,
+        allocation_weight=1,
+        can_set_current=True,
+        consumed_power=800,
+        max_current=7360 / 230,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-10,
+        activation_power=500,
+    )
+    fixed_current_device = make_device_control(
+        "x",
+        "X",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        can_set_current=False,
+        consumed_power=400,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+    )
+    allocator = make_allocator(
+        saturating_device, lender, fixed_current_device, net_power=-6310
+    )
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(saturating_device.controller.charge_control)] == -100
+    assert allocation_calls[id(lender.controller.charge_control)] == -6210
+    assert allocation_calls[id(fixed_current_device.controller.charge_control)] == 400
