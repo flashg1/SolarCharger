@@ -412,16 +412,18 @@ def test_get_allocation_pool_pins_max_power_to_consumed_power_for_fixed_current_
     assert member.max_current == pytest.approx(150 / 230)
 
 
+# Need rebalance flag to be removed.
 def test_get_allocation_pool_propagates_need_rebalance_flag_to_the_book() -> None:
     """A device flagged for rebalance clears its own flag and marks the whole book."""
     device = make_device_control("a", "A", instance_count=1, priority=10)
-    device.controller.solar_charge.rebalance_needed = True
+    device.controller.solar_charge.set_need_rebalance(True)
+    assert device.controller.solar_charge.need_rebalance() is True
     allocator = make_allocator(device, net_power=-1000)
 
     book = allocator._get_allocation_pool(-1000)
 
     assert book.need_rebalance is True
-    assert device.controller.solar_charge.rebalance_needed is False
+    assert device.controller.solar_charge.need_rebalance() is False
 
 
 def test_get_allocation_pool_overrides_priority_and_weight_for_max_speed_charge() -> (
