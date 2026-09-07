@@ -2,13 +2,14 @@
 
 ## v0.11.0 2026-08-29
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.9.0 or prior.
-- Added charger step current config entity.
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
+- Added charger step current list entity.
 ### Fix
 - Do not call update_ha_state() when restoring values in async_added_to_hass() after reboot.
 ### New feature
-- Support configurable charger step current.
+- Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).
 ### Improvement
+- Make charger on/off switch and get/set current overridable for all devices.
 - Added PowerAllocator unit tests.
 
 ## v0.10.7 2026-08-28

@@ -252,27 +252,50 @@ def _is_solarcharger_entity(entity_id: str) -> bool:
 
 
 # ----------------------------------------------------------------------------
+# def choose_selector(
+#     api_entities: dict[str, str | None] | None,
+#     config_item: str,
+#     read_only_selector: EntitySelector,
+#     default_selector: EntitySelector,
+#     modifiable_if_solarcharger_entity: bool = False,
+# ) -> EntitySelector:
+#     """Entity selector is readonly if API entity is a local device entity, ie. user cannot change it.
+
+#     Local device entities are not modifiable. Local config entities are modifiable is modifiable_if_local=True.
+#     eg. chargee_charge_limit is modifiable for OCPP because it is a local config entity.
+#     """
+
+#     if api_entities:
+#         entity_id = api_entities.get(config_item)
+#         if entity_id is not None:
+#             if _is_solarcharger_entity(entity_id):
+#                 if not modifiable_if_solarcharger_entity:
+#                     return read_only_selector
+#             else:
+#                 # Local device entity, ie. non-configurable.
+#                 return read_only_selector
+
+#     return default_selector
+
+
+# ----------------------------------------------------------------------------
 def choose_selector(
     api_entities: dict[str, str | None] | None,
     config_item: str,
     read_only_selector: EntitySelector,
     default_selector: EntitySelector,
-    modifiable_if_solarcharger_entity: bool = False,
+    overridable: bool = False,
 ) -> EntitySelector:
-    """Entity selector is readonly if API entity is a local device entity, ie. user cannot change it.
+    """Entity selector is readonly for all except when overridable is True.
 
-    Local device entities are not modifiable. Local config entities are modifiable is modifiable_if_local=True.
-    eg. chargee_charge_limit is modifiable for OCPP because it is a local config entity.
+    Local device or SC entities are overridable if overridable==True.
+    eg. device_charge_limit is overridable for OCPP because it is a local config entity.
     """
 
     if api_entities:
         entity_id = api_entities.get(config_item)
         if entity_id is not None:
-            if _is_solarcharger_entity(entity_id):
-                if not modifiable_if_solarcharger_entity:
-                    return read_only_selector
-            else:
-                # Local device entity, ie. non-configurable.
+            if not overridable:
                 return read_only_selector
 
     return default_selector

@@ -9,7 +9,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .config.config_utils import get_device_config_default_value
-from .const import DOMAIN, ENTITY_CHARGER_STEP_CURRENT_LIST, TEXT
+from .const import DOMAIN, TEXT, TEXT_CHARGER_STEP_CURRENT_LIST
 from .entity import (
     SolarChargerEntity,
     SolarChargerEntityType,
@@ -99,19 +99,11 @@ CONFIG_TEXT_LIST: tuple[
     # Hidden if not device entities, except for global defaults.
     # entity_category=EntityCategory.CONFIG
     #####################################
-    # Used as local device entity for OCPP only. Others come with own entity.
     (
-        ENTITY_CHARGER_STEP_CURRENT_LIST,
-        [
-            SolarChargerEntityType.TYPE_LOCAL_BYD_VEHICLE,
-            SolarChargerEntityType.TYPE_LOCAL_GWM_ORA,
-            SolarChargerEntityType.TYPE_LOCAL_GEELY_CONNECT,
-            SolarChargerEntityType.TYPE_LOCAL_VOLVO,
-            SolarChargerEntityType.TYPE_LOCAL_MG_SAIC,
-            SolarChargerEntityType.TYPE_LOCAL_USER_CUSTOM,
-        ],
+        TEXT_CHARGER_STEP_CURRENT_LIST,
+        SolarChargerEntityType.TYPE_LOCAL,
         TextEntityDescription(
-            key=ENTITY_CHARGER_STEP_CURRENT_LIST,
+            key=TEXT_CHARGER_STEP_CURRENT_LIST,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
