@@ -10,6 +10,7 @@
     "select",
     "sensor",
     "switch",
+    "text",
     "time",
     "sun",
     "weather",
