@@ -144,7 +144,7 @@
                     "charger_charging_sensor": "Charger charging sensor",
                     "charger_charging_state_list": "Charger charging state list",
                     "charger_max_current": "Charger max current (AMP)",
-                    "charger_step_current_list": "Charger step current list (must start from 0)",
+                    "charger_step_current_list": "Charger step current list (eg. [0,6,15,30])",
                     "charger_get_charge_current": "Charger get charge current (AMP)",
                     "charger_set_charge_current": "Charger set charge current (AMP)",
                     "device_soc_sensor": "Device state-of-charge sensor (%)",
@@ -167,132 +167,14 @@
         }
     },
     "entity": {
-        "sensor": {
-            "run_state": {
-                "name": "Run state",
-                "state": {
-                    "start": "Start",
-                    "initialise": "Initialise",
-                    "charge": "Charge",
-                    "self-depower": "Self-depower",
-                    "pause": "Pause",
-                    "tidy-up": "Tidy-up",
-                    "end": "End"
-                }
-            },
-            "delta_allocated_power": {
-                "name": "Delta allocated power"
-            },
-            "net_allocated_power": {
-                "name": "Net allocated power"
-            },
-            "net_allocated_power_sample_size": {
-                "name": "Net allocated power sample size"
-            },
-            "net_allocated_power_data_set": {
-                "name": "Net allocated power data set",
-                "state": {
-                    "not_ready": "Not ready",
-                    "ready": "Ready"
-                }
-            },
-            "median_net_allocated_power": {
-                "name": "Median net allocated power"
-            },
-            "median_net_allocated_power_period": {
-                "name": "Median net allocated power period"
-            },
-            "sma_net_allocated_power": {
-                "name": "SMA net allocated power"
-            },
-            "consumed_power": {
-                "name": "Consumed power"
-            },
-            "consumed_energy_today": {
-                "name": "Consumed energy today"
-            },
-            "instance_count": {
-                "name": "Instance count"
-            },
-            "share_allocation": {
-                "name": "Share allocation"
-            },
-            "self_depower_today": {
-                "name": "Self-depower today"
-            },
-            "pause_count": {
-                "name": "Pause count"
-            },
-            "average_pause_duration": {
-                "name": "Average pause duration"
-            },
-            "last_pause_duration": {
-                "name": "Last pause duration"
-            },
-            "sync_update": {
-                "name": "Sync update"
-            },
-            "weather_forecast": {
-                "name": "Weather forecast"
-            },
-            "last_check": {
-                "name": "Last check"
-            }
-        },
         "button": {
             "reset_charge_limit_and_time": {
                 "name": "Reset charge limit and time"
             }
         },
-        "switch": {
-            "charge": {
-                "name": "Charge"
-            },
-            "fast_charge_mode": {
-                "name": "Fast charge mode"
-            },
-            "poll_charger_update": {
-                "name": "Poll charger update"
-            },
-            "end_on_condition": {
-                "name": "End on condition"
-            },
-            "schedule_charge": {
-                "name": "Schedule charge"
-            },
-            "reduce_charge_limit_difference": {
-                "name": "Reduce charge limit difference"
-            },
-            "plugin_trigger": {
-                "name": "Plugin trigger"
-            },
-            "presence_trigger": {
-                "name": "Presence trigger"
-            },
-            "sun_trigger": {
-                "name": "Sun trigger"
-            },
-            "calibrate_max_charge_speed": {
-                "name": "Calibrate max charge speed"
-            }
-        },
-        "select": {
-            "weather_provider": {
-                "name": "Weather provider"
-            },
-            "device_presence_sensor": {
-                "name": "Device presence sensor"
-            },
-            "start_state": {
-                "name": "Start state",
-                "state": {
-                    "auto": "Auto",
-                    "charge": "Charge",
-                    "pause": "Pause"
-                }
-            },
-            "exit_condition_sensor": {
-                "name": "Exit condition sensor"
+        "datetime": {
+            "next_charge_time": {
+                "name": "Next charge time"
             }
         },
         "number": {
@@ -411,6 +293,134 @@
                 "name": "Sunday charge limit"
             }
         },
+        "select": {
+            "weather_provider": {
+                "name": "Weather provider"
+            },
+            "device_presence_sensor": {
+                "name": "Device presence sensor"
+            },
+            "start_state": {
+                "name": "Start state",
+                "state": {
+                    "auto": "Auto",
+                    "charge": "Charge",
+                    "pause": "Pause"
+                }
+            },
+            "exit_condition_sensor": {
+                "name": "Exit condition sensor"
+            }
+        },
+        "sensor": {
+            "run_state": {
+                "name": "Run state",
+                "state": {
+                    "start": "Start",
+                    "initialise": "Initialise",
+                    "charge": "Charge",
+                    "self-depower": "Self-depower",
+                    "pause": "Pause",
+                    "tidy-up": "Tidy-up",
+                    "end": "End"
+                }
+            },
+            "delta_allocated_power": {
+                "name": "Delta allocated power"
+            },
+            "net_allocated_power": {
+                "name": "Net allocated power"
+            },
+            "net_allocated_power_sample_size": {
+                "name": "Net allocated power sample size"
+            },
+            "net_allocated_power_data_set": {
+                "name": "Net allocated power data set",
+                "state": {
+                    "not_ready": "Not ready",
+                    "ready": "Ready"
+                }
+            },
+            "median_net_allocated_power": {
+                "name": "Median net allocated power"
+            },
+            "median_net_allocated_power_period": {
+                "name": "Median net allocated power period"
+            },
+            "sma_net_allocated_power": {
+                "name": "SMA net allocated power"
+            },
+            "consumed_power": {
+                "name": "Consumed power"
+            },
+            "consumed_energy_today": {
+                "name": "Consumed energy today"
+            },
+            "instance_count": {
+                "name": "Instance count"
+            },
+            "share_allocation": {
+                "name": "Share allocation"
+            },
+            "self_depower_today": {
+                "name": "Self-depower today"
+            },
+            "pause_count": {
+                "name": "Pause count"
+            },
+            "average_pause_duration": {
+                "name": "Average pause duration"
+            },
+            "last_pause_duration": {
+                "name": "Last pause duration"
+            },
+            "sync_update": {
+                "name": "Sync update"
+            },
+            "weather_forecast": {
+                "name": "Weather forecast"
+            },
+            "last_check": {
+                "name": "Last check"
+            }
+        },
+        "switch": {
+            "charge": {
+                "name": "Charge"
+            },
+            "fast_charge_mode": {
+                "name": "Fast charge mode"
+            },
+            "poll_charger_update": {
+                "name": "Poll charger update"
+            },
+            "end_on_condition": {
+                "name": "End on condition"
+            },
+            "schedule_charge": {
+                "name": "Schedule charge"
+            },
+            "reduce_charge_limit_difference": {
+                "name": "Reduce charge limit difference"
+            },
+            "plugin_trigger": {
+                "name": "Plugin trigger"
+            },
+            "presence_trigger": {
+                "name": "Presence trigger"
+            },
+            "sun_trigger": {
+                "name": "Sun trigger"
+            },
+            "calibrate_max_charge_speed": {
+                "name": "Calibrate max charge speed"
+            }
+        },
+        "text": {
+            "charger_step_current_list": {
+                "name": "Charger step current list"
+            }
+        },
         "time": {
             "charge_endtime_monday": {
                 "name": "Monday charge end time"
@@ -432,11 +442,6 @@
             },
             "charge_endtime_sunday": {
                 "name": "Sunday charge end time"
-            }
-        },
-        "datetime": {
-            "next_charge_time": {
-                "name": "Next charge time"
             }
         }
     }

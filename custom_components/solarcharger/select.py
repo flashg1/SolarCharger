@@ -109,7 +109,7 @@ class SolarChargerSelectEntity(SolarChargerEntity, SelectEntity, RestoreEntity):
             if restored is not None:
                 self._attr_current_option = restored.state
 
-        self.update_ha_state()
+        # self.update_ha_state()
 
     #     # Listen for registry changes to refresh the list
     #     self.async_on_remove(

@@ -20,7 +20,7 @@
 -->
 <!--
 [total-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.total
-[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.10.8']
+[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.11.0']
 -->
 
 ## Solar Charger - Work in progress
@@ -72,6 +72,7 @@ Home Assistant solar charger uses surplus solar to charge your EV and home. ☀�
 - Use [Ping ICMP to detect car presence](https://github.com/flashg1/SolarCharger/wiki/User-guide#use-ping-to-detect-car-and-update-ha-to-get-latest-status) and retry updating HA for 15 minutes until car is connected.
 - User can [customise control of the "Charge" switch](https://github.com/flashg1/SolarCharger/wiki/Design#solarcharger-automation-triggers) and ["Min current"](https://github.com/flashg1/SolarCharger/wiki/Configuration#to-charge-at-maximum-current-between-specific-times) without interference from SolarCharger.
 - Uses [power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) to determine whether or not to pause or resume charging. Charger is switched off when paused.
+- Support configurable charger step current.
 
 **💡 Tip:** Please :star: this project if you find it useful, and may be also buy me a coffee!
 

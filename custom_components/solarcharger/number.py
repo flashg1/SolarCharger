@@ -117,7 +117,39 @@ class SolarChargerNumberEntity(SolarChargerEntity, RestoreNumber):
             NumberExtraStoredData | None
         ) = await self.async_get_last_number_data()
         if restore_num is not None and restore_num.native_value is not None:
-            await self.async_set_native_value(restore_num.native_value)
+            #####################################
+            # 3 reason why directly assign the internal state property is better.
+            # 1. Avoids Redundant State Writes: set_value() usually calls
+            # self.schedule_update_ha_state() or performs an I/O operations to
+            # sync an external backend. Calling it during initialization causes
+            # unnecessary processing while Home Assistant is already trying to
+            # spin up your entity platform.
+            # 2. Avoids Side-Effects: If your custom integration modifies
+            # set_value() later to push updates to an API or external device,
+            # using it during restoration will trigger an unintended API call
+            # every time Home Assistant restarts.
+            # 3. Home Assistant Core Convention: Core components consistently use
+            # direct variable assignment during data restoration to establish the
+            # initial baseline state cleanly before the entity officially goes live.
+            #
+            # - switch/light: Set self._attr_is_on = old_state.state == STATE_ON.
+            # Do not call self.turn_on(), or your physical light might flash or
+            # turn on every time Home Assistant reboots!
+            # - number: Set self._current_value = old_number_data.native_value.
+            # Do not call self.set_native_value().
+            # - select: Set self._current_value = old_select_data.current_option.
+            # Do not call self.select_option().
+            # - time/datetime: Set self._attr_native_value = old_data.native_value.
+            # Do not call self.async_set_value().
+            # - text: Set self._current_value = old_text_data.native_value.
+            # - sensor/binary_sensor: Set self._attr_native_value = old_data.native_value.
+            # - button/event: No restoration needed.
+            #
+            # update_before_add must be False in async_add_entities() for restore to work.
+            #####################################
+            # await self.async_set_native_value(restore_num.native_value)
+            self._attr_native_value = restore_num.native_value
+
             _LOGGER.debug(
                 "Restored %s: %s",
                 self.entity_id,

@@ -87,7 +87,8 @@ class SolarChargerDateTimeEntity(SolarChargerEntity, DateTimeEntity, RestoreEnti
                     e,
                 )
 
-            await self.async_set_value(val)
+            # await self.async_set_value(val)
+            self._attr_native_value = val
 
 
 # ----------------------------------------------------------------------------

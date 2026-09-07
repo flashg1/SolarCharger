@@ -527,6 +527,28 @@ class ScOptionState(ScConfigState):
         return entity_val
 
     # ----------------------------------------------------------------------------
+    def option_get_entity_json_list(
+        self,
+        config_item: str,
+        val_dict: ConfigValueDict | None = None,
+    ) -> list[Any] | None:
+        """Get entity name from saved options, then get list for entity."""
+        json_str = None
+
+        entity_id = self.option_get_id(config_item)
+        if entity_id:
+            json_str = self.get_string(entity_id)
+
+        self._set_config_value_dict(
+            val_dict, self._subentry.unique_id, config_item, entity_id, json_str
+        )
+
+        if json_str is None:
+            return None
+
+        return json.loads(json_str)
+
+    # ----------------------------------------------------------------------------
     def option_get_entity_boolean(
         self,
         config_item: str,

@@ -127,6 +127,15 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity, RestoreEntity):
     def _set_starting_state(
         self, starting_state: StateType | date | datetime | Decimal
     ):
+        """Set the initial starting state for the sensor."""
+
+        if starting_state is not None:
+            self._attr_native_value = starting_state
+
+    # ----------------------------------------------------------------------------
+    def _set_and_update_state(
+        self, starting_state: StateType | date | datetime | Decimal
+    ):
         """Set the starting state for the sensor."""
 
         if starting_state is not None:
@@ -149,7 +158,10 @@ class SolarChargerSensorEntity(SolarChargerEntity, SensorEntity, RestoreEntity):
                 try:
                     # Must keep type the same if entity is used in code for calculation or comparison.
                     # Otherwise will cause runtime exception.
-                    self.set_state(type(self._starting_state)(last_state.state))
+                    # self.set_state(type(self._starting_state)(last_state.state))
+                    self._set_starting_state(
+                        type(self._starting_state)(last_state.state)
+                    )
 
                 except ValueError, TypeError:
                     _LOGGER.error(
@@ -239,7 +251,7 @@ class SolarChargerSensorResetAtMidnightEntity(SolarChargerSensorEntity):
         _LOGGER.debug(
             "Resetting %s to %s at %s.", self.entity_id, self._starting_state, now_time
         )
-        self._set_starting_state(self._starting_state)
+        self._set_and_update_state(self._starting_state)
 
 
 # ----------------------------------------------------------------------------

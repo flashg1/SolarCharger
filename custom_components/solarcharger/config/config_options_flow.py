@@ -25,6 +25,7 @@ from ..const import (
     ENTITY_CHARGER_ON_OFF_SWITCH,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
     ENTITY_CHARGER_SET_CHARGE_CURRENT,
+    ENTITY_CHARGER_STEP_CURRENT_LIST,
     ENTITY_DEVICE_GET_CHARGE_LIMIT,
     ENTITY_DEVICE_LOCATION_SENSOR,
     ENTITY_DEVICE_SET_CHARGE_LIMIT,
@@ -74,7 +75,6 @@ from ..const import (
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST,
     OPTION_CHARGER_NAME,
-    OPTION_CHARGER_STEP_CURRENT_LIST,
     OPTION_DEVICE_LOCATION_STATE_LIST,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
@@ -105,6 +105,8 @@ from .config_utils import (
     SENSOR_ENTITY_SELECTOR_READ_ONLY,
     SWITCH_ENTITY_SELECTOR,
     SWITCH_ENTITY_SELECTOR_READ_ONLY,
+    TEXT_ENTITY_SELECTOR,
+    TEXT_ENTITY_SELECTOR_READ_ONLY,
     TEXT_SELECTOR,
     TEXT_SELECTOR_READ_ONLY,
     TIME_ENTITY_SELECTOR,
@@ -505,12 +507,13 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
-                subentry, OPTION_CHARGER_STEP_CURRENT_LIST, use_default
+                subentry, ENTITY_CHARGER_STEP_CURRENT_LIST, use_default
             ): choose_selector(
                 api_entities,
-                OPTION_CHARGER_STEP_CURRENT_LIST,
-                TEXT_SELECTOR_READ_ONLY,
-                TEXT_SELECTOR,
+                ENTITY_CHARGER_STEP_CURRENT_LIST,
+                TEXT_ENTITY_SELECTOR_READ_ONLY,
+                TEXT_ENTITY_SELECTOR,
+                modifiable_if_solarcharger_entity=True,
             ),
             self._optional(
                 subentry, ENTITY_CHARGER_GET_CHARGE_CURRENT, use_default

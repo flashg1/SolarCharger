@@ -66,7 +66,8 @@ class SolarChargerTimeEntity(SolarChargerEntity, TimeEntity, RestoreEntity):
         if (
             last_state := await self.async_get_last_state()
         ) is not None and last_state.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-            await self.async_set_value(time.fromisoformat(last_state.state))
+            # await self.async_set_value(time.fromisoformat(last_state.state))
+            self._attr_native_value = time.fromisoformat(last_state.state)
 
 
 # ----------------------------------------------------------------------------

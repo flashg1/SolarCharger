@@ -113,10 +113,14 @@ class SolarChargerSwitchEntity(SolarChargerEntity, SwitchEntity, RestoreEntity):
             if restored is not None:
                 turn_on = restored.state == STATE_ON
 
+        # if turn_on:
+        #     await self.async_turn_on()
+        # else:
+        #     await self.async_turn_off()
         if turn_on:
-            await self.async_turn_on()
+            self._attr_is_on = True
         else:
-            await self.async_turn_off()
+            self._attr_is_on = False
 
 
 # ----------------------------------------------------------------------------

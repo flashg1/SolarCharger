@@ -12,6 +12,7 @@ from ..const import (
     ENTITY_CHARGER_ON_OFF_SWITCH,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR,
     ENTITY_CHARGER_SET_CHARGE_CURRENT,
+    ENTITY_CHARGER_STEP_CURRENT_LIST,
     ENTITY_DEVICE_GET_CHARGE_LIMIT,
     ENTITY_DEVICE_LOCATION_SENSOR,
     ENTITY_DEVICE_SET_CHARGE_LIMIT,
@@ -23,7 +24,6 @@ from ..const import (
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
-    OPTION_CHARGER_STEP_CURRENT_LIST,
     OPTION_DEVICE_LOCATION_STATE_LIST,
 )
 from ..models.model_config import ConfigValueDict
@@ -194,8 +194,11 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
 
         step_current_list: list[float] = []
 
-        step_list = self.option_get_list(
-            OPTION_CHARGER_STEP_CURRENT_LIST, val_dict=val_dict
+        # step_list = self.option_get_list(
+        #     OPTION_CHARGER_STEP_CURRENT_LIST, val_dict=val_dict
+        # )
+        step_list = self.option_get_entity_json_list(
+            ENTITY_CHARGER_STEP_CURRENT_LIST, val_dict=val_dict
         )
         if step_list is not None and len(step_list) > 0:
             step_current_list = sorted(step_list)
