@@ -156,12 +156,28 @@ class SolarCharge(ScOptionState):
         self.set_machine_state(StateStart())
 
     # ----------------------------------------------------------------------------
+    # 2026-09-08 14:45:36.884 WARNING (MainThread) [homeassistant.helpers.frame]
+    # Detected that custom integration 'solarcharger' calls `device_registry.async_get_device`,
+    # which is deprecated because device identifiers and connections are no longer unique across
+    # config entries; use `async_get_device_by_identifier`, `async_get_device_by_connection`
+    # or `async_get_devices` instead at custom_components/solarcharger/state_machine/solar_charge.py,
+    # line 163: device = device_registry.async_get_device(.
+    # This will stop working in Home Assistant 2027.8.0,
+    # please create a bug report at https://github.com/flashg1/solarcharger/issues
+    #
+    # Used in emit_solarcharger_event() to get device ID for event.
+
     @cached_property
     def _device(self) -> dr.DeviceEntry:
         """Get the device entry for the controller."""
+
         device_registry = dr.async_get(self._hass)
-        device = device_registry.async_get_device(
-            identifiers={(DOMAIN, self._subentry.subentry_id)}
+        # device = device_registry.async_get_device(
+        #     identifiers={(DOMAIN, self._subentry.subentry_id)}
+        # )
+        device = device_registry.async_get_device_by_identifier(
+            identifier=(DOMAIN, self._subentry.subentry_id),
+            config_entry_id=self._entry.entry_id,
         )
         if device is None:
             raise RuntimeError(f"{self.caller} device entry not found.")
