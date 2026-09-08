@@ -173,13 +173,13 @@ class SolarCharge(ScOptionState):
 
         device_registry = dr.async_get(self._hass)
         if is_ha_version_at_least("2026.9.1"):
-            # Call the new function or method
+            # Call the new method
             device = device_registry.async_get_device_by_identifier(
                 identifier=(DOMAIN, self._subentry.subentry_id),
                 config_entry_id=self._entry.entry_id,
             )
         else:
-            # Fallback to the legacy function or method
+            # Fallback to the legacy method
             device = device_registry.async_get_device(
                 identifiers={(DOMAIN, self._subentry.subentry_id)}
             )
