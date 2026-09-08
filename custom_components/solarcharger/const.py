@@ -119,6 +119,27 @@ class MedianDataState(Enum):
 MEDIAN_DATA_STATE_LIST: list[str] = [state.value for state in MedianDataState]
 
 
+class Modifiable(Enum):
+    """Enumeration of modifiable configuration options."""
+
+    # Select only one. Can combine with inclusion/exclusion lists.
+    IF_NONE = "modifiable_if_none"
+    ALWAYS = "modifiable_always"
+    IF_SC_ENTITY = "modifiable_if_sc_entity"
+    NEVER = "modifiable_never"
+
+    # Inclusion list. Can select multiple.
+    INCLUDE_OCPP = "include_ocpp"
+
+    # Exclusion list. Can select multiple.
+    EXCLUDE_OCPP = "exclude_ocpp"
+
+
+MODIFIABLE_DEFAULT: list[Modifiable] = [Modifiable.IF_NONE]
+MODIFIABLE_ALWAYS: list[Modifiable] = [Modifiable.ALWAYS]
+MODIFIABLE_IF_SC_ENTITY: list[Modifiable] = [Modifiable.IF_SC_ENTITY]
+MODIFIABLE_EXCEPT_OCPP: list[Modifiable] = [Modifiable.ALWAYS, Modifiable.EXCLUDE_OCPP]
+
 # class ChargeControlApi(Enum):
 #     """Enumeration of supported ChargeControl APIs."""
 
@@ -254,6 +275,8 @@ DEVICE_MODEL_MAP: dict[str, str] = {
     DOMAIN_VOLVO: f"{DOMAIN}-{DOMAIN_VOLVO}",
     DOMAIN_MG_SAIC: f"{DOMAIN}-{DOMAIN_MG_SAIC}",
 }
+
+CHARGE_API_DOMAIN = "charge_api_domain"
 
 #######################################################
 # Error codes
@@ -928,6 +951,7 @@ OPTION_LOCAL_INTERNAL_ENTITIES: dict[str, str] = {
 # OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
 OCPP_CHARGING_STATE = "Charging"
 OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_OCPP,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}status_connector",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing"]',
@@ -969,6 +993,7 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
 }
 
 TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_TESLA_CUSTOM,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}charger",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
@@ -1001,6 +1026,7 @@ TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
 }
 
 TESLA_MQTTBLE_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: SUBDOMAIN_MQTT_TESLA_BLE,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}charge_cable",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["SAE", "IEC"]',
@@ -1034,6 +1060,7 @@ TESLA_MQTTBLE_ENTITIES: dict[str, str | None] = {
 }
 
 TESLA_ESPBLE_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: SUBDOMAIN_ESPHOME_TESLA_BLE,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}charge_port_latch_state",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Engaged"]',
@@ -1068,6 +1095,7 @@ TESLA_ESPBLE_ENTITIES: dict[str, str | None] = {
 }
 
 TESLA_FLEET_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_TESLA_FLEET,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}charge_cable",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
@@ -1100,10 +1128,17 @@ TESLA_FLEET_ENTITIES: dict[str, str | None] = {
 }
 
 # Tessie and Teslemetry are using same entity names as Tesla Fleet.
-TESSIE_ENTITIES: dict[str, str | None] = TESLA_FLEET_ENTITIES
-TESLEMETRY_ENTITIES: dict[str, str | None] = TESLA_FLEET_ENTITIES
+TESSIE_ENTITIES: dict[str, str | None] = {
+    **TESLA_FLEET_ENTITIES,
+    CHARGE_API_DOMAIN: DOMAIN_TESSIE,
+}
+TESLEMETRY_ENTITIES: dict[str, str | None] = {
+    **TESLA_FLEET_ENTITIES,
+    CHARGE_API_DOMAIN: DOMAIN_TESLEMETRY,
+}
 
 MYSKODA_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_MYSKODA,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}charger_connected",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
@@ -1137,6 +1172,7 @@ MYSKODA_ENTITIES: dict[str, str | None] = {
 }
 
 BYD_VEHICLE_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_BYD_VEHICLE,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     # Use charging.connectState instead of realtime.connectState. (15=connected, 1=charging)
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}is_charger_connected",
@@ -1172,6 +1208,7 @@ BYD_VEHICLE_ENTITIES: dict[str, str | None] = {
 }
 
 GWM_ORA_ENTIITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_GWM_ORA,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}charge_plug",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
@@ -1207,6 +1244,7 @@ GWM_ORA_ENTIITIES: dict[str, str | None] = {
 }
 
 KIA_UVO_ENTIITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_KIA_UVO,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}ev_battery_is_plugged_in",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
@@ -1239,6 +1277,7 @@ KIA_UVO_ENTIITIES: dict[str, str | None] = {
 }
 
 GEELY_CONNECT_ENTIITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_GEELY_CONNECT,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}charger_plugged_in",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
@@ -1272,6 +1311,7 @@ GEELY_CONNECT_ENTIITIES: dict[str, str | None] = {
 }
 
 VOLVO_ENTIITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_VOLVO,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     # ["connected", "disconnected", "fault"]
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{SENSOR}.{DEVICE_NAME_MARKER}charger_connection_status",
@@ -1308,6 +1348,7 @@ VOLVO_ENTIITIES: dict[str, str | None] = {
 }
 
 MG_SAIC_ENTIITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN_MG_SAIC,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: f"{BINARY_SENSOR}.{DEVICE_NAME_MARKER}charging_gun_state",
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["on"]',
@@ -1346,6 +1387,7 @@ MG_SAIC_ENTIITIES: dict[str, str | None] = {
 }
 
 USER_CUSTOM_ENTITIES: dict[str, str | None] = {
+    CHARGE_API_DOMAIN: DOMAIN,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,
     ENTITY_CHARGER_PLUGGED_IN_SENSOR: None,
     OPTION_CHARGER_CONNECT_TRIGGER_LIST: None,

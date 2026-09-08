@@ -35,6 +35,10 @@ from ..const import (
     ERROR_NUMBER_FORMAT,
     ERROR_SUBENTRY_ID_NOT_FOUND,
     ERROR_SUBENTRY_NOT_FOUND,
+    MODIFIABLE_ALWAYS,
+    MODIFIABLE_DEFAULT,
+    MODIFIABLE_EXCEPT_OCPP,
+    MODIFIABLE_IF_SC_ENTITY,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -362,7 +366,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MAX_SPEED,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_POWER_FACTOR, use_default
@@ -371,7 +375,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_POWER_FACTOR,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_CURRENT, use_default
@@ -380,7 +384,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MIN_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MIN_WORKABLE_CURRENT, use_default
@@ -389,7 +393,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry,
@@ -400,7 +404,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry,
@@ -411,7 +415,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_PRIORITY, use_default
@@ -420,7 +424,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_PRIORITY,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT, use_default
@@ -429,7 +433,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, SENSOR_DELTA_ALLOCATED_POWER, use_default
@@ -438,7 +442,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 SENSOR_DELTA_ALLOCATED_POWER,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             #####################################
             # Local device entities
@@ -448,6 +452,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGER_NAME,
                 TEXT_SELECTOR_READ_ONLY,
                 TEXT_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, ENTITY_CHARGER_PLUGGED_IN_SENSOR, use_default
@@ -456,6 +461,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_CHARGER_PLUGGED_IN_SENSOR,
                 SENSOR_ENTITY_SELECTOR_READ_ONLY,
                 SENSOR_ENTITY_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_TRIGGER_LIST, use_default
@@ -464,6 +470,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGER_CONNECT_TRIGGER_LIST,
                 TEXT_SELECTOR_READ_ONLY,
                 TEXT_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, OPTION_CHARGER_CONNECT_STATE_LIST, use_default
@@ -472,6 +479,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGER_CONNECT_STATE_LIST,
                 TEXT_SELECTOR_READ_ONLY,
                 TEXT_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, ENTITY_CHARGER_ON_OFF_SWITCH, use_default
@@ -480,7 +488,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_CHARGER_ON_OFF_SWITCH,
                 SWITCH_ENTITY_SELECTOR_READ_ONLY,
                 SWITCH_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_ALWAYS,
             ),
             self._optional(
                 subentry, ENTITY_CHARGER_CHARGING_SENSOR, use_default
@@ -489,6 +497,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_CHARGER_CHARGING_SENSOR,
                 SENSOR_ENTITY_SELECTOR_READ_ONLY,
                 SENSOR_ENTITY_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, OPTION_CHARGER_CHARGING_STATE_LIST, use_default
@@ -497,6 +506,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_CHARGER_CHARGING_STATE_LIST,
                 TEXT_SELECTOR_READ_ONLY,
                 TEXT_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, NUMBER_CHARGER_MAX_CURRENT, use_default
@@ -505,7 +515,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 NUMBER_CHARGER_MAX_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, TEXT_CHARGER_STEP_CURRENT_LIST, use_default
@@ -514,7 +524,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 TEXT_CHARGER_STEP_CURRENT_LIST,
                 TEXT_ENTITY_SELECTOR_READ_ONLY,
                 TEXT_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, ENTITY_CHARGER_GET_CHARGE_CURRENT, use_default
@@ -523,7 +533,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_CHARGER_GET_CHARGE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_ALWAYS,
             ),
             self._optional(
                 subentry, ENTITY_CHARGER_SET_CHARGE_CURRENT, use_default
@@ -532,7 +542,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_CHARGER_SET_CHARGE_CURRENT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_EXCEPT_OCPP,
             ),
             self._optional(
                 subentry, ENTITY_DEVICE_SOC_SENSOR, use_default
@@ -541,6 +551,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_DEVICE_SOC_SENSOR,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, ENTITY_DEVICE_GET_CHARGE_LIMIT, use_default
@@ -549,7 +560,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_DEVICE_GET_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, ENTITY_DEVICE_SET_CHARGE_LIMIT, use_default
@@ -558,7 +569,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_DEVICE_SET_CHARGE_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
-                overridable=True,
+                MODIFIABLE_IF_SC_ENTITY,
             ),
             self._optional(
                 subentry, ENTITY_DEVICE_LOCATION_SENSOR, use_default
@@ -567,6 +578,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_DEVICE_LOCATION_SENSOR,
                 LOCATION_ENTITY_SELECTOR_READ_ONLY,
                 LOCATION_ENTITY_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, OPTION_DEVICE_LOCATION_STATE_LIST, use_default
@@ -575,6 +587,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 OPTION_DEVICE_LOCATION_STATE_LIST,
                 TEXT_SELECTOR_READ_ONLY,
                 TEXT_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             self._optional(
                 subentry, ENTITY_DEVICE_WAKE_UP_BUTTON, use_default
@@ -583,6 +596,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_DEVICE_WAKE_UP_BUTTON,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
                 BUTTON_ENTITY_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
             # Turning on force HA update switch will override the in-built update HA button.
             self._optional(
@@ -592,6 +606,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
                 ENTITY_DEVICE_UPDATE_HA_BUTTON,
                 BUTTON_ENTITY_SELECTOR_READ_ONLY,
                 BUTTON_ENTITY_SELECTOR,
+                MODIFIABLE_DEFAULT,
             ),
         }
 

@@ -9,6 +9,7 @@
 ### New feature
 - Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).
 ### Improvement
+- Improved overridable entity configuration.
 - Made charger on/off switch and get/set current overridable for all devices.
 - Added PowerAllocator unit tests.
 
