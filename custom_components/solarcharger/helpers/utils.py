@@ -3,12 +3,16 @@
 """Utilities."""
 
 import asyncio
-from collections.abc import Callable
-from datetime import datetime, timedelta
 import logging
 import threading
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from types import FrameType
 from typing import Any
+
+from awesomeversion import AwesomeVersion
+
+from homeassistant.const import __version__ as HA_VERSION
 
 # import pytz
 from homeassistant.core import CALLBACK_TYPE, State
@@ -18,6 +22,7 @@ from homeassistant.util.dt import as_local, parse_datetime
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
+CURRENT_HA_VERSION = AwesomeVersion(HA_VERSION)
 
 
 # ----------------------------------------------------------------------------
@@ -41,6 +46,12 @@ def get_callable_name(obj: Callable) -> str:
     if isinstance(obj, property):
         return obj.fget.__name__ if obj.fget else "<UnknownProperty>"
     return obj.__name__
+
+
+# ----------------------------------------------------------------------------
+def is_ha_version_at_least(min_version: str) -> bool:
+    """Check if the current Home Assistant version is at least the specified version."""
+    return CURRENT_HA_VERSION >= AwesomeVersion(min_version)
 
 
 # ----------------------------------------------------------------------------

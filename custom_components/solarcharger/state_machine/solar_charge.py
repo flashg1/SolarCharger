@@ -2,11 +2,11 @@
 """Solar charge state machine implementation to manage solar charging."""
 
 import asyncio
-from datetime import date, datetime, timedelta
-from decimal import Decimal
 import inspect
 import logging
 import threading
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 from propcache.api import cached_property
 
@@ -60,7 +60,7 @@ from ..const import (
     RunState,
     StartState,
 )
-from ..helpers.utils import log_is_event_loop
+from ..helpers.utils import is_ha_version_at_least, log_is_event_loop
 from ..models.model_charge_control import ControlEntities
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_config import ConfigValueDict
@@ -172,15 +172,21 @@ class SolarCharge(ScOptionState):
         """Get the device entry for the controller."""
 
         device_registry = dr.async_get(self._hass)
-        # device = device_registry.async_get_device(
-        #     identifiers={(DOMAIN, self._subentry.subentry_id)}
-        # )
-        device = device_registry.async_get_device_by_identifier(
-            identifier=(DOMAIN, self._subentry.subentry_id),
-            config_entry_id=self._entry.entry_id,
-        )
+        if is_ha_version_at_least("2027.8.0"):
+            # Call the new function or method
+            device = device_registry.async_get_device_by_identifier(
+                identifier=(DOMAIN, self._subentry.subentry_id),
+                config_entry_id=self._entry.entry_id,
+            )
+        else:
+            # Fallback to the legacy function or method
+            device = device_registry.async_get_device(
+                identifiers={(DOMAIN, self._subentry.subentry_id)}
+            )
+
         if device is None:
             raise RuntimeError(f"{self.caller} device entry not found.")
+
         return device
 
     # ----------------------------------------------------------------------------
