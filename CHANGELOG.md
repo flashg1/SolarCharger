@@ -9,6 +9,7 @@
 ### New feature
 - Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).
 ### Improvement
+- Added config_options_flow unit tests.
 - Support HA v2026.9.1 device_registry.async_get_device_by_identifier() and legacy async_get_device().
 - Improved overridable entity configuration.
 - Made charger on/off switch and get/set current overridable for all devices.

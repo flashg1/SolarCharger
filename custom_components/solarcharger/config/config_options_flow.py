@@ -173,7 +173,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self.config_entry, subentry, config_item, use_default
         )
 
-        if saved_val:
+        if saved_val is not None:
             return cls(config_item, default=saved_val)
 
         return cls(config_item)
@@ -186,7 +186,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self.config_entry, subentry, config_item, use_default
         )
 
-        if saved_val:
+        if saved_val is not None:
             return vol.Required(config_item, default=saved_val)
 
         return vol.Required(config_item)
@@ -199,7 +199,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self.config_entry, subentry, config_item, use_default
         )
 
-        if saved_val:
+        if saved_val is not None:
             return vol.Optional(config_item, default=saved_val)
 
         return vol.Optional(config_item)

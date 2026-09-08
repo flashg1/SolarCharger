@@ -1,14 +1,18 @@
-"""Shared fakes and builders for power allocator tests.
+"""Shared fakes and builders for solarcharger tests.
 
 PowerAllocator only ever touches DeviceControl.controller.solar_charge and
 .controller.charge_control.instance_count, so tests use small fakes for those
 instead of constructing real ChargeController/HomeAssistant objects.
+
+ConfigOptionsFlowHandler only ever touches config_entry.options/.subentries/
+.entry_id and self.hass.data, so tests use a similarly minimal fake config
+entry instead of a real ConfigEntry/HomeAssistant instance.
 """
 
 from dataclasses import dataclass, field
 from pathlib import Path
 import sys
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -20,7 +24,11 @@ _CONFIG_DIR = Path(__file__).resolve().parents[3]
 if str(_CONFIG_DIR) not in sys.path:
     sys.path.insert(0, str(_CONFIG_DIR))
 
+from custom_components.solarcharger.config.config_options_flow import (  # noqa: E402
+    ConfigOptionsFlowHandler,
+)
 from custom_components.solarcharger.const import (  # noqa: E402
+    DOMAIN,
     OPTION_GLOBAL_DEFAULTS_ID,
     RunState,
 )
@@ -36,9 +44,13 @@ from custom_components.solarcharger.modules.allocator import (  # noqa: E402
     PowerAllocator,
 )
 
+from homeassistant.config_entries import ConfigSubentry  # noqa: E402
+
 GLOBAL_DEFAULTS_SUBENTRY_ID = "global-defaults"
 
 
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 @dataclass
 class FakeSolarCharge:
     """Stand-in for state_machine.solar_charge.SolarCharge."""
@@ -127,6 +139,7 @@ class FakeSolarCharge:
         return SimpleNamespace(state=self.run_state)
 
 
+# ----------------------------------------------------------------------------
 @dataclass
 class FakeChargeControl:
     """Stand-in for model_charge_control.ChargeControl."""
@@ -134,6 +147,7 @@ class FakeChargeControl:
     instance_count: int = 1
 
 
+# ----------------------------------------------------------------------------
 @dataclass
 class FakeChargeController:
     """Stand-in for modules.controller.ChargeController."""
@@ -142,6 +156,7 @@ class FakeChargeController:
     charge_control: FakeChargeControl
 
 
+# ----------------------------------------------------------------------------
 def make_device_control(
     subentry_id: str,
     config_name: str,
@@ -159,6 +174,7 @@ def make_device_control(
     )
 
 
+# ----------------------------------------------------------------------------
 def make_allocator(
     *device_controls: DeviceControl, net_power: float | None = 0.0
 ) -> PowerAllocator:
@@ -177,6 +193,7 @@ def make_allocator(
     return PowerAllocator(global_defaults_subentry, controls)  # type: ignore[arg-type]
 
 
+# ----------------------------------------------------------------------------
 def make_power_allocation(**overrides: Any) -> PowerAllocation:
     """Build a PowerAllocation with sensible defaults, overridden per test."""
     defaults: dict[str, Any] = {
@@ -197,6 +214,7 @@ def make_power_allocation(**overrides: Any) -> PowerAllocation:
     return PowerAllocation(**defaults)
 
 
+# ----------------------------------------------------------------------------
 def make_group(priority: int = 10, **overrides: Any) -> AllocationGroup:
     """Build an AllocationGroup with sensible defaults, overridden per test."""
     defaults: dict[str, Any] = {"priority": priority, "member_map": {}}
@@ -204,6 +222,7 @@ def make_group(priority: int = 10, **overrides: Any) -> AllocationGroup:
     return AllocationGroup(**defaults)
 
 
+# ----------------------------------------------------------------------------
 @pytest.fixture(name="allocation_calls")
 def allocation_calls_fixture(monkeypatch: pytest.MonkeyPatch) -> dict[int, float]:
     """Capture every delta power sent, keyed by the charge_control's identity."""
@@ -221,3 +240,95 @@ def allocation_calls_fixture(monkeypatch: pytest.MonkeyPatch) -> dict[int, float
         fake_async_set_delta_allocated_power,
     )
     return calls
+
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+@dataclass
+class FakeConfigEntry:
+    """Stand-in for homeassistant.config_entries.ConfigEntry."""
+
+    options: dict[str, Any] = field(default_factory=dict)
+    subentries: dict[str, ConfigSubentry] = field(default_factory=dict)
+    entry_id: str = "entry-1"
+
+
+# ----------------------------------------------------------------------------
+def make_subentry(
+    unique_id: str | None,
+    *,
+    subentry_type: str = "charger",
+    data: dict[str, Any] | None = None,
+    subentry_id: str | None = None,
+) -> ConfigSubentry:
+    """Build a real ConfigSubentry. Cheap to construct, no hass required."""
+    kwargs: dict[str, Any] = {
+        "data": MappingProxyType(data or {}),
+        "subentry_type": subentry_type,
+        "title": unique_id or "Untitled",
+        "unique_id": unique_id,
+    }
+    if subentry_id is not None:
+        kwargs["subentry_id"] = subentry_id
+    return ConfigSubentry(**kwargs)
+
+
+# ----------------------------------------------------------------------------
+def make_config_entry(
+    *subentries: ConfigSubentry,
+    options: dict[str, Any] | None = None,
+    entry_id: str = "entry-1",
+) -> FakeConfigEntry:
+    """Build a FakeConfigEntry, keying the given subentries by subentry_id."""
+    return FakeConfigEntry(
+        options=options or {},
+        subentries={subentry.subentry_id: subentry for subentry in subentries},
+        entry_id=entry_id,
+    )
+
+
+# ----------------------------------------------------------------------------
+@dataclass
+class FakeCoordinator:
+    """Stand-in for modules.coordinator.SolarChargerCoordinator."""
+
+    validate_config_options_error: str | None = None
+    validate_config_options_calls: list[tuple[str, dict[str, Any]]] = field(
+        default_factory=list
+    )
+
+    def validate_config_options(
+        self, config_name: str, processed_data: dict[str, Any]
+    ) -> str | None:
+        """Record the call and return the configured error code, if any."""
+        self.validate_config_options_calls.append((config_name, processed_data))
+        return self.validate_config_options_error
+
+
+# ----------------------------------------------------------------------------
+def make_options_flow(
+    config_entry: FakeConfigEntry,
+    *,
+    coordinator: FakeCoordinator | None = None,
+    config_name: str | None = None,
+) -> ConfigOptionsFlowHandler:
+    """Build a ConfigOptionsFlowHandler whose .config_entry resolves to the given fake entry.
+
+    OptionsFlow.config_entry is a read-only property (since HA 2024.11) computed
+    via self.hass.config_entries.async_get_known_entry(self.handler), not a
+    stored attribute -- see config_flow.py's async_get_options_flow, which
+    special-cases pre-2024.11 HA to pass config_entry into __init__ directly.
+    So the fake hass here wires that lookup instead of setting an attribute.
+    """
+    flow = ConfigOptionsFlowHandler()
+    flow.handler = config_entry.entry_id
+    data = {DOMAIN: {config_entry.entry_id: coordinator}} if coordinator else {}
+    flow.hass = SimpleNamespace(
+        data=data,
+        config_entries=SimpleNamespace(
+            async_get_known_entry=lambda entry_id: config_entry
+        ),
+    )
+    if config_name is not None:
+        flow._config_name = config_name  # noqa: SLF001
+    return flow
