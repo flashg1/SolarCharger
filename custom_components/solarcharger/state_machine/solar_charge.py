@@ -172,7 +172,7 @@ class SolarCharge(ScOptionState):
         """Get the device entry for the controller."""
 
         device_registry = dr.async_get(self._hass)
-        if is_ha_version_at_least("2027.8.0"):
+        if is_ha_version_at_least("2026.9.1"):
             # Call the new function or method
             device = device_registry.async_get_device_by_identifier(
                 identifier=(DOMAIN, self._subentry.subentry_id),
