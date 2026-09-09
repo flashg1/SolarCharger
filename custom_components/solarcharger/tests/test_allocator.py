@@ -797,6 +797,45 @@ async def test_async_allocate_net_power_dispatches_bottom_up_when_gross_power_is
 
 
 @pytest.mark.asyncio
+async def test_async_allocate_net_power_to_2_devices_when_gross_power_is_positive(
+    allocation_calls: dict[int, float],
+) -> None:
+    """A shortage that exceeds current consumption is dispatched to _bottom_up_release_power."""
+    device_a = make_device_control(
+        "a",
+        "A",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-50,
+        activation_power=-50,
+        consumed_power=1000,
+    )
+    device_b = make_device_control(
+        "b",
+        "B",
+        instance_count=1,
+        priority=10,
+        allocation_weight=1,
+        max_current=32,
+        voltage=230,
+        power_factor=1,
+        adjusted_activation_power=-100,
+        activation_power=-100,
+        consumed_power=1500,
+    )
+    allocator = make_allocator(device_a, device_b, net_power=3000)
+
+    assert await allocator.async_allocate_net_power()
+
+    assert allocation_calls[id(device_a.controller.charge_control)] == 1000
+    assert allocation_calls[id(device_b.controller.charge_control)] == 1500
+
+
+@pytest.mark.asyncio
 async def test_async_allocate_net_power_sends_nothing_with_no_running_chargers(
     allocation_calls: dict[int, float],
 ) -> None:
