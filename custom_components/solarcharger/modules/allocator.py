@@ -960,9 +960,10 @@ class PowerAllocator:
             allocation_book = self._get_allocation_pool(net_power)
 
             if allocation_book.total_instance > 0:
-                # Information only. Global default variable shows net power available for allocation.
+                # FYI only. Global defaults entity only showing power available to SC for allocation.
                 await async_set_delta_allocated_power(
-                    self._global_defaults_control.controller.charge_control, net_power
+                    self._global_defaults_control.controller.charge_control,
+                    allocation_book.gross_power,
                 )
 
                 await self._async_process_allocation_book(allocation_book)
