@@ -785,11 +785,10 @@ class PowerAllocator:
         rebalance_active_ladder = deepcopy(active_ladder)
 
         total_loan_power = 0.0
-        for rung in range(len(active_ladder)):
-            for rebalance_active_member in active_ladder[rung].member_map.values():
-                rebalance_active_member = rebalance_active_ladder[rung].member_map[
-                    rebalance_active_member.subentry_id
-                ]
+        for rung in range(len(rebalance_active_ladder)):
+            for rebalance_active_member in rebalance_active_ladder[
+                rung
+            ].member_map.values():
                 rebalance_member = book.rebalance_group_map[
                     rebalance_active_member.priority
                 ].member_map[rebalance_active_member.subentry_id]

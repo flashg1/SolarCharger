@@ -1144,6 +1144,7 @@ class SolarCharge(ScOptionState):
 
         continue_pause = (
             context.connected
+            and context.below_charge_limit
             and (not (context.goal.end_on_condition and context.goal.exit_condition))
             and (
                 not context.goal.sun_trigger

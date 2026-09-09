@@ -5,6 +5,7 @@
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 - Added charger step current list entity.
 ### Fix
+- Fixed charger not exiting pause state when at charge limit.
 - Do not call update_ha_state() when restoring values in async_added_to_hass() after reboot.
 ### New feature
 - Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).

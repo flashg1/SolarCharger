@@ -67,7 +67,9 @@ class PowerAllocation:
     allocation_final_weight: float = 0.0  # Use this weight for allocation.
     deallocation_final_weight: float = 0.0  # Use this weight for deallocation.
 
-    # Net allocated power after rebalancing. -ve = allocation. +ve = deallocation.
+    # Delta allocated power: -ve = allocation. +ve = deallocation.
+    # Rebalance available power with 0 consumed power will always result in final_power being -ve or 0. It is never +ve.
+    # It is then combined with consumed_power to get the final power for the charger, which can be -ve, 0 or +ve.
     final_power: float = 0.0
 
     # ----------------------------------------------------------------------------
