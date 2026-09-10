@@ -10,6 +10,11 @@
 ### New feature
 - Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).
 ### Improvement
+- Added coordinator unit tests.
+- Added controller unit tests.
+- Added start state unit tests.
+- Added scheduler unit tests.
+- Added charge loop unit tests.
 - Added user custom charger unit tests.
 - Added tesla_custom unit tests.
 - Global defaults "Delta allocated power" only showing power available to SC for allocation.

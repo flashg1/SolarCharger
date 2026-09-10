@@ -445,7 +445,7 @@ class SolarChargerCoordinator(ScOptionState):
             except Exception as e:
                 _LOGGER.exception(
                     "%s: Failed to synchronise charge current update for net power %s W: %s",
-                    self.solarcharge.caller,
+                    self.caller,
                     new_state.state,
                     e,
                 )

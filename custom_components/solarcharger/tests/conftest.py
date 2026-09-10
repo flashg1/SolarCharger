@@ -316,8 +316,14 @@ def make_config_entry(
 
 
 # ----------------------------------------------------------------------------
-def make_hass(states: dict[str, str] | None = None) -> SimpleNamespace:
-    """Minimal fake hass exposing only .states.get() and .services.async_call()."""
+def make_hass(
+    states: dict[str, str] | None = None, time_zone: str = "UTC"
+) -> SimpleNamespace:
+    """Minimal fake hass exposing only .states.get(), .services.async_call() and .config.time_zone.
+
+    time_zone backs ScState.get_local_timezone() (ZoneInfo(hass.config.time_zone)),
+    used by combine_local_date_time()/get_local_datetime().
+    """
     state_objects = {
         entity_id: SimpleNamespace(entity_id=entity_id, state=value, attributes={})
         for entity_id, value in (states or {}).items()
@@ -325,6 +331,7 @@ def make_hass(states: dict[str, str] | None = None) -> SimpleNamespace:
     return SimpleNamespace(
         states=SimpleNamespace(get=state_objects.get),
         services=SimpleNamespace(async_call=AsyncMock(return_value=None)),
+        config=SimpleNamespace(time_zone=time_zone),
         loop=None,
     )
 
