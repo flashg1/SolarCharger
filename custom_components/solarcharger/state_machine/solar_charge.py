@@ -2,11 +2,11 @@
 """Solar charge state machine implementation to manage solar charging."""
 
 import asyncio
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 import inspect
 import logging
 import threading
-from datetime import date, datetime, timedelta
-from decimal import Decimal
 
 from propcache.api import cached_property
 
@@ -621,8 +621,8 @@ class SolarCharge(ScOptionState):
             NUMBER_CHARGER_POWER_FACTOR
         )
 
-        # Power factor can in theory be 0.
-        if 0 > power_factor > 1:
+        # Power factor of 0 is not physically meaningful for an active charger.
+        if not 0 < power_factor <= 1:
             raise ValueError(f"Invalid charger power factor {power_factor}")
 
         return power_factor

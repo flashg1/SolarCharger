@@ -10,13 +10,7 @@
 ### New feature
 - Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).
 ### Improvement
-- Added coordinator unit tests.
-- Added controller unit tests.
-- Added start state unit tests.
-- Added scheduler unit tests.
-- Added charge loop unit tests.
-- Added user custom charger unit tests.
-- Added tesla_custom unit tests.
+- Added unit tests for tesla_custom charger, user custom charger, charge loop, scheduler, start state, controller, coordinator, config flow, options flow and solar_charge.
 - Global defaults "Delta allocated power" only showing power available to SC for allocation.
 - Added config_options_flow unit tests.
 - Support HA v2026.9.1 device_registry.async_get_device_by_identifier() and legacy async_get_device().

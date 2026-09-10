@@ -22,12 +22,17 @@ from custom_components.solarcharger.config.config_options_flow import (
 from custom_components.solarcharger.config.config_utils import (
     NUMBER_ENTITY_SELECTOR,
     NUMBER_ENTITY_SELECTOR_READ_ONLY,
+    SWITCH_ENTITY_SELECTOR,
 )
 from custom_components.solarcharger.const import (
+    CHARGE_API_DOMAIN,
+    DOMAIN_OCPP,
     ENTITY_CHARGER_ON_OFF_SWITCH,
+    ENTITY_CHARGER_SET_CHARGE_CURRENT,
     ERROR_EMPTY_CHARGER_LIST,
     ERROR_NUMBER_FORMAT,
     ERROR_SUBENTRY_ID_NOT_FOUND,
+    ERROR_SUBENTRY_NOT_FOUND,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MAX_SPEED,
     OPTION_CHARGER_NAME,
@@ -53,6 +58,30 @@ from .conftest import (
 
 async def _noop_store_save(store: str, data: dict[str, Any]) -> None:
     """No-op stand-in for config_utils.async_ha_store_save."""
+
+
+# ----------------------------------------------------------------------------
+# __init__
+# ----------------------------------------------------------------------------
+def test_init_with_explicit_config_entry_hits_a_read_only_property_on_current_ha() -> (
+    None
+):
+    """Characterization test for a dead pre-2024.11 compatibility branch, not a bug to fix here.
+
+    __init__'s `if config_entry is not None: self.config_entry = config_entry`
+    exists for HA versions before the 2024.11 options-flow change, where
+    config_entry was a plain settable attribute (see the blog link in its
+    docstring). On the HA core actually installed in this repo, OptionsFlow.
+    config_entry is unconditionally a read-only property with no setter, so
+    passing config_entry into __init__ raises instead of storing it -- this
+    branch cannot run successfully against this codebase's real base class,
+    matching the equivalent finding for ConfigFlowHandler.async_get_options_flow
+    in test_config_flow.py. It is legacy compatibility code, not something
+    exercised by async_get_options_flow() on this HA version (see that
+    method's own tests, which spy on the constructor instead of calling it).
+    """
+    with pytest.raises(AttributeError, match="no setter"):
+        ConfigOptionsFlowHandler(config_entry=make_config_entry())  # type: ignore[arg-type]
 
 
 # ----------------------------------------------------------------------------
@@ -173,6 +202,69 @@ def test_optional_default_reflects_saved_value(
     assert default == expected_default
 
 
+@pytest.mark.parametrize("use_default", [True, False])
+def test_prompt_forwards_use_default_to_get_saved_option_value(
+    monkeypatch: pytest.MonkeyPatch, use_default: bool
+) -> None:
+    """use_default is passed through to get_saved_option_value, not hardcoded."""
+    calls: list[bool] = []
+    monkeypatch.setattr(
+        cof_module,
+        "get_saved_option_value",
+        lambda entry, subentry, config_item, use_default: (
+            calls.append(use_default) or "sensor.saved"
+        ),
+    )
+    flow = make_options_flow(make_config_entry())
+    subentry = make_subentry("X")
+
+    flow._prompt(vol.Optional, subentry, "my_item", use_default)
+
+    assert calls == [use_default]
+
+
+@pytest.mark.parametrize("use_default", [True, False])
+def test_required_forwards_use_default_to_get_saved_option_value(
+    monkeypatch: pytest.MonkeyPatch, use_default: bool
+) -> None:
+    """use_default is passed through to get_saved_option_value, not hardcoded."""
+    calls: list[bool] = []
+    monkeypatch.setattr(
+        cof_module,
+        "get_saved_option_value",
+        lambda entry, subentry, config_item, use_default: (
+            calls.append(use_default) or "sensor.saved"
+        ),
+    )
+    flow = make_options_flow(make_config_entry())
+    subentry = make_subentry("X")
+
+    flow._required(subentry, "my_item", use_default)
+
+    assert calls == [use_default]
+
+
+@pytest.mark.parametrize("use_default", [True, False])
+def test_optional_forwards_use_default_to_get_saved_option_value(
+    monkeypatch: pytest.MonkeyPatch, use_default: bool
+) -> None:
+    """use_default is passed through to get_saved_option_value, not hardcoded."""
+    calls: list[bool] = []
+    monkeypatch.setattr(
+        cof_module,
+        "get_saved_option_value",
+        lambda entry, subentry, config_item, use_default: (
+            calls.append(use_default) or "sensor.saved"
+        ),
+    )
+    flow = make_options_flow(make_config_entry())
+    subentry = make_subentry("X")
+
+    flow._optional(subentry, "my_item", use_default)
+
+    assert calls == [use_default]
+
+
 # ----------------------------------------------------------------------------
 # _charger_environment_schema / _charger_device_control_schema
 # ----------------------------------------------------------------------------
@@ -243,6 +335,65 @@ def test_charger_device_control_schema_local_entity_is_always_modifiable(
     assert OPTION_CHARGER_NAME in selectors_by_key
 
 
+def test_charger_device_control_schema_always_modifiable_ignores_third_party_api_entity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """MODIFIABLE_ALWAYS fields stay editable even when the API entity is third-party.
+
+    Contrast with NUMBER_CHARGER_MAX_SPEED (MODIFIABLE_IF_SC_ENTITY) above,
+    which *does* become read-only for a third-party entity -- ENTITY_CHARGER_
+    ON_OFF_SWITCH does not, because it's always modifiable regardless.
+    """
+    monkeypatch.setattr(cof_module, "get_saved_option_value", lambda *a, **k: None)
+    monkeypatch.setattr(
+        cof_module,
+        "get_device_api_entities",
+        lambda subentry: {
+            ENTITY_CHARGER_ON_OFF_SWITCH: "switch.some_other_integration_charger"
+        },
+    )
+    flow = make_options_flow(make_config_entry())
+    subentry = make_subentry("Charger1")
+
+    schema = flow._charger_device_control_schema(subentry, use_default=True)
+
+    selectors_by_key = {key.schema: selector for key, selector in schema.items()}
+    assert selectors_by_key[ENTITY_CHARGER_ON_OFF_SWITCH] is SWITCH_ENTITY_SELECTOR
+
+
+@pytest.mark.parametrize(
+    ("device_domain", "expected_selector"),
+    [
+        pytest.param(
+            DOMAIN_OCPP, NUMBER_ENTITY_SELECTOR_READ_ONLY, id="ocpp_is_read_only"
+        ),
+        pytest.param(
+            "tesla_custom", NUMBER_ENTITY_SELECTOR, id="non_ocpp_stays_modifiable"
+        ),
+    ],
+)
+def test_charger_device_control_schema_except_ocpp_is_read_only_only_for_ocpp(
+    monkeypatch: pytest.MonkeyPatch, device_domain: str, expected_selector: Any
+) -> None:
+    """MODIFIABLE_EXCEPT_OCPP is normally modifiable, but read-only specifically for OCPP."""
+    monkeypatch.setattr(cof_module, "get_saved_option_value", lambda *a, **k: None)
+    monkeypatch.setattr(
+        cof_module,
+        "get_device_api_entities",
+        lambda subentry: {
+            ENTITY_CHARGER_SET_CHARGE_CURRENT: "number.set_current",
+            CHARGE_API_DOMAIN: device_domain,
+        },
+    )
+    flow = make_options_flow(make_config_entry())
+    subentry = make_subentry("Charger1")
+
+    schema = flow._charger_device_control_schema(subentry, use_default=True)
+
+    selectors_by_key = {key.schema: selector for key, selector in schema.items()}
+    assert selectors_by_key[ENTITY_CHARGER_SET_CHARGE_CURRENT] is expected_selector
+
+
 # ----------------------------------------------------------------------------
 # process_config_options
 # ----------------------------------------------------------------------------
@@ -287,6 +438,26 @@ async def test_process_config_options_raises_on_validation_error(
     assert exc_info.value.key == "bad_value"
 
 
+@pytest.mark.asyncio
+async def test_process_config_options_raises_when_coordinator_not_yet_registered(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No coordinator under hass.data[DOMAIN] (setup ordering issue) surfaces as a KeyError.
+
+    Not caught anywhere in process_config_options, so this documents that a
+    setup-ordering problem fails loudly rather than being silently swallowed.
+    """
+    subentry = make_subentry("Charger1")
+    entry = make_config_entry(subentry)
+    flow = make_options_flow(entry, coordinator=None, config_name="Charger1")
+    monkeypatch.setattr(
+        cof_module, "process_api_config", lambda *a, **k: {"processed": True}
+    )
+
+    with pytest.raises(KeyError):
+        await flow.process_config_options("Charger1", {"raw": 1})
+
+
 # ----------------------------------------------------------------------------
 # async_step_config_device
 # ----------------------------------------------------------------------------
@@ -300,6 +471,30 @@ async def test_async_step_config_device_aborts_when_subentry_id_not_found() -> N
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == ERROR_SUBENTRY_ID_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_async_step_config_device_aborts_when_subentry_missing_despite_resolved_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A resolved subentry_id that no longer maps to a real subentry also aborts cleanly.
+
+    get_subentry_id() and entry.subentries.get() both read the same dict in
+    practice, so this pairing should never actually diverge -- but the
+    handler still guards against it, so this test drives that defensive
+    branch directly via a monkeypatched get_subentry_id() rather than relying
+    on the two ever naturally disagreeing.
+    """
+    entry = make_config_entry()
+    flow = make_options_flow(entry, config_name="Charger1")
+    monkeypatch.setattr(
+        cof_module, "get_subentry_id", lambda entry, config_name: "orphaned-id"
+    )
+
+    result = await flow.async_step_config_device(None)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == ERROR_SUBENTRY_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -538,3 +733,22 @@ async def test_async_step_init_lists_global_defaults_and_charger_subentries_only
     assert result["type"] is FlowResultType.FORM
     selector = next(iter(result["data_schema"].schema.values()))
     assert selector.config["options"] == ["Global defaults", "Charger1", "Custom1"]
+
+
+@pytest.mark.asyncio
+async def test_async_step_init_excludes_a_charger_subentry_with_no_unique_id() -> None:
+    """A charger-type subentry that somehow has no unique_id is skipped too.
+
+    A distinct guard from the subentry_type filter above: even a subentry of
+    a recognised charger type is excluded if subentry.unique_id is falsy,
+    since that unique_id is what config_name/options are keyed on.
+    """
+    sub_charger = make_subentry("Charger1", subentry_type="charger")
+    sub_no_unique_id = make_subentry(None, subentry_type="charger")
+    entry = make_config_entry(sub_charger, sub_no_unique_id)
+    flow = make_options_flow(entry)
+
+    result = await flow.async_step_init(None)
+
+    selector = next(iter(result["data_schema"].schema.values()))
+    assert selector.config["options"] == ["Global defaults", "Charger1"]
