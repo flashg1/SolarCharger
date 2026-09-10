@@ -7,6 +7,11 @@ instead of constructing real ChargeController/HomeAssistant objects.
 ConfigOptionsFlowHandler only ever touches config_entry.options/.subentries/
 .entry_id and self.hass.data, so tests use a similarly minimal fake config
 entry instead of a real ConfigEntry/HomeAssistant instance.
+
+ScState-derived classes (ChargerChargeableBase, SolarCharge, ChargeScheduler,
+...) only ever read entity state via hass.states.get() and write via
+hass.services.async_call(), so make_hass() below stands in for HomeAssistant
+too rather than requiring a real instance.
 """
 
 from dataclasses import dataclass, field
@@ -14,6 +19,7 @@ from pathlib import Path
 import sys
 from types import MappingProxyType, SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -28,6 +34,7 @@ from custom_components.solarcharger.config.config_options_flow import (  # noqa:
     ConfigOptionsFlowHandler,
 )
 from custom_components.solarcharger.const import (  # noqa: E402
+    CURRENT_VARIATION_PERCENTAGE,
     DOMAIN,
     OPTION_GLOBAL_DEFAULTS_ID,
     RunState,
@@ -71,6 +78,7 @@ class FakeSolarCharge:
     run_state: RunState = RunState.CHARGE
     rebalance_needed: bool = False
     step_power_list: list[float] = field(default_factory=list)
+    self_depower_today: int = 0
 
     def get_charger_priority(self) -> int:
         """Return configured priority."""
@@ -104,6 +112,26 @@ class FakeSolarCharge:
     def is_self_depower(self) -> bool:
         """Return configured self-depower flag."""
         return self.self_depower
+
+    def set_self_depower(self, self_depower: bool) -> None:
+        """Record self-depower flag."""
+        self.self_depower = self_depower
+
+    def get_self_depower_today(self) -> int:
+        """Return configured self-depower-today count."""
+        return self.self_depower_today
+
+    def set_self_depower_today(self, val: int) -> None:
+        """Record self-depower-today count."""
+        self.self_depower_today = val
+
+    def set_run_state(self, run_state: RunState) -> None:
+        """Record run state."""
+        self.run_state = run_state
+
+    def get_allowed_current_variation(self) -> float:
+        """Return allowed current variation, mirroring SolarCharge's own formula."""
+        return self.max_current * CURRENT_VARIATION_PERCENTAGE / 100
 
     def get_adjusted_activation_power(self, run_state: RunState) -> tuple[float, float]:
         """Return configured (adjusted_activation_power, activation_power)."""
@@ -284,6 +312,20 @@ def make_config_entry(
         options=options or {},
         subentries={subentry.subentry_id: subentry for subentry in subentries},
         entry_id=entry_id,
+    )
+
+
+# ----------------------------------------------------------------------------
+def make_hass(states: dict[str, str] | None = None) -> SimpleNamespace:
+    """Minimal fake hass exposing only .states.get() and .services.async_call()."""
+    state_objects = {
+        entity_id: SimpleNamespace(entity_id=entity_id, state=value, attributes={})
+        for entity_id, value in (states or {}).items()
+    }
+    return SimpleNamespace(
+        states=SimpleNamespace(get=state_objects.get),
+        services=SimpleNamespace(async_call=AsyncMock(return_value=None)),
+        loop=None,
     )
 
 
