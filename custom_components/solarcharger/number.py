@@ -272,7 +272,7 @@ CONFIG_NUMBER_LIST: tuple[
     #####################################
     (
         NUMBER_CHARGER_MAX_SPEED,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_MAX_SPEED,
             entity_category=EntityCategory.CONFIG,
@@ -284,7 +284,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGER_POWER_FACTOR,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_POWER_FACTOR,
             entity_category=EntityCategory.CONFIG,
@@ -295,7 +295,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGER_MIN_CURRENT,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_MIN_CURRENT,
             entity_category=EntityCategory.CONFIG,
@@ -308,7 +308,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
             entity_category=EntityCategory.CONFIG,
@@ -321,7 +321,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
             entity_category=EntityCategory.CONFIG,
@@ -333,7 +333,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
             entity_category=EntityCategory.CONFIG,
@@ -346,7 +346,7 @@ CONFIG_NUMBER_LIST: tuple[
     # Control entity
     (
         NUMBER_CHARGER_PRIORITY,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_PRIORITY,
             native_min_value=USER_DEVICE_PRIORITY_START,
@@ -356,7 +356,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
             native_min_value=0,
@@ -535,7 +535,7 @@ CONFIG_NUMBER_LIST: tuple[
     # Default charge limit configs.
     (
         NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
             entity_category=EntityCategory.CONFIG,
@@ -547,7 +547,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -559,7 +559,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -571,7 +571,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
             entity_category=EntityCategory.CONFIG,
@@ -583,7 +583,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
             entity_category=EntityCategory.CONFIG,
@@ -595,7 +595,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
             entity_category=EntityCategory.CONFIG,
@@ -607,7 +607,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
             entity_category=EntityCategory.CONFIG,
@@ -620,7 +620,7 @@ CONFIG_NUMBER_LIST: tuple[
     # Actual charge limit configs.
     (
         NUMBER_CHARGE_LIMIT_MONDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGE_LIMIT_MONDAY,
             entity_category=EntityCategory.CONFIG,
@@ -632,7 +632,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGE_LIMIT_TUESDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGE_LIMIT_TUESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -644,7 +644,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGE_LIMIT_WEDNESDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGE_LIMIT_WEDNESDAY,
             entity_category=EntityCategory.CONFIG,
@@ -656,7 +656,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGE_LIMIT_THURSDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGE_LIMIT_THURSDAY,
             entity_category=EntityCategory.CONFIG,
@@ -668,7 +668,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGE_LIMIT_FRIDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGE_LIMIT_FRIDAY,
             entity_category=EntityCategory.CONFIG,
@@ -680,7 +680,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGE_LIMIT_SATURDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGE_LIMIT_SATURDAY,
             entity_category=EntityCategory.CONFIG,
@@ -692,7 +692,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_CHARGE_LIMIT_SUNDAY,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_CHARGE_LIMIT_SUNDAY,
             entity_category=EntityCategory.CONFIG,

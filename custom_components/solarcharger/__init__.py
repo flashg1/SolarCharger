@@ -2,12 +2,16 @@
 
 import asyncio
 import logging
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, cast
 
+from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.loader import async_get_integration
 
 from .chargers import Charger, charger_factory
 from .chargers.chargeable import Chargeable
@@ -50,9 +54,47 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+# The whole directory is served (not one file) because solarcharger-strategy.js
+# and solarcharger-charger-card.js both `import` solarcharger-shared.js by
+# relative URL -- that shared module is fetched transitively by the browser
+# and never needs its own add_extra_js_url() entry.
+FRONTEND_URL_BASE = "/solarcharger_frontend"
+FRONTEND_ENTRY_MODULES = ["solarcharger-strategy.js", "solarcharger-charger-card.js"]
+
+
+# ----------------------------------------------------------------------------
+async def _async_register_frontend_strategy(hass: HomeAssistant) -> None:
+    """Serve the frontend/ directory and register its entry modules as extra JS.
+
+    cache_headers=False for the whole directory: manifest.json's version is
+    appended as a cache-busting query string to the two entry modules below,
+    but solarcharger-shared.js and solarcharger-charger-card-editor.js are
+    only ever reached via plain relative `import` statements inside those
+    entry modules, with no version string of their own -- if this directory
+    were cacheable, a browser could keep serving a stale copy of one of those
+    indefinitely, unaffected by the entry modules' own cache-busting. This is
+    a small, admin-only, actively-iterated-on set of files, so trading a
+    little caching for always-fresh JS is the right default.
+
+    single_config_entry is true for this integration and async_setup() only
+    ever runs once, so no double-registration guard is needed here (unlike a
+    static path registered from async_setup_entry).
+    """
+    integration = await async_get_integration(hass, DOMAIN)
+    frontend_dir = Path(__file__).parent / "frontend"
+
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(FRONTEND_URL_BASE, str(frontend_dir), cache_headers=False)]
+    )
+    for module in FRONTEND_ENTRY_MODULES:
+        add_extra_js_url(hass, f"{FRONTEND_URL_BASE}/{module}?v={integration.version}")
+
+
+# ----------------------------------------------------------------------------
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up Solar Charger integration."""
     hass.data.setdefault(DOMAIN, {})
+    await _async_register_frontend_strategy(hass)
     return True
 
 

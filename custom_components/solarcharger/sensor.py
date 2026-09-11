@@ -422,7 +422,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_RUN_STATE,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_RUN_STATE,
             device_class=SensorDeviceClass.ENUM,
@@ -450,7 +450,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_NET_ALLOCATED_POWER,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_NET_ALLOCATED_POWER,
             device_class=SensorDeviceClass.POWER,
@@ -464,7 +464,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE,
             state_class=SensorStateClass.TOTAL,
@@ -476,7 +476,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_NET_ALLOCATED_POWER_DATA_SET,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_NET_ALLOCATED_POWER_DATA_SET,
             device_class=SensorDeviceClass.ENUM,
@@ -489,7 +489,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_MEDIAN_NET_ALLOCATED_POWER,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_MEDIAN_NET_ALLOCATED_POWER,
             device_class=SensorDeviceClass.POWER,
@@ -504,7 +504,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
             device_class=SensorDeviceClass.DURATION,
@@ -534,7 +534,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_CONSUMED_POWER,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_CONSUMED_POWER,
             device_class=SensorDeviceClass.POWER,
@@ -548,7 +548,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_CONSUMED_ENERGY_TODAY,
         SolarChargerSensorResetAtMidnightEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_CONSUMED_ENERGY_TODAY,
             device_class=SensorDeviceClass.ENERGY,
@@ -562,7 +562,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_SYNC_UPDATE,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_GLOBAL,
+        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_SYNC_UPDATE,
             device_class=SensorDeviceClass.TIMESTAMP,
@@ -573,7 +573,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_WEATHER_FORECAST,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_GLOBAL,
+        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_WEATHER_FORECAST,
         ),
@@ -597,7 +597,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_INSTANCE_COUNT,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_INSTANCE_COUNT,
             state_class=SensorStateClass.TOTAL,
@@ -609,7 +609,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_SHARE_ALLOCATION,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_SHARE_ALLOCATION,
             state_class=SensorStateClass.TOTAL,
@@ -621,7 +621,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_SELF_DEPOWER_TODAY,
         SolarChargerSensorResetAtMidnightEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_SELF_DEPOWER_TODAY,
             state_class=SensorStateClass.TOTAL,
@@ -633,7 +633,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_PAUSE_COUNT,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_PAUSE_COUNT,
             state_class=SensorStateClass.TOTAL,
@@ -645,7 +645,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_AVERAGE_PAUSE_DURATION,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_AVERAGE_PAUSE_DURATION,
             state_class=SensorStateClass.MEASUREMENT,
@@ -659,7 +659,7 @@ CONFIG_SENSOR_LIST: tuple[
     (
         SENSOR_LAST_PAUSE_DURATION,
         SolarChargerSensorStateEntity,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
             key=SENSOR_LAST_PAUSE_DURATION,
             state_class=SensorStateClass.MEASUREMENT,

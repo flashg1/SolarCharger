@@ -41,5 +41,5 @@
   "loggers": ["custom_components.solarcharger", "solarcharger"],
   "requirements": [],
   "single_config_entry": true,
-  "version": "0.11.0"
+  "version": "0.11.1"
 }

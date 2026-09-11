@@ -246,7 +246,7 @@ CONFIG_SELECT_LIST: tuple[
         SolarChargerSelectEntity,
         RESTORE_ON_START_TRUE,
         option_presence_sensor,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SelectEntityDescription(
             key=SELECT_DEVICE_PRESENCE_SENSOR,
             entity_category=EntityCategory.CONFIG,
@@ -257,7 +257,7 @@ CONFIG_SELECT_LIST: tuple[
         SolarChargerSelectEntity,
         RESTORE_ON_START_TRUE,
         option_start_state,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SelectEntityDescription(
             key=SELECT_START_STATE,
             entity_category=EntityCategory.CONFIG,
@@ -268,7 +268,7 @@ CONFIG_SELECT_LIST: tuple[
         SolarChargerSelectEntity,
         RESTORE_ON_START_TRUE,
         option_template_binary_sensor,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SelectEntityDescription(
             key=SELECT_EXIT_CONDITION_SENSOR,
             entity_category=EntityCategory.CONFIG,
@@ -279,7 +279,7 @@ CONFIG_SELECT_LIST: tuple[
         SolarChargerSelectEntity,
         RESTORE_ON_START_TRUE,
         option_weather_provider,
-        SolarChargerEntityType.TYPE_GLOBAL,
+        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
         SelectEntityDescription(
             key=SELECT_WEATHER_PROVIDER,
             entity_category=EntityCategory.CONFIG,

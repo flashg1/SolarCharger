@@ -101,7 +101,7 @@ CONFIG_TEXT_LIST: tuple[
     #####################################
     (
         TEXT_CHARGER_STEP_CURRENT_LIST,
-        SolarChargerEntityType.TYPE_LOCAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         TextEntityDescription(
             key=TEXT_CHARGER_STEP_CURRENT_LIST,
             entity_category=EntityCategory.CONFIG,
