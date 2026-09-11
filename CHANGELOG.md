@@ -1,12 +1,14 @@
 # Changelog
 
-## v0.11.1 2026-09-11
+## v0.12.0 2026-09-11
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.10.7 or prior.
 ### Fix
 ### New feature
 - Added user interface card.
 ### Improvement
+- Refactored how most internal entity IDs are requested by caching the IDs in single dictionary.
+- Moved charge limit/end time entities from global defaults to local internal entities.
 
 ## v0.11.0 2026-08-29
 ### Breaking change

@@ -218,86 +218,86 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, NUMBER_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            #####################################
-            # Charge scheduling
-            #####################################
-            # Max/min charge limits
-            self._optional(
-                subentry, NUMBER_DEVICE_MIN_CHARGE_LIMIT, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_DEVICE_MAX_CHARGE_LIMIT, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            # Charge limit defaults
-            self._optional(
-                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            # Reduce charge limit between days
-            self._optional(
-                subentry, SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE, use_default
-            ): SWITCH_ENTITY_SELECTOR,
-            # Charge limits
-            self._optional(
-                subentry, NUMBER_CHARGE_LIMIT_MONDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_CHARGE_LIMIT_TUESDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_CHARGE_LIMIT_WEDNESDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_CHARGE_LIMIT_THURSDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_CHARGE_LIMIT_FRIDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_CHARGE_LIMIT_SATURDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
-                subentry, NUMBER_CHARGE_LIMIT_SUNDAY, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            # Charge end times
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_MONDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_TUESDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_WEDNESDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_THURSDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_FRIDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_SATURDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
-            self._optional(
-                subentry, TIME_CHARGE_ENDTIME_SUNDAY, use_default
-            ): TIME_ENTITY_SELECTOR,
+            # #####################################
+            # # Charge scheduling
+            # #####################################
+            # # Max/min charge limits
+            # self._optional(
+            #     subentry, NUMBER_DEVICE_MIN_CHARGE_LIMIT, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_DEVICE_MAX_CHARGE_LIMIT, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # # Charge limit defaults
+            # self._optional(
+            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # # Reduce charge limit between days
+            # self._optional(
+            #     subentry, SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE, use_default
+            # ): SWITCH_ENTITY_SELECTOR,
+            # # Charge limits
+            # self._optional(
+            #     subentry, NUMBER_CHARGE_LIMIT_MONDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_CHARGE_LIMIT_TUESDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_CHARGE_LIMIT_WEDNESDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_CHARGE_LIMIT_THURSDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_CHARGE_LIMIT_FRIDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_CHARGE_LIMIT_SATURDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, NUMBER_CHARGE_LIMIT_SUNDAY, use_default
+            # ): NUMBER_ENTITY_SELECTOR,
+            # # Charge end times
+            # self._optional(
+            #     subentry, TIME_CHARGE_ENDTIME_MONDAY, use_default
+            # ): TIME_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, TIME_CHARGE_ENDTIME_TUESDAY, use_default
+            # ): TIME_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, TIME_CHARGE_ENDTIME_WEDNESDAY, use_default
+            # ): TIME_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, TIME_CHARGE_ENDTIME_THURSDAY, use_default
+            # ): TIME_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, TIME_CHARGE_ENDTIME_FRIDAY, use_default
+            # ): TIME_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, TIME_CHARGE_ENDTIME_SATURDAY, use_default
+            # ): TIME_ENTITY_SELECTOR,
+            # self._optional(
+            #     subentry, TIME_CHARGE_ENDTIME_SUNDAY, use_default
+            # ): TIME_ENTITY_SELECTOR,
             #####################################
             # Sunrise/sunset triggers
             #####################################

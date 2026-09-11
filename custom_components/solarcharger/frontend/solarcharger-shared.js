@@ -170,7 +170,7 @@ export function buildChargerSection(device, entities) {
   const cards = [{ type: "heading", heading: device.name_by_user || device.name }];
 
   if (controls.length) {
-    cards.push(buildTileGrid("Controls", controls, 4));
+    cards.push(buildTileGrid("Controls", controls, 2));
   }
 
   if (limitRows.length || endtimeRows.length) {
@@ -187,7 +187,7 @@ export function buildChargerSection(device, entities) {
   }
 
   if (status.length) {
-    cards.push(buildTileGrid("Status", status, 4));
+    cards.push(buildTileGrid("Status", status, 2));
   }
 
   if (advanced.length) {

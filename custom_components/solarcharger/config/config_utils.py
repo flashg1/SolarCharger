@@ -859,7 +859,10 @@ def create_entity_ids_from_templates(
     config_name: str | None,
     is_init_all: bool,
 ) -> None:
-    """Create config from SolarCharger entity and config templates."""
+    """Create config from SolarCharger entity and config templates.
+
+    device_name only required for third-party API entities, not SC entities.
+    """
 
     if template_map:
         # key_list = list(template_map.keys())

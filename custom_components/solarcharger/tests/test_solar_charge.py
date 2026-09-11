@@ -8,8 +8,8 @@ entity through the inherited ScOptionState/ScConfigState/ScState chain).
 Constructing a full SolarCharge just to test that one getter would mean
 building fakes for the whole session object graph to satisfy attributes the
 test never uses, so these tests bypass __init__ via SolarCharge.__new__() and
-set only the four attributes ScState/ScConfigState/ScOptionState actually
-read: _hass, _entry, _subentry, caller.
+set only the attributes ScState/ScConfigState/ScOptionState actually read:
+_hass, _entry, _subentry, caller, _internal_entity_ids.
 """
 
 from datetime import time
@@ -75,6 +75,7 @@ def make_bare_solar_charge(
     solar_charge._entry = entry
     solar_charge._subentry = subentry
     solar_charge.caller = subentry.unique_id
+    solar_charge._internal_entity_ids = {}
     solar_charge.charger = charger
     solar_charge.chargeable = chargeable
     solar_charge.entities = entities

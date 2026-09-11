@@ -100,7 +100,7 @@ async def async_setup_entry(
     coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     # ----------------------------------------------------------------------------
-    CONFIG_BUTTON_LIST: tuple[
+    config_button_list: tuple[
         tuple[
             str,
             Any,
@@ -118,7 +118,7 @@ async def async_setup_entry(
             BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
             SolarChargerButtonActionEntity,
             coordinator.async_reset_charge_limit_default,
-            SolarChargerEntityType.TYPE_LOCAL_ONLY,
+            SolarChargerEntityType.TYPE_LOCAL_GLOBAL,
             ButtonEntityDescription(
                 key=BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
             ),
@@ -136,7 +136,7 @@ async def async_setup_entry(
             action,
             entity_type,
             entity_description,
-        ) in CONFIG_BUTTON_LIST:
+        ) in config_button_list:
             if is_create_entity(subentry, entity_type):
                 buttons[config_item] = cls(
                     config_item,
