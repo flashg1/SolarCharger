@@ -216,7 +216,7 @@ async def async_setup_entry(
             SolarChargerSwitchEntity,
             RESTORE_ON_START_TRUE,
             coordinator.async_switch_dummy,
-            SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+            SolarChargerEntityType.TYPE_LOCAL_ONLY,
             SwitchEntityDescription(
                 key=SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
                 entity_category=EntityCategory.CONFIG,

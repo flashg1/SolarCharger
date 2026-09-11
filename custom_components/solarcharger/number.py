@@ -510,7 +510,7 @@ CONFIG_NUMBER_LIST: tuple[
     # Max/min charge limit config.
     (
         NUMBER_DEVICE_MIN_CHARGE_LIMIT,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEVICE_MIN_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
@@ -522,7 +522,7 @@ CONFIG_NUMBER_LIST: tuple[
     ),
     (
         NUMBER_DEVICE_MAX_CHARGE_LIMIT,
-        SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
             key=NUMBER_DEVICE_MAX_CHARGE_LIMIT,
             entity_category=EntityCategory.CONFIG,
