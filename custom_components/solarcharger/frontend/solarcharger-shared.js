@@ -92,6 +92,17 @@ export function getSolarchargerDevices(hass) {
   );
 }
 
+/** Find a device by its current display name (name_by_user || name).
+ * Device registry IDs are opaque, HA-generated strings that change if a
+ * device is ever deleted and recreated (eg. removing and re-adding a
+ * charger) -- the display name is what a user actually controls and would
+ * re-enter consistently, so the charger card persists that instead of a
+ * device_id. */
+export function findDeviceByName(hass, name) {
+  if (!name) return undefined;
+  return Object.values(hass.devices).find((device) => (device.name_by_user || device.name) === name);
+}
+
 /** Is this device a real charger (has a charge switch), not the Global Defaults device? */
 export function isChargerDevice(device, entitiesByDevice) {
   const entities = entitiesByDevice.get(device.id) || [];

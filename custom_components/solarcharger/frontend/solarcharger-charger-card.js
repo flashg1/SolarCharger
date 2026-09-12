@@ -17,6 +17,7 @@
 
 import {
   buildChargerSection,
+  findDeviceByName,
   getChargerDevices,
   groupEntitiesByDevice,
 } from "./solarcharger-shared.js";
@@ -41,11 +42,11 @@ class SolarchargerChargerCard extends HTMLElement {
 
   static getStubConfig(hass) {
     const [firstCharger] = getChargerDevices(hass);
-    return { device_id: firstCharger ? firstCharger.id : "" };
+    return { device_name: firstCharger ? firstCharger.name_by_user || firstCharger.name : "" };
   }
 
   setConfig(config) {
-    if (!config || !config.device_id) {
+    if (!config || !(config.device_name || config.device_id)) {
       throw new Error("Please pick a charger device.");
     }
     this._config = config;
@@ -67,9 +68,16 @@ class SolarchargerChargerCard extends HTMLElement {
   async _update() {
     if (!this._config || !this._hass) return;
 
-    const device = this._hass.devices[this._config.device_id];
+    // device_name is the persisted, stable identifier (see findDeviceByName's
+    // doc comment in solarcharger-shared.js); device_id is only read as a
+    // fallback for cards saved before this switch, since registry IDs aren't
+    // stable across a delete+recreate of the device.
+    const device = this._config.device_name
+      ? findDeviceByName(this._hass, this._config.device_name)
+      : this._hass.devices[this._config.device_id];
     if (!device) {
-      this._renderMessage(`Charger device not found: ${this._config.device_id}`);
+      const identifier = this._config.device_name || this._config.device_id;
+      this._renderMessage(`Charger device not found: ${identifier}`);
       return;
     }
 

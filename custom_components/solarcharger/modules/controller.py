@@ -685,6 +685,9 @@ class ChargeController(ScOptionState):
         """Reset charge limit defaults."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
+        if not (self._control.entities.numbers and self._control.entities.times):
+            return
+
         _LOGGER.info(
             "%s: Resetting charge limit and charge end time defaults",
             self.caller,

@@ -23,11 +23,23 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 from zoneinfo import ZoneInfo
 
+from custom_components.solarcharger.const import (
+    DEFAULT_CHARGE_LIMIT_MAP,
+    NUMBER_CHARGE_LIMIT_MONDAY,
+    NUMBER_CHARGE_LIMIT_TUESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
+    NUMBER_DEVICE_MAX_CHARGE_LIMIT,
+    NUMBER_DEVICE_MIN_CHARGE_LIMIT,
+    SENSOR_SYNC_UPDATE,
+    WEEKLY_CHARGE_ENDTIMES,
+)
 from custom_components.solarcharger.models.model_charge_control import (
     ChargeControl,
     ControlEntities,
 )
+from custom_components.solarcharger.models.model_device_control import DeviceControl
 from custom_components.solarcharger.models.model_schedule_data import ScheduleData
+import custom_components.solarcharger.modules.controller as controller_module
 from custom_components.solarcharger.modules.controller import ChargeController
 import pytest
 
@@ -66,6 +78,9 @@ def make_fake_tracker(**overrides: object) -> SimpleNamespace:
         "untrack_charge_endtime_schedule": Mock(),
         "track_next_charge_time_trigger": Mock(),
         "remove_ha_started_callback": Mock(),
+        "track_net_power_update": Mock(return_value=True),
+        "track_weather_update": Mock(return_value=True),
+        "untrack_weather_update": Mock(),
     }
     defaults.update(overrides)
     return SimpleNamespace(**defaults)
@@ -99,6 +114,9 @@ def make_bare_controller(
     charge_limit_entity_ids: dict[str, int] | None = None,
     charge_endtime_entity_ids: dict[str, int] | None = None,
     now: datetime = ANCHOR_NOW,
+    device_controls: dict[str, object] | None = None,
+    allocator: object | None = None,
+    weather_provider: str | None = None,
 ) -> ChargeController:
     """Build a ChargeController with its heavy collaborators replaced by fakes."""
     subentry = make_subentry(HOT_WATER_SUBENTRY_ID)
@@ -127,6 +145,19 @@ def make_bare_controller(
     controller._charge_task = None
     controller._end_charge_task = None
     controller._is_updated_today_tomorrow_schedule = False
+
+    controller._device_controls = device_controls or {}
+    controller._allocator = allocator or SimpleNamespace(
+        async_allocate_net_power=AsyncMock(return_value=True),
+        init_allocator=Mock(),
+    )
+    controller._current_update_period = 0.0
+    controller._min_current_update_period = 0.0
+    controller._sync_charge_current_time = 0.0
+    controller._net_power_update_count = 0
+    controller._weather_provider = weather_provider
+    controller._tracking_weather = weather_provider is not None
+    controller.get_weather_provider = lambda: weather_provider
 
     controller.is_schedule_charge = lambda: is_schedule_charge
     controller.get_local_datetime = lambda: now
@@ -638,3 +669,356 @@ def test_stop_charge_starts_a_fresh_end_task_once_the_old_one_finished() -> None
 
     assert result is new_end_task
     controller._hass.async_create_task.assert_called_once()
+
+
+def make_net_power_event(
+    entity_id: str, old_state: object, new_state: object
+) -> SimpleNamespace:
+    """Stand-in for the net power sensor's Event[EventStateChangedData]."""
+    return SimpleNamespace(
+        data={"entity_id": entity_id, "old_state": old_state, "new_state": new_state}
+    )
+
+
+def _patch_utcnow(monkeypatch: pytest.MonkeyPatch, timestamp: float) -> None:
+    monkeypatch.setattr(
+        controller_module,
+        "utcnow",
+        Mock(return_value=SimpleNamespace(timestamp=Mock(return_value=timestamp))),
+    )
+
+
+# ----------------------------------------------------------------------------
+# async_reset_charge_limit_default() -- reset all 7 days to configured defaults
+#
+# Only reachable on a device with its own number/time entities (a real
+# charger, or Global Defaults if it exposes them) -- moved here from
+# SolarChargerCoordinator, which used to own this logic and delegate down to
+# a control's ChargeController; the coordinator now just forwards the call.
+# ----------------------------------------------------------------------------
+async def test_reset_charge_limit_default_sets_every_day_within_range() -> None:
+    """Every default that falls within [min, max] gets pushed to its number entity."""
+    numbers = {
+        key: SimpleNamespace(async_set_native_value=AsyncMock())
+        for key in DEFAULT_CHARGE_LIMIT_MAP.values()
+    }
+    times = {
+        key: SimpleNamespace(async_set_value=AsyncMock())
+        for key in WEEKLY_CHARGE_ENDTIMES
+    }
+    control = ChargeControl(
+        subentry_id=HOT_WATER_SUBENTRY_ID,
+        config_name=HOT_WATER_SUBENTRY_ID,
+        entities=ControlEntities(numbers=numbers, times=times),
+    )
+    controller = make_bare_controller(charge_control=control)
+    controller.option_get_entity_number_or_abort = lambda _config_item, _val_dict=None: (
+        50.0
+    )
+
+    await controller.async_reset_charge_limit_default()
+
+    for entity in numbers.values():
+        entity.async_set_native_value.assert_awaited_once_with(50.0)
+    for entity in times.values():
+        entity.async_set_value.assert_awaited_once()
+
+
+async def test_reset_charge_limit_default_skips_a_default_outside_the_valid_range() -> (
+    None
+):
+    """A default outside [min, max] is left alone; the rest are still applied."""
+    numbers = {
+        key: SimpleNamespace(async_set_native_value=AsyncMock())
+        for key in DEFAULT_CHARGE_LIMIT_MAP.values()
+    }
+    times = {
+        key: SimpleNamespace(async_set_value=AsyncMock())
+        for key in WEEKLY_CHARGE_ENDTIMES
+    }
+    control = ChargeControl(
+        subentry_id=HOT_WATER_SUBENTRY_ID,
+        config_name=HOT_WATER_SUBENTRY_ID,
+        entities=ControlEntities(numbers=numbers, times=times),
+    )
+    controller = make_bare_controller(charge_control=control)
+
+    def _fake_option_get(config_item: str, _val_dict: object = None) -> float:
+        if config_item == NUMBER_DEVICE_MIN_CHARGE_LIMIT:
+            return 0.0
+        if config_item == NUMBER_DEVICE_MAX_CHARGE_LIMIT:
+            return 100.0
+        if config_item == NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY:
+            return 150.0  # out of range
+        return 50.0
+
+    controller.option_get_entity_number_or_abort = _fake_option_get
+
+    await controller.async_reset_charge_limit_default()
+
+    numbers[NUMBER_CHARGE_LIMIT_TUESDAY].async_set_native_value.assert_not_awaited()
+    numbers[NUMBER_CHARGE_LIMIT_MONDAY].async_set_native_value.assert_awaited_once_with(
+        50.0
+    )
+
+
+async def test_reset_charge_limit_default_noop_without_number_and_time_entities() -> (
+    None
+):
+    """A device with no number/time entities of its own (eg. Global Defaults) is left alone."""
+    control = ChargeControl(
+        subentry_id=HOT_WATER_SUBENTRY_ID,
+        config_name=HOT_WATER_SUBENTRY_ID,
+        entities=ControlEntities(),  # numbers/times both None
+    )
+    controller = make_bare_controller(charge_control=control)
+    controller.option_get_entity_number_or_abort = Mock(
+        side_effect=AssertionError("should never be called")
+    )
+
+    # Must not raise, and must not touch option_get_entity_number_or_abort at all.
+    await controller.async_reset_charge_limit_default()
+
+
+# ----------------------------------------------------------------------------
+# _async_allocate_net_power() -- thin wrapper that never lets the allocator raise
+#
+# Only ever exercised on the Global Defaults device's controller, the one
+# that owns the shared PowerAllocator and _device_controls map.
+# ----------------------------------------------------------------------------
+async def test_allocate_net_power_returns_the_allocator_result() -> None:
+    """The allocator's own True/False result is passed straight through."""
+    allocator = SimpleNamespace(async_allocate_net_power=AsyncMock(return_value=True))
+    controller = make_bare_controller(allocator=allocator)
+
+    assert await controller._async_allocate_net_power() is True
+
+
+async def test_allocate_net_power_swallows_allocator_errors_as_false() -> None:
+    """A raised exception in the allocator is logged, not propagated, and counts as False."""
+    allocator = SimpleNamespace(
+        async_allocate_net_power=AsyncMock(side_effect=RuntimeError("boom"))
+    )
+    controller = make_bare_controller(allocator=allocator)
+
+    assert await controller._async_allocate_net_power() is False
+
+
+# ----------------------------------------------------------------------------
+# _async_synchronise_charge_current_update()
+# ----------------------------------------------------------------------------
+async def test_synchronise_charge_current_update_sets_sensor_and_timestamp(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A successful sync writes the sync-update sensor and records the sync timestamp."""
+    sync_entity = SimpleNamespace(set_state=Mock())
+    control = ChargeControl(
+        subentry_id=HOT_WATER_SUBENTRY_ID,
+        config_name=HOT_WATER_SUBENTRY_ID,
+        entities=ControlEntities(sensors={SENSOR_SYNC_UPDATE: sync_entity}),
+    )
+    controller = make_bare_controller(charge_control=control)
+    # Global Defaults' own device_controls entry maps its subentry_id back to
+    # itself -- see _async_synchronise_charge_current_update()'s lookup.
+    device_control = DeviceControl(
+        subentry_id=controller._subentry.subentry_id,
+        config_name=HOT_WATER_SUBENTRY_ID,
+        controller=controller,
+    )
+    controller._device_controls = {controller._subentry.subentry_id: device_control}
+    _patch_utcnow(monkeypatch, timestamp=12345.0)
+
+    await controller._async_synchronise_charge_current_update()
+
+    sync_entity.set_state.assert_called_once()
+    assert controller._sync_charge_current_time == 12345.0
+
+
+async def test_synchronise_charge_current_update_swallows_a_missing_device_control() -> (
+    None
+):
+    """The global-defaults control not being registered yet is logged, not raised."""
+    controller = make_bare_controller(device_controls={})
+
+    # Must not raise despite the lookup failing.
+    await controller._async_synchronise_charge_current_update()
+
+    assert controller._sync_charge_current_time == 0.0
+
+
+# ----------------------------------------------------------------------------
+# _async_handle_net_power_update() -- allocate, then maybe synchronise
+# ----------------------------------------------------------------------------
+async def test_net_power_update_ignores_an_event_with_no_new_state() -> None:
+    """A cleared/removed entity (new_state=None) is not a real power update."""
+    controller = make_bare_controller()
+    controller._async_allocate_net_power = AsyncMock()
+    event = make_net_power_event("sensor.net_power", make_state("100"), None)
+
+    await controller._async_handle_net_power_update(event)
+
+    controller._async_allocate_net_power.assert_not_awaited()
+
+
+async def test_net_power_update_allocates_but_waits_for_the_sync_period(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A successful allocation before the min sync period just counts, doesn't sync yet."""
+    _patch_utcnow(monkeypatch, timestamp=100.0)
+    controller = make_bare_controller()
+    controller._sync_charge_current_time = 95.0  # 5s ago
+    controller._min_current_update_period = 30.0
+    controller._async_allocate_net_power = AsyncMock(return_value=True)
+    controller._async_synchronise_charge_current_update = AsyncMock()
+    event = make_net_power_event(
+        "sensor.net_power", make_state("100"), make_state("150")
+    )
+
+    await controller._async_handle_net_power_update(event)
+
+    assert controller._net_power_update_count == 1
+    controller._async_synchronise_charge_current_update.assert_not_awaited()
+
+
+async def test_net_power_update_synchronises_once_the_sync_period_has_elapsed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Once enough time has passed and at least one allocation happened, it synchronises."""
+    _patch_utcnow(monkeypatch, timestamp=200.0)
+    controller = make_bare_controller()
+    controller._sync_charge_current_time = 100.0  # 100s ago
+    controller._min_current_update_period = 30.0
+    controller._async_allocate_net_power = AsyncMock(return_value=True)
+    controller._async_synchronise_charge_current_update = AsyncMock()
+    event = make_net_power_event(
+        "sensor.net_power", make_state("100"), make_state("150")
+    )
+
+    await controller._async_handle_net_power_update(event)
+
+    controller._async_synchronise_charge_current_update.assert_awaited_once()
+    assert controller._net_power_update_count == 0
+
+
+async def test_net_power_update_does_not_synchronise_when_allocation_found_nothing_to_do(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Even past the sync period, a run with no running charger does not trigger a sync."""
+    _patch_utcnow(monkeypatch, timestamp=200.0)
+    controller = make_bare_controller()
+    controller._sync_charge_current_time = 100.0
+    controller._min_current_update_period = 30.0
+    controller._async_allocate_net_power = AsyncMock(return_value=False)
+    controller._async_synchronise_charge_current_update = AsyncMock()
+    event = make_net_power_event(
+        "sensor.net_power", make_state("100"), make_state("150")
+    )
+
+    await controller._async_handle_net_power_update(event)
+
+    controller._async_synchronise_charge_current_update.assert_not_awaited()
+    assert controller._net_power_update_count == 0
+
+
+async def test_net_power_update_swallows_a_synchronise_failure() -> None:
+    """A failure while synchronising is logged via self.caller, not raised to the event bus."""
+    controller = make_bare_controller()
+    controller._sync_charge_current_time = 0.0
+    controller._min_current_update_period = 0.0
+    controller._async_allocate_net_power = AsyncMock(return_value=True)
+    controller._async_synchronise_charge_current_update = AsyncMock(
+        side_effect=RuntimeError("boom")
+    )
+    event = make_net_power_event(
+        "sensor.net_power", make_state("100"), make_state("150")
+    )
+
+    # Must not raise despite the synchronise call failing.
+    await controller._async_handle_net_power_update(event)
+
+
+# ----------------------------------------------------------------------------
+# check_weather_provider() -- subscribe/unsubscribe state machine
+#
+# Only ever called for the Global Defaults device's controller (see
+# SolarChargerCoordinator._async_periodic_maintenance()'s dispatch).
+# ----------------------------------------------------------------------------
+def test_weather_provider_none_and_not_tracking_is_a_noop() -> None:
+    """No weather provider configured, and nothing was tracked: nothing to do."""
+    tracker = make_fake_tracker()
+    controller = make_bare_controller(tracker=tracker, weather_provider=None)
+
+    controller.check_weather_provider()
+
+    tracker.untrack_weather_update.assert_not_called()
+    tracker.track_weather_update.assert_not_called()
+
+
+def test_weather_provider_removed_unsubscribes() -> None:
+    """A previously configured provider being cleared unsubscribes tracking."""
+    tracker = make_fake_tracker()
+    controller = make_bare_controller(tracker=tracker, weather_provider=None)
+    controller._weather_provider = "weather.home"
+    controller._tracking_weather = True
+
+    controller.check_weather_provider()
+
+    tracker.untrack_weather_update.assert_called_once()
+    assert controller._tracking_weather is False
+    assert controller._weather_provider is None
+
+
+def test_weather_provider_newly_configured_subscribes() -> None:
+    """A provider configured for the first time starts tracking."""
+    tracker = make_fake_tracker()
+    controller = make_bare_controller(tracker=tracker, weather_provider="weather.home")
+    controller._weather_provider = None
+    controller._tracking_weather = False
+
+    controller.check_weather_provider()
+
+    tracker.track_weather_update.assert_called_once()
+    assert controller._tracking_weather is True
+    assert controller._weather_provider == "weather.home"
+
+
+def test_weather_provider_unchanged_does_not_resubscribe() -> None:
+    """The same provider still configured does not tear down and rebuild tracking."""
+    tracker = make_fake_tracker()
+    controller = make_bare_controller(tracker=tracker, weather_provider="weather.home")
+    controller._weather_provider = "weather.home"
+    controller._tracking_weather = True
+
+    controller.check_weather_provider()
+
+    tracker.untrack_weather_update.assert_not_called()
+    tracker.track_weather_update.assert_not_called()
+
+
+def test_weather_provider_changed_resubscribes_to_the_new_one() -> None:
+    """Switching providers unsubscribes the old one and subscribes the new one."""
+    tracker = make_fake_tracker()
+    controller = make_bare_controller(
+        tracker=tracker, weather_provider="weather.other_home"
+    )
+    controller._weather_provider = "weather.home"
+    controller._tracking_weather = True
+
+    controller.check_weather_provider()
+
+    tracker.untrack_weather_update.assert_called_once()
+    tracker.track_weather_update.assert_called_once()
+    assert controller._weather_provider == "weather.other_home"
+
+
+def test_weather_tracking_falls_back_to_untracked_when_tracker_rejects_it() -> None:
+    """If the tracker fails to subscribe, the provider is not recorded as tracked."""
+    tracker = make_fake_tracker(track_weather_update=Mock(return_value=False))
+    controller = make_bare_controller(tracker=tracker, weather_provider="weather.home")
+    controller._weather_provider = None
+    controller._tracking_weather = False
+
+    controller.check_weather_provider()
+
+    assert controller._tracking_weather is False
+    assert controller._weather_provider is None
