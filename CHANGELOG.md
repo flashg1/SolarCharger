@@ -7,7 +7,8 @@
 ### New feature
 - Added user interface card.
 ### Improvement
-- Refactored how most internal entity IDs are requested by caching the IDs in single dictionary.
+- Refactored coordinator. Moved weather and allocator to global default subentry device.
+- Refactored sc_option_state on how most internal entity IDs are requested by caching the IDs in single dictionary.
 - Moved charge limit/end time entities from global defaults to local internal entities.
 
 ## v0.11.0 2026-08-29
