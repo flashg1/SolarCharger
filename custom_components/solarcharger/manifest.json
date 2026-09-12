@@ -17,6 +17,7 @@
     "ping",
     "mqtt",
     "esphome",
+    "http",
     "tesla_custom",
     "tesla_fleet",
     "tessie",
