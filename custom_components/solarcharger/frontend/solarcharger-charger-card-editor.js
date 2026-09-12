@@ -78,9 +78,15 @@ class SolarchargerChargerCardEditor extends HTMLElement {
         ev.stopPropagation();
         const deviceId = ev.detail.value.device_id;
         const device = this._hass.devices[deviceId];
-        // Persist the device's current display name, not its registry ID --
-        // see the file header comment for why.
-        const newConfig = { device_name: device ? device.name_by_user || device.name : "" };
+        // Merge into the existing config (preserving "type" and anything
+        // else the dialog already put there) rather than replacing it
+        // outright -- _form.data below deliberately only carries device_id
+        // (the field our schema manages), so ha-form's echoed value doesn't
+        // include "type", and building newConfig from scratch would silently
+        // drop it. Persist the device's current display name, not its
+        // registry ID -- see the file header comment for why.
+        const newConfig = { ...this._config, device_name: device ? device.name_by_user || device.name : "" };
+        delete newConfig.device_id;
         this._config = newConfig;
         // Standard Lovelace card-editor contract: bubble the edited config
         // up to the card-config dialog via a "config-changed" event.
