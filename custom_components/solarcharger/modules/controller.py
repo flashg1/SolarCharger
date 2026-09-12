@@ -685,6 +685,7 @@ class ChargeController(ScOptionState):
         """Reset charge limit defaults."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
+        # Check just in case.
         if not (self._control.entities.numbers and self._control.entities.times):
             return
 
@@ -1017,7 +1018,7 @@ class ChargeController(ScOptionState):
             else:
                 self.charge_control.switch_charge = True
                 await self.async_start_charger(self.charge_control)
-        else:  # noqa: PLR5501
+        else:
             if self.charge_control.switch_charge:
                 self.charge_control.switch_charge = False
                 await self.async_stop_charger(self.charge_control)
@@ -1191,7 +1192,6 @@ class ChargeController(ScOptionState):
         if self._subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
             # Abort charge task if running.
             await self._async_abort_solar_charger(None)
-
             await self._charger.async_unload()
 
         # Unload tracker.
