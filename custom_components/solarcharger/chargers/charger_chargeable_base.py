@@ -19,8 +19,6 @@ from ..const import (
     ENTITY_DEVICE_UPDATE_HA_BUTTON,
     ENTITY_DEVICE_WAKE_UP_BUTTON,
     NUMBER_CHARGER_MAX_CURRENT,
-    NUMBER_DEVICE_MAX_CHARGE_LIMIT,
-    NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     OPTION_CHARGER_CHARGING_STATE_LIST,
     OPTION_CHARGER_CONNECT_STATE_LIST,
     OPTION_DEVICE_LOCATION_STATE_LIST,
@@ -140,12 +138,8 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     ) -> None:
         """Set chargeable device charge limit."""
 
-        min_limit = self.option_get_entity_number_or_abort(
-            NUMBER_DEVICE_MIN_CHARGE_LIMIT, val_dict=val_dict
-        )
-        max_limit = self.option_get_entity_number_or_abort(
-            NUMBER_DEVICE_MAX_CHARGE_LIMIT, val_dict=val_dict
-        )
+        min_limit = self.get_min_charge_limit(val_dict=val_dict)
+        max_limit = self.get_max_charge_limit(val_dict=val_dict)
         if not min_limit <= charge_limit <= max_limit:
             msg = f"Invalid charge limit {charge_limit}. Must be between {min_limit} and {max_limit} %%."
             raise ValueError(msg)

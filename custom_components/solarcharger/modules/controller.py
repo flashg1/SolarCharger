@@ -1,13 +1,13 @@
-# ruff: noqa: TRY401, TID252
+# ruff: noqa: TRY401, TID252, PLR5501
 """Module to manage the charging process and entity subscriptions."""
 
 import asyncio
 from asyncio import Task
 from collections.abc import Callable, Coroutine
-from datetime import datetime
+from datetime import datetime, time
 import inspect
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from propcache.api import cached_property
 
@@ -19,22 +19,34 @@ from homeassistant.core import (
     EventStateChangedData,
     HomeAssistant,
     State,
+    callback,
 )
 from homeassistant.helpers.typing import NoEventData
+from homeassistant.util.dt import utcnow
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
 from ..const import (
+    DEFAULT_CHARGE_LIMIT_MAP,
+    DELTA_CHARGER_CURRENT_UPDATE_PERIOD,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     SENSOR_INSTANCE_COUNT,
+    SENSOR_SYNC_UPDATE,
+    SENSOR_WEATHER_FORECAST,
+    SUBENTRY_CHARGER_TYPES,
+    SUBENTRY_TYPE_DEFAULTS,
     SWITCH_CHARGE,
+    WEEKLY_CHARGE_ENDTIMES,
 )
 from ..helpers.utils import get_is_sun_rising, get_sun_elevation, log_is_event_loop
 from ..models.model_charge_control import ChargeControl
 from ..models.model_schedule_data import ScheduleData
 from ..state_machine.solar_charge import SolarCharge
 from .tracker import Tracker
+
+if TYPE_CHECKING:
+    from ..models.model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
@@ -93,6 +105,24 @@ class ChargeController(ScOptionState):
 
         self._is_updated_today_tomorrow_schedule: bool = False
 
+        #######################################################
+        # Global defaults device only.
+        #######################################################
+        # Started tracking weather
+        self._weather_provider: str = None
+        self._tracking_weather: bool = False
+
+        # Required by Allocator
+        self._device_controls: dict[str, DeviceControl]
+        # Charge current update period.
+        self._current_update_period: float = 0
+        # Slightly smaller charge current update period to allow for variation in net power update interval.
+        self._min_current_update_period: float = 0
+        # Sync charge current time.
+        self._sync_charge_current_time: float = 0  # UTC time
+        # Net power update count
+        self._net_power_update_count: int = 0
+
     # ----------------------------------------------------------------------------
     @cached_property
     def charge_control(self) -> ChargeControl:
@@ -113,6 +143,239 @@ class ChargeController(ScOptionState):
         """Set whether need to check charge schedule."""
         self._is_updated_today_tomorrow_schedule = value
 
+    # ----------------------------------------------------------------------------
+    # Global defaults functions
+    # ----------------------------------------------------------------------------
+    # Weather provider
+    # ----------------------------------------------------------------------------
+    def _update_sensor_attribute(
+        self, config_item: str, state_value: str, attributes: dict[str, Any] | None
+    ) -> None:
+        """Update attribute sensor."""
+
+        try:
+            # Global defaults subentry device
+            control = self._device_controls[self._subentry.subentry_id]
+
+            assert control.controller.charge_control.entities.sensors is not None
+            control.controller.charge_control.entities.sensors[
+                config_item
+            ].set_complete_state(state_value, attributes)
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to update attribute sensor data: %s",
+                self.caller,
+                e,
+            )
+
+    # ----------------------------------------------------------------------------
+    async def _async_update_weather_sensor(self, entity_id: str) -> None:
+        """Update weather sensor."""
+
+        state_obj = self._hass.states.get(entity_id)
+        if not state_obj:
+            return
+
+        # The attributes has current weather condition but no daily data, so get
+        # daily data separately below.
+        attributes = dict(state_obj.attributes)
+
+        # Request weather forecast data correctly via the standard service engine
+        try:
+            # Setting blocking=True with return_response=True satisfies HA execution rules
+            response = await self._hass.services.async_call(
+                domain="weather",
+                service="get_forecasts",
+                service_data={"type": "daily"},
+                target={"entity_id": entity_id},
+                blocking=True,  # Required when returning a response
+                return_response=True,  # Tells HA to expect data payload mapping
+            )
+
+            # Safely extract and map the forecast list to attributes
+            if response and entity_id in response:
+                attributes["daily_forecast"] = response[entity_id].get("forecast", [])
+            else:
+                attributes["daily_forecast"] = []
+
+        except Exception as e:
+            _LOGGER.warning(
+                "%s: Failed get_forecasts: %s: %s", self.caller, entity_id, e
+            )
+
+        # Assign and commit the newly bundled metadata state
+        self._update_sensor_attribute(
+            SENSOR_WEATHER_FORECAST, state_obj.state, attributes
+        )
+
+    # ----------------------------------------------------------------------------
+    @callback
+    def _async_handle_weather_update(
+        self, event: Event[EventStateChangedData] | None
+    ) -> None:
+        """Handle weather update."""
+
+        entity_id = self.get_weather_provider()
+        if entity_id is not None:
+            self._hass.async_create_task(self._async_update_weather_sensor(entity_id))
+
+    # ----------------------------------------------------------------------------
+    def _subscribe_weather(self, weather_provider: str) -> None:
+        """Subscribe weather updates."""
+
+        if self._tracker.track_weather_update(self._async_handle_weather_update):
+            # Populate weather sensor with data.
+            self._async_handle_weather_update(None)
+            self._weather_provider = weather_provider
+            self._tracking_weather = True
+        else:
+            self._weather_provider = None
+            self._tracking_weather = False
+
+    # ----------------------------------------------------------------------------
+    def _unsubscribe_weather(self) -> None:
+        """Unsubscribe weather updates."""
+
+        self._tracker.untrack_weather_update()
+        self._update_sensor_attribute(SENSOR_WEATHER_FORECAST, STATE_UNKNOWN, None)
+        self._weather_provider = None
+        self._tracking_weather = False
+
+    # ----------------------------------------------------------------------------
+    def check_weather_provider(self) -> None:
+        """Track weather if weather provider is defined."""
+
+        entity_id = self.get_weather_provider()
+        if entity_id is not None:
+            if entity_id != self._weather_provider and self._tracking_weather:
+                self._unsubscribe_weather()
+
+            if not self._tracking_weather:
+                self._subscribe_weather(entity_id)
+
+        else:
+            if self._tracking_weather:
+                self._unsubscribe_weather()
+
+    # ----------------------------------------------------------------------------
+    # Allocator
+    # ----------------------------------------------------------------------------
+    async def _async_allocate_net_power(self) -> bool:
+        """Execute an update cycle."""
+        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+        ok: bool = False
+
+        try:
+            ok = await self._allocator.async_allocate_net_power()
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to allocate net power: %s",
+                self.caller,
+                e,
+            )
+
+        return ok
+
+    # ----------------------------------------------------------------------------
+    async def _async_synchronise_charge_current_update(self) -> None:
+        """Synchronise charge current update for all chargers."""
+
+        try:
+            # Coordinator has global defaults subentry
+            control = self._device_controls[self._subentry.subentry_id]
+
+            assert control.controller.charge_control.entities.sensors is not None
+            control.controller.charge_control.entities.sensors[
+                SENSOR_SYNC_UPDATE
+            ].set_state(datetime.now().astimezone())
+
+            self._sync_charge_current_time = utcnow().timestamp()
+
+        except Exception as e:
+            _LOGGER.exception(
+                "%s: Failed to synchronise charge current update: %s",
+                self.caller,
+                e,
+            )
+
+    # ----------------------------------------------------------------------------
+    # 2025-11-02 09:01:48.009 INFO (MainThread) [custom_components.solarcharger.chargers.controller] tesla_custom_tesla23m3:
+    # entity_id=number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power,
+    #
+    # old_state=<state number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power=-500.0; min=-23000.0, max=23000.0, step=1.0, mode=box,
+    # unit_of_measurement=W, device_class=power, icon=mdi:flash, friendly_name=tesla_custom Tesla23m3 Allocated power @ 2025-11-02T20:00:32.962356+11:00>,
+    #
+    # new_state=<state number.solarcharger_tesla_custom_tesla23m3_charger_allocated_power=-200.0; min=-23000.0, max=23000.0, step=1.0, mode=box,
+    # unit_of_measurement=W, device_class=power, icon=mdi:flash, friendly_name=tesla_custom Tesla23m3 Allocated power @ 2025-11-02T20:01:48.008211+11:00>
+    async def _async_handle_net_power_update(
+        self, event: Event[EventStateChangedData]
+    ) -> None:
+        """Use net power update event to synchronise charge current update when reaching update period."""
+
+        data = event.data
+        entity_id = data["entity_id"]
+        old_state = data["old_state"]
+        new_state = data["new_state"]
+
+        if new_state is not None:
+            # Should use last_updated_timestamp instead of last_changed_timestamp since value might not have changed.
+            # last_updated_timestamp is updated when state is updated, while last_changed_timestamp is only updated when state changes.
+            # duration_since_last_sync = (
+            #     new_state.last_updated_timestamp - self._sync_charge_current_time
+            # )
+
+            # Note that last_updated_timestamp and last_changed_timestamp are in UTC.
+            # For adhering to current_update_period.
+            duration_since_last_sync = (
+                utcnow().timestamp() - self._sync_charge_current_time
+            )
+
+            _LOGGER.debug(
+                "Net power update: duration_since_last_sync=%s, new_state=%s, old_state=%s, entity_id=%s",
+                duration_since_last_sync,
+                new_state.state,
+                old_state.state,
+                entity_id,
+            )
+
+            try:
+                # Allocate power for median net allocated power calculation.
+                if await self._async_allocate_net_power():
+                    self._net_power_update_count += 1
+
+                # Synchronise charge current update for all chargers.
+                # During testing with 10s period for both net power and current, not every
+                # net power update trigger a current update due to period variation.
+                if (
+                    self._net_power_update_count > 0
+                    and duration_since_last_sync >= self._min_current_update_period
+                ):
+                    self._net_power_update_count = 0
+                    await self._async_synchronise_charge_current_update()
+
+            except Exception as e:
+                _LOGGER.exception(
+                    "%s: Failed to synchronise charge current update for net power %s W: %s",
+                    self.caller,
+                    new_state.state,
+                    e,
+                )
+
+    # ----------------------------------------------------------------------------
+    def _track_net_power_update(self) -> None:
+        """Track net power update."""
+
+        self._allocator.init_allocator()
+        ok = self._tracker.track_net_power_update(self._async_handle_net_power_update)
+        if not ok:
+            _LOGGER.error("%s: Invalid net power sensor", self.caller)
+            # raise EntityExceptionError("Invalid net power sensor")
+
+    # ----------------------------------------------------------------------------
+    # Charger functions
+    # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
     # Call HA to turn on or off the actual switch
     # ----------------------------------------------------------------------------
@@ -414,6 +677,50 @@ class ChargeController(ScOptionState):
 
         self._tracker.untrack_charge_limit_schedule()
         self._tracker.untrack_charge_endtime_schedule()
+
+    # ----------------------------------------------------------------------------
+    # Button actions
+    # ----------------------------------------------------------------------------
+    async def async_reset_charge_limit_default(self) -> None:
+        """Reset charge limit defaults."""
+        log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
+
+        _LOGGER.info(
+            "%s: Resetting charge limit and charge end time defaults",
+            self.caller,
+        )
+
+        min_charge_limit = self.get_min_charge_limit()
+        max_charge_limit = self.get_max_charge_limit()
+
+        # Set charge limits
+        for day_limit_default in DEFAULT_CHARGE_LIMIT_MAP:
+            # default_val = get_saved_option_value(
+            #     self._entry, subentry, day_limit_default, True
+            # )
+            default_val = self.option_get_entity_number_or_abort(day_limit_default)
+
+            day_limit = DEFAULT_CHARGE_LIMIT_MAP[day_limit_default]
+            if (
+                default_val is not None
+                and min_charge_limit <= default_val <= max_charge_limit
+            ):
+                await self._control.entities.numbers[day_limit].async_set_native_value(
+                    default_val
+                )
+            else:
+                _LOGGER.error(
+                    "%s: Cannot set default charge limit %s for %s, min_charge_limit=%s, max_charge_limit=%s",
+                    self.caller,
+                    default_val,
+                    day_limit,
+                    min_charge_limit,
+                    max_charge_limit,
+                )
+
+        # Set charge end times
+        for day_endtime in WEEKLY_CHARGE_ENDTIMES:
+            await self._control.entities.times[day_endtime].async_set_value(time.min)
 
     # ----------------------------------------------------------------------------
     # Switch actions
@@ -800,12 +1107,57 @@ class ChargeController(ScOptionState):
         self._tracker.remove_ha_started_callback()
 
     # ----------------------------------------------------------------------------
-    async def async_setup(self) -> None:
-        """Async setup of the ChargeController."""
 
-        # Load charger and tracker.
+    # ----------------------------------------------------------------------------
+    async def _async_activate_power_allocator(
+        self, event: Event[NoEventData] | None
+    ) -> None:
+
+        # coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+
+        # # device_controls must be initialised first since allocator needs to access device_controls.
+        # self._allocator = PowerAllocator(self._subentry, device_controls)
+        self._current_update_period = self.get_charger_current_update_period()
+        self._min_current_update_period = (
+            self._current_update_period
+            * (100 - DELTA_CHARGER_CURRENT_UPDATE_PERIOD)
+            / 100
+        )
+
+        _LOGGER.info(
+            "%s: current_update_period=%s, min_current_update_period=%s",
+            self.caller,
+            self._current_update_period,
+            self._min_current_update_period,
+        )
+
+        self._track_net_power_update()
+
+        # Remove HA started callback if exists
+        self._tracker.remove_ha_started_callback()
+
+    # ----------------------------------------------------------------------------
+    async def _async_init_global_defaults_device(
+        self, device_controls: dict[str, DeviceControl]
+    ) -> None:
+        """Init global defaults device."""
+
+        # device_controls must be initialised first since allocator needs to access device_controls.
+        from .allocator import PowerAllocator
+
+        self._device_controls = device_controls
+        self._allocator = PowerAllocator(self._subentry, device_controls)
+
+        if self._hass.state == CoreState.running:
+            await self._async_activate_power_allocator(None)
+        else:
+            self._tracker.on_ha_started(self._async_activate_power_allocator)
+
+    # ----------------------------------------------------------------------------
+    async def _async_init_charger_device(self) -> None:
+        """Init charger device."""
+
         await self._charger.async_setup()
-        await self._tracker.async_setup()
 
         self._tracker.on_ha_stop(self._async_abort_solar_charger)
 
@@ -815,12 +1167,29 @@ class ChargeController(ScOptionState):
             self._tracker.on_ha_started(self._async_activate_controller_switches)
 
     # ----------------------------------------------------------------------------
+    async def async_setup(self, device_controls: dict[str, DeviceControl]) -> None:
+        """Async setup of the ChargeController."""
+
+        # Load tracker.
+        await self._tracker.async_setup()
+
+        # Load charger.
+        if self._subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
+            await self._async_init_global_defaults_device(device_controls)
+
+        elif self._subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
+            await self._async_init_charger_device()
+
+    # ----------------------------------------------------------------------------
     async def async_unload(self) -> None:
         """Async unload of the ChargeController."""
 
-        # Abort charge task if running.
-        await self._async_abort_solar_charger(None)
+        # Unload charger.
+        if self._subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
+            # Abort charge task if running.
+            await self._async_abort_solar_charger(None)
 
-        # Unload charger and tracker.
-        await self._charger.async_unload()
+            await self._charger.async_unload()
+
+        # Unload tracker.
         await self._tracker.async_unload()

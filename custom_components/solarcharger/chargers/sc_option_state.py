@@ -32,6 +32,7 @@ from ..const import (
     NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_PRIORITY,
+    NUMBER_DEVICE_MAX_CHARGE_LIMIT,
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
@@ -1005,12 +1006,6 @@ class ScOptionState(ScConfigState):
         return self.get_datetime(self.sync_update_entity_id)
 
     # ----------------------------------------------------------------------------
-    def get_min_charge_limit(self) -> float:
-        """Get minimum charge limit."""
-
-        return self.option_get_entity_number_or_abort(NUMBER_DEVICE_MIN_CHARGE_LIMIT)
-
-    # ----------------------------------------------------------------------------
     def get_power_monitor_duration(self) -> float:
         """Get power monitor duration."""
 
@@ -1036,6 +1031,28 @@ class ScOptionState(ScConfigState):
 
     # ----------------------------------------------------------------------------
     # Local device control entities: Readers
+    # ----------------------------------------------------------------------------
+    def get_min_charge_limit(
+        self,
+        val_dict: ConfigValueDict | None = None,
+    ) -> float:
+        """Get minimum charge limit."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_DEVICE_MIN_CHARGE_LIMIT, val_dict
+        )
+
+    # ----------------------------------------------------------------------------
+    def get_max_charge_limit(
+        self,
+        val_dict: ConfigValueDict | None = None,
+    ) -> float:
+        """Get maximum charge limit."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_DEVICE_MAX_CHARGE_LIMIT, val_dict
+        )
+
     # ----------------------------------------------------------------------------
     def get_charger_priority(self) -> int:
         """Get charger priority."""
