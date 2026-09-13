@@ -3,6 +3,12 @@
 PowerAllocator only ever touches DeviceControl.controller.solar_charge and
 .controller.charge_control.instance_count, so tests use small fakes for those
 instead of constructing real ChargeController/HomeAssistant objects.
+It also calls the module-level async_set_delta_allocated_power() and
+async_update_sensor_state() helpers directly (both of which read
+charge_control.entities.sensors, an attribute FakeChargeControl deliberately
+doesn't have) -- the allocation_calls fixture below monkeypatches both away
+rather than growing FakeChargeControl a fake entities/sensors structure just
+to satisfy them.
 
 ConfigOptionsFlowHandler only ever touches config_entry.options/.subentries/
 .entry_id and self.hass.data, so tests use a similarly minimal fake config
@@ -266,6 +272,17 @@ def allocation_calls_fixture(monkeypatch: pytest.MonkeyPatch) -> dict[int, float
         allocator_module,
         "async_set_delta_allocated_power",
         fake_async_set_delta_allocated_power,
+    )
+
+    async def fake_async_update_sensor_state(
+        charge_control: FakeChargeControl, config_item: str, new_state: object
+    ) -> bool:
+        return True
+
+    monkeypatch.setattr(
+        allocator_module,
+        "async_update_sensor_state",
+        fake_async_update_sensor_state,
     )
     return calls
 
