@@ -306,12 +306,11 @@ class SolarChargerCoordinator:
         """Set up the coordinator and its managed components."""
         log_is_event_loop(_LOGGER, self.__class__.__name__, inspect.currentframe())
 
+        # Global default entities MUST be created first before running the coordinator.setup().
+        # Otherwise cannot get entity config values here.
         for control in self.device_controls.values():
             # Set up both global defaults and charger devices.
             await control.controller.async_setup(self.device_controls)
-
-        # Global default entities MUST be created first before running the coordinator.setup().
-        # Otherwise cannot get entity config values here.
 
         # Update weather sensor now because the one in periodic maintenance is delayed by 60 sec.
         global_defaults_control = self.device_controls[

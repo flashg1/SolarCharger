@@ -142,7 +142,7 @@ class ChargeController(ScOptionState):
         self._is_updated_today_tomorrow_schedule = value
 
     # ----------------------------------------------------------------------------
-    # Global defaults functions
+    # Global defaults device functions
     # ----------------------------------------------------------------------------
     # Weather provider
     # ----------------------------------------------------------------------------
@@ -372,7 +372,7 @@ class ChargeController(ScOptionState):
             # raise EntityExceptionError("Invalid net power sensor")
 
     # ----------------------------------------------------------------------------
-    # Charger functions
+    # Charger device functions
     # ----------------------------------------------------------------------------
     # ----------------------------------------------------------------------------
     # Call HA to turn on or off the actual switch
@@ -1166,6 +1166,7 @@ class ChargeController(ScOptionState):
         """Async setup of the ChargeController."""
 
         # Save device controls to be used by global defaults device only.
+        # For weather provider and power allocator.
         self._device_controls = device_controls
 
         # Load tracker.
