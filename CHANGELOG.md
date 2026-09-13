@@ -5,7 +5,7 @@
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.10.7 or prior.
 ### Fix
 ### New feature
-- Added user interface card.
+- Added SolarCharger user interface card.
 ### Improvement
 - Refactored coordinator. Moved weather and allocator to global default subentry device.
 - Refactored sc_option_state on how most internal entity IDs are requested by caching the IDs in single dictionary.
