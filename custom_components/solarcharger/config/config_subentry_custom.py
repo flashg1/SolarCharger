@@ -26,7 +26,7 @@ from ..const import (
     OPTION_CHARGER_NAME,
     OPTION_GLOBAL_DEFAULTS_ID,
     SENSOR,
-    SENSOR_DELTA_ALLOCATED_POWER,
+    SENSOR_NET_ALLOCATED_POWER,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_ID,
     SUBENTRY_CHARGER_DEVICE_NAME,
@@ -163,7 +163,7 @@ async def async_create_custom_device(
     custom_charger_config_name = slugify(f"{custom_charger_display_name}")
 
     global_defaults_net_power = compose_entity_id(
-        SENSOR, OPTION_GLOBAL_DEFAULTS_ID, SENSOR_DELTA_ALLOCATED_POWER
+        SENSOR, OPTION_GLOBAL_DEFAULTS_ID, SENSOR_NET_ALLOCATED_POWER
     )
     global_defaults_device_entry: DeviceEntry | None = _get_device_entry(
         hass, global_defaults_net_power

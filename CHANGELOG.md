@@ -3,10 +3,14 @@
 ## v0.12.0 2026-09-11
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.10.7 or prior.
+- Removed global defaults "Delta allocated power".
+- Added global defaults "Net allocated power" which shows power available to SC for allocation.
+- Enabled local charge limit and end time for each device.
 ### Fix
 ### New feature
 - Added SolarCharger user interface card.
 ### Improvement
+- Assigned dedicated icons for most diagnostic entities.
 - Refactored coordinator. Moved weather and allocator to global default subentry device.
 - Refactored sc_option_state on how most internal entity IDs are requested by caching the IDs in single dictionary.
 - Moved charge limit/end time entities from global defaults to local internal entities.

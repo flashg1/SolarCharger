@@ -10,10 +10,11 @@ from ..const import (
     MAX_SPEED_CHARGE_PRIORITY,
     MAX_SPEED_CHARGE_PRIORITY_WEIGHT,
     OPTION_GLOBAL_DEFAULTS_ID,
+    SENSOR_NET_ALLOCATED_POWER,
     USER_DEVICE_PRIORITY_START,
     RunState,
 )
-from ..helpers.general import async_set_delta_allocated_power
+from ..helpers.general import async_set_delta_allocated_power, async_update_sensor_state
 from ..models.model_allocation import AllocationBook, AllocationGroup, PowerAllocation
 from ..models.model_device_control import DeviceControl
 
@@ -960,8 +961,9 @@ class PowerAllocator:
 
             if allocation_book.total_instance > 0:
                 # FYI only. Global defaults entity only showing power available to SC for allocation.
-                await async_set_delta_allocated_power(
+                await async_update_sensor_state(
                     self._global_defaults_control.controller.charge_control,
+                    SENSOR_NET_ALLOCATED_POWER,
                     allocation_book.gross_power,
                 )
 

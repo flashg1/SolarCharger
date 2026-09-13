@@ -8,7 +8,7 @@ from homeassistant.components.button import ButtonEntity, ButtonEntityDescriptio
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import BUTTON, BUTTON_RESET_CHARGE_LIMIT_AND_TIME, DOMAIN, ICON_START
+from .const import BUTTON, BUTTON_RESET_CHARGE_LIMIT_AND_TIME, DOMAIN, ICON_UPDATE
 from .entity import SolarChargerEntity, SolarChargerEntityType, is_create_entity
 from .models.model_device_control import DeviceControl
 from .modules.coordinator import SolarChargerCoordinator
@@ -58,7 +58,7 @@ class SolarChargerButtonActionEntity(SolarChargerButtonEntity):
 
     # _entity_key = CONTROL_CHARGE_BUTTON
     # _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = ICON_START
+    # _attr_icon = ICON_START
     # _attr_entity_registry_enabled_default = False
 
     def __init__(
@@ -121,6 +121,7 @@ async def async_setup_entry(
             SolarChargerEntityType.TYPE_LOCAL_ONLY,
             ButtonEntityDescription(
                 key=BUTTON_RESET_CHARGE_LIMIT_AND_TIME,
+                icon=ICON_UPDATE,
             ),
         ),
     )

@@ -26,7 +26,6 @@ from .const import (
     DOMAIN_TESLEMETRY,
     DOMAIN_TESSIE,
     DOMAIN_VOLVO,
-    ICON,
     MANUFACTURER,
     SUBDOMAIN_ESPHOME_TESLA_BLE,
     SUBDOMAIN_MQTT_TESLA_BLE,
@@ -219,7 +218,7 @@ def is_create_entity(
 class SolarChargerEntity(Entity):
     """SolarCharger base entity class."""
 
-    _attr_icon = ICON
+    # _attr_icon = ICON_FLASH
     _attr_has_entity_name = True
 
     _entity_key: str
