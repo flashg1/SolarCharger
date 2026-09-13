@@ -89,8 +89,8 @@ def make_bare_coordinator(
     coordinator = SolarChargerCoordinator.__new__(SolarChargerCoordinator)
     coordinator._hass = hass
     coordinator._entry = entry
-    coordinator._subentry = subentry
-    coordinator.caller = "Coordinator"
+    coordinator._global_defaults_subentry = subentry
+    coordinator._caller = "Coordinator"
     coordinator.device_controls = device_controls or {}
     coordinator._unsub = []
 

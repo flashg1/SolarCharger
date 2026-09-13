@@ -1074,8 +1074,11 @@ class ChargeController(ScOptionState):
         """Instantiates the power allocator and track net power updates."""
 
         # coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+        # Deferred import: allocator.py imports DeviceControl, which imports
+        # ChargeController from this module -- a top-level import here would
+        # be a circular import.
         # device_controls must be initialised first since allocator needs to access device_controls.
-        from .allocator import PowerAllocator
+        from .allocator import PowerAllocator  # noqa: PLC0415
 
         self._allocator = PowerAllocator(self._subentry, self._device_controls)
 

@@ -283,7 +283,7 @@ class SolarChargerCoordinator:
         except Exception as e:
             _LOGGER.exception(
                 "%s: Failed periodic maintenance: %s",
-                self.caller,
+                self._caller,
                 e,
             )
 
