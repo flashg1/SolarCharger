@@ -18,23 +18,31 @@
  * alternative (searchable in "+ Add Card"), see solarcharger-charger-card.js,
  * which reuses the exact same grouping logic from solarcharger-shared.js.
  *
- * Per charger device, four blocks, built entirely from two stable signals
+ * Per charger device, five blocks, built entirely from two stable signals
  * this integration already sets on every entity (see entity.py):
  *   - translation_key, which always equals the Python config_item constant
  *     (eg. "charge_limit_monday"), independent of user-renamed entity_ids.
  *   - entity_category ("config" / "diagnostic" / none), which the backend
  *     assigns per entity.
  *
- *   1. Schedule    -- translation_key matches charge_limit_<weekday> /
+ * Controls/Sensors/Diagnostic mirror HA's own native device-info page
+ * grouping exactly (split by entity_category, then domain) -- Schedule and
+ * Advanced settings have no native equivalent and are specific to this card:
+ *
+ *   1. Controls    -- entities with entity_category unset (HA's "primary"
+ *                     category), domain switch/select/number/button, ie.
+ *                     day-to-day toggles and setpoints.
+ *   2. Sensors     -- remaining entity_category-unset sensor/datetime
+ *                     entities.
+ *   3. Diagnostic  -- remaining entity_category "diagnostic" entities, of
+ *                     any domain.
+ *   4. Schedule    -- translation_key matches charge_limit_<weekday> /
  *                     charge_endtime_<weekday>, rendered Monday->Sunday in a
  *                     fixed order (never alphabetical -- "Friday" sorts
- *                     before "Monday" and would silently scramble the week).
- *   2. Controls    -- remaining entities with entity_category unset
- *                     (HA's "primary" category), domain switch/select/number/
- *                     button, ie. day-to-day toggles and setpoints.
- *   3. Status      -- remaining sensor/datetime entities: primary ones
- *                     first, then entity_category "diagnostic" ones.
- *   4. Advanced settings -- remaining entity_category "config" entities,
+ *                     before "Monday" and would silently scramble the week),
+ *                     plus the "Reset charge limit and time" button as its
+ *                     last row.
+ *   5. Advanced settings -- remaining entity_category "config" entities,
  *                     collapsed by default via expander-card. Skipped
  *                     entirely for a device with nothing left in it.
  *

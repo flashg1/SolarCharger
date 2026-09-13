@@ -2,8 +2,9 @@
  * Shared grouping/rendering logic for the SolarCharger Lovelace view strategy
  * (solarcharger-strategy.js) and the single-device card
  * (solarcharger-charger-card.js). Both need to turn one device's entities
- * into the same Schedule/Controls/Status/Advanced-settings card layout, so
- * that logic lives here once rather than being kept in sync in two places.
+ * into the same Controls/Sensors/Diagnostic/Schedule/Advanced-settings card
+ * layout, so that logic lives here once rather than being kept in sync in
+ * two places.
  *
  * See solarcharger-strategy.js's header comment for the full design
  * rationale (translation_key / entity_category signals, why Global Defaults
@@ -11,7 +12,11 @@
  * the "why".
  */
 
+import "./solarcharger-schedule-row.js";
+
 export const SOLARCHARGER_DOMAIN = "solarcharger";
+
+const RESET_CHARGE_LIMIT_TRANSLATION_KEY = "reset_charge_limit_and_time";
 
 export const WEEKDAYS = [
   "monday",
@@ -122,60 +127,65 @@ export function getChargerDevices(hass) {
 /** Split one device's entities into the weekly schedule rows plus the four card buckets. */
 function groupDeviceEntities(entities) {
   const byTranslationKey = new Map(entities.map((e) => [e.translation_key, e]));
-  const limitRows = [];
-  const endtimeRows = [];
+  const scheduleRows = [];
   const scheduleEntityIds = new Set();
 
   for (const day of WEEKDAYS) {
     const limit = byTranslationKey.get(`charge_limit_${day}`);
     const endtime = byTranslationKey.get(`charge_endtime_${day}`);
-    if (limit) {
-      limitRows.push({ entity: limit.entity_id, name: capitalize(day) });
-      scheduleEntityIds.add(limit.entity_id);
-    }
-    if (endtime) {
-      endtimeRows.push({ entity: endtime.entity_id, name: capitalize(day) });
-      scheduleEntityIds.add(endtime.entity_id);
-    }
+    const defaultLimit = byTranslationKey.get(`default_charge_limit_${day}`);
+    if (!limit && !endtime && !defaultLimit) continue;
+
+    scheduleRows.push({
+      day: capitalize(day),
+      limitEntityId: limit ? limit.entity_id : null,
+      endtimeEntityId: endtime ? endtime.entity_id : null,
+      defaultLimitEntityId: defaultLimit ? defaultLimit.entity_id : null,
+    });
+    if (limit) scheduleEntityIds.add(limit.entity_id);
+    if (endtime) scheduleEntityIds.add(endtime.entity_id);
+    if (defaultLimit) scheduleEntityIds.add(defaultLimit.entity_id);
   }
 
-  const rest = entities.filter((e) => !scheduleEntityIds.has(e.entity_id));
+  const resetButton = entities.find(
+    (e) => e.translation_key === RESET_CHARGE_LIMIT_TRANSLATION_KEY
+  );
+  const rest = entities.filter(
+    (e) => !scheduleEntityIds.has(e.entity_id) && e !== resetButton
+  );
   const isStatusDomain = (e) => ["sensor", "datetime"].includes(entityDomain(e));
 
   const controls = rest
     .filter((e) => !e.entity_category && !isStatusDomain(e))
     .sort(byLabel);
-  const statusPrimary = rest.filter((e) => !e.entity_category && isStatusDomain(e));
-  const statusDiagnostic = rest.filter((e) => e.entity_category === "diagnostic");
-  const status = [...statusPrimary, ...statusDiagnostic].sort(byLabel);
+  const sensors = rest.filter((e) => !e.entity_category && isStatusDomain(e)).sort(byLabel);
+  const diagnostic = rest.filter((e) => e.entity_category === "diagnostic").sort(byLabel);
   const advanced = rest.filter((e) => e.entity_category === "config").sort(byLabel);
 
-  return { limitRows, endtimeRows, controls, status, advanced };
+  return { scheduleRows, resetButton, controls, sensors, diagnostic, advanced };
 }
 
 /** Shape the Advanced settings card correctly for a container type (expander-card)
- * vs. the plain built-in "entities" card, which has no concept of child cards. */
+ * vs. the plain built-in "grid" card, which has no concept of a collapsible title. */
 function buildAdvancedCard(advancedEntities) {
-  const entitiesCard = {
-    type: "entities",
-    entities: advancedEntities.map(toEntityRow),
-  };
-
   if (ADVANCED_CARD_TYPE === "entities") {
-    return { ...entitiesCard, title: "Advanced settings" };
+    return buildTileGrid("Advanced settings", advancedEntities, 2);
   }
 
   return {
     type: ADVANCED_CARD_TYPE,
     title: "Advanced settings",
     expanded: false,
-    cards: [entitiesCard],
+    cards: [buildTileGrid(null, advancedEntities, 2)],
   };
 }
 
-/** Build the full Schedule/Controls/Status/Advanced-settings card config for one device. */
+/** Build the full Controls/Sensors/Diagnostic/Schedule/Advanced-settings card config
+ * for one device -- Controls/Sensors/Diagnostic mirror HA's own native device-page
+ * grouping (split by entity_category, then domain); Charge schedule has no native
+ * equivalent and is built separately below. */
 export function buildChargerSection(device, entities) {
-  const { limitRows, endtimeRows, controls, status, advanced } =
+  const { scheduleRows, resetButton, controls, sensors, diagnostic, advanced } =
     groupDeviceEntities(entities);
 
   const cards = [{ type: "heading", heading: device.name_by_user || device.name }];
@@ -184,28 +194,38 @@ export function buildChargerSection(device, entities) {
     cards.push(buildTileGrid("Controls", controls, 2));
   }
 
-  if (limitRows.length || endtimeRows.length) {
-    cards.push({
-      type: "grid",
-      columns: 2,
-      square: false,
-      title: "Charge schedule",
-      cards: [
-        { type: "entities", title: "Limit", entities: limitRows },
-        { type: "entities", title: "End time", entities: endtimeRows },
-      ],
-    });
+  if (sensors.length) {
+    cards.push(buildTileGrid("Sensors", sensors, 2));
   }
 
-  if (status.length) {
-    cards.push(buildTileGrid("Status", status, 2));
+  if (diagnostic.length) {
+    cards.push(buildTileGrid("Diagnostic", diagnostic, 2));
+  }
+
+  if (scheduleRows.length) {
+    cards.push({
+      type: "entities",
+      title: "Charge schedule",
+      show_header_toggle: false,
+      entities: [
+        { type: "custom:solarcharger-schedule-row", header: true },
+        ...scheduleRows.map((row) => ({
+          type: "custom:solarcharger-schedule-row",
+          day: row.day,
+          limit_entity: row.limitEntityId,
+          endtime_entity: row.endtimeEntityId,
+          default_limit_entity: row.defaultLimitEntityId,
+        })),
+        ...(resetButton ? [toEntityRow(resetButton)] : []),
+      ],
+    });
   }
 
   if (advanced.length) {
     cards.push(buildAdvancedCard(advanced));
   }
 
-  // columns: 1 + square: false stacks the sub-cards (schedule/controls/status/
+  // columns: 1 + square: false stacks the sub-cards (controls/sensors/diagnostic/
   // advanced) full-width vertically -- without them, "grid" defaults to
   // multiple square-forced columns, which squishes everything into tiny
   // boxes both here and inside the nested tile/schedule grids above.
