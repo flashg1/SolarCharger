@@ -12,6 +12,7 @@
  * the "why".
  */
 
+import "./solarcharger-auto-grid-card.js";
 import "./solarcharger-schedule-row.js";
 
 export const SOLARCHARGER_DOMAIN = "solarcharger";
@@ -65,14 +66,13 @@ function toTileCard(entity) {
   return { type: "tile", entity: entity.entity_id, name: entityLabel(entity) };
 }
 
-/** A titled grid of tile cards. square: false lets tiles keep their natural
- * (non-square) chip shape instead of being forced into square boxes. */
-function buildTileGrid(title, entities, columns = 2) {
+/** A titled grid of tile cards that reflows its column count to the
+ * available width (see solarcharger-auto-grid-card.js), rather than a fixed
+ * column count. */
+function buildTileGrid(title, entities) {
   return {
-    type: "grid",
+    type: "custom:solarcharger-auto-grid-card",
     title,
-    columns,
-    square: false,
     cards: entities.map(toTileCard),
   };
 }
@@ -169,14 +169,14 @@ function groupDeviceEntities(entities) {
  * vs. the plain built-in "grid" card, which has no concept of a collapsible title. */
 function buildAdvancedCard(advancedEntities) {
   if (ADVANCED_CARD_TYPE === "entities") {
-    return buildTileGrid("Advanced settings", advancedEntities, 2);
+    return buildTileGrid("Advanced settings", advancedEntities);
   }
 
   return {
     type: ADVANCED_CARD_TYPE,
     title: "Advanced settings",
     expanded: false,
-    cards: [buildTileGrid(null, advancedEntities, 2)],
+    cards: [buildTileGrid(null, advancedEntities)],
   };
 }
 
@@ -191,15 +191,15 @@ export function buildChargerSection(device, entities) {
   const cards = [{ type: "heading", heading: device.name_by_user || device.name }];
 
   if (controls.length) {
-    cards.push(buildTileGrid("Controls", controls, 2));
+    cards.push(buildTileGrid("Controls", controls));
   }
 
   if (sensors.length) {
-    cards.push(buildTileGrid("Sensors", sensors, 2));
+    cards.push(buildTileGrid("Sensors", sensors));
   }
 
   if (diagnostic.length) {
-    cards.push(buildTileGrid("Diagnostic", diagnostic, 2));
+    cards.push(buildTileGrid("Diagnostic", diagnostic));
   }
 
   if (scheduleRows.length) {
