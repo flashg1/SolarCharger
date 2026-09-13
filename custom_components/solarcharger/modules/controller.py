@@ -24,8 +24,6 @@ from homeassistant.core import (
 from homeassistant.helpers.typing import NoEventData
 from homeassistant.util.dt import utcnow
 
-from ..chargers.chargeable import Chargeable
-from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     DEFAULT_CHARGE_LIMIT_MAP,
@@ -46,6 +44,8 @@ from ..state_machine.solar_charge import SolarCharge
 from .tracker import Tracker
 
 if TYPE_CHECKING:
+    from ..chargers.chargeable import Chargeable
+    from ..chargers.charger import Charger
     from ..models.model_device_control import DeviceControl
 
 # ----------------------------------------------------------------------------
@@ -66,10 +66,8 @@ class ChargeController(ScOptionState):
         entry: ConfigEntry,
         subentry: ConfigSubentry,
         control: ChargeControl,
-        charger: Any,
-        chargeable: Any,
-        # charger: Charger,
-        # chargeable: Chargeable,
+        charger: Charger,
+        chargeable: Chargeable,
     ) -> None:
         """Initialize the Charge instance."""
 
@@ -1070,6 +1068,46 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     # Set up and unload
     # ----------------------------------------------------------------------------
+    async def _async_activate_power_allocator(
+        self, event: Event[NoEventData] | None
+    ) -> None:
+        """Instantiates the power allocator and track net power updates."""
+
+        # coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+        # device_controls must be initialised first since allocator needs to access device_controls.
+        from .allocator import PowerAllocator
+
+        self._allocator = PowerAllocator(self._subentry, self._device_controls)
+
+        self._current_update_period = self.get_charger_current_update_period()
+        self._min_current_update_period = (
+            self._current_update_period
+            * (100 - DELTA_CHARGER_CURRENT_UPDATE_PERIOD)
+            / 100
+        )
+
+        _LOGGER.info(
+            "%s: current_update_period=%s, min_current_update_period=%s",
+            self.caller,
+            self._current_update_period,
+            self._min_current_update_period,
+        )
+
+        self._track_net_power_update()
+
+        # Remove HA started callback if exists
+        self._tracker.remove_ha_started_callback()
+
+    # ----------------------------------------------------------------------------
+    async def _async_init_global_defaults_device(self) -> None:
+        """Init global defaults device."""
+
+        if self._hass.state == CoreState.running:
+            await self._async_activate_power_allocator(None)
+        else:
+            self._tracker.on_ha_started(self._async_activate_power_allocator)
+
+    # ----------------------------------------------------------------------------
     async def _async_activate_controller_switches(
         self, event: Event[NoEventData] | None
     ) -> None:
@@ -1111,53 +1149,6 @@ class ChargeController(ScOptionState):
         self._tracker.remove_ha_started_callback()
 
     # ----------------------------------------------------------------------------
-
-    # ----------------------------------------------------------------------------
-    async def _async_activate_power_allocator(
-        self, event: Event[NoEventData] | None
-    ) -> None:
-
-        # coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
-
-        # # device_controls must be initialised first since allocator needs to access device_controls.
-        # self._allocator = PowerAllocator(self._subentry, device_controls)
-        self._current_update_period = self.get_charger_current_update_period()
-        self._min_current_update_period = (
-            self._current_update_period
-            * (100 - DELTA_CHARGER_CURRENT_UPDATE_PERIOD)
-            / 100
-        )
-
-        _LOGGER.info(
-            "%s: current_update_period=%s, min_current_update_period=%s",
-            self.caller,
-            self._current_update_period,
-            self._min_current_update_period,
-        )
-
-        self._track_net_power_update()
-
-        # Remove HA started callback if exists
-        self._tracker.remove_ha_started_callback()
-
-    # ----------------------------------------------------------------------------
-    async def _async_init_global_defaults_device(
-        self, device_controls: dict[str, DeviceControl]
-    ) -> None:
-        """Init global defaults device."""
-
-        # device_controls must be initialised first since allocator needs to access device_controls.
-        from .allocator import PowerAllocator
-
-        self._device_controls = device_controls
-        self._allocator = PowerAllocator(self._subentry, device_controls)
-
-        if self._hass.state == CoreState.running:
-            await self._async_activate_power_allocator(None)
-        else:
-            self._tracker.on_ha_started(self._async_activate_power_allocator)
-
-    # ----------------------------------------------------------------------------
     async def _async_init_charger_device(self) -> None:
         """Init charger device."""
 
@@ -1174,12 +1165,15 @@ class ChargeController(ScOptionState):
     async def async_setup(self, device_controls: dict[str, DeviceControl]) -> None:
         """Async setup of the ChargeController."""
 
+        # Save device controls to be used by global defaults device only.
+        self._device_controls = device_controls
+
         # Load tracker.
         await self._tracker.async_setup()
 
         # Load charger.
         if self._subentry.subentry_type == SUBENTRY_TYPE_DEFAULTS:
-            await self._async_init_global_defaults_device(device_controls)
+            await self._async_init_global_defaults_device()
 
         elif self._subentry.subentry_type in SUBENTRY_CHARGER_TYPES:
             await self._async_init_charger_device()
