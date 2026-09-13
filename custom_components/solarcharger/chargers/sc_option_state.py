@@ -52,11 +52,11 @@ from ..const import (
     SUBENTRY_CHARGER_DEVICE_NAME,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED,
     SWITCH_CHARGE,
-    SWITCH_END_ON_CONDITION,
+    SWITCH_DEVICE_PRESENCE_TRIGGER,
+    SWITCH_EXIT_CONDITION_TRIGGER,
     SWITCH_FAST_CHARGE_MODE,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
-    SWITCH_PRESENCE_TRIGGER,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
     SWITCH_SUN_TRIGGER,
@@ -171,9 +171,9 @@ class ScOptionState(ScConfigState):
         return self._internal_entity_ids[SELECT_DEVICE_PRESENCE_SENSOR]
 
     @cached_property
-    def presence_trigger_switch_entity_id(self) -> str:
-        """Return the presence trigger switch entity ID."""
-        return self._internal_entity_ids[SWITCH_PRESENCE_TRIGGER]
+    def device_presence_trigger_switch_entity_id(self) -> str:
+        """Return the device presence trigger switch entity ID."""
+        return self._internal_entity_ids[SWITCH_DEVICE_PRESENCE_TRIGGER]
 
     @cached_property
     def plugin_trigger_switch_entity_id(self) -> str:
@@ -206,9 +206,9 @@ class ScOptionState(ScConfigState):
         return self._internal_entity_ids[SELECT_EXIT_CONDITION_SENSOR]
 
     @cached_property
-    def end_on_condition_switch_entity_id(self) -> str:
-        """Return the end on condition switch entity ID."""
-        return self._internal_entity_ids[SWITCH_END_ON_CONDITION]
+    def exit_condition_trigger_switch_entity_id(self) -> str:
+        """Return the exit condition trigger switch entity ID."""
+        return self._internal_entity_ids[SWITCH_EXIT_CONDITION_TRIGGER]
 
     @cached_property
     def calibrate_max_charge_speed_switch_entity_id(self) -> str:
@@ -1141,7 +1141,7 @@ class ScOptionState(ScConfigState):
     def is_end_on_condition(self) -> bool:
         """Is end on condition switch on?"""
 
-        return self.get_boolean_or_abort(self.end_on_condition_switch_entity_id)
+        return self.get_boolean_or_abort(self.exit_condition_trigger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_schedule_charge(self) -> bool:
@@ -1159,7 +1159,7 @@ class ScOptionState(ScConfigState):
     def is_presence_trigger(self) -> bool:
         """Is presence trigger on?"""
 
-        return self.get_boolean_or_abort(self.presence_trigger_switch_entity_id)
+        return self.get_boolean_or_abort(self.device_presence_trigger_switch_entity_id)
 
     # ----------------------------------------------------------------------------
     def is_sun_trigger(self) -> bool:

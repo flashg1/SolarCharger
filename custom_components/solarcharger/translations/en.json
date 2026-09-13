@@ -394,8 +394,8 @@
             "poll_charger_update": {
                 "name": "Poll charger update"
             },
-            "end_on_condition": {
-                "name": "End on condition"
+            "exit_condition_trigger": {
+                "name": "Exit condition trigger"
             },
             "schedule_charge": {
                 "name": "Schedule charge"
@@ -406,8 +406,8 @@
             "plugin_trigger": {
                 "name": "Plugin trigger"
             },
-            "presence_trigger": {
-                "name": "Presence trigger"
+            "device_presence_trigger": {
+                "name": "Device presence trigger"
             },
             "sun_trigger": {
                 "name": "Sun trigger"

@@ -389,7 +389,7 @@ class ChargeController(ScOptionState):
         """Turn off detect presence trigger switch."""
 
         await self.async_turn_switch(
-            self.presence_trigger_switch_entity_id, turn_on=False
+            self.device_presence_trigger_switch_entity_id, turn_on=False
         )
 
     # ----------------------------------------------------------------------------
