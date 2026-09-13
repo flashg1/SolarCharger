@@ -61,7 +61,7 @@ class SolarchargerScheduleRow extends HTMLElement {
              row's, throwing off every column boundary except the last. */
           .row {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 3.5rem 5.5rem 3.5rem;
+            grid-template-columns: minmax(0, 1fr) 3.5rem 6.5rem 3.5rem;
             align-items: center;
             padding: 8px 16px;
             gap: 16px;
@@ -76,7 +76,7 @@ class SolarchargerScheduleRow extends HTMLElement {
             color: var(--primary-text-color);
           }
           .row.header .day { color: inherit; }
-          .value { color: var(--primary-text-color); text-align: end; }
+          .value { color: var(--primary-text-color); text-align: end; white-space: nowrap; }
           .row.header .value { color: inherit; }
           .value.clickable { cursor: pointer; }
           .value.clickable:hover { text-decoration: underline; }
