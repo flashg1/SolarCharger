@@ -61,7 +61,7 @@ class SolarChargerCoordinator:
         self._hass = hass
         self._entry = entry
         self._global_defaults_subentry = global_defaults_subentry
-        self._caller = "Coordinator"
+        self.caller = "Coordinator"
 
         # Instance variable declared inside __init__() are unique to the instance.
         self.device_controls: dict[str, DeviceControl] = {}
@@ -283,7 +283,7 @@ class SolarChargerCoordinator:
         except Exception as e:
             _LOGGER.exception(
                 "%s: Failed periodic maintenance: %s",
-                self._caller,
+                self.caller,
                 e,
             )
 

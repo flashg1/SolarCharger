@@ -90,7 +90,7 @@ def make_bare_coordinator(
     coordinator._hass = hass
     coordinator._entry = entry
     coordinator._global_defaults_subentry = subentry
-    coordinator._caller = "Coordinator"
+    coordinator.caller = "Coordinator"
     coordinator.device_controls = device_controls or {}
     coordinator._unsub = []
 

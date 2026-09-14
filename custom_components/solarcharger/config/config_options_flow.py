@@ -39,13 +39,6 @@ from ..const import (
     MODIFIABLE_DEFAULT,
     MODIFIABLE_EXCEPT_OCPP,
     MODIFIABLE_IF_SC_ENTITY,
-    # NUMBER_CHARGE_LIMIT_FRIDAY,
-    # NUMBER_CHARGE_LIMIT_MONDAY,
-    # NUMBER_CHARGE_LIMIT_SATURDAY,
-    # NUMBER_CHARGE_LIMIT_SUNDAY,
-    # NUMBER_CHARGE_LIMIT_THURSDAY,
-    # NUMBER_CHARGE_LIMIT_TUESDAY,
-    # NUMBER_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MAX_CURRENT,
     NUMBER_CHARGER_MAX_SPEED,
@@ -56,15 +49,6 @@ from ..const import (
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_CHARGER_PRIORITY,
-    # NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
-    # NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
-    # NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
-    # NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
-    # NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
-    # NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
-    # NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
-    # NUMBER_DEVICE_MAX_CHARGE_LIMIT,
-    # NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
@@ -86,15 +70,7 @@ from ..const import (
     OPTION_SELECT_SETTINGS,
     SENSOR_DELTA_ALLOCATED_POWER,
     SUBENTRY_CHARGER_TYPES,
-    # SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     TEXT_CHARGER_STEP_CURRENT_LIST,
-    # TIME_CHARGE_ENDTIME_FRIDAY,
-    # TIME_CHARGE_ENDTIME_MONDAY,
-    # TIME_CHARGE_ENDTIME_SATURDAY,
-    # TIME_CHARGE_ENDTIME_SUNDAY,
-    # TIME_CHARGE_ENDTIME_THURSDAY,
-    # TIME_CHARGE_ENDTIME_TUESDAY,
-    # TIME_CHARGE_ENDTIME_WEDNESDAY,
 )
 from ..exceptions.validation_exception import ValidationExceptionError
 from ..modules.coordinator import SolarChargerCoordinator
@@ -113,7 +89,6 @@ from .config_utils import (
     TEXT_ENTITY_SELECTOR_READ_ONLY,
     TEXT_SELECTOR,
     TEXT_SELECTOR_READ_ONLY,
-    TIME_ENTITY_SELECTOR,
     async_ha_store_save,
     choose_selector,
     get_device_api_entities,
@@ -218,86 +193,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, NUMBER_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            # #####################################
-            # # Charge scheduling
-            # #####################################
-            # # Max/min charge limits
-            # self._optional(
-            #     subentry, NUMBER_DEVICE_MIN_CHARGE_LIMIT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_DEVICE_MAX_CHARGE_LIMIT, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # # Charge limit defaults
-            # self._optional(
-            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # # Reduce charge limit between days
-            # self._optional(
-            #     subentry, SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE, use_default
-            # ): SWITCH_ENTITY_SELECTOR,
-            # # Charge limits
-            # self._optional(
-            #     subentry, NUMBER_CHARGE_LIMIT_MONDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_CHARGE_LIMIT_TUESDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_CHARGE_LIMIT_WEDNESDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_CHARGE_LIMIT_THURSDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_CHARGE_LIMIT_FRIDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_CHARGE_LIMIT_SATURDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, NUMBER_CHARGE_LIMIT_SUNDAY, use_default
-            # ): NUMBER_ENTITY_SELECTOR,
-            # # Charge end times
-            # self._optional(
-            #     subentry, TIME_CHARGE_ENDTIME_MONDAY, use_default
-            # ): TIME_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, TIME_CHARGE_ENDTIME_TUESDAY, use_default
-            # ): TIME_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, TIME_CHARGE_ENDTIME_WEDNESDAY, use_default
-            # ): TIME_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, TIME_CHARGE_ENDTIME_THURSDAY, use_default
-            # ): TIME_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, TIME_CHARGE_ENDTIME_FRIDAY, use_default
-            # ): TIME_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, TIME_CHARGE_ENDTIME_SATURDAY, use_default
-            # ): TIME_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry, TIME_CHARGE_ENDTIME_SUNDAY, use_default
-            # ): TIME_ENTITY_SELECTOR,
             #####################################
             # Sunrise/sunset triggers
             #####################################
@@ -334,16 +229,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             self._optional(
                 subentry, NUMBER_POWER_MONITOR_DURATION, use_default
             ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry,
-            #     NUMBER_CHARGER_MIN_WORKABLE_CURRENT_ENTER_PAUSE_PERCENT,
-            #     use_default,
-            # ): NUMBER_ENTITY_SELECTOR,
-            # self._optional(
-            #     subentry,
-            #     NUMBER_CHARGER_MIN_WORKABLE_CURRENT_EXIT_PAUSE_PERCENT,
-            #     use_default,
-            # ): NUMBER_ENTITY_SELECTOR,
         }
 
     # ----------------------------------------------------------------------------

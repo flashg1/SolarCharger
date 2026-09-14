@@ -15,7 +15,6 @@ from ..const import (
     CONFIG_LOCAL_OPTION_LIST,
     CONFIG_NET_POWER_SENSOR,
     DELTA_POWER_MONITOR_DURATION,
-    OPTION_LOCAL_INTERNAL_ENTITIES,
     RunState,
 )
 from ..models.model_charge_stats import ChargeStats
@@ -402,7 +401,9 @@ class StateStart(SolarChargeState):
             self._log_net_power_configs()
             self._log_config_entities(CONFIG_ENTITY_ID_LIST)
             self._log_local_options(CONFIG_LOCAL_OPTION_LIST)
-            self._log_internal_entities(OPTION_LOCAL_INTERNAL_ENTITIES)
+
+            # Required entities from DEVICE_INTERNAL_ENTITIES are already included in CONFIG_ENTITY_ID_LIST.
+            # self._log_internal_entities(DEVICE_INTERNAL_ENTITIES)
 
     # ----------------------------------------------------------------------------
     # Main code

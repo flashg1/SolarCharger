@@ -20,6 +20,7 @@ from ..config.config_utils import (
 )
 from ..const import (
     DATETIME_NEXT_CHARGE_TIME,
+    DEVICE_INTERNAL_ENTITIES,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
     NUMBER_CHARGE_LIMIT_SATURDAY,
@@ -38,7 +39,6 @@ from ..const import (
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_CHARGER_NAME,
-    OPTION_LOCAL_INTERNAL_ENTITIES,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
     SELECT_START_STATE,
@@ -100,13 +100,13 @@ class ScOptionState(ScConfigState):
 
         self._internal_entity_ids: dict[str, str] = {}
 
-        # OPTION_LOCAL_INTERNAL_ENTITIES are purely SC entities, not third-party
+        # DEVICE_INTERNAL_ENTITIES are purely SC entities, not third-party
         # API entities, so device name can be None.
         # device_name = None
         device_name = slugify(subentry.data.get(SUBENTRY_CHARGER_DEVICE_NAME))
         create_entity_ids_from_templates(
             self._internal_entity_ids,
-            OPTION_LOCAL_INTERNAL_ENTITIES,
+            DEVICE_INTERNAL_ENTITIES,
             device_name,
             subentry.unique_id,
             is_init_all=True,
@@ -301,123 +301,10 @@ class ScOptionState(ScConfigState):
     #     )
 
     # @cached_property
-    # def weather_provider_selector_entity_id(self) -> str:
-    #     """Return weather provider selector entity ID."""
-    #     return compose_entity_id(
-    #         SELECT, CONFIG_NAME_GLOBAL_DEFAULTS, SELECT_WEATHER_PROVIDER
-    #     )
-
-    # @cached_property
     # def share_allocation_entity_id(self) -> str:
     #     """Return the share allocation entity ID."""
     #     return compose_entity_id(
     #         SENSOR, self._subentry.unique_id, SENSOR_SHARE_ALLOCATION
-    #     )
-
-    # @cached_property
-    # def self_depower_today_entity_id(self) -> str:
-    #     """Return the self-depower today entity ID."""
-    #     return compose_entity_id(
-    #         SENSOR, self._subentry.unique_id, SENSOR_SELF_DEPOWER_TODAY
-    #     )
-
-    # @cached_property
-    # def consumed_power_entity_id(self) -> str:
-    #     """Return the consumed power entity ID."""
-    #     return compose_entity_id(
-    #         SENSOR, self._subentry.unique_id, SENSOR_CONSUMED_POWER
-    #     )
-
-    # @cached_property
-    # def consumed_energy_today_entity_id(self) -> str:
-    #     """Return the consumed energy today entity ID."""
-    #     return compose_entity_id(
-    #         SENSOR, self._subentry.unique_id, SENSOR_CONSUMED_ENERGY_TODAY
-    #     )
-
-    # @cached_property
-    # def next_charge_time_trigger_entity_id(self) -> str:
-    #     """Return the next charge time trigger entity ID."""
-    #     return compose_entity_id(
-    #         DATETIME, self._subentry.unique_id, DATETIME_NEXT_CHARGE_TIME
-    #     )
-
-    # @cached_property
-    # def fast_charge_mode_switch_entity_id(self) -> str:
-    #     """Return the fast charge mode switch entity ID."""
-    #     return compose_entity_id(
-    #         SWITCH, self._subentry.unique_id, SWITCH_FAST_CHARGE_MODE
-    #     )
-
-    # @cached_property
-    # def poll_charger_update_switch_entity_id(self) -> str:
-    #     """Return the poll charger update switch entity ID."""
-    #     return compose_entity_id(
-    #         SWITCH, self._subentry.unique_id, SWITCH_POLL_CHARGER_UPDATE
-    #     )
-
-    # @cached_property
-    # def end_on_condition_switch_entity_id(self) -> str:
-    #     """Return the end on condition switch entity ID."""
-    #     return compose_entity_id(
-    #         SWITCH, self._subentry.unique_id, SWITCH_END_ON_CONDITION
-    #     )
-
-    # @cached_property
-    # def charge_switch_entity_id(self) -> str:
-    #     """Return the charge switch entity ID."""
-    #     return compose_entity_id(SWITCH, self._subentry.unique_id, SWITCH_CHARGE)
-
-    # @cached_property
-    # def schedule_charge_switch_entity_id(self) -> str:
-    #     """Return the schedule charge switch entity ID."""
-    #     return compose_entity_id(
-    #         SWITCH, self._subentry.unique_id, SWITCH_SCHEDULE_CHARGE
-    #     )
-
-    # @cached_property
-    # def plugin_trigger_switch_entity_id(self) -> str:
-    #     """Return the plugin trigger switch entity ID."""
-    #     return compose_entity_id(
-    #         SWITCH, self._subentry.unique_id, SWITCH_PLUGIN_TRIGGER
-    #     )
-
-    # @cached_property
-    # def presence_trigger_switch_entity_id(self) -> str:
-    #     """Return the presence trigger switch entity ID."""
-    #     return compose_entity_id(
-    #         SWITCH, self._subentry.unique_id, SWITCH_PRESENCE_TRIGGER
-    #     )
-
-    # @cached_property
-    # def sun_trigger_switch_entity_id(self) -> str:
-    #     """Return the sun trigger switch entity ID."""
-    #     return compose_entity_id(SWITCH, self._subentry.unique_id, SWITCH_SUN_TRIGGER)
-
-    # @cached_property
-    # def calibrate_max_charge_speed_switch_entity_id(self) -> str:
-    #     """Return the calibrate max charge speed switch entity ID."""
-    #     return compose_entity_id(
-    #         SWITCH, self._subentry.unique_id, SWITCH_CALIBRATE_MAX_CHARGE_SPEED
-    #     )
-
-    # @cached_property
-    # def device_presence_sensor_selector_entity_id(self) -> str:
-    #     """Return the selector entity ID for the device presence sensor."""
-    #     return compose_entity_id(
-    #         SELECT, self._subentry.unique_id, SELECT_DEVICE_PRESENCE_SENSOR
-    #     )
-
-    # @cached_property
-    # def start_state_selector_entity_id(self) -> str:
-    #     """Return the selector entity ID for the device start state."""
-    #     return compose_entity_id(SELECT, self._subentry.unique_id, SELECT_START_STATE)
-
-    # @cached_property
-    # def exit_condition_sensor_selector_entity_id(self) -> str:
-    #     """Return the selector entity ID for the exit condition sensor."""
-    #     return compose_entity_id(
-    #         SELECT, self._subentry.unique_id, SELECT_EXIT_CONDITION_SENSOR
     #     )
 
     # # ----------------------------------------------------------------------------
@@ -427,71 +314,6 @@ class ScOptionState(ScConfigState):
     # def charge_limit_monday_entity_id(self) -> str:
     #     """Return Monday charge limit entity ID."""
     #     return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_MONDAY)
-
-    # @cached_property
-    # def charge_limit_tuesday_entity_id(self) -> str:
-    #     """Return Tuesday charge limit entity ID."""
-    #     return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_TUESDAY)
-
-    # @cached_property
-    # def charge_limit_wednesday_entity_id(self) -> str:
-    #     """Return Wednesday charge limit entity ID."""
-    #     return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_WEDNESDAY)
-
-    # @cached_property
-    # def charge_limit_thursday_entity_id(self) -> str:
-    #     """Return Thursday charge limit entity ID."""
-    #     return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_THURSDAY)
-
-    # @cached_property
-    # def charge_limit_friday_entity_id(self) -> str:
-    #     """Return Friday charge limit entity ID."""
-    #     return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_FRIDAY)
-
-    # @cached_property
-    # def charge_limit_saturday_entity_id(self) -> str:
-    #     """Return Saturday charge limit entity ID."""
-    #     return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_SATURDAY)
-
-    # @cached_property
-    # def charge_limit_sunday_entity_id(self) -> str:
-    #     """Return Sunday charge limit entity ID."""
-    #     return self.option_get_id_or_abort(NUMBER_CHARGE_LIMIT_SUNDAY)
-
-    # @cached_property
-    # def charge_endtime_monday_entity_id(self) -> str:
-    #     """Return Monday charge endtime entity ID."""
-    #     return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_MONDAY)
-
-    # @cached_property
-    # def charge_endtime_tuesday_entity_id(self) -> str:
-    #     """Return Tuesday charge endtime entity ID."""
-    #     return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_TUESDAY)
-
-    # @cached_property
-    # def charge_endtime_wednesday_entity_id(self) -> str:
-    #     """Return Wednesday charge endtime entity ID."""
-    #     return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_WEDNESDAY)
-
-    # @cached_property
-    # def charge_endtime_thursday_entity_id(self) -> str:
-    #     """Return Thursday charge endtime entity ID."""
-    #     return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_THURSDAY)
-
-    # @cached_property
-    # def charge_endtime_friday_entity_id(self) -> str:
-    #     """Return Friday charge endtime entity ID."""
-    #     return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_FRIDAY)
-
-    # @cached_property
-    # def charge_endtime_saturday_entity_id(self) -> str:
-    #     """Return Saturday charge endtime entity ID."""
-    #     return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_SATURDAY)
-
-    # @cached_property
-    # def charge_endtime_sunday_entity_id(self) -> str:
-    #     """Return Sunday charge endtime entity ID."""
-    #     return self.option_get_id_or_abort(TIME_CHARGE_ENDTIME_SUNDAY)
 
     @cached_property
     def get_charge_limit_entity_ids(self) -> dict[str, int]:
