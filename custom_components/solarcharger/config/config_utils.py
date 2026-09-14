@@ -50,6 +50,20 @@ from ..const import (
     ENTITY_DEVICE_UPDATE_HA_BUTTON,
     ENTITY_DEVICE_WAKE_UP_BUTTON,
     NON_ENTITY_CONFIGS,
+    NUMBER_CHARGE_LIMIT_FRIDAY,
+    NUMBER_CHARGE_LIMIT_MONDAY,
+    NUMBER_CHARGE_LIMIT_SATURDAY,
+    NUMBER_CHARGE_LIMIT_SUNDAY,
+    NUMBER_CHARGE_LIMIT_THURSDAY,
+    NUMBER_CHARGE_LIMIT_TUESDAY,
+    NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY,
     NUMBER_DEVICE_CHARGE_LIMIT,
     NUMBER_DEVICE_MAX_CHARGE_LIMIT,
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
@@ -62,6 +76,14 @@ from ..const import (
     STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
+    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
+    TIME_CHARGE_ENDTIME_FRIDAY,
+    TIME_CHARGE_ENDTIME_MONDAY,
+    TIME_CHARGE_ENDTIME_SATURDAY,
+    TIME_CHARGE_ENDTIME_SUNDAY,
+    TIME_CHARGE_ENDTIME_THURSDAY,
+    TIME_CHARGE_ENDTIME_TUESDAY,
+    TIME_CHARGE_ENDTIME_WEDNESDAY,
     Modifiable,
 )
 
@@ -507,7 +529,10 @@ def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
     # Converting a dictionary to a list keeps that same order for version migrations.
     # old name (key): new name (value)
     migrate_list: dict[str, str] = {
-        # Migrate from v0.9.0 to v0.10.0.
+        #######################################################
+        # From v0.9.0 to v0.10.0
+        # Rename keys for global defaults and local devices.
+        #######################################################
         "chargee_min_charge_limit": NUMBER_DEVICE_MIN_CHARGE_LIMIT,
         "chargee_max_charge_limit": NUMBER_DEVICE_MAX_CHARGE_LIMIT,
         "wait_chargee_wakeup": NUMBER_WAIT_DEVICE_WAKEUP,
@@ -521,20 +546,52 @@ def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
         "chargee_location_state_list": OPTION_DEVICE_LOCATION_STATE_LIST,  # string
         "chargee_wake_up_button": ENTITY_DEVICE_WAKE_UP_BUTTON,
         "chargee_update_ha_button": ENTITY_DEVICE_UPDATE_HA_BUTTON,
+        #######################################################
+        # From v0.11.0 to v0.12.0
+        # Delete charge limit keys in global defaults and local devices.
+        #######################################################
+        NUMBER_DEVICE_MIN_CHARGE_LIMIT: "",
+        NUMBER_DEVICE_MAX_CHARGE_LIMIT: "",
+        SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE: "",
+        NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY: "",
+        NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY: "",
+        NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY: "",
+        NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY: "",
+        NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY: "",
+        NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY: "",
+        NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: "",
+        NUMBER_CHARGE_LIMIT_MONDAY: "",
+        NUMBER_CHARGE_LIMIT_TUESDAY: "",
+        NUMBER_CHARGE_LIMIT_WEDNESDAY: "",
+        NUMBER_CHARGE_LIMIT_THURSDAY: "",
+        NUMBER_CHARGE_LIMIT_FRIDAY: "",
+        NUMBER_CHARGE_LIMIT_SATURDAY: "",
+        NUMBER_CHARGE_LIMIT_SUNDAY: "",
+        TIME_CHARGE_ENDTIME_MONDAY: "",
+        TIME_CHARGE_ENDTIME_TUESDAY: "",
+        TIME_CHARGE_ENDTIME_WEDNESDAY: "",
+        TIME_CHARGE_ENDTIME_THURSDAY: "",
+        TIME_CHARGE_ENDTIME_FRIDAY: "",
+        TIME_CHARGE_ENDTIME_SATURDAY: "",
+        TIME_CHARGE_ENDTIME_SUNDAY: "",
     }
 
     # Do not directly modify data map in loop, so put in list first.
-    for old_name, old_config_val in list(store_config.items()):
-        new_name = migrate_list.get(old_name)
-        if new_name:
+    for old_key, old_config_val in list(store_config.items()):
+        new_key = migrate_list.get(old_key)
+        if new_key is not None:
             # old_config_val = data.pop(old_name)
-            del store_config[old_name]
+            del store_config[old_key]
+
+            if new_key == "":
+                # Old value not required in config.
+                continue
 
             # Only remove old solar charger entity ID.
             # Need to handle separately for config string.
             if not _is_solarcharger_entity(old_config_val):
                 # Keep non-solarcharger entity ID, string config or None.
-                store_config[new_name] = old_config_val
+                store_config[new_key] = old_config_val
 
 
 # ----------------------------------------------------------------------------
