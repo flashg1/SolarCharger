@@ -27,7 +27,7 @@
  *
  * Controls/Sensors/Diagnostic mirror HA's own native device-info page
  * grouping exactly (split by entity_category, then domain) -- Schedule and
- * Advanced settings have no native equivalent and are specific to this card:
+ * Configuration have no native equivalent and are specific to this card:
  *
  *   1. Controls    -- entities with entity_category unset (HA's "primary"
  *                     category), domain switch/select/number/button, ie.
@@ -42,7 +42,7 @@
  *                     before "Monday" and would silently scramble the week),
  *                     plus the "Reset charge limit and time" button as its
  *                     last row.
- *   5. Advanced settings -- remaining entity_category "config" entities,
+ *   5. Configuration -- remaining entity_category "config" entities,
  *                     collapsed by default via expander-card. Skipped
  *                     entirely for a device with nothing left in it.
  *

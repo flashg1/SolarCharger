@@ -19,6 +19,21 @@ export const SOLARCHARGER_DOMAIN = "solarcharger";
 
 const RESET_CHARGE_LIMIT_TRANSLATION_KEY = "reset_charge_limit_and_time";
 
+// Shown as rows in the Charge schedule card, after the reset button, instead
+// of in Configuration -- schedule-adjacent toggles/selectors a user is
+// likely to check right alongside the weekly schedule itself. Order here is
+// the display order.
+const SCHEDULE_EXTRA_TRANSLATION_KEYS = [
+  "schedule_charge",
+  "sun_trigger",
+  "plugin_trigger",
+  "device_presence_sensor",
+  "device_presence_trigger",
+  "exit_condition_sensor",
+  "exit_condition_trigger",
+  "reduce_charge_limit_difference",
+];
+
 export const WEEKDAYS = [
   "monday",
   "tuesday",
@@ -29,7 +44,7 @@ export const WEEKDAYS = [
   "sunday",
 ];
 
-// "custom:expander-card" (HACS) collapses the Advanced settings section by
+// "custom:expander-card" (HACS) collapses the Configuration section by
 // default; "entities" (a built-in card, no "custom:" prefix) renders it as a
 // plain, always-visible card instead if expander-card isn't installed.
 // buildAdvancedCard() shapes the config correctly for either one --
@@ -150,8 +165,15 @@ function groupDeviceEntities(entities) {
   const resetButton = entities.find(
     (e) => e.translation_key === RESET_CHARGE_LIMIT_TRANSLATION_KEY
   );
+  const scheduleExtras = SCHEDULE_EXTRA_TRANSLATION_KEYS.map((key) =>
+    byTranslationKey.get(key)
+  ).filter(Boolean);
+  const scheduleExtraIds = new Set(scheduleExtras.map((e) => e.entity_id));
   const rest = entities.filter(
-    (e) => !scheduleEntityIds.has(e.entity_id) && e !== resetButton
+    (e) =>
+      !scheduleEntityIds.has(e.entity_id) &&
+      e !== resetButton &&
+      !scheduleExtraIds.has(e.entity_id)
   );
   const isStatusDomain = (e) => ["sensor", "datetime"].includes(entityDomain(e));
 
@@ -162,19 +184,27 @@ function groupDeviceEntities(entities) {
   const diagnostic = rest.filter((e) => e.entity_category === "diagnostic").sort(byLabel);
   const advanced = rest.filter((e) => e.entity_category === "config").sort(byLabel);
 
-  return { scheduleRows, resetButton, controls, sensors, diagnostic, advanced };
+  return {
+    scheduleRows,
+    resetButton,
+    scheduleExtras,
+    controls,
+    sensors,
+    diagnostic,
+    advanced,
+  };
 }
 
-/** Shape the Advanced settings card correctly for a container type (expander-card)
+/** Shape the Configuration card correctly for a container type (expander-card)
  * vs. the plain built-in "grid" card, which has no concept of a collapsible title. */
 function buildAdvancedCard(advancedEntities) {
   if (ADVANCED_CARD_TYPE === "entities") {
-    return buildTileGrid("Advanced settings", advancedEntities);
+    return buildTileGrid("Configuration", advancedEntities);
   }
 
   return {
     type: ADVANCED_CARD_TYPE,
-    title: "Advanced settings",
+    title: "Configuration",
     expanded: false,
     cards: [buildTileGrid(null, advancedEntities)],
   };
@@ -185,7 +215,7 @@ function buildAdvancedCard(advancedEntities) {
  * grouping (split by entity_category, then domain); Charge schedule has no native
  * equivalent and is built separately below. */
 export function buildChargerSection(device, entities) {
-  const { scheduleRows, resetButton, controls, sensors, diagnostic, advanced } =
+  const { scheduleRows, resetButton, scheduleExtras, controls, sensors, diagnostic, advanced } =
     groupDeviceEntities(entities);
 
   const cards = [{ type: "heading", heading: device.name_by_user || device.name }];
@@ -219,6 +249,10 @@ export function buildChargerSection(device, entities) {
         ...(resetButton ? [toEntityRow(resetButton)] : []),
       ],
     });
+  }
+
+  if (scheduleExtras.length) {
+    cards.push(buildTileGrid(null, scheduleExtras));
   }
 
   if (advanced.length) {
