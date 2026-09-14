@@ -312,7 +312,26 @@ ERROR_SINGLE_INSTANCE_ALLOWED = "single_instance_allowed"
 # Make sure the entity key names are unique.
 #######################################################
 #####################################
-# Internal non-configurable entities
+# Config flow
+#####################################
+CONFIG_NET_POWER_SENSOR = "net_power_sensor"
+
+CONFIG_CHARGER_CURRENT_UPDATE_PERIOD = "charger_current_update_period"
+DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD = 60  # 60 seconds
+MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD = 5  # 5 seconds
+DELTA_CHARGER_CURRENT_UPDATE_PERIOD = 5  # +/- 5%
+
+OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
+
+#####################################
+# Global defaults device entities only
+#####################################
+SENSOR_SYNC_UPDATE = "sync_update"
+SELECT_WEATHER_PROVIDER = "weather_provider"
+SENSOR_WEATHER_FORECAST = "weather_forecast"
+
+#####################################
+# Local device internal non-configurable entities
 #####################################
 # Sensors
 SENSOR_RUN_STATE = "run_state"
@@ -338,10 +357,11 @@ SENSOR_LAST_CHECK = "last_check"
 
 # Boolean switches
 # Global defaults
-SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE = "reduce_charge_limit_difference"
 # Local device switches
+SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE = "reduce_charge_limit_difference"
 SWITCH_FAST_CHARGE_MODE = "fast_charge_mode"
 SWITCH_POLL_CHARGER_UPDATE = "poll_charger_update"
+SELECT_EXIT_CONDITION_SENSOR = "exit_condition_sensor"
 SWITCH_EXIT_CONDITION_TRIGGER = "exit_condition_trigger"
 
 # Action switches
@@ -349,6 +369,7 @@ SWITCH_EXIT_CONDITION_TRIGGER = "exit_condition_trigger"
 SWITCH_CHARGE = "charge"
 SWITCH_SCHEDULE_CHARGE = "schedule_charge"
 SWITCH_PLUGIN_TRIGGER = "plugin_trigger"
+SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
 SWITCH_DEVICE_PRESENCE_TRIGGER = "device_presence_trigger"
 SWITCH_SUN_TRIGGER = "sun_trigger"
 SWITCH_CALIBRATE_MAX_CHARGE_SPEED = "calibrate_max_charge_speed"
@@ -365,6 +386,83 @@ CALIBRATE_MAX_SOC = 91
 CALIBRATE_SOC_INCREASE = 4
 TIME_DEFAULT_STR = "00:00:00"
 
+#####################################
+# Internal control entities
+#####################################
+SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE = "net_allocated_power_sample_size"
+SENSOR_NET_ALLOCATED_POWER_DATA_SET = "net_allocated_power_data_set"
+SENSOR_MEDIAN_NET_ALLOCATED_POWER = "median_net_allocated_power"
+SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD = "median_net_allocated_power_period"
+SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
+SELECT_START_STATE = "start_state"
+
+#####################################
+# Charge schedule entities
+#####################################
+NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY = "default_charge_limit_monday"
+NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY = "default_charge_limit_tuesday"
+NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY = "default_charge_limit_wednesday"
+NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY = "default_charge_limit_thursday"
+NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY = "default_charge_limit_friday"
+NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY = "default_charge_limit_saturday"
+NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY = "default_charge_limit_sunday"
+
+NUMBER_CHARGE_LIMIT_MONDAY = "charge_limit_monday"
+NUMBER_CHARGE_LIMIT_TUESDAY = "charge_limit_tuesday"
+NUMBER_CHARGE_LIMIT_WEDNESDAY = "charge_limit_wednesday"
+NUMBER_CHARGE_LIMIT_THURSDAY = "charge_limit_thursday"
+NUMBER_CHARGE_LIMIT_FRIDAY = "charge_limit_friday"
+NUMBER_CHARGE_LIMIT_SATURDAY = "charge_limit_saturday"
+NUMBER_CHARGE_LIMIT_SUNDAY = "charge_limit_sunday"
+
+TIME_CHARGE_ENDTIME_MONDAY = "charge_endtime_monday"
+TIME_CHARGE_ENDTIME_TUESDAY = "charge_endtime_tuesday"
+TIME_CHARGE_ENDTIME_WEDNESDAY = "charge_endtime_wednesday"
+TIME_CHARGE_ENDTIME_THURSDAY = "charge_endtime_thursday"
+TIME_CHARGE_ENDTIME_FRIDAY = "charge_endtime_friday"
+TIME_CHARGE_ENDTIME_SATURDAY = "charge_endtime_saturday"
+TIME_CHARGE_ENDTIME_SUNDAY = "charge_endtime_sunday"
+
+WEEKLY_CHARGE_LIMITS: list[str] = [
+    NUMBER_CHARGE_LIMIT_MONDAY,
+    NUMBER_CHARGE_LIMIT_TUESDAY,
+    NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_CHARGE_LIMIT_THURSDAY,
+    NUMBER_CHARGE_LIMIT_FRIDAY,
+    NUMBER_CHARGE_LIMIT_SATURDAY,
+    NUMBER_CHARGE_LIMIT_SUNDAY,
+]
+
+WEEKLY_CHARGE_ENDTIMES: list[str] = [
+    TIME_CHARGE_ENDTIME_MONDAY,
+    TIME_CHARGE_ENDTIME_TUESDAY,
+    TIME_CHARGE_ENDTIME_WEDNESDAY,
+    TIME_CHARGE_ENDTIME_THURSDAY,
+    TIME_CHARGE_ENDTIME_FRIDAY,
+    TIME_CHARGE_ENDTIME_SATURDAY,
+    TIME_CHARGE_ENDTIME_SUNDAY,
+]
+
+WEEKLY_DAY_NAMES: list[str] = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+
+# Linking default value configs to charge limit configs.
+DEFAULT_CHARGE_LIMIT_MAP: dict[str, str] = {
+    NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY: NUMBER_CHARGE_LIMIT_MONDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY: NUMBER_CHARGE_LIMIT_TUESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY: NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY: NUMBER_CHARGE_LIMIT_THURSDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY: NUMBER_CHARGE_LIMIT_FRIDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY: NUMBER_CHARGE_LIMIT_SATURDAY,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: NUMBER_CHARGE_LIMIT_SUNDAY,
+}
 
 #######################################################
 # Make sure the entity key names are unique.
@@ -387,18 +485,6 @@ EVENT_ATTR_OLD_VALUE = "old_value"
 #######################################################
 # Option constants
 #######################################################
-
-#####################################
-# Power import/export sensor
-#####################################
-CONFIG_NET_POWER_SENSOR = "net_power_sensor"
-
-CONFIG_CHARGER_CURRENT_UPDATE_PERIOD = "charger_current_update_period"
-DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD = 60  # 60 seconds
-MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD = 5  # 5 seconds
-DELTA_CHARGER_CURRENT_UPDATE_PERIOD = 5  # +/- 5%
-
-OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 
 #####################################
 # Charger general configs
@@ -482,78 +568,6 @@ OPTION_DEVICE_LOCATION_STATE_LIST = "device_location_state_list"
 ENTITY_DEVICE_WAKE_UP_BUTTON = "device_wake_up_button"
 ENTITY_DEVICE_UPDATE_HA_BUTTON = "device_update_ha_button"
 
-#####################################
-# Internal control entities
-#####################################
-SENSOR_SYNC_UPDATE = "sync_update"
-SENSOR_NET_ALLOCATED_POWER_SAMPLE_SIZE = "net_allocated_power_sample_size"
-SENSOR_NET_ALLOCATED_POWER_DATA_SET = "net_allocated_power_data_set"
-SENSOR_MEDIAN_NET_ALLOCATED_POWER = "median_net_allocated_power"
-SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD = "median_net_allocated_power_period"
-SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
-SELECT_DEVICE_PRESENCE_SENSOR = "device_presence_sensor"
-SELECT_START_STATE = "start_state"
-SELECT_EXIT_CONDITION_SENSOR = "exit_condition_sensor"
-SELECT_WEATHER_PROVIDER = "weather_provider"
-SENSOR_WEATHER_FORECAST = "weather_forecast"
-
-#####################################
-# Charge schedule entities
-#####################################
-NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY = "default_charge_limit_monday"
-NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY = "default_charge_limit_tuesday"
-NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY = "default_charge_limit_wednesday"
-NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY = "default_charge_limit_thursday"
-NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY = "default_charge_limit_friday"
-NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY = "default_charge_limit_saturday"
-NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY = "default_charge_limit_sunday"
-
-NUMBER_CHARGE_LIMIT_MONDAY = "charge_limit_monday"
-NUMBER_CHARGE_LIMIT_TUESDAY = "charge_limit_tuesday"
-NUMBER_CHARGE_LIMIT_WEDNESDAY = "charge_limit_wednesday"
-NUMBER_CHARGE_LIMIT_THURSDAY = "charge_limit_thursday"
-NUMBER_CHARGE_LIMIT_FRIDAY = "charge_limit_friday"
-NUMBER_CHARGE_LIMIT_SATURDAY = "charge_limit_saturday"
-NUMBER_CHARGE_LIMIT_SUNDAY = "charge_limit_sunday"
-
-TIME_CHARGE_ENDTIME_MONDAY = "charge_endtime_monday"
-TIME_CHARGE_ENDTIME_TUESDAY = "charge_endtime_tuesday"
-TIME_CHARGE_ENDTIME_WEDNESDAY = "charge_endtime_wednesday"
-TIME_CHARGE_ENDTIME_THURSDAY = "charge_endtime_thursday"
-TIME_CHARGE_ENDTIME_FRIDAY = "charge_endtime_friday"
-TIME_CHARGE_ENDTIME_SATURDAY = "charge_endtime_saturday"
-TIME_CHARGE_ENDTIME_SUNDAY = "charge_endtime_sunday"
-
-WEEKLY_CHARGE_LIMITS: list[str] = [
-    NUMBER_CHARGE_LIMIT_MONDAY,
-    NUMBER_CHARGE_LIMIT_TUESDAY,
-    NUMBER_CHARGE_LIMIT_WEDNESDAY,
-    NUMBER_CHARGE_LIMIT_THURSDAY,
-    NUMBER_CHARGE_LIMIT_FRIDAY,
-    NUMBER_CHARGE_LIMIT_SATURDAY,
-    NUMBER_CHARGE_LIMIT_SUNDAY,
-]
-
-WEEKLY_CHARGE_ENDTIMES: list[str] = [
-    TIME_CHARGE_ENDTIME_MONDAY,
-    TIME_CHARGE_ENDTIME_TUESDAY,
-    TIME_CHARGE_ENDTIME_WEDNESDAY,
-    TIME_CHARGE_ENDTIME_THURSDAY,
-    TIME_CHARGE_ENDTIME_FRIDAY,
-    TIME_CHARGE_ENDTIME_SATURDAY,
-    TIME_CHARGE_ENDTIME_SUNDAY,
-]
-
-WEEKLY_DAY_NAMES: list[str] = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-]
-
 #######################################################
 # Non-entity configs
 #######################################################
@@ -561,17 +575,6 @@ WEEKLY_DAY_NAMES: list[str] = [
 NON_ENTITY_CONFIGS: list[str] = [
     OPTION_CHARGER_NAME,
 ]
-
-# Linking default value configs to charge limit configs.
-DEFAULT_CHARGE_LIMIT_MAP: dict[str, str] = {
-    NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY: NUMBER_CHARGE_LIMIT_MONDAY,
-    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY: NUMBER_CHARGE_LIMIT_TUESDAY,
-    NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY: NUMBER_CHARGE_LIMIT_WEDNESDAY,
-    NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY: NUMBER_CHARGE_LIMIT_THURSDAY,
-    NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY: NUMBER_CHARGE_LIMIT_FRIDAY,
-    NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY: NUMBER_CHARGE_LIMIT_SATURDAY,
-    NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: NUMBER_CHARGE_LIMIT_SUNDAY,
-}
 
 #######################################################
 # Lists for debug logging of entity configuration
