@@ -54,12 +54,20 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-# The whole directory is served (not one file) because solarcharger-strategy.js
-# and solarcharger-charger-card.js both `import` solarcharger-shared.js by
-# relative URL -- that shared module is fetched transitively by the browser
-# and never needs its own add_extra_js_url() entry.
+# The whole directory is served (not one file) because every entry module
+# below `import`s solarcharger-shared.js (and the card modules also import
+# solarcharger-section-card-base.js) by relative URL -- those shared modules
+# are fetched transitively by the browser and never need their own
+# add_extra_js_url() entry.
 FRONTEND_URL_BASE = "/solarcharger_frontend"
-FRONTEND_ENTRY_MODULES = ["solarcharger-strategy.js", "solarcharger-charger-card.js"]
+FRONTEND_ENTRY_MODULES = [
+    "solarcharger-strategy.js",
+    "solarcharger-charger-card.js",
+    "solarcharger-controls-sensors-card.js",
+    "solarcharger-diagnostic-card.js",
+    "solarcharger-schedule-card.js",
+    "solarcharger-configuration-card.js",
+]
 
 
 # ----------------------------------------------------------------------------
@@ -67,14 +75,15 @@ async def _async_register_frontend_strategy(hass: HomeAssistant) -> None:
     """Serve the frontend/ directory and register its entry modules as extra JS.
 
     cache_headers=False for the whole directory: manifest.json's version is
-    appended as a cache-busting query string to the two entry modules below,
-    but solarcharger-shared.js and solarcharger-charger-card-editor.js are
-    only ever reached via plain relative `import` statements inside those
-    entry modules, with no version string of their own -- if this directory
-    were cacheable, a browser could keep serving a stale copy of one of those
-    indefinitely, unaffected by the entry modules' own cache-busting. This is
-    a small, admin-only, actively-iterated-on set of files, so trading a
-    little caching for always-fresh JS is the right default.
+    appended as a cache-busting query string to the entry modules below, but
+    solarcharger-shared.js, solarcharger-section-card-base.js, and
+    solarcharger-charger-card-editor.js are only ever reached via plain
+    relative `import` statements inside those entry modules, with no version
+    string of their own -- if this directory were cacheable, a browser could
+    keep serving a stale copy of one of those indefinitely, unaffected by the
+    entry modules' own cache-busting. This is a small, admin-only,
+    actively-iterated-on set of files, so trading a little caching for
+    always-fresh JS is the right default.
 
     single_config_entry is true for this integration and async_setup() only
     ever runs once, so no double-registration guard is needed here (unlike a

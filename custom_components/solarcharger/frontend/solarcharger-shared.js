@@ -1,10 +1,12 @@
 /**
  * Shared grouping/rendering logic for the SolarCharger Lovelace view strategy
- * (solarcharger-strategy.js) and the single-device card
- * (solarcharger-charger-card.js). Both need to turn one device's entities
- * into the same Controls/Sensors/Diagnostic/Schedule/Advanced-settings card
- * layout, so that logic lives here once rather than being kept in sync in
- * two places.
+ * (solarcharger-strategy.js) and the per-device cards (solarcharger-charger-card.js
+ * plus the smaller solarcharger-controls-sensors-card.js / -diagnostic-card.js /
+ * -schedule-card.js / -configuration-card.js, all built on top of
+ * solarcharger-section-card-base.js). All of them need to turn one device's
+ * entities into the same Controls/Sensors/Diagnostic/Schedule/Configuration
+ * card layout (either the whole thing, or just one section of it), so that
+ * logic lives here once rather than being kept in sync in several places.
  *
  * See solarcharger-strategy.js's header comment for the full design
  * rationale (translation_key / entity_category signals, why Global Defaults
@@ -210,58 +212,101 @@ function buildAdvancedCard(advancedEntities) {
   };
 }
 
-/** Build the full Controls/Sensors/Diagnostic/Schedule/Advanced-settings card config
- * for one device -- Controls/Sensors/Diagnostic mirror HA's own native device-page
- * grouping (split by entity_category, then domain); Charge schedule has no native
- * equivalent and is built separately below. */
-export function buildChargerSection(device, entities) {
-  const { scheduleRows, resetButton, scheduleExtras, controls, sensors, diagnostic, advanced } =
-    groupDeviceEntities(entities);
+/** Controls + Sensors tile grids -- mirrors HA's own native device-page
+ * grouping (split by entity_category, then domain). Sensors has no title of
+ * its own, the same way the Charge schedule badges don't -- it reads as more
+ * tiles under the "Controls" heading rather than a second titled section. */
+function buildControlsSensorsSection(grouped) {
+  const cards = [];
+  if (grouped.controls.length) cards.push(buildTileGrid("Controls", grouped.controls));
+  if (grouped.sensors.length) cards.push(buildTileGrid(null, grouped.sensors));
+  return cards;
+}
 
-  const cards = [{ type: "heading", heading: device.name_by_user || device.name }];
+/** Diagnostic tile grid -- mirrors HA's own native device-page grouping. */
+function buildDiagnosticSection(grouped) {
+  return grouped.diagnostic.length ? [buildTileGrid("Diagnostic", grouped.diagnostic)] : [];
+}
 
-  if (controls.length) {
-    cards.push(buildTileGrid("Controls", controls));
-  }
-
-  if (sensors.length) {
-    cards.push(buildTileGrid("Sensors", sensors));
-  }
-
-  if (diagnostic.length) {
-    cards.push(buildTileGrid("Diagnostic", diagnostic));
-  }
-
-  if (scheduleRows.length) {
+/** The weekly schedule table plus the schedule-adjacent toggle/selector tiles
+ * shown directly underneath it. Has no native HA device-page equivalent, so
+ * it's built from scratch rather than mirrored. */
+function buildScheduleSection(grouped) {
+  const cards = [];
+  if (grouped.scheduleRows.length) {
     cards.push({
       type: "entities",
       title: "Charge schedule",
       show_header_toggle: false,
       entities: [
         { type: "custom:solarcharger-schedule-row", header: true },
-        ...scheduleRows.map((row) => ({
+        ...grouped.scheduleRows.map((row) => ({
           type: "custom:solarcharger-schedule-row",
           day: row.day,
           limit_entity: row.limitEntityId,
           endtime_entity: row.endtimeEntityId,
           default_limit_entity: row.defaultLimitEntityId,
         })),
-        ...(resetButton ? [toEntityRow(resetButton)] : []),
+        ...(grouped.resetButton ? [toEntityRow(grouped.resetButton)] : []),
       ],
     });
   }
+  if (grouped.scheduleExtras.length) cards.push(buildTileGrid(null, grouped.scheduleExtras));
+  return cards;
+}
 
-  if (scheduleExtras.length) {
-    cards.push(buildTileGrid(null, scheduleExtras));
+/** The Configuration card. */
+function buildConfigurationSection(grouped) {
+  return grouped.advanced.length ? [buildAdvancedCard(grouped.advanced)] : [];
+}
+
+/** Stack a device-name heading followed by whichever section(s) `sections`
+ * produce, as a single full-width-stacked "grid" card. Shared by the full
+ * combined card and each smaller per-section card -- see
+ * solarcharger-section-card-base.js. */
+function buildDeviceCard(device, entities, sections) {
+  const grouped = groupDeviceEntities(entities);
+  const cards = [{ type: "heading", heading: device.name_by_user || device.name }];
+  for (const buildSection of sections) {
+    cards.push(...buildSection(grouped));
   }
 
-  if (advanced.length) {
-    cards.push(buildAdvancedCard(advanced));
-  }
-
-  // columns: 1 + square: false stacks the sub-cards (controls/sensors/diagnostic/
-  // advanced) full-width vertically -- without them, "grid" defaults to
-  // multiple square-forced columns, which squishes everything into tiny
-  // boxes both here and inside the nested tile/schedule grids above.
+  // columns: 1 + square: false stacks the sub-cards full-width vertically --
+  // without them, "grid" defaults to multiple square-forced columns, which
+  // squishes everything into tiny boxes both here and inside the nested
+  // tile/schedule grids above.
   return { type: "grid", columns: 1, square: false, cards };
+}
+
+/** Build the full Controls/Sensors/Diagnostic/Schedule/Configuration card config
+ * for one device -- used by both the whole-view strategy and
+ * solarcharger-charger-card (the single "everything in one card" card). */
+export function buildChargerSection(device, entities) {
+  return buildDeviceCard(device, entities, [
+    buildControlsSensorsSection,
+    buildDiagnosticSection,
+    buildScheduleSection,
+    buildConfigurationSection,
+  ]);
+}
+
+/** Just the Controls + Sensors card for one device, for solarcharger-controls-sensors-card. */
+export function buildControlsSensorsCard(device, entities) {
+  return buildDeviceCard(device, entities, [buildControlsSensorsSection]);
+}
+
+/** Just the Diagnostic card for one device, for solarcharger-diagnostic-card. */
+export function buildDiagnosticCard(device, entities) {
+  return buildDeviceCard(device, entities, [buildDiagnosticSection]);
+}
+
+/** Just the Charge schedule card (+ the badges underneath it) for one device,
+ * for solarcharger-schedule-card. */
+export function buildScheduleCard(device, entities) {
+  return buildDeviceCard(device, entities, [buildScheduleSection]);
+}
+
+/** Just the Configuration card for one device, for solarcharger-configuration-card. */
+export function buildConfigurationCard(device, entities) {
+  return buildDeviceCard(device, entities, [buildConfigurationSection]);
 }

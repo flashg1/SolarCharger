@@ -1,5 +1,9 @@
 /**
- * Visual config editor for the "solarcharger-charger-card" custom card.
+ * Visual config editor shared by every per-device SolarCharger custom card
+ * (solarcharger-charger-card and the smaller solarcharger-controls-sensors-card
+ * / -diagnostic-card / -schedule-card / -configuration-card) -- they all take
+ * the same config shape (just a device), so one editor covers all of them;
+ * see solarcharger-section-card-base.js's getConfigElement().
  *
  * Uses <ha-form> with a declarative "device" selector schema -- the same
  * foundational, universally-loaded building block HA's own built-in card
@@ -26,8 +30,8 @@
  * to/from device_id right here at the form boundary, so a saved card survives
  * that kind of recreation as long as the device keeps the same display name.
  *
- * Loaded lazily by SolarchargerChargerCard.getConfigElement() only when the
- * user opens the card's edit dialog.
+ * Loaded lazily by getConfigElement() only when the user opens a card's edit
+ * dialog.
  */
 
 import { findDeviceByName } from "./solarcharger-shared.js";
