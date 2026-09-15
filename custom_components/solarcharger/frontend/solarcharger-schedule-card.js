@@ -19,4 +19,7 @@ defineSectionCard({
   buildCardConfig: buildScheduleCard,
   name: "SolarCharger Charge Schedule",
   description: "Charge schedule for one SolarCharger charger device.",
+  // The weekly schedule table itself has no "columns" concept, but the
+  // schedule-adjacent toggle tiles underneath it (Sun trigger, etc.) do --
+  // see buildScheduleSection()'s doc comment in solarcharger-shared.js.
 });

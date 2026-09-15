@@ -13,6 +13,11 @@
  * need card_mod (HACS); this card sidesteps that dependency by hosting its
  * child cards in a genuinely responsive grid of its own instead of
  * delegating to hui-grid-card at all.
+ *
+ * `columns` in config is optional and lets a caller opt back into a fixed
+ * column count instead: 0 (or omitted) keeps the auto-fit behaviour above,
+ * a positive integer switches to a plain `repeat(N, 1fr)` -- see
+ * solarcharger-shared.js, which is the only caller that ever sets it.
  */
 
 const MIN_TILE_WIDTH = "140px";
@@ -76,7 +81,6 @@ class SolarchargerAutoGridCard extends HTMLElement {
             }
             .grid {
               display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(${MIN_TILE_WIDTH}, 1fr));
               gap: 8px;
             }
           </style>
@@ -95,13 +99,28 @@ class SolarchargerAutoGridCard extends HTMLElement {
     heading.textContent = this._config.title || "";
     heading.hidden = !this._config.title;
 
+    // Not gated behind the `serialized` check above -- config.columns can
+    // change on its own (eg. via the card editor) without the entity/tile
+    // list changing, and this is cheap enough to just always re-apply.
+    const grid = this.shadowRoot.querySelector(".grid");
+    const columns = Number(this._config.columns) || 0;
+    // minmax(0, 1fr), not a bare 1fr -- a grid track's automatic minimum size
+    // otherwise defaults to its item's max-content size (eg. a tile's
+    // unwrapped title text), so one long entity name would blow out its
+    // whole column instead of staying equal-width and letting the tile's own
+    // ellipsis/truncation handle the overflow. Same reasoning as hui-grid-card's
+    // own `repeat(N, minmax(0, 1fr))`, noted in the file header above.
+    grid.style.gridTemplateColumns =
+      columns > 0 ? `repeat(${columns}, minmax(0, 1fr))` : `repeat(auto-fit, minmax(${MIN_TILE_WIDTH}, 1fr))`;
+
     for (const tile of this._tiles) {
       tile.hass = this._hass;
     }
   }
 
   getCardSize() {
-    const rows = Math.ceil((this._tiles?.length || 1) / 3);
+    const columns = Number(this._config?.columns) || 3;
+    const rows = Math.ceil((this._tiles?.length || 1) / columns);
     return rows + (this._config?.title ? 1 : 0);
   }
 }

@@ -54,6 +54,12 @@ export const WEEKDAYS = [
 // just wants a flat `entities:` list.
 export const ADVANCED_CARD_TYPE = "entities";
 
+// The number of columns every tile grid uses when a card's `columns` config
+// is left unset -- Controls/Sensors, Diagnostic, Configuration, and the
+// schedule-adjacent toggle tiles underneath Charge schedule's weekly table
+// (which has no "columns" concept of its own).
+export const DEFAULT_TILE_COLUMNS = 2;
+
 function capitalize(word) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
@@ -83,13 +89,14 @@ function toTileCard(entity) {
   return { type: "tile", entity: entity.entity_id, name: entityLabel(entity) };
 }
 
-/** A titled grid of tile cards that reflows its column count to the
- * available width (see solarcharger-auto-grid-card.js), rather than a fixed
- * column count. */
-function buildTileGrid(title, entities) {
+/** A titled grid of tile cards that, by default, reflows its column count to
+ * the available width (see solarcharger-auto-grid-card.js) -- `columns`
+ * (0 = that auto-fit default, N = a fixed column count) overrides that. */
+function buildTileGrid(title, entities, columns) {
   return {
     type: "custom:solarcharger-auto-grid-card",
     title,
+    columns,
     cards: entities.map(toTileCard),
   };
 }
@@ -215,16 +222,16 @@ function withHeadingPrefix(prefix, title, verbatim) {
 
 /** Shape the Configuration card correctly for a container type (expander-card)
  * vs. the plain built-in "grid" card, which has no concept of a collapsible title. */
-function buildAdvancedCard(advancedEntities, title) {
+function buildAdvancedCard(advancedEntities, title, columns) {
   if (ADVANCED_CARD_TYPE === "entities") {
-    return buildTileGrid(title, advancedEntities);
+    return buildTileGrid(title, advancedEntities, columns);
   }
 
   return {
     type: ADVANCED_CARD_TYPE,
     title,
     expanded: false,
-    cards: [buildTileGrid(null, advancedEntities)],
+    cards: [buildTileGrid(null, advancedEntities, columns)],
   };
 }
 
@@ -232,29 +239,32 @@ function buildAdvancedCard(advancedEntities, title) {
  * grouping (split by entity_category, then domain). Sensors has no title of
  * its own, the same way the Charge schedule badges don't -- it reads as more
  * tiles under the "Controls" heading rather than a second titled section. */
-function buildControlsSensorsSection(grouped, headingPrefix, verbatim) {
+function buildControlsSensorsSection(grouped, headingPrefix, verbatim, columns) {
   const cards = [];
   if (grouped.controls.length) {
-    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, "Controls", verbatim), grouped.controls));
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, "Controls", verbatim), grouped.controls, columns));
     headingPrefix = null;
   }
   if (grouped.sensors.length) {
-    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null, verbatim), grouped.sensors));
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null, verbatim), grouped.sensors, columns));
   }
   return cards;
 }
 
 /** Diagnostic tile grid -- mirrors HA's own native device-page grouping. */
-function buildDiagnosticSection(grouped, headingPrefix, verbatim) {
+function buildDiagnosticSection(grouped, headingPrefix, verbatim, columns) {
   return grouped.diagnostic.length
-    ? [buildTileGrid(withHeadingPrefix(headingPrefix, "Diagnostic", verbatim), grouped.diagnostic)]
+    ? [buildTileGrid(withHeadingPrefix(headingPrefix, "Diagnostic", verbatim), grouped.diagnostic, columns)]
     : [];
 }
 
 /** The weekly schedule table plus the schedule-adjacent toggle/selector tiles
  * shown directly underneath it. Has no native HA device-page equivalent, so
- * it's built from scratch rather than mirrored. */
-function buildScheduleSection(grouped, headingPrefix, verbatim) {
+ * it's built from scratch rather than mirrored. The weekly table itself has
+ * no "columns" concept (it's a fixed-layout entities card, not a tile grid),
+ * but the schedule-adjacent toggle tiles underneath it are the same kind of
+ * tile grid as the other sections, so `columns` is forwarded to that one. */
+function buildScheduleSection(grouped, headingPrefix, verbatim, columns) {
   const cards = [];
   if (grouped.scheduleRows.length) {
     cards.push({
@@ -295,15 +305,15 @@ function buildScheduleSection(grouped, headingPrefix, verbatim) {
     headingPrefix = null;
   }
   if (grouped.scheduleExtras.length) {
-    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null, verbatim), grouped.scheduleExtras));
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null, verbatim), grouped.scheduleExtras, columns));
   }
   return cards;
 }
 
 /** The Configuration card. */
-function buildConfigurationSection(grouped, headingPrefix, verbatim) {
+function buildConfigurationSection(grouped, headingPrefix, verbatim, columns) {
   return grouped.advanced.length
-    ? [buildAdvancedCard(grouped.advanced, withHeadingPrefix(headingPrefix, "Configuration", verbatim))]
+    ? [buildAdvancedCard(grouped.advanced, withHeadingPrefix(headingPrefix, "Configuration", verbatim), columns)]
     : [];
 }
 
@@ -318,14 +328,19 @@ function buildConfigurationSection(grouped, headingPrefix, verbatim) {
  *
  * `titleOverride` is the card's optional user-configured `title` -- when
  * set, it's used verbatim as that same first heading instead of the device
- * name prefix (see withHeadingPrefix()). */
-function buildDeviceCard(device, entities, sections, titleOverride) {
+ * name prefix (see withHeadingPrefix()). `tileColumns` is the card's
+ * optional user-configured `columns` (defaulting to DEFAULT_TILE_COLUMNS
+ * when unset) -- passed on to whichever sections accept it; note this is
+ * unrelated to the outer "grid" card's own `columns: 1` below, which just
+ * forces that wrapper to stack its sections vertically. */
+function buildDeviceCard(device, entities, sections, titleOverride, tileColumns) {
   const grouped = groupDeviceEntities(entities);
   let headingPrefix = titleOverride || device.name_by_user || device.name;
   let verbatim = Boolean(titleOverride);
+  const columns = tileColumns === undefined || tileColumns === null ? DEFAULT_TILE_COLUMNS : Number(tileColumns) || 0;
   const cards = [];
   for (const buildSection of sections) {
-    const sectionCards = buildSection(grouped, headingPrefix, verbatim);
+    const sectionCards = buildSection(grouped, headingPrefix, verbatim, columns);
     if (sectionCards.length) {
       cards.push(...sectionCards);
       headingPrefix = null;
@@ -343,33 +358,55 @@ function buildDeviceCard(device, entities, sections, titleOverride) {
 /** Build the full Controls/Sensors/Diagnostic/Schedule/Configuration card config
  * for one device -- used by both the whole-view strategy and
  * solarcharger-charger-card (the single "everything in one card" card).
- * `title`, if set, overrides the card's first heading -- see buildDeviceCard(). */
-export function buildChargerSection(device, entities, title) {
+ * `title` and `columns`, if set, override the card's defaults -- see
+ * buildDeviceCard(). */
+export function buildChargerSection(device, entities, title, columns) {
   return buildDeviceCard(
     device,
     entities,
     [buildControlsSensorsSection, buildDiagnosticSection, buildScheduleSection, buildConfigurationSection],
-    title
+    title,
+    columns
   );
 }
 
 /** Just the Controls + Sensors card for one device, for solarcharger-controls-sensors-card. */
-export function buildControlsSensorsCard(device, entities, title) {
-  return buildDeviceCard(device, entities, [buildControlsSensorsSection], title);
+export function buildControlsSensorsCard(device, entities, title, columns) {
+  return buildDeviceCard(device, entities, [buildControlsSensorsSection], title, columns);
 }
 
 /** Just the Diagnostic card for one device, for solarcharger-diagnostic-card. */
-export function buildDiagnosticCard(device, entities, title) {
-  return buildDeviceCard(device, entities, [buildDiagnosticSection], title);
+export function buildDiagnosticCard(device, entities, title, columns) {
+  return buildDeviceCard(device, entities, [buildDiagnosticSection], title, columns);
 }
 
 /** Just the Charge schedule card (+ the badges underneath it) for one device,
- * for solarcharger-schedule-card. */
-export function buildScheduleCard(device, entities, title) {
-  return buildDeviceCard(device, entities, [buildScheduleSection], title);
+ * for solarcharger-schedule-card. `columns` only affects the schedule-adjacent
+ * toggle tiles underneath the weekly table -- see buildScheduleSection(). */
+export function buildScheduleCard(device, entities, title, columns) {
+  return buildDeviceCard(device, entities, [buildScheduleSection], title, columns);
 }
 
 /** Just the Configuration card for one device, for solarcharger-configuration-card. */
-export function buildConfigurationCard(device, entities, title) {
-  return buildDeviceCard(device, entities, [buildConfigurationSection], title);
+export function buildConfigurationCard(device, entities, title, columns) {
+  return buildDeviceCard(device, entities, [buildConfigurationSection], title, columns);
+}
+
+/** Find the first heading a built card config actually renders -- ie. the
+ * default title a user's own `title` config would override. Used by the
+ * config editor to show that default as the title field's placeholder
+ * (instead of a blank box) without baking it into the saved config. Walks
+ * into `cards` because the top-level result is always an untitled "grid"
+ * wrapper (see buildDeviceCard) -- the real heading is on whichever child
+ * card ends up first. */
+export function firstCardTitle(cardConfig) {
+  if (!cardConfig) return null;
+  if (cardConfig.title) return cardConfig.title;
+  if (Array.isArray(cardConfig.cards)) {
+    for (const card of cardConfig.cards) {
+      const title = firstCardTitle(card);
+      if (title) return title;
+    }
+  }
+  return null;
 }

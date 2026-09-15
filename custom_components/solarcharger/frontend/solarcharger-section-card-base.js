@@ -38,7 +38,12 @@ export function defineSectionCard({ tagName, buildCardConfig, name, description 
 
     static async getConfigElement() {
       await import("./solarcharger-charger-card-editor.js");
-      return document.createElement("solarcharger-charger-card-editor");
+      const editor = document.createElement("solarcharger-charger-card-editor");
+      // Lets the editor preview this specific card's default title (see
+      // firstCardTitle() in solarcharger-shared.js) as its title field's
+      // placeholder -- each of the five cards computes a different one.
+      editor.buildCardConfig = buildCardConfig;
+      return editor;
     }
 
     static getStubConfig(hass) {
@@ -83,7 +88,12 @@ export function defineSectionCard({ tagName, buildCardConfig, name, description 
       }
 
       const entitiesByDevice = groupEntitiesByDevice(this._hass);
-      const cardConfig = buildCardConfig(device, entitiesByDevice.get(device.id) || [], this._config.title);
+      const cardConfig = buildCardConfig(
+        device,
+        entitiesByDevice.get(device.id) || [],
+        this._config.title,
+        this._config.columns
+      );
 
       // buildCardConfig() only embeds entity_ids/names, not live state, so
       // its output is stable across most hass updates -- only re-run setConfig
