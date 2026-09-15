@@ -202,9 +202,14 @@ function groupDeviceEntities(entities) {
  * Controls" so the device name and the section title share one line/header
  * instead of a separate heading line above it. `prefix` is only truthy for
  * the very first card a host actually renders (see buildDeviceCard below);
- * every other card keeps its own plain title (or null) unchanged. */
-function withHeadingPrefix(prefix, title) {
+ * every other card keeps its own plain title (or null) unchanged.
+ *
+ * If the user configured a custom `title` (verbatim=true), it replaces that
+ * first heading outright instead of prefixing it -- eg. "Diagnostic" becomes
+ * exactly what they typed, with no section name appended. */
+function withHeadingPrefix(prefix, title, verbatim) {
   if (!prefix) return title ?? null;
+  if (verbatim) return prefix;
   return title ? `${prefix} ${title}` : prefix;
 }
 
@@ -227,34 +232,34 @@ function buildAdvancedCard(advancedEntities, title) {
  * grouping (split by entity_category, then domain). Sensors has no title of
  * its own, the same way the Charge schedule badges don't -- it reads as more
  * tiles under the "Controls" heading rather than a second titled section. */
-function buildControlsSensorsSection(grouped, headingPrefix) {
+function buildControlsSensorsSection(grouped, headingPrefix, verbatim) {
   const cards = [];
   if (grouped.controls.length) {
-    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, "Controls"), grouped.controls));
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, "Controls", verbatim), grouped.controls));
     headingPrefix = null;
   }
   if (grouped.sensors.length) {
-    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null), grouped.sensors));
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null, verbatim), grouped.sensors));
   }
   return cards;
 }
 
 /** Diagnostic tile grid -- mirrors HA's own native device-page grouping. */
-function buildDiagnosticSection(grouped, headingPrefix) {
+function buildDiagnosticSection(grouped, headingPrefix, verbatim) {
   return grouped.diagnostic.length
-    ? [buildTileGrid(withHeadingPrefix(headingPrefix, "Diagnostic"), grouped.diagnostic)]
+    ? [buildTileGrid(withHeadingPrefix(headingPrefix, "Diagnostic", verbatim), grouped.diagnostic)]
     : [];
 }
 
 /** The weekly schedule table plus the schedule-adjacent toggle/selector tiles
  * shown directly underneath it. Has no native HA device-page equivalent, so
  * it's built from scratch rather than mirrored. */
-function buildScheduleSection(grouped, headingPrefix) {
+function buildScheduleSection(grouped, headingPrefix, verbatim) {
   const cards = [];
   if (grouped.scheduleRows.length) {
     cards.push({
       type: "entities",
-      title: withHeadingPrefix(headingPrefix, "Charge schedule"),
+      title: withHeadingPrefix(headingPrefix, "Charge schedule", verbatim),
       show_header_toggle: false,
       // A built-in card's header has no CSS custom property for its own
       // background or padding (unlike --ha-card-header-font-size, which
@@ -290,15 +295,15 @@ function buildScheduleSection(grouped, headingPrefix) {
     headingPrefix = null;
   }
   if (grouped.scheduleExtras.length) {
-    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null), grouped.scheduleExtras));
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null, verbatim), grouped.scheduleExtras));
   }
   return cards;
 }
 
 /** The Configuration card. */
-function buildConfigurationSection(grouped, headingPrefix) {
+function buildConfigurationSection(grouped, headingPrefix, verbatim) {
   return grouped.advanced.length
-    ? [buildAdvancedCard(grouped.advanced, withHeadingPrefix(headingPrefix, "Configuration"))]
+    ? [buildAdvancedCard(grouped.advanced, withHeadingPrefix(headingPrefix, "Configuration", verbatim))]
     : [];
 }
 
@@ -309,16 +314,22 @@ function buildConfigurationSection(grouped, headingPrefix) {
  * in its first section(s) (eg. no Controls or Sensors entities at all), the
  * device name attaches to whichever section actually ends up first instead
  * of being silently dropped. Shared by the full combined card and each
- * smaller per-section card -- see solarcharger-section-card-base.js. */
-function buildDeviceCard(device, entities, sections) {
+ * smaller per-section card -- see solarcharger-section-card-base.js.
+ *
+ * `titleOverride` is the card's optional user-configured `title` -- when
+ * set, it's used verbatim as that same first heading instead of the device
+ * name prefix (see withHeadingPrefix()). */
+function buildDeviceCard(device, entities, sections, titleOverride) {
   const grouped = groupDeviceEntities(entities);
-  let headingPrefix = device.name_by_user || device.name;
+  let headingPrefix = titleOverride || device.name_by_user || device.name;
+  let verbatim = Boolean(titleOverride);
   const cards = [];
   for (const buildSection of sections) {
-    const sectionCards = buildSection(grouped, headingPrefix);
+    const sectionCards = buildSection(grouped, headingPrefix, verbatim);
     if (sectionCards.length) {
       cards.push(...sectionCards);
       headingPrefix = null;
+      verbatim = false;
     }
   }
 
@@ -331,33 +342,34 @@ function buildDeviceCard(device, entities, sections) {
 
 /** Build the full Controls/Sensors/Diagnostic/Schedule/Configuration card config
  * for one device -- used by both the whole-view strategy and
- * solarcharger-charger-card (the single "everything in one card" card). */
-export function buildChargerSection(device, entities) {
-  return buildDeviceCard(device, entities, [
-    buildControlsSensorsSection,
-    buildDiagnosticSection,
-    buildScheduleSection,
-    buildConfigurationSection,
-  ]);
+ * solarcharger-charger-card (the single "everything in one card" card).
+ * `title`, if set, overrides the card's first heading -- see buildDeviceCard(). */
+export function buildChargerSection(device, entities, title) {
+  return buildDeviceCard(
+    device,
+    entities,
+    [buildControlsSensorsSection, buildDiagnosticSection, buildScheduleSection, buildConfigurationSection],
+    title
+  );
 }
 
 /** Just the Controls + Sensors card for one device, for solarcharger-controls-sensors-card. */
-export function buildControlsSensorsCard(device, entities) {
-  return buildDeviceCard(device, entities, [buildControlsSensorsSection]);
+export function buildControlsSensorsCard(device, entities, title) {
+  return buildDeviceCard(device, entities, [buildControlsSensorsSection], title);
 }
 
 /** Just the Diagnostic card for one device, for solarcharger-diagnostic-card. */
-export function buildDiagnosticCard(device, entities) {
-  return buildDeviceCard(device, entities, [buildDiagnosticSection]);
+export function buildDiagnosticCard(device, entities, title) {
+  return buildDeviceCard(device, entities, [buildDiagnosticSection], title);
 }
 
 /** Just the Charge schedule card (+ the badges underneath it) for one device,
  * for solarcharger-schedule-card. */
-export function buildScheduleCard(device, entities) {
-  return buildDeviceCard(device, entities, [buildScheduleSection]);
+export function buildScheduleCard(device, entities, title) {
+  return buildDeviceCard(device, entities, [buildScheduleSection], title);
 }
 
 /** Just the Configuration card for one device, for solarcharger-configuration-card. */
-export function buildConfigurationCard(device, entities) {
-  return buildDeviceCard(device, entities, [buildConfigurationSection]);
+export function buildConfigurationCard(device, entities, title) {
+  return buildDeviceCard(device, entities, [buildConfigurationSection], title);
 }

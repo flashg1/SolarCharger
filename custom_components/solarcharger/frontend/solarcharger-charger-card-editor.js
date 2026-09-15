@@ -2,8 +2,9 @@
  * Visual config editor shared by every per-device SolarCharger custom card
  * (solarcharger-charger-card and the smaller solarcharger-controls-sensors-card
  * / -diagnostic-card / -schedule-card / -configuration-card) -- they all take
- * the same config shape (just a device), so one editor covers all of them;
- * see solarcharger-section-card-base.js's getConfigElement().
+ * the same config shape (a device, plus an optional custom title), so one
+ * editor covers all of them; see solarcharger-section-card-base.js's
+ * getConfigElement().
  *
  * Uses <ha-form> with a declarative "device" selector schema -- the same
  * foundational, universally-loaded building block HA's own built-in card
@@ -46,10 +47,16 @@ const SCHEMA = [
       },
     },
   },
+  {
+    name: "title",
+    selector: { text: {} },
+  },
 ];
 
 function computeLabel(schemaEntry) {
-  return schemaEntry.name === "device_id" ? "Charger device" : schemaEntry.name;
+  if (schemaEntry.name === "device_id") return "Charger device";
+  if (schemaEntry.name === "title") return "Title (optional, overrides the default)";
+  return schemaEntry.name;
 }
 
 class SolarchargerChargerCardEditor extends HTMLElement {
@@ -80,17 +87,22 @@ class SolarchargerChargerCardEditor extends HTMLElement {
       this._form.computeLabel = computeLabel;
       this._form.addEventListener("value-changed", (ev) => {
         ev.stopPropagation();
-        const deviceId = ev.detail.value.device_id;
+        const { device_id: deviceId, title } = ev.detail.value;
         const device = this._hass.devices[deviceId];
         // Merge into the existing config (preserving "type" and anything
         // else the dialog already put there) rather than replacing it
         // outright -- _form.data below deliberately only carries device_id
-        // (the field our schema manages), so ha-form's echoed value doesn't
-        // include "type", and building newConfig from scratch would silently
-        // drop it. Persist the device's current display name, not its
-        // registry ID -- see the file header comment for why.
+        // and title (the fields our schema manages), so ha-form's echoed
+        // value doesn't include "type", and building newConfig from scratch
+        // would silently drop it. Persist the device's current display name,
+        // not its registry ID -- see the file header comment for why.
         const newConfig = { ...this._config, device_name: device ? device.name_by_user || device.name : "" };
         delete newConfig.device_id;
+        if (title) {
+          newConfig.title = title;
+        } else {
+          delete newConfig.title;
+        }
         this._config = newConfig;
         // Standard Lovelace card-editor contract: bubble the edited config
         // up to the card-config dialog via a "config-changed" event.
@@ -117,7 +129,7 @@ class SolarchargerChargerCardEditor extends HTMLElement {
 
     this._form.hass = this._hass;
     this._form.schema = SCHEMA;
-    this._form.data = { device_id: selectedDevice ? selectedDevice.id : "" };
+    this._form.data = { device_id: selectedDevice ? selectedDevice.id : "", title: this._config.title || "" };
   }
 }
 

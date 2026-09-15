@@ -83,7 +83,7 @@ export function defineSectionCard({ tagName, buildCardConfig, name, description 
       }
 
       const entitiesByDevice = groupEntitiesByDevice(this._hass);
-      const cardConfig = buildCardConfig(device, entitiesByDevice.get(device.id) || []);
+      const cardConfig = buildCardConfig(device, entitiesByDevice.get(device.id) || [], this._config.title);
 
       // buildCardConfig() only embeds entity_ids/names, not live state, so
       // its output is stable across most hass updates -- only re-run setConfig
