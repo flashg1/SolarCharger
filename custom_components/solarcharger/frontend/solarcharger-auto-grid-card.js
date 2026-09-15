@@ -60,7 +60,19 @@ class SolarchargerAutoGridCard extends HTMLElement {
               font-size: 1.5rem;
               font-weight: 400;
               margin: 0 0 8px 0;
+              padding: 4px 8px;
+              /* Kept in sync by hand with the card_mod background on the
+                 Charge schedule entities card in solarcharger-shared.js --
+                 that one can't reach this same value via a plain CSS custom
+                 property the way font-size does (there's no inherited
+                 --ha-card-header-background var), so it's card_mod-only and
+                 needs its own copy of this color. */
+              background-color: rgba(var(--rgb-primary-color), 0.15);
+              border-radius: var(--ha-border-radius-sm, 4px);
               color: var(--primary-text-color);
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
             .grid {
               display: grid;

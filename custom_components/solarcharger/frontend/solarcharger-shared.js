@@ -197,16 +197,27 @@ function groupDeviceEntities(entities) {
   };
 }
 
+/** Prefix a section's own title with the device name, for whichever card ends
+ * up first in a host card -- eg. "Controls" becomes "tesla_custom Tesla23m3
+ * Controls" so the device name and the section title share one line/header
+ * instead of a separate heading line above it. `prefix` is only truthy for
+ * the very first card a host actually renders (see buildDeviceCard below);
+ * every other card keeps its own plain title (or null) unchanged. */
+function withHeadingPrefix(prefix, title) {
+  if (!prefix) return title ?? null;
+  return title ? `${prefix} ${title}` : prefix;
+}
+
 /** Shape the Configuration card correctly for a container type (expander-card)
  * vs. the plain built-in "grid" card, which has no concept of a collapsible title. */
-function buildAdvancedCard(advancedEntities) {
+function buildAdvancedCard(advancedEntities, title) {
   if (ADVANCED_CARD_TYPE === "entities") {
-    return buildTileGrid("Configuration", advancedEntities);
+    return buildTileGrid(title, advancedEntities);
   }
 
   return {
     type: ADVANCED_CARD_TYPE,
-    title: "Configuration",
+    title,
     expanded: false,
     cards: [buildTileGrid(null, advancedEntities)],
   };
@@ -216,28 +227,54 @@ function buildAdvancedCard(advancedEntities) {
  * grouping (split by entity_category, then domain). Sensors has no title of
  * its own, the same way the Charge schedule badges don't -- it reads as more
  * tiles under the "Controls" heading rather than a second titled section. */
-function buildControlsSensorsSection(grouped) {
+function buildControlsSensorsSection(grouped, headingPrefix) {
   const cards = [];
-  if (grouped.controls.length) cards.push(buildTileGrid("Controls", grouped.controls));
-  if (grouped.sensors.length) cards.push(buildTileGrid(null, grouped.sensors));
+  if (grouped.controls.length) {
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, "Controls"), grouped.controls));
+    headingPrefix = null;
+  }
+  if (grouped.sensors.length) {
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null), grouped.sensors));
+  }
   return cards;
 }
 
 /** Diagnostic tile grid -- mirrors HA's own native device-page grouping. */
-function buildDiagnosticSection(grouped) {
-  return grouped.diagnostic.length ? [buildTileGrid("Diagnostic", grouped.diagnostic)] : [];
+function buildDiagnosticSection(grouped, headingPrefix) {
+  return grouped.diagnostic.length
+    ? [buildTileGrid(withHeadingPrefix(headingPrefix, "Diagnostic"), grouped.diagnostic)]
+    : [];
 }
 
 /** The weekly schedule table plus the schedule-adjacent toggle/selector tiles
  * shown directly underneath it. Has no native HA device-page equivalent, so
  * it's built from scratch rather than mirrored. */
-function buildScheduleSection(grouped) {
+function buildScheduleSection(grouped, headingPrefix) {
   const cards = [];
   if (grouped.scheduleRows.length) {
     cards.push({
       type: "entities",
-      title: "Charge schedule",
+      title: withHeadingPrefix(headingPrefix, "Charge schedule"),
       show_header_toggle: false,
+      // A built-in card's header has no CSS custom property for its own
+      // background or padding (unlike --ha-card-header-font-size, which
+      // solarcharger-section-card-base.js sets directly) -- highlighting
+      // just the header row, and shrinking its padding/line-height down to
+      // the same height as the other section titles, needs card_mod (HACS).
+      // Harmless if card_mod isn't installed: an unrecognized config key is
+      // just ignored. Keep this in sync by hand with
+      // solarcharger-auto-grid-card.js's own h1 (background, padding), used
+      // for the other section titles.
+      card_mod: {
+        style: `
+          .card-header {
+            background-color: rgba(var(--rgb-primary-color), 0.15);
+            border-radius: var(--ha-border-radius-sm, 4px) var(--ha-border-radius-sm, 4px) 0 0;
+            padding: 4px 8px;
+            line-height: normal;
+          }
+        `,
+      },
       entities: [
         { type: "custom:solarcharger-schedule-row", header: true },
         ...grouped.scheduleRows.map((row) => ({
@@ -250,25 +287,39 @@ function buildScheduleSection(grouped) {
         ...(grouped.resetButton ? [toEntityRow(grouped.resetButton)] : []),
       ],
     });
+    headingPrefix = null;
   }
-  if (grouped.scheduleExtras.length) cards.push(buildTileGrid(null, grouped.scheduleExtras));
+  if (grouped.scheduleExtras.length) {
+    cards.push(buildTileGrid(withHeadingPrefix(headingPrefix, null), grouped.scheduleExtras));
+  }
   return cards;
 }
 
 /** The Configuration card. */
-function buildConfigurationSection(grouped) {
-  return grouped.advanced.length ? [buildAdvancedCard(grouped.advanced)] : [];
+function buildConfigurationSection(grouped, headingPrefix) {
+  return grouped.advanced.length
+    ? [buildAdvancedCard(grouped.advanced, withHeadingPrefix(headingPrefix, "Configuration"))]
+    : [];
 }
 
-/** Stack a device-name heading followed by whichever section(s) `sections`
- * produce, as a single full-width-stacked "grid" card. Shared by the full
- * combined card and each smaller per-section card -- see
- * solarcharger-section-card-base.js. */
+/** Stack whichever section(s) `sections` produce, as a single
+ * full-width-stacked "grid" card, with the device name merged into the
+ * first section's own title rather than shown as a separate heading line
+ * above it (see withHeadingPrefix()). If a device happens to have nothing
+ * in its first section(s) (eg. no Controls or Sensors entities at all), the
+ * device name attaches to whichever section actually ends up first instead
+ * of being silently dropped. Shared by the full combined card and each
+ * smaller per-section card -- see solarcharger-section-card-base.js. */
 function buildDeviceCard(device, entities, sections) {
   const grouped = groupDeviceEntities(entities);
-  const cards = [{ type: "heading", heading: device.name_by_user || device.name }];
+  let headingPrefix = device.name_by_user || device.name;
+  const cards = [];
   for (const buildSection of sections) {
-    cards.push(...buildSection(grouped));
+    const sectionCards = buildSection(grouped, headingPrefix);
+    if (sectionCards.length) {
+      cards.push(...sectionCards);
+      headingPrefix = null;
+    }
   }
 
   // columns: 1 + square: false stacks the sub-cards full-width vertically --
