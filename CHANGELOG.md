@@ -10,7 +10,7 @@
 - Enabled local charge limit and end time for each device.
 ### Fix
 ### New feature
-- Added SolarCharger user interface card.
+- Added [SolarCharger user interface cards](https://github.com/flashg1/SolarCharger/wiki/User-interface#solarcharger-cards).
 ### Improvement
 - Assigned dedicated icons for most diagnostic entities.
 - Refactored coordinator. Moved weather and allocator to global default subentry device.
