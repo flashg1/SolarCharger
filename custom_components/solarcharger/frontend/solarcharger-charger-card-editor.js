@@ -43,9 +43,16 @@
  * sidesteps that rather than chasing it further. It's still non-destructive:
  * setting .value on the underlying <input> doesn't itself fire a
  * "value-changed" event, so leaving it untouched and saving still persists
- * no `title` at all -- see _syncConfig() and the value-changed handler
- * below, which only ever writes this._config.title in response to the user
- * actually editing the field.
+ * no `title` at all. The tricky part is that ha-form's value-changed event
+ * can't tell "the user typed this" apart from "this is just the seeded
+ * default still sitting in the box" -- both look like the same string coming
+ * back in ev.detail.value. That distinction matters when the device changes:
+ * without it, the previous device's default title gets misread as a real
+ * user override and permanently locked into the config, so every later
+ * device pick keeps showing that same stale title instead of its own. See
+ * _syncConfig() and the value-changed handler below, which compare the
+ * incoming title against this._lastDefaultTitle (the default seeded for the
+ * previously-selected device) to tell the two apart.
  *
  * Loaded lazily by getConfigElement() only when the user opens a card's edit
  * dialog.
@@ -134,7 +141,11 @@ class SolarchargerChargerCardEditor extends HTMLElement {
       // registry ID -- see the file header comment for why.
       const newConfig = { ...this._config, device_name: device ? device.name_by_user || device.name : "" };
       delete newConfig.device_id;
-      if (title) {
+      // A title equal to the previously-seeded default means the user never
+      // touched the field -- it's just the old device's default text still
+      // sitting in the box, not an intentional override. Only persist it if
+      // it actually differs from that.
+      if (title && title !== this._lastDefaultTitle) {
         newConfig.title = title;
       } else {
         delete newConfig.title;
@@ -186,6 +197,7 @@ class SolarchargerChargerCardEditor extends HTMLElement {
       const cardConfig = this.buildCardConfig(selectedDevice, entitiesByDevice.get(selectedDevice.id) || []);
       defaultTitle = firstCardTitle(cardConfig) || "";
     }
+    this._lastDefaultTitle = defaultTitle;
 
     this._form.schema = SCHEMA;
     this._form.data = {
