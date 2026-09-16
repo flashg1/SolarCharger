@@ -2,7 +2,7 @@
 
 ## v0.12.0 2026-09-11
 ### Breaking change
-- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.10.7 or prior.
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 - Renamed "Presence trigger" switch to "Device presence trigger". Please check this switch setting.
 - Renamed "End on condition" switch to "Exit condition trigger". Please check this switch setting.
 - Removed charge limit and end time from global defaults, and enabled for each device instead. See [SolarCharger cards](https://github.com/flashg1/SolarCharger/wiki/User-interface#solarcharger-cards).
