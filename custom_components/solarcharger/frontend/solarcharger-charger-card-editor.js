@@ -46,13 +46,18 @@
  * no `title` at all. The tricky part is that ha-form's value-changed event
  * can't tell "the user typed this" apart from "this is just the seeded
  * default still sitting in the box" -- both look like the same string coming
- * back in ev.detail.value. That distinction matters when the device changes:
- * without it, the previous device's default title gets misread as a real
- * user override and permanently locked into the config, so every later
- * device pick keeps showing that same stale title instead of its own. See
- * _syncConfig() and the value-changed handler below, which compare the
- * incoming title against this._lastDefaultTitle (the default seeded for the
- * previously-selected device) to tell the two apart.
+ * back in ev.detail.value. That distinction matters for edits to the title
+ * field on its own (without a device change): without it, the untouched
+ * default text gets misread as a real user override and permanently locked
+ * into the config. See _syncConfig() and the value-changed handler below,
+ * which compare the incoming title against this._lastDefaultTitle (the
+ * default seeded for the currently-selected device) to tell the two apart.
+ * A device change is simpler and always wins outright: whatever title came
+ * back in that same event is just an echo of the *old* device's field (the
+ * form hasn't re-rendered with the new device's default yet), so any
+ * existing title override -- genuine or not -- is dropped and the new
+ * device's default takes over. The user can retype a custom title for the
+ * new device afterwards if they still want one.
  *
  * Loaded lazily by getConfigElement() only when the user opens a card's edit
  * dialog.
@@ -144,8 +149,15 @@ class SolarchargerChargerCardEditor extends HTMLElement {
       // A title equal to the previously-seeded default means the user never
       // touched the field -- it's just the old device's default text still
       // sitting in the box, not an intentional override. Only persist it if
-      // it actually differs from that.
-      if (title && title !== this._lastDefaultTitle) {
+      // it actually differs from that. And a device change always drops any
+      // existing override, even a genuine one: `title` here is still an echo
+      // of the *old* device's field (ha-form hasn't re-rendered with the new
+      // device's default yet), so the new device's default should always win
+      // -- the user can retype a custom title for the new device if they
+      // still want one.
+      if (deviceId !== this._lastDeviceId) {
+        delete newConfig.title;
+      } else if (title && title !== this._lastDefaultTitle) {
         newConfig.title = title;
       } else {
         delete newConfig.title;
