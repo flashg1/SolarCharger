@@ -3,15 +3,15 @@
 ## v0.12.0 2026-09-11
 ### Breaking change
 - Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.10.7 or prior.
-- Renamed "End on condition" switch to "Exit condition trigger". Please reset if you are using this switch.
-- Renamed "Presence trigger" switch to "Device presence trigger". Please reset if you are using this switch.
+- Renamed "Presence trigger" switch to "Device presence trigger". Please check this switch setting.
+- Renamed "End on condition" switch to "Exit condition trigger". Please check this switch setting.
+- Removed charge limit and end time from global defaults, and enabled for each device instead. See [SolarCharger cards](https://github.com/flashg1/SolarCharger/wiki/User-interface#solarcharger-cards).
 - Removed global defaults "Delta allocated power".
 - Added global defaults "Net allocated power" which shows power available to SC for allocation.
-- Removed charge limit and end time from global defaults, and enabled for each device instead.
 ### Fix
 - Minor fixes to do with exception handling.
 ### New feature
-- Added [SolarCharger user interface cards](https://github.com/flashg1/SolarCharger/wiki/User-interface#solarcharger-cards).
+- Added [SolarCharger cards](https://github.com/flashg1/SolarCharger/wiki/User-interface#solarcharger-cards).
 ### Improvement
 - Assigned dedicated icons for most diagnostic entities.
 - Refactored coordinator. Moved weather and allocator to global default subentry device.
