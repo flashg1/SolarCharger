@@ -138,5 +138,9 @@ export function defineSectionCard({ tagName, buildCardConfig, name, description 
   customElements.define(tagName, SolarchargerSectionCard);
 
   window.customCards = window.customCards || [];
-  window.customCards.push({ type: tagName, name, description, preview: true });
+  // false: the live-rendered preview (an actual instance of the hosted
+  // grid/entities card) is much taller than the built-in cards' previews,
+  // making the picker awkward to scroll -- plain description text matches
+  // how cards like Grid/Horizontal stack/Humidifier present themselves.
+  window.customCards.push({ type: tagName, name, description, preview: false });
 }

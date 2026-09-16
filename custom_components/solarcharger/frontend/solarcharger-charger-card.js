@@ -24,5 +24,5 @@ defineSectionCard({
   tagName: "solarcharger-charger-card",
   buildCardConfig: buildChargerSection,
   name: "SolarCharger Charger",
-  description: "Controls and status for one SolarCharger charger device.",
+  description: "Controls, Sensors, Diagnostic, Charge schedule, and Configuration for one SolarCharger charger device, all in one card.",
 });
