@@ -15,6 +15,7 @@
  */
 
 import "./solarcharger-auto-grid-card.js";
+import "./solarcharger-multicolumn-card.js";
 import "./solarcharger-schedule-row.js";
 
 export const SOLARCHARGER_DOMAIN = "solarcharger";
@@ -317,22 +318,22 @@ function buildConfigurationSection(grouped, headingPrefix, verbatim, columns) {
     : [];
 }
 
-/** Stack whichever section(s) `sections` produce, as a single
- * full-width-stacked "grid" card, with the device name merged into the
- * first section's own title rather than shown as a separate heading line
- * above it (see withHeadingPrefix()). If a device happens to have nothing
- * in its first section(s) (eg. no Controls or Sensors entities at all), the
- * device name attaches to whichever section actually ends up first instead
- * of being silently dropped. Shared by the full combined card and each
- * smaller per-section card -- see solarcharger-section-card-base.js.
+/** Combine whichever section(s) `sections` produce into a single
+ * width-reflowing multi-column card (see solarcharger-multicolumn-card.js),
+ * with the device name merged into the first section's own title rather
+ * than shown as a separate heading line above it (see withHeadingPrefix()).
+ * If a device happens to have nothing in its first section(s) (eg. no
+ * Controls or Sensors entities at all), the device name attaches to
+ * whichever section actually ends up first instead of being silently
+ * dropped. Shared by the full combined card and each smaller per-section
+ * card -- see solarcharger-section-card-base.js.
  *
  * `titleOverride` is the card's optional user-configured `title` -- when
  * set, it's used verbatim as that same first heading instead of the device
  * name prefix (see withHeadingPrefix()). `tileColumns` is the card's
  * optional user-configured `columns` (defaulting to DEFAULT_TILE_COLUMNS
- * when unset) -- passed on to whichever sections accept it; note this is
- * unrelated to the outer "grid" card's own `columns: 1` below, which just
- * forces that wrapper to stack its sections vertically. */
+ * when unset) -- passed on to whichever sections accept it; unrelated to how
+ * many columns the outer multicolumn card itself ends up reflowing into. */
 function buildDeviceCard(device, entities, sections, titleOverride, tileColumns) {
   const grouped = groupDeviceEntities(entities);
   let headingPrefix = titleOverride || device.name_by_user || device.name;
@@ -348,11 +349,7 @@ function buildDeviceCard(device, entities, sections, titleOverride, tileColumns)
     }
   }
 
-  // columns: 1 + square: false stacks the sub-cards full-width vertically --
-  // without them, "grid" defaults to multiple square-forced columns, which
-  // squishes everything into tiny boxes both here and inside the nested
-  // tile/schedule grids above.
-  return { type: "grid", columns: 1, square: false, cards };
+  return { type: "custom:solarcharger-multicolumn-card", cards };
 }
 
 /** Build the full Controls/Sensors/Diagnostic/Schedule/Configuration card config
@@ -396,9 +393,9 @@ export function buildConfigurationCard(device, entities, title, columns) {
  * default title a user's own `title` config would override. Used by the
  * config editor to show that default as the title field's placeholder
  * (instead of a blank box) without baking it into the saved config. Walks
- * into `cards` because the top-level result is always an untitled "grid"
- * wrapper (see buildDeviceCard) -- the real heading is on whichever child
- * card ends up first. */
+ * into `cards` because the top-level result is always an untitled
+ * multicolumn wrapper (see buildDeviceCard) -- the real heading is on
+ * whichever child card ends up first. */
 export function firstCardTitle(cardConfig) {
   if (!cardConfig) return null;
   if (cardConfig.title) return cardConfig.title;
