@@ -1,7 +1,9 @@
 /**
- * Custom Lovelace card: a titled grid of child cards (tile cards, in this
- * project) that reflows its column count to the available width via plain
- * CSS `repeat(auto-fit, minmax(...))`, instead of a fixed count.
+ * Custom Lovelace card: a titled grid of child cards (usually tile cards,
+ * though solarcharger-shared.js also hosts a single entities card this way
+ * for the background its title `<h1>` gives for free) that reflows its
+ * column count to the available width via plain CSS
+ * `repeat(auto-fit, minmax(...))`, instead of a fixed count.
  *
  * The built-in "grid" card (hui-grid-card) only supports a fixed `columns`
  * value from config (or a hardcoded default) -- its own CSS is
@@ -66,12 +68,6 @@ class SolarchargerAutoGridCard extends HTMLElement {
               font-weight: 400;
               margin: 0 0 8px 0;
               padding: 4px 8px;
-              /* Kept in sync by hand with the card_mod background on the
-                 Charge schedule entities card in solarcharger-shared.js --
-                 that one can't reach this same value via a plain CSS custom
-                 property the way font-size does (there's no inherited
-                 --ha-card-header-background var), so it's card_mod-only and
-                 needs its own copy of this color. */
               background-color: rgba(var(--rgb-primary-color), 0.15);
               border-radius: var(--ha-border-radius-sm, 4px);
               color: var(--primary-text-color);

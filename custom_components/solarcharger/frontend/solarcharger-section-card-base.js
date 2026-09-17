@@ -25,15 +25,6 @@ export function defineSectionCard({ tagName, buildCardConfig, name, description 
     // throws "NotSupportedError: ... result must not have attributes" if it does.
     connectedCallback() {
       this.style.display = "block";
-      // The Charge schedule section hosts a plain built-in "entities" card,
-      // whose title renders via its native .card-header rule at
-      // --ha-card-header-font-size (defaulting to the larger
-      // --ha-font-size-2xl) -- unlike Controls/Diagnostic/Configuration,
-      // whose titles are our own solarcharger-auto-grid-card's <h1>, fixed
-      // at 1.5rem. CSS custom properties inherit through shadow DOM
-      // boundaries, so setting this here (rather than needing card_mod)
-      // brings the entities card's header down to match.
-      this.style.setProperty("--ha-card-header-font-size", "1.5rem");
     }
 
     static async getConfigElement() {

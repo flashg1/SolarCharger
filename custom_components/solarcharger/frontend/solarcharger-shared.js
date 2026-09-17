@@ -268,39 +268,33 @@ function buildDiagnosticSection(grouped, headingPrefix, verbatim, columns) {
 function buildScheduleSection(grouped, headingPrefix, verbatim, columns) {
   const cards = [];
   if (grouped.scheduleRows.length) {
+    // Hosted inside solarcharger-auto-grid-card rather than given its own
+    // `title` -- a built-in entities card's header has no CSS custom
+    // property for its own background (unlike --ha-card-header-font-size),
+    // so highlighting it to match the other section titles needed card_mod
+    // (HACS), which isn't guaranteed to be installed. The auto-grid-card's
+    // own <h1> gives the same background without that dependency; `columns:
+    // 1` just means "one card, not a reflowing tile grid".
     cards.push({
-      type: "entities",
+      type: "custom:solarcharger-auto-grid-card",
       title: withHeadingPrefix(headingPrefix, "Charge schedule", verbatim),
-      show_header_toggle: false,
-      // A built-in card's header has no CSS custom property for its own
-      // background or padding (unlike --ha-card-header-font-size, which
-      // solarcharger-section-card-base.js sets directly) -- highlighting
-      // just the header row, and shrinking its padding/line-height down to
-      // the same height as the other section titles, needs card_mod (HACS).
-      // Harmless if card_mod isn't installed: an unrecognized config key is
-      // just ignored. Keep this in sync by hand with
-      // solarcharger-auto-grid-card.js's own h1 (background, padding), used
-      // for the other section titles.
-      card_mod: {
-        style: `
-          .card-header {
-            background-color: rgba(var(--rgb-primary-color), 0.15);
-            border-radius: var(--ha-border-radius-sm, 4px) var(--ha-border-radius-sm, 4px) 0 0;
-            padding: 4px 8px;
-            line-height: normal;
-          }
-        `,
-      },
-      entities: [
-        { type: "custom:solarcharger-schedule-row", header: true },
-        ...grouped.scheduleRows.map((row) => ({
-          type: "custom:solarcharger-schedule-row",
-          day: row.day,
-          limit_entity: row.limitEntityId,
-          endtime_entity: row.endtimeEntityId,
-          default_limit_entity: row.defaultLimitEntityId,
-        })),
-        ...(grouped.resetButton ? [toEntityRow(grouped.resetButton)] : []),
+      columns: 1,
+      cards: [
+        {
+          type: "entities",
+          show_header_toggle: false,
+          entities: [
+            { type: "custom:solarcharger-schedule-row", header: true },
+            ...grouped.scheduleRows.map((row) => ({
+              type: "custom:solarcharger-schedule-row",
+              day: row.day,
+              limit_entity: row.limitEntityId,
+              endtime_entity: row.endtimeEntityId,
+              default_limit_entity: row.defaultLimitEntityId,
+            })),
+            ...(grouped.resetButton ? [toEntityRow(grouped.resetButton)] : []),
+          ],
+        },
       ],
     });
     headingPrefix = null;
