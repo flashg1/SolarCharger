@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.12.1 2026-09-17
+### Breaking change
+- Reminder: Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) if upgrading from v0.11.0 or prior.
+### Fix
+### New feature
+### Improvement
+- Removed dependency on card-mod for charge schedule heading colour.
+
 ## v0.12.0 2026-09-11
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
