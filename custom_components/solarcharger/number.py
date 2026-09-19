@@ -16,6 +16,7 @@ from homeassistant.const import (
     PERCENTAGE,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfPower,
     # UnitOfEnergy,
     UnitOfTime,
 )
@@ -53,6 +54,7 @@ from .const import (
     NUMBER_DEVICE_CHARGE_LIMIT,
     NUMBER_DEVICE_MAX_CHARGE_LIMIT,
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
+    NUMBER_MAX_BATTERY_EXPORT_POWER,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_POWER_MONITOR_DURATION,
@@ -369,6 +371,19 @@ CONFIG_NUMBER_LIST: tuple[
     # Hidden except for global defaults
     # entity_category=EntityCategory.CONFIG
     #####################################
+    (
+        NUMBER_MAX_BATTERY_EXPORT_POWER,
+        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
+        NumberEntityDescription(
+            key=NUMBER_MAX_BATTERY_EXPORT_POWER,
+            entity_category=EntityCategory.CONFIG,
+            device_class=NumberDeviceClass.POWER,
+            native_unit_of_measurement=UnitOfPower.WATT,
+            native_min_value=0.0,
+            native_max_value=+20000.0,
+            native_step=1.0,
+        ),
+    ),
     (
         NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
         SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,

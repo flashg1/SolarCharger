@@ -92,6 +92,7 @@
                 "title": "Charger options",
                 "description": "These are entities controlling charger behaviour with values defined in \"Configuration\" section. Replace with your own entities if required. Greyed-out entries are FYI only.\n\nTo delete an entity, select a dummy entity with name *.deleteme, eg. sensor.deleteme\n\nTo delete a string, replace string with 2 spaces.",
                 "data": {
+                    "max_battery_export_power": "Max battery export power (W)",
                     "charger_effective_voltage": "Charger effective voltage (V)",
                     "default_charge_limit_monday": "Monday default charge limit (%)",
                     "default_charge_limit_tuesday": "Tuesday default charge limit (%)",
@@ -178,6 +179,9 @@
             }
         },
         "number": {
+            "max_battery_export_power": {
+                "name": "Max battery export power"
+            },
             "charger_effective_voltage": {
                 "name": "Effective voltage"
             },
@@ -294,6 +298,9 @@
             }
         },
         "select": {
+            "net_battery_power": {
+                "name": "Net battery power"
+            },
             "weather_provider": {
                 "name": "Weather provider"
             },
@@ -385,6 +392,9 @@
             }
         },
         "switch": {
+            "limit_battery_export": {
+                "name": "Limit battery export"
+            },
             "charge": {
                 "name": "Charge"
             },

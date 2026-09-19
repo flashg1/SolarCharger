@@ -49,6 +49,7 @@ from ..const import (
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_CHARGER_PRIORITY,
+    NUMBER_MAX_BATTERY_EXPORT_POWER,
     NUMBER_POWER_MONITOR_DURATION,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
@@ -190,6 +191,9 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             #####################################
             # Charge environment
             #####################################
+            self._optional(
+                subentry, NUMBER_MAX_BATTERY_EXPORT_POWER, use_default
+            ): NUMBER_ENTITY_SELECTOR,
             self._optional(
                 subentry, NUMBER_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,

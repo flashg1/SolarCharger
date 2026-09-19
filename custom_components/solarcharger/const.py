@@ -12,7 +12,7 @@ NAME = "SolarCharger"
 DOMAIN = "solarcharger"
 DOMAIN_DATA = f"{DOMAIN}_data"
 # Also need to set version in manifest.json, README.md and CHANGELOG.md.
-VERSION = "0.12.1"
+VERSION = "0.13.0"
 STORAGE_VERSION = 1
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
@@ -333,9 +333,14 @@ OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 #######################################################
 # Global defaults device entities only
 #######################################################
-SENSOR_SYNC_UPDATE = "sync_update"
+SELECT_NET_BATTERY_POWER = "net_battery_power"
+NUMBER_MAX_BATTERY_EXPORT_POWER = "max_battery_export_power"  # Overridable
+SWITCH_LIMIT_BATTERY_EXPORT = "limit_battery_export"
+
 SELECT_WEATHER_PROVIDER = "weather_provider"
 SENSOR_WEATHER_FORECAST = "weather_forecast"
+
+SENSOR_SYNC_UPDATE = "sync_update"
 
 #######################################################
 # Global defaults and local device configs
@@ -574,6 +579,7 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     #####################################
     # Charger general configs
     #####################################
+    NUMBER_MAX_BATTERY_EXPORT_POWER,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_POWER_FACTOR,
@@ -667,6 +673,8 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     # global default entities
     #####################################
     SELECT_WEATHER_PROVIDER,
+    SELECT_NET_BATTERY_POWER,
+    SWITCH_LIMIT_BATTERY_EXPORT,
 ]
 
 # Config option with local values, ie. not stored by entities.
@@ -691,24 +699,8 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Global defaults: Environment defaults
     #####################################
+    NUMBER_MAX_BATTERY_EXPORT_POWER: 0.0,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE: None,  # Also update CONFIG_WITH_NO_DEFAULTS
-    #####################################
-    # Global defaults: Charge limit defaults
-    #####################################
-    NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY: 70,
-    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY: 70,
-    NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY: 70,
-    NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY: 70,
-    NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY: 80,
-    NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY: 80,
-    NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: 80,
-    NUMBER_CHARGE_LIMIT_MONDAY: 70,
-    NUMBER_CHARGE_LIMIT_TUESDAY: 70,
-    NUMBER_CHARGE_LIMIT_WEDNESDAY: 70,
-    NUMBER_CHARGE_LIMIT_THURSDAY: 70,
-    NUMBER_CHARGE_LIMIT_FRIDAY: 80,
-    NUMBER_CHARGE_LIMIT_SATURDAY: 80,
-    NUMBER_CHARGE_LIMIT_SUNDAY: 80,
     #####################################
     # Global defaults: Sun elevation triggers
     #####################################
@@ -724,14 +716,15 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_WAIT_CHARGER_OFF: 5,
     NUMBER_WAIT_CHARGER_AMP_CHANGE: 1,
     #####################################
-    # Global defaults: Switch defaults
-    #####################################
-    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE: DEFAULT_ON,
-    #####################################
     # Global defaults: Charger configs
     #####################################
     NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
     SELECT_WEATHER_PROVIDER: None,  # Also update CONFIG_WITH_NO_DEFAULTS
+    SELECT_NET_BATTERY_POWER: None,  # Also update CONFIG_WITH_NO_DEFAULTS
+    #####################################
+    # Global defaults: Switch defaults
+    #####################################
+    SWITCH_LIMIT_BATTERY_EXPORT: DEFAULT_OFF,
     #####################################
     # Local device required defaults
     #####################################
@@ -748,6 +741,23 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_CHARGER_MAX_CURRENT: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     TEXT_CHARGER_STEP_CURRENT_LIST: "[]",
     #####################################
+    # Local device charge limits and defaults
+    #####################################
+    NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY: 70,
+    NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY: 70,
+    NUMBER_DEFAULT_CHARGE_LIMIT_WEDNESDAY: 70,
+    NUMBER_DEFAULT_CHARGE_LIMIT_THURSDAY: 70,
+    NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY: 80,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY: 80,
+    NUMBER_DEFAULT_CHARGE_LIMIT_SUNDAY: 80,
+    NUMBER_CHARGE_LIMIT_MONDAY: 70,
+    NUMBER_CHARGE_LIMIT_TUESDAY: 70,
+    NUMBER_CHARGE_LIMIT_WEDNESDAY: 70,
+    NUMBER_CHARGE_LIMIT_THURSDAY: 70,
+    NUMBER_CHARGE_LIMIT_FRIDAY: 80,
+    NUMBER_CHARGE_LIMIT_SATURDAY: 80,
+    NUMBER_CHARGE_LIMIT_SUNDAY: 80,
+    #####################################
     # Local device optional defaults
     #####################################
     NUMBER_DEVICE_CHARGE_LIMIT: 70,
@@ -762,6 +772,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     SWITCH_PLUGIN_TRIGGER: DEFAULT_ON,
     SWITCH_DEVICE_PRESENCE_TRIGGER: DEFAULT_OFF,
     SWITCH_SUN_TRIGGER: DEFAULT_ON,
+    SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE: DEFAULT_ON,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED: DEFAULT_OFF,
     #####################################
     # Local device select defaults
@@ -772,6 +783,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
 }
 
 CONFIG_WITH_NO_DEFAULTS: list[str] = [
+    SELECT_NET_BATTERY_POWER,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     SELECT_WEATHER_PROVIDER,
     NUMBER_CHARGER_MAX_CURRENT,
@@ -879,6 +891,7 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
     #####################################
     # Charge environment
     #####################################
+    NUMBER_MAX_BATTERY_EXPORT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{NUMBER_MAX_BATTERY_EXPORT_POWER}",
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{NUMBER_CHARGER_EFFECTIVE_VOLTAGE}",
     #####################################
     # Sunrise/sunset triggers
@@ -909,6 +922,8 @@ DEVICE_INTERNAL_ENTITIES: dict[str, str] = {
     #####################################
     SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
     SELECT_WEATHER_PROVIDER: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SELECT_WEATHER_PROVIDER}",
+    SELECT_NET_BATTERY_POWER: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SELECT_NET_BATTERY_POWER}",
+    SWITCH_LIMIT_BATTERY_EXPORT: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SWITCH_LIMIT_BATTERY_EXPORT}",
     #####################################
     # Local device entities
     #####################################

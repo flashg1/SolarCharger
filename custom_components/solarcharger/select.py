@@ -8,11 +8,14 @@ from homeassistant.components.binary_sensor import (
     DOMAIN as BINARY_SENSOR_DOMAIN,
     BinarySensorDeviceClass,
 )
+from homeassistant.components.input_number import DOMAIN as INPUT_NUMBER_DOMAIN
+from homeassistant.components.number import DOMAIN as NUMBER_DOMAIN
 from homeassistant.components.select import (
     # ENTITY_ID_FORMAT,
     SelectEntity,
     SelectEntityDescription,
 )
+from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 from homeassistant.components.weather import DOMAIN as WEATHER_DOMAIN
 from homeassistant.config_entries import ConfigSubentry
 from homeassistant.core import State
@@ -29,6 +32,7 @@ from .const import (
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
+    SELECT_NET_BATTERY_POWER,
     SELECT_NONE,
     SELECT_START_STATE,
     SELECT_WEATHER_PROVIDER,
@@ -224,6 +228,35 @@ def option_weather_provider(self) -> list[str]:
 
 
 # ----------------------------------------------------------------------------
+def option_template_sensor(self) -> list[str]:
+    """Return a filtered list of entity IDs."""
+
+    registry = er.async_get(self.hass)
+
+    target_classes = {
+        None,  # Include sensors with no device class (custom template sensors)
+    }
+    filtered_entities = []
+
+    for entry in registry.entities.values():
+        # 1. Ensure it is a sensor or number
+        if entry.domain not in [SENSOR_DOMAIN, NUMBER_DOMAIN, INPUT_NUMBER_DOMAIN]:
+            continue
+
+        # 2. Check Device Class from the Registry (static configuration)
+        reg_class = entry.device_class or entry.original_device_class
+
+        # 3. Check Device Class from the State (live state)
+        state = self.hass.states.get(entry.entity_id)
+        state_class = state.attributes.get("device_class") if state else None
+
+        if reg_class in target_classes or state_class in target_classes:
+            filtered_entities.append(entry.entity_id)
+
+    return [SELECT_NONE, *sorted(filtered_entities)]
+
+
+# ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 CONFIG_SELECT_LIST: tuple[
     tuple[
@@ -241,6 +274,28 @@ CONFIG_SELECT_LIST: tuple[
     # Config:   entity_category=EntityCategory.CONFIG
     # Diagnostic: entity_category=EntityCategory.DIAGNOSTIC
     #####################################
+    (
+        SELECT_NET_BATTERY_POWER,
+        SolarChargerSelectEntity,
+        RESTORE_ON_START_TRUE,
+        option_template_sensor,
+        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
+        SelectEntityDescription(
+            key=SELECT_NET_BATTERY_POWER,
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
+    (
+        SELECT_WEATHER_PROVIDER,
+        SolarChargerSelectEntity,
+        RESTORE_ON_START_TRUE,
+        option_weather_provider,
+        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
+        SelectEntityDescription(
+            key=SELECT_WEATHER_PROVIDER,
+            entity_category=EntityCategory.CONFIG,
+        ),
+    ),
     (
         SELECT_DEVICE_PRESENCE_SENSOR,
         SolarChargerSelectEntity,
@@ -271,17 +326,6 @@ CONFIG_SELECT_LIST: tuple[
         SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SelectEntityDescription(
             key=SELECT_EXIT_CONDITION_SENSOR,
-            entity_category=EntityCategory.CONFIG,
-        ),
-    ),
-    (
-        SELECT_WEATHER_PROVIDER,
-        SolarChargerSelectEntity,
-        RESTORE_ON_START_TRUE,
-        option_weather_provider,
-        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
-        SelectEntityDescription(
-            key=SELECT_WEATHER_PROVIDER,
             entity_category=EntityCategory.CONFIG,
         ),
     ),

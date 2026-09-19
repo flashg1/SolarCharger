@@ -20,7 +20,7 @@
 -->
 <!--
 [total-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.total
-[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.12.1']
+[latest-downloads]: https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=latest%20version&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.solarcharger.versions['0.13.0']
 -->
 
 ## Solar Charger - Work in progress
@@ -74,6 +74,7 @@ Home Assistant solar charger uses surplus solar to charge your EV and home. ☀�
 - Uses [power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) to determine whether or not to pause or resume charging. Charger is switched off when paused.
 - Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).
 - Support [SolarCharger cards](https://github.com/flashg1/SolarCharger/wiki/User-interface#solarcharger-cards).
+- Added native support for battery as a source of power.
 
 **💡 Tip:** Please :star: this project if you find it useful, and may be also buy me a coffee!
 

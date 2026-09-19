@@ -41,6 +41,7 @@ from ..const import (
     OPTION_CHARGER_NAME,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
+    SELECT_NET_BATTERY_POWER,
     SELECT_START_STATE,
     SELECT_WEATHER_PROVIDER,
     SENSOR_CONSUMED_ENERGY_TODAY,
@@ -55,6 +56,7 @@ from ..const import (
     SWITCH_DEVICE_PRESENCE_TRIGGER,
     SWITCH_EXIT_CONDITION_TRIGGER,
     SWITCH_FAST_CHARGE_MODE,
+    SWITCH_LIMIT_BATTERY_EXPORT,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
@@ -124,6 +126,11 @@ class ScOptionState(ScConfigState):
     def weather_provider_selector_entity_id(self) -> str:
         """Return weather provider selector entity ID."""
         return self._internal_entity_ids[SELECT_WEATHER_PROVIDER]
+
+    @cached_property
+    def net_battery_power_selector_entity_id(self) -> str:
+        """Return net battery power entity ID."""
+        return self._internal_entity_ids[SELECT_NET_BATTERY_POWER]
 
     # ----------------------------------------------------------------------------
     # Local device only entities.
@@ -844,12 +851,20 @@ class ScOptionState(ScConfigState):
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def is_reduce_charge_limit_difference_between_days(self) -> bool:
-        """Return True if reduce charge limit difference between days is enabled."""
+    def get_net_battery_power_entity_id(self) -> str | None:
+        """Get weather provider entity ID."""
 
-        return self.option_get_entity_boolean_or_abort(
-            SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE
-        )
+        entity_id = self.get_string(self.net_battery_power_selector_entity_id)
+        if entity_id in [STATE_UNKNOWN, STATE_UNAVAILABLE]:
+            entity_id = None
+
+        return entity_id
+
+    # ----------------------------------------------------------------------------
+    def is_enforce_battery_export(self) -> bool:
+        """Return True if enforce battery export is enabled."""
+
+        return self.option_get_entity_boolean_or_abort(SWITCH_LIMIT_BATTERY_EXPORT)
 
     # ----------------------------------------------------------------------------
     # Local device control entities: Readers
@@ -873,6 +888,14 @@ class ScOptionState(ScConfigState):
 
         return self.option_get_entity_number_or_abort(
             NUMBER_DEVICE_MAX_CHARGE_LIMIT, val_dict
+        )
+
+    # ----------------------------------------------------------------------------
+    def is_reduce_charge_limit_difference_between_days(self) -> bool:
+        """Return True if reduce charge limit difference between days is enabled."""
+
+        return self.option_get_entity_boolean_or_abort(
+            SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE
         )
 
     # ----------------------------------------------------------------------------
