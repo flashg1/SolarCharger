@@ -49,8 +49,8 @@ from ..const import (
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
     NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_CHARGER_PRIORITY,
-    NUMBER_MAX_BATTERY_EXPORT_POWER,
     NUMBER_POWER_MONITOR_DURATION,
+    NUMBER_SOURCE_MAX_OUTPUT_POWER,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
@@ -192,9 +192,6 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             # Charge environment
             #####################################
             self._optional(
-                subentry, NUMBER_MAX_BATTERY_EXPORT_POWER, use_default
-            ): NUMBER_ENTITY_SELECTOR,
-            self._optional(
                 subentry, NUMBER_CHARGER_EFFECTIVE_VOLTAGE, use_default
             ): NUMBER_ENTITY_SELECTOR,
             #####################################
@@ -245,6 +242,18 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         api_entities: dict[str, str | None] | None = get_device_api_entities(subentry)
 
         return {
+            #####################################
+            # Power source entities
+            #####################################
+            self._optional(
+                subentry, NUMBER_SOURCE_MAX_OUTPUT_POWER, use_default
+            ): choose_selector(
+                api_entities,
+                NUMBER_SOURCE_MAX_OUTPUT_POWER,
+                NUMBER_ENTITY_SELECTOR_READ_ONLY,
+                NUMBER_ENTITY_SELECTOR,
+                MODIFIABLE_IF_SC_ENTITY,
+            ),
             #####################################
             # Charge environment
             #####################################

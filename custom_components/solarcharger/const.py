@@ -333,10 +333,6 @@ OPTION_SELECT_SETTINGS = "select_global_or_local_settings"
 #######################################################
 # Global defaults device entities only
 #######################################################
-SELECT_NET_BATTERY_POWER = "net_battery_power"
-NUMBER_MAX_BATTERY_EXPORT_POWER = "max_battery_export_power"  # Overridable
-SWITCH_LIMIT_BATTERY_EXPORT = "limit_battery_export"
-
 SELECT_WEATHER_PROVIDER = "weather_provider"
 SENSOR_WEATHER_FORECAST = "weather_forecast"
 
@@ -366,6 +362,13 @@ DELTA_POWER_MONITOR_DURATION = 20  # +/- 20%
 #######################################################
 # Local device internal non-configurable entities
 #######################################################
+#####################################
+# Power source entities, eg. generator, battery, etc.
+#####################################
+SELECT_SOURCE_NET_POWER = "source_net_power"  # +ve/-ve
+NUMBER_SOURCE_MAX_OUTPUT_POWER = "source_max_output_power"  # Overridable, +ve only
+SWITCH_SOURCE_LIMIT_OUTPUT_POWER = "source_limit_output_power"
+
 #####################################
 # Monitor window entities
 #####################################
@@ -399,7 +402,7 @@ SENSOR_SELF_DEPOWER_TODAY = "self_depower_today"
 SENSOR_LAST_CHECK = "last_check"  # To be removed
 
 #####################################
-# Config entities
+# Configurable entities
 #####################################
 SELECT_START_STATE = "start_state"
 NUMBER_DEVICE_MIN_CHARGE_LIMIT = "device_min_charge_limit"
@@ -577,9 +580,14 @@ NON_ENTITY_CONFIGS: list[str] = [
 # Entity IDs that are saved in options config.
 CONFIG_ENTITY_ID_LIST: list[str] = [
     #####################################
+    # Power source entities
+    #####################################
+    SELECT_SOURCE_NET_POWER,
+    NUMBER_SOURCE_MAX_OUTPUT_POWER,
+    SWITCH_SOURCE_LIMIT_OUTPUT_POWER,
+    #####################################
     # Charger general configs
     #####################################
-    NUMBER_MAX_BATTERY_EXPORT_POWER,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_CHARGER_POWER_FACTOR,
@@ -673,8 +681,6 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     # global default entities
     #####################################
     SELECT_WEATHER_PROVIDER,
-    SELECT_NET_BATTERY_POWER,
-    SWITCH_LIMIT_BATTERY_EXPORT,
 ]
 
 # Config option with local values, ie. not stored by entities.
@@ -696,18 +702,20 @@ RESTORE_ON_START_TRUE = True
 RESTORE_ON_START_FALSE = False
 
 OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
+    #######################################################
+    # Global defaults
+    #######################################################
     #####################################
-    # Global defaults: Environment defaults
+    # Environment defaults
     #####################################
-    NUMBER_MAX_BATTERY_EXPORT_POWER: 0.0,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     #####################################
-    # Global defaults: Sun elevation triggers
+    # Sun elevation triggers
     #####################################
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER: 3,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER: 6,
     #####################################
-    # Global defaults: Wait times
+    # Wait times
     #####################################
     NUMBER_WAIT_DEVICE_WAKEUP: 40,
     NUMBER_WAIT_DEVICE_UPDATE_HA: 5,
@@ -716,17 +724,21 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_WAIT_CHARGER_OFF: 5,
     NUMBER_WAIT_CHARGER_AMP_CHANGE: 1,
     #####################################
-    # Global defaults: Charger configs
+    # Charger configs
     #####################################
     NUMBER_POWER_MONITOR_DURATION: 10,  # 0=disabled
     SELECT_WEATHER_PROVIDER: None,  # Also update CONFIG_WITH_NO_DEFAULTS
-    SELECT_NET_BATTERY_POWER: None,  # Also update CONFIG_WITH_NO_DEFAULTS
+    #######################################################
+    # Local device
+    #######################################################
     #####################################
-    # Global defaults: Switch defaults
+    # Power source entities
     #####################################
-    SWITCH_LIMIT_BATTERY_EXPORT: DEFAULT_OFF,
+    SELECT_SOURCE_NET_POWER: None,  # Also update CONFIG_WITH_NO_DEFAULTS
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: 0.0,
+    SWITCH_SOURCE_LIMIT_OUTPUT_POWER: DEFAULT_OFF,
     #####################################
-    # Local device required defaults
+    # Device required defaults
     #####################################
     NUMBER_CHARGER_MAX_SPEED: 6.1448,
     NUMBER_CHARGER_POWER_FACTOR: 1.0,
@@ -741,7 +753,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_CHARGER_MAX_CURRENT: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     TEXT_CHARGER_STEP_CURRENT_LIST: "[]",
     #####################################
-    # Local device charge limits and defaults
+    # Device charge limits and defaults
     #####################################
     NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY: 70,
     NUMBER_DEFAULT_CHARGE_LIMIT_TUESDAY: 70,
@@ -758,11 +770,11 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     NUMBER_CHARGE_LIMIT_SATURDAY: 80,
     NUMBER_CHARGE_LIMIT_SUNDAY: 80,
     #####################################
-    # Local device optional defaults
+    # Device optional defaults
     #####################################
     NUMBER_DEVICE_CHARGE_LIMIT: 70,
     #####################################
-    # Local device switch defaults
+    # Device switch defaults
     #####################################
     SWITCH_CHARGE: DEFAULT_OFF,
     SWITCH_FAST_CHARGE_MODE: DEFAULT_OFF,
@@ -775,7 +787,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE: DEFAULT_ON,
     SWITCH_CALIBRATE_MAX_CHARGE_SPEED: DEFAULT_OFF,
     #####################################
-    # Local device select defaults
+    # Device select defaults
     #####################################
     SELECT_DEVICE_PRESENCE_SENSOR: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     SELECT_START_STATE: StartState.AUTO.value,
@@ -783,7 +795,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
 }
 
 CONFIG_WITH_NO_DEFAULTS: list[str] = [
-    SELECT_NET_BATTERY_POWER,
+    SELECT_SOURCE_NET_POWER,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     SELECT_WEATHER_PROVIDER,
     NUMBER_CHARGER_MAX_CURRENT,
@@ -891,7 +903,6 @@ OPTION_GLOBAL_DEFAULT_ENTITIES: dict[str, str] = {
     #####################################
     # Charge environment
     #####################################
-    NUMBER_MAX_BATTERY_EXPORT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{NUMBER_MAX_BATTERY_EXPORT_POWER}",
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{NUMBER_CHARGER_EFFECTIVE_VOLTAGE}",
     #####################################
     # Sunrise/sunset triggers
@@ -922,8 +933,11 @@ DEVICE_INTERNAL_ENTITIES: dict[str, str] = {
     #####################################
     SENSOR_SYNC_UPDATE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SENSOR_SYNC_UPDATE}",
     SELECT_WEATHER_PROVIDER: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SELECT_WEATHER_PROVIDER}",
-    SELECT_NET_BATTERY_POWER: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SELECT_NET_BATTERY_POWER}",
-    SWITCH_LIMIT_BATTERY_EXPORT: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_GLOBAL_DEFAULTS}_{SWITCH_LIMIT_BATTERY_EXPORT}",
+    #####################################
+    # Power source entities
+    #####################################
+    SELECT_SOURCE_NET_POWER: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_SOURCE_NET_POWER}",
+    SWITCH_SOURCE_LIMIT_OUTPUT_POWER: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SOURCE_LIMIT_OUTPUT_POWER}",
     #####################################
     # Local device entities
     #####################################
@@ -1041,6 +1055,8 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
@@ -1074,6 +1090,8 @@ TESLA_CUSTOM_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 TESLA_MQTTBLE_ENTITIES: dict[str, str | None] = {
@@ -1108,6 +1126,8 @@ TESLA_MQTTBLE_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 TESLA_ESPBLE_ENTITIES: dict[str, str | None] = {
@@ -1143,6 +1163,8 @@ TESLA_ESPBLE_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 TESLA_FLEET_ENTITIES: dict[str, str | None] = {
@@ -1176,6 +1198,8 @@ TESLA_FLEET_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 # Tessie and Teslemetry are using same entity names as Tesla Fleet.
@@ -1220,6 +1244,8 @@ MYSKODA_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 BYD_VEHICLE_ENTITIES: dict[str, str | None] = {
@@ -1256,6 +1282,8 @@ BYD_VEHICLE_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 GWM_ORA_ENTIITIES: dict[str, str | None] = {
@@ -1292,6 +1320,8 @@ GWM_ORA_ENTIITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 KIA_UVO_ENTIITIES: dict[str, str | None] = {
@@ -1325,6 +1355,8 @@ KIA_UVO_ENTIITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 GEELY_CONNECT_ENTIITIES: dict[str, str | None] = {
@@ -1359,6 +1391,8 @@ GEELY_CONNECT_ENTIITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 VOLVO_ENTIITIES: dict[str, str | None] = {
@@ -1396,6 +1430,8 @@ VOLVO_ENTIITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 MG_SAIC_ENTIITIES: dict[str, str | None] = {
@@ -1435,6 +1471,8 @@ MG_SAIC_ENTIITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 USER_CUSTOM_ENTITIES: dict[str, str | None] = {
@@ -1468,6 +1506,8 @@ USER_CUSTOM_ENTITIES: dict[str, str | None] = {
     NUMBER_CHARGER_PRIORITY: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_PRIORITY}",
     NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT}",
     SENSOR_DELTA_ALLOCATED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_DELTA_ALLOCATED_POWER}",
+    # Power source entities
+    NUMBER_SOURCE_MAX_OUTPUT_POWER: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_SOURCE_MAX_OUTPUT_POWER}",
 }
 
 CHARGE_API_ENTITIES: dict[str, dict[str, str | None]] = {

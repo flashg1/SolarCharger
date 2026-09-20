@@ -41,7 +41,7 @@ from ..const import (
     OPTION_CHARGER_NAME,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
-    SELECT_NET_BATTERY_POWER,
+    SELECT_SOURCE_NET_POWER,
     SELECT_START_STATE,
     SELECT_WEATHER_PROVIDER,
     SENSOR_CONSUMED_ENERGY_TODAY,
@@ -56,11 +56,11 @@ from ..const import (
     SWITCH_DEVICE_PRESENCE_TRIGGER,
     SWITCH_EXIT_CONDITION_TRIGGER,
     SWITCH_FAST_CHARGE_MODE,
-    SWITCH_LIMIT_BATTERY_EXPORT,
     SWITCH_PLUGIN_TRIGGER,
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
+    SWITCH_SOURCE_LIMIT_OUTPUT_POWER,
     SWITCH_SUN_TRIGGER,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
@@ -128,9 +128,9 @@ class ScOptionState(ScConfigState):
         return self._internal_entity_ids[SELECT_WEATHER_PROVIDER]
 
     @cached_property
-    def net_battery_power_selector_entity_id(self) -> str:
-        """Return net battery power entity ID."""
-        return self._internal_entity_ids[SELECT_NET_BATTERY_POWER]
+    def source_net_power_selector_entity_id(self) -> str:
+        """Return source net power entity ID."""
+        return self._internal_entity_ids[SELECT_SOURCE_NET_POWER]
 
     # ----------------------------------------------------------------------------
     # Local device only entities.
@@ -851,20 +851,20 @@ class ScOptionState(ScConfigState):
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def get_net_battery_power_entity_id(self) -> str | None:
-        """Get weather provider entity ID."""
+    def get_source_net_power_entity_id(self) -> str | None:
+        """Get source net power entity ID."""
 
-        entity_id = self.get_string(self.net_battery_power_selector_entity_id)
+        entity_id = self.get_string(self.source_net_power_selector_entity_id)
         if entity_id in [STATE_UNKNOWN, STATE_UNAVAILABLE]:
             entity_id = None
 
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def is_enforce_battery_export(self) -> bool:
-        """Return True if enforce battery export is enabled."""
+    def is_source_limit_output_power(self) -> bool:
+        """Return True if source limit output power is enabled."""
 
-        return self.option_get_entity_boolean_or_abort(SWITCH_LIMIT_BATTERY_EXPORT)
+        return self.option_get_entity_boolean_or_abort(SWITCH_SOURCE_LIMIT_OUTPUT_POWER)
 
     # ----------------------------------------------------------------------------
     # Local device control entities: Readers

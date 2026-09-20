@@ -54,10 +54,10 @@ from .const import (
     NUMBER_DEVICE_CHARGE_LIMIT,
     NUMBER_DEVICE_MAX_CHARGE_LIMIT,
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
-    NUMBER_MAX_BATTERY_EXPORT_POWER,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_POWER_MONITOR_DURATION,
+    NUMBER_SOURCE_MAX_OUTPUT_POWER,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
@@ -250,6 +250,12 @@ CONFIG_NUMBER_LIST: tuple[
             native_step=1,
         ),
     ),
+    #####################################
+    # Local device config or control entities
+    # Must haves, ie. not hidden for all
+    # entity_category=None
+    # entity_category=EntityCategory.CONFIG
+    #####################################
     # Used as local device entity.
     # OCPP comes with own entity, but should also use this to avoid reading from OCPP.
     # So will make this configurable.
@@ -266,12 +272,6 @@ CONFIG_NUMBER_LIST: tuple[
             native_step=0.01,
         ),
     ),
-    #####################################
-    # Local device config or control entities
-    # Must haves, ie. not hidden for all
-    # entity_category=None
-    # entity_category=EntityCategory.CONFIG
-    #####################################
     (
         NUMBER_CHARGER_MAX_SPEED,
         SolarChargerEntityType.TYPE_LOCAL_ONLY,
@@ -366,16 +366,11 @@ CONFIG_NUMBER_LIST: tuple[
             native_step=1,
         ),
     ),
-    #####################################
-    # Global default config entities
-    # Hidden except for global defaults
-    # entity_category=EntityCategory.CONFIG
-    #####################################
     (
-        NUMBER_MAX_BATTERY_EXPORT_POWER,
-        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
+        NUMBER_SOURCE_MAX_OUTPUT_POWER,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
-            key=NUMBER_MAX_BATTERY_EXPORT_POWER,
+            key=NUMBER_SOURCE_MAX_OUTPUT_POWER,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.POWER,
             native_unit_of_measurement=UnitOfPower.WATT,
@@ -384,6 +379,11 @@ CONFIG_NUMBER_LIST: tuple[
             native_step=1.0,
         ),
     ),
+    #####################################
+    # Global default config entities
+    # Hidden except for global defaults
+    # entity_category=EntityCategory.CONFIG
+    #####################################
     (
         NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
         SolarChargerEntityType.TYPE_LOCALHIDDEN_GLOBAL,

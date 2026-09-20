@@ -32,8 +32,8 @@ from .const import (
     SELECT,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
-    SELECT_NET_BATTERY_POWER,
     SELECT_NONE,
+    SELECT_SOURCE_NET_POWER,
     SELECT_START_STATE,
     SELECT_WEATHER_PROVIDER,
     START_STATE_LIST,
@@ -275,13 +275,13 @@ CONFIG_SELECT_LIST: tuple[
     # Diagnostic: entity_category=EntityCategory.DIAGNOSTIC
     #####################################
     (
-        SELECT_NET_BATTERY_POWER,
+        SELECT_SOURCE_NET_POWER,
         SolarChargerSelectEntity,
         RESTORE_ON_START_TRUE,
         option_template_sensor,
-        SolarChargerEntityType.TYPE_GLOBAL_ONLY,
+        SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SelectEntityDescription(
-            key=SELECT_NET_BATTERY_POWER,
+            key=SELECT_SOURCE_NET_POWER,
             entity_category=EntityCategory.CONFIG,
         ),
     ),
