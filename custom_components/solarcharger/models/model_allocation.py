@@ -12,6 +12,9 @@ class PowerAllocation:
     subentry_id: str
     name: str
 
+    #####################################
+    # Charger variables
+    #####################################
     # Environment data:
     # Maximum power the charger can consume.
     max_power: float
@@ -72,11 +75,23 @@ class PowerAllocation:
     # It is then combined with consumed_power to get the final power for the charger, which can be -ve, 0 or +ve.
     final_power: float = 0.0
 
+    #####################################
+    # Power source variables
+    #####################################
+    source_limit_output_power: bool = False
+    source_net_power: float = 0.0  # +ve/-ve
+    source_max_output_power: float = 0.0  # +ve
+    source_depower: float = 0.0  # +ve
+
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of PowerAllocation."""
         return (
             f"name={self.name}, "
+            f"source_limit_output_power={self.source_limit_output_power}, "
+            f"source_net_power={self.source_net_power}, "
+            f"source_max_output_power={self.source_max_output_power}, "
+            f"source_depower={self.source_depower}, "
             f"max_power={self.max_power}, "
             f"max_current={self.max_current}, "
             f"step_power_list={self.step_power_list}, "
@@ -126,11 +141,17 @@ class AllocationGroup:
     # Total running instances including paused chargers.
     total_instance: int = 0
 
+    #####################################
+    # Power source variables
+    #####################################
+    total_source_depower: float = 0  # +ve
+
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of AllocationGroup."""
         return (
             f"priority={self.priority}, "
+            f"total_source_depower={self.total_source_depower}, "
             f"total_max_power={self.total_max_power}, "
             f"total_consumed_power={self.total_consumed_power}, "
             f"total_need_power={self.total_need_power}, "
@@ -188,10 +209,16 @@ class AllocationBook:
     # So must keep doing deallocation until device is paused and power released.
     need_rebalance: bool = False  # Not used, to be removed.
 
+    #####################################
+    # Power source variables
+    #####################################
+    total_source_depower: float = 0.0  # +ve
+
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of AllocationBook."""
         return (
+            f"source_depower={self.total_source_depower}, "
             f"active_instance={self.total_active_instance}, "
             f"paused_instance={self.total_paused_instance}, "
             f"total_instance={self.total_instance}, "

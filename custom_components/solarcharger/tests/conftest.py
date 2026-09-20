@@ -86,6 +86,13 @@ class FakeSolarCharge:
     step_power_list: list[float] = field(default_factory=list)
     self_depower_today: int = 0
 
+    #####################################
+    # Power source variables
+    #####################################
+    source_limit_output_power: bool = False
+    source_net_power: float = 0.0
+    source_max_output_power: float = 0.0
+
     def get_charger_priority(self) -> int:
         """Return configured priority."""
         return self.priority
@@ -166,6 +173,18 @@ class FakeSolarCharge:
     def get_net_power(self) -> float | None:
         """Return configured net power."""
         return self.net_power
+
+    def is_source_limit_output_power(self) -> bool:
+        """Return configured source-limit-output-power flag."""
+        return self.source_limit_output_power
+
+    def get_source_net_power(self) -> float | None:
+        """Get power source net power."""
+        return self.source_net_power
+
+    def get_source_max_output_power(self) -> float:
+        """Get power source max output power."""
+        return self.source_max_output_power
 
     @property
     def machine_state(self) -> SimpleNamespace:

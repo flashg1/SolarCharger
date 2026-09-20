@@ -188,6 +188,19 @@ class PowerAllocator:
         )
         member.consumed_power = consumed_power
 
+        #####################################
+        # Power source
+        #####################################
+        cap_source = control.controller.solar_charge.is_source_limit_output_power()
+        source_net_power = control.controller.solar_charge.get_source_net_power()
+        source_max_power = control.controller.solar_charge.get_source_max_output_power()
+        if cap_source and source_net_power is not None:
+            member.source_limit_output_power = cap_source
+            member.source_net_power = source_net_power
+            member.source_max_output_power = source_max_power
+            if source_net_power < 0 and abs(source_net_power) > source_max_power:
+                member.source_depower = abs(source_net_power) - source_max_power
+
         return member
 
     # ----------------------------------------------------------------------------
@@ -267,6 +280,11 @@ class PowerAllocator:
         group.total_deallocation_final_weight += member.deallocation_final_weight
         group.total_instance += member.instance
 
+        #####################################
+        # Power source
+        #####################################
+        group.total_source_depower += member.source_depower
+
     # ----------------------------------------------------------------------------
     def _get_allocation_pool(self, net_power: float = 0.0) -> AllocationBook:
         """Get allocation pool for active and paused devices."""
@@ -328,6 +346,7 @@ class PowerAllocator:
             )
 
             book.total_consumed_power += active_member.consumed_power
+            book.total_source_depower += active_member.source_depower
 
             #####################################
             # Populate rebalance member group with active chargers only.
@@ -341,7 +360,9 @@ class PowerAllocator:
             )
 
         book.net_power = net_power
-        book.gross_power = net_power - book.total_consumed_power
+        book.gross_power = (
+            net_power - book.total_consumed_power + book.total_source_depower
+        )
 
         return book
 

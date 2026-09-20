@@ -36,6 +36,7 @@ from ..const import (
     NUMBER_DEVICE_MAX_CHARGE_LIMIT,
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
+    NUMBER_SOURCE_MAX_OUTPUT_POWER,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_CHARGER_NAME,
@@ -851,6 +852,19 @@ class ScOptionState(ScConfigState):
         return entity_id
 
     # ----------------------------------------------------------------------------
+    # Local device control entities: Readers
+    # ----------------------------------------------------------------------------
+    def is_source_limit_output_power(
+        self,
+        val_dict: ConfigValueDict | None = None,
+    ) -> bool:
+        """Is power source limit output power?"""
+
+        return self.option_get_entity_boolean_or_abort(
+            SWITCH_SOURCE_LIMIT_OUTPUT_POWER, val_dict
+        )
+
+    # ----------------------------------------------------------------------------
     def get_source_net_power_entity_id(self) -> str | None:
         """Get source net power entity ID."""
 
@@ -861,13 +875,27 @@ class ScOptionState(ScConfigState):
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def is_source_limit_output_power(self) -> bool:
-        """Return True if source limit output power is enabled."""
+    def get_source_net_power(self) -> float | None:
+        """Get power source net power."""
 
-        return self.option_get_entity_boolean_or_abort(SWITCH_SOURCE_LIMIT_OUTPUT_POWER)
+        source_net_power = None
+        entity_id = self.get_source_net_power_entity_id()
+        if entity_id:
+            source_net_power = self.get_number(entity_id)
+
+        return source_net_power
 
     # ----------------------------------------------------------------------------
-    # Local device control entities: Readers
+    def get_source_max_output_power(
+        self,
+        val_dict: ConfigValueDict | None = None,
+    ) -> float:
+        """Get power source max output power."""
+
+        return self.option_get_entity_number_or_abort(
+            NUMBER_SOURCE_MAX_OUTPUT_POWER, val_dict
+        )
+
     # ----------------------------------------------------------------------------
     def get_min_charge_limit(
         self,
