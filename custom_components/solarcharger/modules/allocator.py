@@ -333,6 +333,10 @@ class PowerAllocator:
             book.total_instance += 1
             book.total_max_power += all_member.max_power
 
+            # Only all member group has complete group information.
+            # member.source_depower is already set for members including active_member.
+            book.total_source_depower += all_member.source_depower
+
             #####################################
             # Populate active member group with active chargers only.
             # For source of rebalance allocation.
@@ -346,7 +350,9 @@ class PowerAllocator:
             )
 
             book.total_consumed_power += active_member.consumed_power
-            book.total_source_depower += active_member.source_depower
+
+            # member.source_depower is already set for members including active_member.
+            # book.total_source_depower += active_member.source_depower
 
             #####################################
             # Populate rebalance member group with active chargers only.

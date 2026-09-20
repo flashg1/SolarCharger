@@ -571,7 +571,7 @@ class SolarCharge(ScOptionState):
         """Get charger max current."""
 
         max_current = self.charger.get_max_charge_current()
-        if max_current is None or max_current <= 0:
+        if max_current is None or max_current < 0:
             raise ValueError("Failed to get charger max current")
 
         return max_current
@@ -922,7 +922,7 @@ class SolarCharge(ScOptionState):
             # If device cannot set current, then ignore this condition.
             # (min_current == max_current and self.can_set_current)
             # Time-based min current using template helper.
-            (min_current == max_current)
+            (min_current == max_current and max_current > 0)
             # Note running goal is updated in both charging and paused states.
             or (
                 # Running goal is not ready to the allocator for a brief period.
@@ -998,6 +998,10 @@ class SolarCharge(ScOptionState):
 
         context.fast_charge = self.is_fast_charge_mode()
         context.calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
+
+        # Power source
+        context.source_limit_output_power = self.is_source_limit_output_power()
+        context.charger_max_current = self.get_charger_max_current()
 
         self._log_power_allocations(context)
 
@@ -1131,6 +1135,12 @@ class SolarCharge(ScOptionState):
 
             # What to do if there is no monitor window and not enough power?
             # Continue charging or stop?
+
+        # No other reason to continue charge, so check power source.
+        elif context.source_limit_output_power:
+            context.next_step = ChargeStatus.CHARGE_PAUSE
+            context.continue_state = False
+
         else:
             context.next_step = ChargeStatus.CHARGE_END
             context.continue_state = False
@@ -1163,9 +1173,21 @@ class SolarCharge(ScOptionState):
                     )
                 )
 
-                if context.enough_power is None or not context.enough_power:
+                if (
+                    # There is enough power to start charging.
+                    context.enough_power is None or not context.enough_power
+                ) or (
+                    # Stay in pause mode if is power source and max_current=0, ie. not charging.
+                    context.source_limit_output_power
+                    and context.charger_max_current == 0
+                ):
                     context.next_step = ChargeStatus.CHARGE_PAUSE
                     context.continue_state = True
+
+        # No other reason to continue pause, so check power source.
+        elif context.source_limit_output_power:
+            context.next_step = ChargeStatus.CHARGE_PAUSE
+            context.continue_state = True
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_state(

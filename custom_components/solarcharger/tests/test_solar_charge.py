@@ -322,7 +322,8 @@ def test_get_charger_min_current_direct_reads_control_entity_state_instead() -> 
     "reported_max_current",
     [
         pytest.param(None, id="charger_reports_none"),
-        pytest.param(0, id="charger_reports_zero"),
+        # Max current can be 0.
+        # pytest.param(0, id="charger_reports_zero"),
         pytest.param(-5, id="charger_reports_negative"),
     ],
 )
