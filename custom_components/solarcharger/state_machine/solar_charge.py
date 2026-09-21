@@ -1119,8 +1119,10 @@ class SolarCharge(ScOptionState):
             and (not (context.goal.end_on_condition and context.goal.exit_condition))
             and (context.stats.loop_success_count == 0 or context.charging)
             and (
-                not context.goal.sun_trigger  # Sun trigger off, continue.
-                or context.goal.sun_above_start_end_elevations  # Sun trigger on, continue if between start and end elevations.
+                # Sun trigger off, continue.
+                not context.goal.sun_trigger
+                # Sun trigger on, continue if between start and end elevations.
+                or context.goal.sun_above_start_end_elevations
                 or context.fast_charge
                 or context.calibrate_max_charge_speed
                 or (context.goal.has_charge_endtime and context.goal.max_charge_now)
@@ -1163,21 +1165,29 @@ class SolarCharge(ScOptionState):
         continue_pause = (
             context.connected
             and (
-                context.below_charge_limit  # Below charge limit, continue pause.
-                or context.limit_power_source_output  # At or above charge limit, continue pause if power source.
+                # Below charge limit, continue pause.
+                context.below_charge_limit
+                # At or above charge limit, continue pause if power source.
+                or context.limit_power_source_output
             )
             and (
+                # Continue pause if not exit.
                 not (context.goal.end_on_condition and context.goal.exit_condition)
-            )  # Continue pause if not exit.
-            and (
-                not context.goal.sun_trigger  # Sun trigger off, continue pause.
-                or context.goal.sun_above_start_end_elevations  # Sun trigger on, continue pause if between start and end elevations.
             )
-            and not context.fast_charge  # Continue pause if not fast charge.
-            and not context.calibrate_max_charge_speed  # Continue pause if not calibrate charge speed.
+            and (
+                # Sun trigger off, continue pause.
+                not context.goal.sun_trigger
+                # Sun trigger on, continue pause if between start and end elevations.
+                or context.goal.sun_above_start_end_elevations
+            )
+            # Continue pause if not fast charge.
+            and not context.fast_charge
+            # Continue pause if not calibrate charge speed.
+            and not context.calibrate_max_charge_speed
             and not (
+                # Continue pause if no schedule and not max charge now.
                 context.goal.has_charge_endtime and context.goal.max_charge_now
-            )  # Continue pause if no schedule and not max charge now.
+            )
         )
 
         if continue_pause:
@@ -1191,17 +1201,16 @@ class SolarCharge(ScOptionState):
                 )
 
                 if (
-                    (
-                        # Continue pause if there is not enough power to start charging.
-                        context.enough_power is None or not context.enough_power
-                    )
-                    or (
-                        # Enough power.
-                        context.limit_power_source_output  # Continue pause if is power source.
-                        and (
-                            not context.real_soc  # Continue pause if not real SOC.
-                            or not context.below_charge_limit  # Real SOC, continue pause if SOC at or above limit.
-                        )
+                    # Continue pause if there is not enough power to start charging.
+                    context.enough_power is None or not context.enough_power
+                ) or (
+                    # Enough power, continue pause if is power source.
+                    context.limit_power_source_output
+                    and (
+                        # Continue pause if not real SOC.
+                        not context.real_soc
+                        # Real SOC, continue pause if SOC at or above limit.
+                        or not context.below_charge_limit
                     )
                 ):
                     context.next_step = ChargeStatus.CHARGE_PAUSE

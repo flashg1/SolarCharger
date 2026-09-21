@@ -5,7 +5,7 @@
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 ### Fix
 ### New feature
-- Added native support for battery as a source of power.
+- Added [power source](https://github.com/flashg1/SolarCharger/wiki/User-guide#source-limit-output-power) support.
 ### Improvement
 - Removed dependency on card-mod for charge schedule heading colour.
 
