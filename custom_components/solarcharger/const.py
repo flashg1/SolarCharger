@@ -366,7 +366,8 @@ DELTA_POWER_MONITOR_DURATION = 20  # +/- 20%
 # Power source entities, eg. generator, battery, etc.
 #####################################
 SELECT_SOURCE_NET_POWER = "source_net_power"  # +ve/-ve
-NUMBER_SOURCE_MAX_OUTPUT_POWER = "source_max_output_power"  # Overridable, +ve only
+# Overridable, -1=No limit, 0 or +ve
+NUMBER_SOURCE_MAX_OUTPUT_POWER = "source_max_output_power"
 SWITCH_SOURCE_LIMIT_OUTPUT_POWER = "source_limit_output_power"
 
 #####################################

@@ -374,7 +374,7 @@ CONFIG_NUMBER_LIST: tuple[
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.POWER,
             native_unit_of_measurement=UnitOfPower.WATT,
-            native_min_value=0.0,
+            native_min_value=-1,
             native_max_value=+20000.0,
             native_step=1.0,
         ),

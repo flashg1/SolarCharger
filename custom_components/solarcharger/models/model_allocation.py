@@ -80,7 +80,8 @@ class PowerAllocation:
     #####################################
     limit_power_source_output: bool = False
     source_net_power: float = 0.0  # +ve/-ve
-    source_max_output_power: float = 0.0  # +ve
+    # +ve (>=0) = output power limit , -ve (<0) = No output power limit
+    source_max_output_power: float = 0.0
     source_depower: float = 0.0  # +ve
 
     # ----------------------------------------------------------------------------

@@ -197,8 +197,16 @@ class PowerAllocator:
             source_max_power = (
                 control.controller.solar_charge.get_source_max_output_power()
             )
-            if source_net_power < 0 and abs(source_net_power) > source_max_power:
-                member.source_depower = abs(source_net_power) - source_max_power
+
+            member.source_depower = 0
+            if source_net_power < 0:
+                # Power source outputting power.
+                if source_max_power < 0:
+                    # Accept whatever output power.
+                    member.source_depower = 0
+                elif abs(source_net_power) > source_max_power:
+                    # Output more than max power, so depower difference.
+                    member.source_depower = abs(source_net_power) - source_max_power
 
             member.limit_power_source_output = limit_source
             member.source_net_power = source_net_power
