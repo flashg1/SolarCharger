@@ -191,26 +191,24 @@ class PowerAllocator:
         #####################################
         # Power source
         #####################################
-        limit_source = control.controller.solar_charge.is_limit_power_source_output()
+        limit_source = control.controller.solar_charge.is_cap_supply_power()
         if limit_source:
-            source_net_power = control.controller.solar_charge.get_source_net_power()
-            source_max_power = (
-                control.controller.solar_charge.get_source_max_output_power()
-            )
+            supply_power = control.controller.solar_charge.get_supply_power()
+            source_max_power = control.controller.solar_charge.get_supply_power_limit()
 
-            member.source_depower = 0
-            if source_net_power < 0:
+            member.supply_depower = 0
+            if supply_power < 0:
                 # Power source outputting power.
                 if source_max_power < 0:
                     # Accept whatever output power.
-                    member.source_depower = 0
-                elif abs(source_net_power) > source_max_power:
+                    member.supply_depower = 0
+                elif abs(supply_power) > source_max_power:
                     # Output more than max power, so depower difference.
-                    member.source_depower = abs(source_net_power) - source_max_power
+                    member.supply_depower = abs(supply_power) - source_max_power
 
-            member.limit_power_source_output = limit_source
-            member.source_net_power = source_net_power
-            member.source_max_output_power = source_max_power
+            member.cap_supply_power = limit_source
+            member.supply_power = supply_power
+            member.supply_power_limit = source_max_power
 
         return member
 
@@ -294,7 +292,7 @@ class PowerAllocator:
         #####################################
         # Power source
         #####################################
-        group.total_source_depower += member.source_depower
+        group.total_source_depower += member.supply_depower
 
     # ----------------------------------------------------------------------------
     def _get_allocation_pool(self, net_power: float = 0.0) -> AllocationBook:
@@ -346,7 +344,7 @@ class PowerAllocator:
 
             # Only all member group has complete group information.
             # member.source_depower is already set for members including active_member.
-            book.total_source_depower += all_member.source_depower
+            book.total_source_depower += all_member.supply_depower
 
             #####################################
             # Populate active member group with active chargers only.

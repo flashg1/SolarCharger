@@ -52,7 +52,7 @@ class ContextData:
     #####################################
     # Power source
     #####################################
-    limit_power_source_output: bool = False
+    cap_supply_power: bool = False
     charger_max_current: float = 0.0
 
     # ----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ class ContextData:
             f"sun_above_start_end_elevations={self.goal.sun_above_start_end_elevations} ({self.goal.sun_elevation}), "
             f"fast_charge={self.fast_charge}, "
             f"calibrate_max_charge_speed={self.calibrate_max_charge_speed}, "
-            f"limit_power_source_output={self.limit_power_source_output}, "
+            f"cap_supply_power={self.cap_supply_power}, "
             f"charger_max_current={self.charger_max_current}, "
             f"timer_session={self.goal.timer_session}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "

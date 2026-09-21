@@ -27,7 +27,7 @@ from .const import (
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
-    SWITCH_SOURCE_LIMIT_OUTPUT_POWER,
+    SWITCH_SUPPLY_CAP,
     SWITCH_SUN_TRIGGER,
 )
 from .entity import (
@@ -213,13 +213,13 @@ async def async_setup_entry(
         # Boolean switches
         #####################################
         (
-            SWITCH_SOURCE_LIMIT_OUTPUT_POWER,
+            SWITCH_SUPPLY_CAP,
             SolarChargerSwitchEntity,
             RESTORE_ON_START_TRUE,
             coordinator.async_switch_dummy,
             SolarChargerEntityType.TYPE_LOCAL_ONLY,
             SwitchEntityDescription(
-                key=SWITCH_SOURCE_LIMIT_OUTPUT_POWER,
+                key=SWITCH_SUPPLY_CAP,
                 entity_category=EntityCategory.CONFIG,
             ),
         ),

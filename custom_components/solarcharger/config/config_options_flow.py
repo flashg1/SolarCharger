@@ -50,7 +50,7 @@ from ..const import (
     NUMBER_CHARGER_POWER_FACTOR,
     NUMBER_CHARGER_PRIORITY,
     NUMBER_POWER_MONITOR_DURATION,
-    NUMBER_SOURCE_MAX_OUTPUT_POWER,
+    NUMBER_SUPPLY_POWER_LIMIT,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
@@ -246,10 +246,10 @@ class ConfigOptionsFlowHandler(OptionsFlow):
             # Power source entities
             #####################################
             self._optional(
-                subentry, NUMBER_SOURCE_MAX_OUTPUT_POWER, use_default
+                subentry, NUMBER_SUPPLY_POWER_LIMIT, use_default
             ): choose_selector(
                 api_entities,
-                NUMBER_SOURCE_MAX_OUTPUT_POWER,
+                NUMBER_SUPPLY_POWER_LIMIT,
                 NUMBER_ENTITY_SELECTOR_READ_ONLY,
                 NUMBER_ENTITY_SELECTOR,
                 MODIFIABLE_IF_SC_ENTITY,

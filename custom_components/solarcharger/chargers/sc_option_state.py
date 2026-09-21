@@ -36,13 +36,13 @@ from ..const import (
     NUMBER_DEVICE_MAX_CHARGE_LIMIT,
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
     NUMBER_POWER_MONITOR_DURATION,
-    NUMBER_SOURCE_MAX_OUTPUT_POWER,
+    NUMBER_SUPPLY_POWER_LIMIT,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     OPTION_CHARGER_NAME,
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
-    SELECT_SOURCE_NET_POWER,
+    SELECT_SUPPLY_POWER_SENSOR,
     SELECT_START_STATE,
     SELECT_WEATHER_PROVIDER,
     SENSOR_CONSUMED_ENERGY_TODAY,
@@ -61,7 +61,7 @@ from ..const import (
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
-    SWITCH_SOURCE_LIMIT_OUTPUT_POWER,
+    SWITCH_SUPPLY_CAP,
     SWITCH_SUN_TRIGGER,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
@@ -128,16 +128,16 @@ class ScOptionState(ScConfigState):
         """Return weather provider selector entity ID."""
         return self._internal_entity_ids[SELECT_WEATHER_PROVIDER]
 
-    @cached_property
-    def source_net_power_selector_entity_id(self) -> str:
-        """Return source net power entity ID."""
-        return self._internal_entity_ids[SELECT_SOURCE_NET_POWER]
-
     # ----------------------------------------------------------------------------
     # Local device only entities.
     # Non-modifiable local device internal entities, ie.
     # not defined in config_options_flow _charger_control_entities_schema().
     # ----------------------------------------------------------------------------
+    @cached_property
+    def supply_power_sensor_selector_entity_id(self) -> str:
+        """Return supply power sensor selector entity ID."""
+        return self._internal_entity_ids[SELECT_SUPPLY_POWER_SENSOR]
+
     @cached_property
     def share_allocation_entity_id(self) -> str:
         """Return the share allocation entity ID."""
@@ -854,55 +854,53 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # Local device control entities: Readers
     # ----------------------------------------------------------------------------
-    def _is_source_limit_output_power(
+    def _is_supply_cap(
         self,
         val_dict: ConfigValueDict | None = None,
     ) -> bool:
-        """Is power source limit output power?"""
+        """Is power supply cap enabled?"""
 
-        return self.option_get_entity_boolean_or_abort(
-            SWITCH_SOURCE_LIMIT_OUTPUT_POWER, val_dict
-        )
+        return self.option_get_entity_boolean_or_abort(SWITCH_SUPPLY_CAP, val_dict)
 
     # ----------------------------------------------------------------------------
-    def get_source_net_power_entity_id(self) -> str | None:
-        """Get source net power entity ID."""
+    def get_supply_power_sensor_entity_id(self) -> str | None:
+        """Get supply power sensor entity ID."""
 
-        entity_id = self.get_string(self.source_net_power_selector_entity_id)
+        entity_id = self.get_string(self.supply_power_sensor_selector_entity_id)
         if entity_id in [STATE_UNKNOWN, STATE_UNAVAILABLE]:
             entity_id = None
 
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def get_source_net_power(self) -> float | None:
-        """Get power source net power."""
+    def get_supply_power(self) -> float | None:
+        """Get power source output power."""
 
-        source_net_power = None
-        entity_id = self.get_source_net_power_entity_id()
+        power = None
+        entity_id = self.get_supply_power_sensor_entity_id()
         if entity_id:
-            source_net_power = self.get_number(entity_id)
+            power = self.get_number(entity_id)
 
-        return source_net_power
+        return power
 
     # ----------------------------------------------------------------------------
-    def is_limit_power_source_output(self) -> bool:
-        """Is power source limit output power and source net power is set?"""
+    def is_cap_supply_power(self) -> bool:
+        """Is supply cap on and supply power sensor is set?"""
 
         return (
-            self._is_source_limit_output_power()
-            and self.get_source_net_power_entity_id() is not None
+            self._is_supply_cap()
+            and self.get_supply_power_sensor_entity_id() is not None
         )
 
     # ----------------------------------------------------------------------------
-    def get_source_max_output_power(
+    def get_supply_power_limit(
         self,
         val_dict: ConfigValueDict | None = None,
     ) -> float:
-        """Get power source max output power."""
+        """Get power source output power limit."""
 
         return self.option_get_entity_number_or_abort(
-            NUMBER_SOURCE_MAX_OUTPUT_POWER, val_dict
+            NUMBER_SUPPLY_POWER_LIMIT, val_dict
         )
 
     # ----------------------------------------------------------------------------

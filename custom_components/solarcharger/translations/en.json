@@ -92,7 +92,7 @@
                 "title": "Charger options",
                 "description": "These are entities controlling charger behaviour with values defined in \"Configuration\" section. Replace with your own entities if required. Greyed-out entries are FYI only.\n\nTo delete an entity, select a dummy entity with name *.deleteme, eg. sensor.deleteme\n\nTo delete a string, replace string with 2 spaces.",
                 "data": {
-                    "source_max_output_power": "Source max output power (W) (-1=No limit)",
+                    "supply_power_limit": "Supply power limit (W) (-1 = No limit)",
                     "charger_effective_voltage": "Charger effective voltage (V)",
                     "default_charge_limit_monday": "Monday default charge limit (%)",
                     "default_charge_limit_tuesday": "Tuesday default charge limit (%)",
@@ -179,8 +179,8 @@
             }
         },
         "number": {
-            "source_max_output_power": {
-                "name": "Source max output power"
+            "supply_power_limit": {
+                "name": "Supply power limit"
             },
             "charger_effective_voltage": {
                 "name": "Effective voltage"
@@ -298,8 +298,8 @@
             }
         },
         "select": {
-            "source_net_power": {
-                "name": "Source net power"
+            "supply_power_sensor": {
+                "name": "Supply power sensor"
             },
             "weather_provider": {
                 "name": "Weather provider"
@@ -392,8 +392,8 @@
             }
         },
         "switch": {
-            "source_limit_output_power": {
-                "name": "Source limit output power"
+            "supply_cap": {
+                "name": "Supply cap"
             },
             "charge": {
                 "name": "Charge"

@@ -89,9 +89,9 @@ class FakeSolarCharge:
     #####################################
     # Power source variables
     #####################################
-    limit_power_source_output: bool = False
-    source_net_power: float = 0.0
-    source_max_output_power: float = 0.0
+    cap_supply_power: bool = False
+    supply_power: float = 0.0
+    supply_power_limit: float = 0.0
 
     def get_charger_priority(self) -> int:
         """Return configured priority."""
@@ -174,17 +174,17 @@ class FakeSolarCharge:
         """Return configured net power."""
         return self.net_power
 
-    def is_limit_power_source_output(self) -> bool:
+    def is_cap_supply_power(self) -> bool:
         """Return configured limit-power-source-output flag."""
-        return self.limit_power_source_output
+        return self.cap_supply_power
 
-    def get_source_net_power(self) -> float | None:
-        """Get power source net power."""
-        return self.source_net_power
+    def get_supply_power(self) -> float | None:
+        """Get power source output power."""
+        return self.supply_power
 
-    def get_source_max_output_power(self) -> float:
-        """Get power source max output power."""
-        return self.source_max_output_power
+    def get_supply_power_limit(self) -> float:
+        """Get power source output power limit."""
+        return self.supply_power_limit
 
     @property
     def machine_state(self) -> SimpleNamespace:

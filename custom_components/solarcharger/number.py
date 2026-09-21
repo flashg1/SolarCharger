@@ -57,7 +57,7 @@ from .const import (
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
     NUMBER_POWER_MONITOR_DURATION,
-    NUMBER_SOURCE_MAX_OUTPUT_POWER,
+    NUMBER_SUPPLY_POWER_LIMIT,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
     NUMBER_SUNSET_ELEVATION_END_TRIGGER,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
@@ -367,10 +367,10 @@ CONFIG_NUMBER_LIST: tuple[
         ),
     ),
     (
-        NUMBER_SOURCE_MAX_OUTPUT_POWER,
+        NUMBER_SUPPLY_POWER_LIMIT,
         SolarChargerEntityType.TYPE_LOCAL_ONLY,
         NumberEntityDescription(
-            key=NUMBER_SOURCE_MAX_OUTPUT_POWER,
+            key=NUMBER_SUPPLY_POWER_LIMIT,
             entity_category=EntityCategory.CONFIG,
             device_class=NumberDeviceClass.POWER,
             native_unit_of_measurement=UnitOfPower.WATT,

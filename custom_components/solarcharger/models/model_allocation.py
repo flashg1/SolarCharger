@@ -78,21 +78,21 @@ class PowerAllocation:
     #####################################
     # Power source variables
     #####################################
-    limit_power_source_output: bool = False
-    source_net_power: float = 0.0  # +ve/-ve
+    cap_supply_power: bool = False
+    supply_power: float = 0.0  # +ve/-ve
     # +ve (>=0) = output power limit , -ve (<0) = No output power limit
-    source_max_output_power: float = 0.0
-    source_depower: float = 0.0  # +ve
+    supply_power_limit: float = 0.0
+    supply_depower: float = 0.0  # +ve
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of PowerAllocation."""
         return (
             f"name={self.name}, "
-            f"limit_power_source_output={self.limit_power_source_output}, "
-            f"source_net_power={self.source_net_power}, "
-            f"source_max_output_power={self.source_max_output_power}, "
-            f"source_depower={self.source_depower}, "
+            f"cap_supply_power={self.cap_supply_power}, "
+            f"supply_power={self.supply_power}, "
+            f"supply_power_limit={self.supply_power_limit}, "
+            f"supply_depower={self.supply_depower}, "
             f"max_power={self.max_power}, "
             f"max_current={self.max_current}, "
             f"step_power_list={self.step_power_list}, "

@@ -1006,7 +1006,7 @@ class SolarCharge(ScOptionState):
         context.calibrate_max_charge_speed = self.is_calibrate_max_charge_speed()
 
         # Power source
-        context.limit_power_source_output = self.is_limit_power_source_output()
+        context.cap_supply_power = self.is_cap_supply_power()
         context.charger_max_current = self.get_charger_max_current()
 
         self._log_power_allocations(context)
@@ -1147,7 +1147,7 @@ class SolarCharge(ScOptionState):
             # Continue charging or stop?
 
         # No other reason to continue charge, so check power source.
-        elif context.limit_power_source_output:
+        elif context.cap_supply_power:
             context.next_step = ChargeStatus.CHARGE_PAUSE
             context.continue_state = False
 
@@ -1168,7 +1168,7 @@ class SolarCharge(ScOptionState):
                 # Below charge limit, continue pause.
                 context.below_charge_limit
                 # At or above charge limit, continue pause if power source.
-                or context.limit_power_source_output
+                or context.cap_supply_power
             )
             and (
                 # Continue pause if not exit.
@@ -1205,7 +1205,7 @@ class SolarCharge(ScOptionState):
                     context.enough_power is None or not context.enough_power
                 ) or (
                     # Enough power, continue pause if is power source.
-                    context.limit_power_source_output
+                    context.cap_supply_power
                     and (
                         # Continue pause if not real SOC.
                         not context.real_soc
