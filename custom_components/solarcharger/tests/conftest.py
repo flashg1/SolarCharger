@@ -89,7 +89,7 @@ class FakeSolarCharge:
     #####################################
     # Power source variables
     #####################################
-    source_limit_output_power: bool = False
+    limit_power_source_output: bool = False
     source_net_power: float = 0.0
     source_max_output_power: float = 0.0
 
@@ -174,9 +174,9 @@ class FakeSolarCharge:
         """Return configured net power."""
         return self.net_power
 
-    def is_source_limit_output_power(self) -> bool:
-        """Return configured source-limit-output-power flag."""
-        return self.source_limit_output_power
+    def is_limit_power_source_output(self) -> bool:
+        """Return configured limit-power-source-output flag."""
+        return self.limit_power_source_output
 
     def get_source_net_power(self) -> float | None:
         """Get power source net power."""

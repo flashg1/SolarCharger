@@ -43,6 +43,7 @@ class ContextData:
     #####################################
     connected: bool = False
     below_charge_limit: bool = False
+    real_soc: bool = False  # Real SOC, not faked.
     charging: bool = False
     charging_status: Any = ""
     fast_charge: bool = False
@@ -51,7 +52,7 @@ class ContextData:
     #####################################
     # Power source
     #####################################
-    source_limit_output_power: bool = False
+    limit_power_source_output: bool = False
     charger_max_current: float = 0.0
 
     # ----------------------------------------------------------------------------
@@ -75,7 +76,7 @@ class ContextData:
             f"sun_above_start_end_elevations={self.goal.sun_above_start_end_elevations} ({self.goal.sun_elevation}), "
             f"fast_charge={self.fast_charge}, "
             f"calibrate_max_charge_speed={self.calibrate_max_charge_speed}, "
-            f"source_limit_output_power={self.source_limit_output_power}, "
+            f"limit_power_source_output={self.limit_power_source_output}, "
             f"charger_max_current={self.charger_max_current}, "
             f"timer_session={self.goal.timer_session}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "

@@ -854,7 +854,7 @@ class ScOptionState(ScConfigState):
     # ----------------------------------------------------------------------------
     # Local device control entities: Readers
     # ----------------------------------------------------------------------------
-    def is_source_limit_output_power(
+    def _is_source_limit_output_power(
         self,
         val_dict: ConfigValueDict | None = None,
     ) -> bool:
@@ -884,6 +884,15 @@ class ScOptionState(ScConfigState):
             source_net_power = self.get_number(entity_id)
 
         return source_net_power
+
+    # ----------------------------------------------------------------------------
+    def is_limit_power_source_output(self) -> bool:
+        """Is power source limit output power and source net power is set?"""
+
+        return (
+            self._is_source_limit_output_power()
+            and self.get_source_net_power_entity_id() is not None
+        )
 
     # ----------------------------------------------------------------------------
     def get_source_max_output_power(

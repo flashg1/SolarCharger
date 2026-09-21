@@ -78,7 +78,7 @@ class PowerAllocation:
     #####################################
     # Power source variables
     #####################################
-    source_limit_output_power: bool = False
+    limit_power_source_output: bool = False
     source_net_power: float = 0.0  # +ve/-ve
     source_max_output_power: float = 0.0  # +ve
     source_depower: float = 0.0  # +ve
@@ -88,7 +88,7 @@ class PowerAllocation:
         """Return string representation of PowerAllocation."""
         return (
             f"name={self.name}, "
-            f"source_limit_output_power={self.source_limit_output_power}, "
+            f"limit_power_source_output={self.limit_power_source_output}, "
             f"source_net_power={self.source_net_power}, "
             f"source_max_output_power={self.source_max_output_power}, "
             f"source_depower={self.source_depower}, "

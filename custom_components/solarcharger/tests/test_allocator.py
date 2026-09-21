@@ -852,7 +852,7 @@ async def test_async_allocate_net_power_to_2_devices_with_power_source_when_gros
         adjusted_activation_power=-50,
         activation_power=-50,
         consumed_power=1000,
-        source_limit_output_power=True,
+        limit_power_source_output=True,
         source_net_power=-1600.0,
         source_max_output_power=1200,
     )
@@ -924,7 +924,7 @@ async def test_async_allocate_net_power_to_3_devices_with_paused_power_source_wh
         adjusted_activation_power=-50,
         activation_power=-50,
         consumed_power=0,
-        source_limit_output_power=True,
+        limit_power_source_output=True,
         source_net_power=-1600.0,
         source_max_output_power=1200,
     )

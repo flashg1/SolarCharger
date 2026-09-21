@@ -191,15 +191,18 @@ class PowerAllocator:
         #####################################
         # Power source
         #####################################
-        cap_source = control.controller.solar_charge.is_source_limit_output_power()
-        source_net_power = control.controller.solar_charge.get_source_net_power()
-        source_max_power = control.controller.solar_charge.get_source_max_output_power()
-        if cap_source and source_net_power is not None:
-            member.source_limit_output_power = cap_source
-            member.source_net_power = source_net_power
-            member.source_max_output_power = source_max_power
+        limit_source = control.controller.solar_charge.is_limit_power_source_output()
+        if limit_source:
+            source_net_power = control.controller.solar_charge.get_source_net_power()
+            source_max_power = (
+                control.controller.solar_charge.get_source_max_output_power()
+            )
             if source_net_power < 0 and abs(source_net_power) > source_max_power:
                 member.source_depower = abs(source_net_power) - source_max_power
+
+            member.limit_power_source_output = limit_source
+            member.source_net_power = source_net_power
+            member.source_max_output_power = source_max_power
 
         return member
 
