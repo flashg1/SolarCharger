@@ -31,7 +31,7 @@ from unittest.mock import AsyncMock, Mock
 
 from custom_components.solarcharger.const import (
     MAX_CONSECUTIVE_FAILURE_COUNT,
-    ChargeStatus,
+    RunStep,
     RunState,
 )
 from custom_components.solarcharger.models.model_charge_stats import ChargeStats
@@ -136,7 +136,7 @@ def test_charger_that_can_set_current_is_never_flagged_self_depower() -> None:
 # ----------------------------------------------------------------------------
 # _async_charge_device() -- the per-second charge loop
 # ----------------------------------------------------------------------------
-def make_context(next_step: ChargeStatus) -> ContextData:
+def make_context(next_step: RunStep) -> ContextData:
     """Build a ContextData carrying only the field _async_charge_device() reads."""
     return ContextData(
         charger=None,  # type: ignore[arg-type]
@@ -196,7 +196,7 @@ def make_charging_state(fake_solar_charge: SimpleNamespace) -> StateCharge:
 async def test_loop_ends_immediately_without_switching_on_charger() -> None:
     """First status check already says stop: no switch-on, no calibration, no trailing sleep."""
     stats = ChargeStats()
-    final_context = make_context(ChargeStatus.CHARGE_END)
+    final_context = make_context(RunStep.END)
     fake_solar_charge = make_loop_solarcharge(stats, [final_context])
     state = make_charging_state(fake_solar_charge)
 
@@ -217,9 +217,9 @@ async def test_loop_switches_on_charger_only_once_across_iterations() -> None:
     """Two CONTINUE iterations then a stop: switch-on ran once, calibration ran each time."""
     stats = ChargeStats()
     contexts = [
-        make_context(ChargeStatus.CHARGE_CONTINUE),
-        make_context(ChargeStatus.CHARGE_CONTINUE),
-        make_context(ChargeStatus.CHARGE_PAUSE),
+        make_context(RunStep.CHARGE),
+        make_context(RunStep.CHARGE),
+        make_context(RunStep.PAUSE),
     ]
     fake_solar_charge = make_loop_solarcharge(stats, contexts)
     state = make_charging_state(fake_solar_charge)
@@ -240,8 +240,8 @@ async def test_loop_recovers_from_a_transient_failure_and_resets_the_streak() ->
     """A failed iteration counts as a failure; the next successful CONTINUE clears the streak."""
     stats = ChargeStats()
     contexts = [
-        make_context(ChargeStatus.CHARGE_CONTINUE),
-        make_context(ChargeStatus.CHARGE_END),
+        make_context(RunStep.CHARGE),
+        make_context(RunStep.END),
     ]
     fake_solar_charge = make_loop_solarcharge(stats, contexts)
     # 1st iteration fails before async_set_charge_status is even reached.

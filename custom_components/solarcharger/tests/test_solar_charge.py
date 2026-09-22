@@ -20,7 +20,7 @@ from custom_components.solarcharger.const import (
     MAX_CONSECUTIVE_FAILURE_COUNT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MIN_CURRENT,
-    ChargeStatus,
+    RunStep,
     RunState,
 )
 from custom_components.solarcharger.models.model_charge_stats import ChargeStats
@@ -903,7 +903,7 @@ def test_continue_charge_state_ends_the_session_when_a_gate_fails(
 
     solar_charge._set_is_continue_charge_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_END
+    assert context.next_step is RunStep.END
     assert context.continue_state is False
 
 
@@ -932,7 +932,7 @@ def test_continue_charge_state_sun_gate_has_overrides(
 
     solar_charge._set_is_continue_charge_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_CONTINUE
+    assert context.next_step is RunStep.CHARGE
     assert context.continue_state is True
 
 
@@ -944,7 +944,7 @@ def test_continue_charge_state_first_loop_continues_even_if_not_yet_charging() -
 
     solar_charge._set_is_continue_charge_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_CONTINUE
+    assert context.next_step is RunStep.CHARGE
 
 
 def test_continue_charge_state_skips_the_power_check_when_pausing_is_not_allowed() -> (
@@ -964,23 +964,19 @@ def test_continue_charge_state_skips_the_power_check_when_pausing_is_not_allowed
 
     solar_charge._set_is_continue_charge_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_CONTINUE
+    assert context.next_step is RunStep.CHARGE
 
 
 @pytest.mark.parametrize(
     ("enough_power", "expected_next_step"),
     [
-        pytest.param(False, ChargeStatus.CHARGE_PAUSE, id="not_enough_power_pauses"),
-        pytest.param(
-            None, ChargeStatus.CHARGE_CONTINUE, id="unknown_data_keeps_charging"
-        ),
-        pytest.param(
-            True, ChargeStatus.CHARGE_CONTINUE, id="enough_power_keeps_charging"
-        ),
+        pytest.param(False, RunStep.PAUSE, id="not_enough_power_pauses"),
+        pytest.param(None, RunStep.CHARGE, id="unknown_data_keeps_charging"),
+        pytest.param(True, RunStep.CHARGE, id="enough_power_keeps_charging"),
     ],
 )
 def test_continue_charge_state_pause_decision_when_monitoring_enabled(
-    enough_power: bool | None, expected_next_step: ChargeStatus
+    enough_power: bool | None, expected_next_step: RunStep
 ) -> None:
     """Only a definite 'not enough power' (False, not None) triggers a pause."""
     solar_charge = make_bare_solar_charge()
@@ -1035,7 +1031,7 @@ def test_continue_pause_state_resumes_immediately_when_a_stay_paused_condition_f
 
     solar_charge._set_is_continue_pause_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_CONTINUE
+    assert context.next_step is RunStep.CHARGE
     assert context.continue_state is False
 
 
@@ -1047,7 +1043,7 @@ def test_continue_pause_state_exits_pause_when_pausing_is_no_longer_allowed() ->
 
     solar_charge._set_is_continue_pause_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_CONTINUE
+    assert context.next_step is RunStep.CHARGE
     assert context.continue_state is False
 
 
@@ -1077,7 +1073,7 @@ def test_continue_pause_state_stays_paused_without_a_confirmed_surplus(
 
     solar_charge._set_is_continue_pause_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_PAUSE
+    assert context.next_step is RunStep.PAUSE
     assert context.continue_state is expected_continue_state
 
 
@@ -1092,7 +1088,7 @@ def test_continue_pause_state_resumes_once_a_surplus_is_confirmed() -> None:
 
     solar_charge._set_is_continue_pause_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_CONTINUE
+    assert context.next_step is RunStep.CHARGE
     assert context.continue_state is False
 
 
@@ -1107,7 +1103,7 @@ def test_set_is_continue_state_dispatches_charge_state_to_the_charge_handler() -
 
     solar_charge._set_is_continue_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_END  # the charge-state gate fired
+    assert context.next_step is RunStep.END  # the charge-state gate fired
 
 
 def test_set_is_continue_state_dispatches_pause_state_to_the_pause_handler() -> None:
@@ -1118,17 +1114,15 @@ def test_set_is_continue_state_dispatches_pause_state_to_the_pause_handler() -> 
 
     solar_charge._set_is_continue_state(context)
 
-    assert (
-        context.next_step is ChargeStatus.CHARGE_CONTINUE
-    )  # the pause-state gate fired
+    assert context.next_step is RunStep.CHARGE  # the pause-state gate fired
 
 
 def test_set_is_continue_state_leaves_context_untouched_for_other_states() -> None:
     """Any other run state (eg. START, INITIALISE) is not this method's concern."""
     solar_charge = make_bare_solar_charge()
     context = make_context(state=RunState.START)
-    context.next_step = ChargeStatus.CHARGE_END  # sentinel: must stay untouched
+    context.next_step = RunStep.END  # sentinel: must stay untouched
 
     solar_charge._set_is_continue_state(context)
 
-    assert context.next_step is ChargeStatus.CHARGE_END
+    assert context.next_step is RunStep.END

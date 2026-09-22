@@ -55,7 +55,7 @@ from ..const import (
     SENSOR_SELF_DEPOWER_TODAY,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SMA_NET_ALLOCATED_POWER,
-    ChargeStatus,
+    RunStep,
     MedianDataState,
     RunState,
     StartState,
@@ -1106,7 +1106,7 @@ class SolarCharge(ScOptionState):
     def _set_is_continue_charge_state(self, context: ContextData) -> None:
         """Is continue charge state?"""
 
-        context.next_step = ChargeStatus.CHARGE_CONTINUE
+        context.next_step = RunStep.CHARGE
         context.continue_state = True
 
         # Charge just-in-time feature:
@@ -1139,7 +1139,7 @@ class SolarCharge(ScOptionState):
                 )
 
                 if context.enough_power is not None and not context.enough_power:
-                    context.next_step = ChargeStatus.CHARGE_PAUSE
+                    context.next_step = RunStep.PAUSE
                     context.continue_state = False
 
             # What to do if there is no monitor window and not enough power?
@@ -1147,18 +1147,18 @@ class SolarCharge(ScOptionState):
 
         # No other reason to continue charge, so check power source.
         elif context.cap_supply_power:
-            context.next_step = ChargeStatus.CHARGE_PAUSE
+            context.next_step = RunStep.PAUSE
             context.continue_state = False
 
         else:
-            context.next_step = ChargeStatus.CHARGE_END
+            context.next_step = RunStep.END
             context.continue_state = False
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_pause_state(self, context: ContextData) -> None:
         """Is continue pause state?"""
 
-        context.next_step = ChargeStatus.CHARGE_CONTINUE
+        context.next_step = RunStep.CHARGE
         context.continue_state = False
 
         continue_pause = (
@@ -1212,7 +1212,7 @@ class SolarCharge(ScOptionState):
                         or not context.below_charge_limit
                     )
                 ):
-                    context.next_step = ChargeStatus.CHARGE_PAUSE
+                    context.next_step = RunStep.PAUSE
                     context.continue_state = True
 
     # ----------------------------------------------------------------------------

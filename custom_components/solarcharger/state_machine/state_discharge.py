@@ -9,11 +9,6 @@ from ..chargers.charger import Charger
 from ..const import RunStep, RunState
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_context_data import ContextData
-
-# Import Modules, Not Classes: Instead of from machine import StateA, use
-# import machine and refer to machine.StateA. This breaks the cycle because
-# Python only needs to locate the module, not resolve its contents immediately.
-# from .state_initialise import StateInitialise
 from . import state_initialise
 from .solar_charge_state import SolarChargeState
 
@@ -24,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StatePause(SolarChargeState):
+class StateDischarge(SolarChargeState):
     """Pause state: Turn off charger and wait for external trigger."""
 
     def __init__(

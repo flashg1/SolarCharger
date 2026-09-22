@@ -82,12 +82,13 @@ PLATFORMS: list[Platform | str] = [
 #######################################################
 # Enumerations
 #######################################################
-class ChargeStatus(Enum):
-    """Enumeration of charge statuses."""
+class RunStep(Enum):
+    """Enumeration of run steps."""
 
-    CHARGE_CONTINUE = "charge_continue"
-    CHARGE_PAUSE = "charge_pause"
-    CHARGE_END = "charge_end"
+    CHARGE = "charge"
+    DISCHARGE = "discharge"
+    PAUSE = "pause"
+    END = "end"
 
 
 class StartState(Enum):
@@ -112,6 +113,8 @@ class RunState(Enum):
     CHARGE = "charge"
     # SELF_DEPOWER is a sub-state of CHARGING state.
     SELF_DEPOWER = "self-depower"
+
+    DISCHARGE = "discharge"
 
     PAUSE = "pause"
     ABORT = "abort"

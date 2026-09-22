@@ -16,7 +16,7 @@ from ..const import (
     ENTITY_CHARGER_CHARGING_SENSOR,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
-    ChargeStatus,
+    RunStep,
     RunState,
 )
 from ..exceptions.entity_exception import EntityExceptionError
@@ -609,7 +609,7 @@ class StateCharge(SolarChargeState):
                 context = await self.solarcharge.async_set_charge_status(
                     charger, chargeable, state, stats
                 )
-                if context.next_step != ChargeStatus.CHARGE_CONTINUE:
+                if context.next_step != RunStep.CHARGE:
                     break
 
                 # Turn on charger if looping for the first time.
@@ -666,7 +666,7 @@ class StateCharge(SolarChargeState):
 
         self.solarcharge.log_context(context)
 
-        if context.next_step == ChargeStatus.CHARGE_PAUSE:
+        if context.next_step == RunStep.PAUSE:
             self.solarcharge.set_machine_state(StatePause())
         else:
             self.solarcharge.set_machine_state(StateTidyUp())

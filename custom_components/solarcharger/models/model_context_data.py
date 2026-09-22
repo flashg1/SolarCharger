@@ -8,7 +8,7 @@ from typing import Any
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import ChargeStatus, RunState
+from ..const import RunStep, RunState
 from .model_charge_stats import ChargeStats
 from .model_median_data import MedianData
 from .model_schedule_data import ScheduleData
@@ -35,7 +35,7 @@ class ContextData:
     # Outputs
     #####################################
     continue_state: bool = False  # Continue current state
-    next_step: ChargeStatus = ChargeStatus.CHARGE_END
+    next_step: RunStep = RunStep.END
     enough_power: bool | None = None  # None=not enough data points.
 
     #####################################
