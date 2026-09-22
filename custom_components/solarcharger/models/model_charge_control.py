@@ -19,14 +19,25 @@ from typing import TYPE_CHECKING
 #
 # Use one of following solutions:
 # from __future__ import annotations
-#   Affects all type annotations in the module, making them string literals, even if the type is readily available.
+#   Affects all type annotations in the module, making them string literals,
+#   even if the type is readily available.
 # if TYPE_CHECKING:
-#   Specifically targets imports that are only needed for type checking, preventing them from being executed at runtime.
-#   You still need to use string literals for forward references if the type isn't available at runtime.
+#   Specifically targets imports that are only needed for type checking,
+#   preventing them from being executed at runtime. You still need to use string
+#   literals for forward references if the type isn't available at runtime.
 # Import locally among code just before using:
+#   Local Imports (Lazy Loading). Move from state_a import StateA inside the
+#   handle method of StateB. This delays the import until the method runs. Eg.
 #   from ..sensor import SolarChargerSensorAttributeEntity
 #   attribute_sensor: SolarChargerSensorAttributeEntity
-#######################################################
+# Import Modules, Not Classes:
+#   Instead of from machine import StateA, use import machine and refer to
+#   machine.StateA. This breaks the cycle because Python only needs to locate
+#   the module, not resolve its contents immediately. Eg.
+#   # from .state_initialise import StateInitialise <- Don't use this
+#   from . import state_initialise                  <- Use this
+#
+# #######################################################
 if TYPE_CHECKING:
     from ..button import SolarChargerButtonActionEntity
     from ..datetime import SolarChargerDateTimeConfigEntity
