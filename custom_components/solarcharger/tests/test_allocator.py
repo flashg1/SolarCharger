@@ -853,7 +853,7 @@ async def test_async_allocate_net_power_to_2_devices_with_power_source_when_gros
         activation_power=-50,
         consumed_power=1000,
         cap_supply_power=True,
-        supply_power=1600.0,
+        supply_net_power=-1600.0,
         supply_power_limit=1200,
     )
     device_b = make_device_control(
@@ -925,7 +925,7 @@ async def test_async_allocate_net_power_to_3_devices_with_paused_power_source_wh
         activation_power=-50,
         consumed_power=0,
         cap_supply_power=True,
-        supply_power=1600.0,
+        supply_net_power=-1600.0,
         supply_power_limit=1200,
     )
     allocator = make_allocator(device_a, device_b, device_c_battery, net_power=-100)

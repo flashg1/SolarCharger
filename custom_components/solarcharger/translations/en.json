@@ -298,8 +298,8 @@
             }
         },
         "select": {
-            "supply_power_sensor": {
-                "name": "Supply power sensor"
+            "supply_net_power_sensor": {
+                "name": "Supply net power sensor"
             },
             "weather_provider": {
                 "name": "Weather provider"

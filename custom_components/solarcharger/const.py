@@ -366,7 +366,8 @@ DELTA_POWER_MONITOR_DURATION = 20  # +/- 20%
 # Power source entities, eg. generator, battery, etc.
 #####################################
 SWITCH_SUPPLY_CAP = "supply_cap"
-SELECT_SUPPLY_POWER_SENSOR = "supply_power_sensor"  # 0 or +ve
+# -ve=Battery discharging, +ve=Battery charging
+SELECT_SUPPLY_NET_POWER_SENSOR = "supply_net_power_sensor"
 # Overridable, -1=No limit, 0 or +ve
 NUMBER_SUPPLY_POWER_LIMIT = "supply_power_limit"
 
@@ -584,7 +585,7 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     # Power source entities
     #####################################
     SWITCH_SUPPLY_CAP,
-    SELECT_SUPPLY_POWER_SENSOR,
+    SELECT_SUPPLY_NET_POWER_SENSOR,
     NUMBER_SUPPLY_POWER_LIMIT,
     #####################################
     # Charger general configs
@@ -736,7 +737,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     # Power source entities
     #####################################
     SWITCH_SUPPLY_CAP: DEFAULT_OFF,
-    SELECT_SUPPLY_POWER_SENSOR: None,  # Also update CONFIG_WITH_NO_DEFAULTS
+    SELECT_SUPPLY_NET_POWER_SENSOR: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     NUMBER_SUPPLY_POWER_LIMIT: 0.0,
     #####################################
     # Device required defaults
@@ -796,7 +797,7 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
 }
 
 CONFIG_WITH_NO_DEFAULTS: list[str] = [
-    SELECT_SUPPLY_POWER_SENSOR,
+    SELECT_SUPPLY_NET_POWER_SENSOR,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     SELECT_WEATHER_PROVIDER,
     NUMBER_CHARGER_MAX_CURRENT,
@@ -938,7 +939,7 @@ DEVICE_INTERNAL_ENTITIES: dict[str, str] = {
     # Power source entities
     #####################################
     SWITCH_SUPPLY_CAP: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUPPLY_CAP}",
-    SELECT_SUPPLY_POWER_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_SUPPLY_POWER_SENSOR}",
+    SELECT_SUPPLY_NET_POWER_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_SUPPLY_NET_POWER_SENSOR}",
     #####################################
     # Local device entities
     #####################################

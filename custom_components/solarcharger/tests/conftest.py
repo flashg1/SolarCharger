@@ -90,7 +90,7 @@ class FakeSolarCharge:
     # Power source variables
     #####################################
     cap_supply_power: bool = False
-    supply_power: float = 0.0
+    supply_net_power: float = 0.0
     supply_power_limit: float = 0.0
 
     def get_charger_priority(self) -> int:
@@ -178,9 +178,9 @@ class FakeSolarCharge:
         """Return configured cap_supply_power flag."""
         return self.cap_supply_power
 
-    def get_supply_power(self) -> float | None:
-        """Get power source output power."""
-        return self.supply_power
+    def get_supply_net_power(self) -> float | None:
+        """Get power source net power."""
+        return self.supply_net_power
 
     def get_supply_power_limit(self) -> float:
         """Get power source output power limit."""

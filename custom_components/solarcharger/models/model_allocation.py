@@ -79,7 +79,7 @@ class PowerAllocation:
     # Power source variables
     #####################################
     cap_supply_power: bool = False
-    supply_power: float = 0.0  # 0 or +ve
+    supply_net_power: float = 0.0  # -ve or +ve
     # +ve (>=0) = output power limit , -ve (<0) = No output power limit
     supply_power_limit: float = 0.0
     supply_depower: float = 0.0  # 0 or +ve
@@ -90,7 +90,7 @@ class PowerAllocation:
         return (
             f"name={self.name}, "
             f"cap_supply_power={self.cap_supply_power}, "
-            f"supply_power={self.supply_power}, "
+            f"supply_net_power={self.supply_net_power}, "
             f"supply_power_limit={self.supply_power_limit}, "
             f"supply_depower={self.supply_depower}, "
             f"max_power={self.max_power}, "

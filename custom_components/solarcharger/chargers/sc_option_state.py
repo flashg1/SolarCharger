@@ -43,7 +43,7 @@ from ..const import (
     SELECT_DEVICE_PRESENCE_SENSOR,
     SELECT_EXIT_CONDITION_SENSOR,
     SELECT_START_STATE,
-    SELECT_SUPPLY_POWER_SENSOR,
+    SELECT_SUPPLY_NET_POWER_SENSOR,
     SELECT_WEATHER_PROVIDER,
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
@@ -134,9 +134,9 @@ class ScOptionState(ScConfigState):
     # not defined in config_options_flow _charger_control_entities_schema().
     # ----------------------------------------------------------------------------
     @cached_property
-    def supply_power_sensor_selector_entity_id(self) -> str:
-        """Return supply power sensor selector entity ID."""
-        return self._internal_entity_ids[SELECT_SUPPLY_POWER_SENSOR]
+    def supply_net_power_sensor_selector_entity_id(self) -> str:
+        """Return supply net power sensor selector entity ID."""
+        return self._internal_entity_ids[SELECT_SUPPLY_NET_POWER_SENSOR]
 
     @cached_property
     def share_allocation_entity_id(self) -> str:
@@ -863,27 +863,27 @@ class ScOptionState(ScConfigState):
         return self.option_get_entity_boolean_or_abort(SWITCH_SUPPLY_CAP, val_dict)
 
     # ----------------------------------------------------------------------------
-    def get_supply_power_sensor_entity_id(self) -> str | None:
-        """Get supply power sensor entity ID."""
+    def get_supply_net_power_sensor_entity_id(self) -> str | None:
+        """Get supply net power sensor entity ID."""
 
-        entity_id = self.get_string(self.supply_power_sensor_selector_entity_id)
+        entity_id = self.get_string(self.supply_net_power_sensor_selector_entity_id)
         if entity_id in [STATE_UNKNOWN, STATE_UNAVAILABLE]:
             entity_id = None
 
         return entity_id
 
     # ----------------------------------------------------------------------------
-    def get_supply_power(self) -> float | None:
-        """Get power source output power."""
+    def get_supply_net_power(self) -> float | None:
+        """Get power source net power."""
 
         power = None
-        entity_id = self.get_supply_power_sensor_entity_id()
+        entity_id = self.get_supply_net_power_sensor_entity_id()
         if entity_id:
             power = self.get_number(entity_id)
-            if power < 0:
-                raise ValueError(
-                    f"{self._subentry.unique_id}: Invalid supply power {power}"
-                )
+            # if power < 0:
+            #     raise ValueError(
+            #         f"{self._subentry.unique_id}: Invalid supply power {power}"
+            #     )
 
         return power
 
@@ -893,7 +893,7 @@ class ScOptionState(ScConfigState):
 
         return (
             self._is_supply_cap()
-            and self.get_supply_power_sensor_entity_id() is not None
+            and self.get_supply_net_power_sensor_entity_id() is not None
         )
 
     # ----------------------------------------------------------------------------

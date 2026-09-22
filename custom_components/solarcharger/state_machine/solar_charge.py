@@ -1007,7 +1007,6 @@ class SolarCharge(ScOptionState):
 
         # Power source
         context.cap_supply_power = self.is_cap_supply_power()
-        context.charger_max_current = self.get_charger_max_current()
 
         self._log_power_allocations(context)
 

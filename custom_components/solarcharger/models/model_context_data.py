@@ -53,7 +53,6 @@ class ContextData:
     # Power source
     #####################################
     cap_supply_power: bool = False
-    charger_max_current: float = 0.0
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -77,7 +76,6 @@ class ContextData:
             f"fast_charge={self.fast_charge}, "
             f"calibrate_max_charge_speed={self.calibrate_max_charge_speed}, "
             f"cap_supply_power={self.cap_supply_power}, "
-            f"charger_max_current={self.charger_max_current}, "
             f"timer_session={self.goal.timer_session}, "
             f"has_charge_endtime={self.goal.has_charge_endtime}, "
             f"started_max_charge={self.goal.started_max_charge}, "
