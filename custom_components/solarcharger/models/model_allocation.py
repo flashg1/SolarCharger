@@ -79,10 +79,10 @@ class PowerAllocation:
     # Power source variables
     #####################################
     cap_supply_power: bool = False
-    supply_power: float = 0.0  # +ve/-ve
+    supply_power: float = 0.0  # 0 or +ve
     # +ve (>=0) = output power limit , -ve (<0) = No output power limit
     supply_power_limit: float = 0.0
-    supply_depower: float = 0.0  # +ve
+    supply_depower: float = 0.0  # 0 or +ve
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:

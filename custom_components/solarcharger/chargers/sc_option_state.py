@@ -880,6 +880,10 @@ class ScOptionState(ScConfigState):
         entity_id = self.get_supply_power_sensor_entity_id()
         if entity_id:
             power = self.get_number(entity_id)
+            if power < 0:
+                raise ValueError(
+                    f"{self._subentry.unique_id}: Invalid supply power {power}"
+                )
 
         return power
 

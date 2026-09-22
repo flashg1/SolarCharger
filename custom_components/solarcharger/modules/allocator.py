@@ -191,24 +191,26 @@ class PowerAllocator:
         #####################################
         # Power source
         #####################################
-        limit_source = control.controller.solar_charge.is_cap_supply_power()
-        if limit_source:
+        cap_supply_power = control.controller.solar_charge.is_cap_supply_power()
+        if cap_supply_power:
             supply_power = control.controller.solar_charge.get_supply_power()
-            source_max_power = control.controller.solar_charge.get_supply_power_limit()
+            supply_power_limit = (
+                control.controller.solar_charge.get_supply_power_limit()
+            )
 
             member.supply_depower = 0
-            if supply_power < 0:
+            if supply_power > 0:
                 # Power source outputting power.
-                if source_max_power < 0:
+                if supply_power_limit < 0:
                     # Accept whatever output power.
                     member.supply_depower = 0
-                elif abs(supply_power) > source_max_power:
+                elif supply_power > supply_power_limit:
                     # Output more than max power, so depower difference.
-                    member.supply_depower = abs(supply_power) - source_max_power
+                    member.supply_depower = supply_power - supply_power_limit
 
-            member.cap_supply_power = limit_source
+            member.cap_supply_power = cap_supply_power
             member.supply_power = supply_power
-            member.supply_power_limit = source_max_power
+            member.supply_power_limit = supply_power_limit
 
         return member
 
