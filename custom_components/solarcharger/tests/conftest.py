@@ -175,7 +175,7 @@ class FakeSolarCharge:
         return self.net_power
 
     def is_cap_supply_power(self) -> bool:
-        """Return configured limit-power-source-output flag."""
+        """Return configured cap_supply_power flag."""
         return self.cap_supply_power
 
     def get_supply_power(self) -> float | None:

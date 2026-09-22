@@ -583,9 +583,9 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     #####################################
     # Power source entities
     #####################################
+    SWITCH_SUPPLY_CAP,
     SELECT_SUPPLY_POWER_SENSOR,
     NUMBER_SUPPLY_POWER_LIMIT,
-    SWITCH_SUPPLY_CAP,
     #####################################
     # Charger general configs
     #####################################
@@ -735,9 +735,9 @@ OPTION_COMMON_DEFAULT_VALUES: dict[str, Any] = {
     #####################################
     # Power source entities
     #####################################
+    SWITCH_SUPPLY_CAP: DEFAULT_OFF,
     SELECT_SUPPLY_POWER_SENSOR: None,  # Also update CONFIG_WITH_NO_DEFAULTS
     NUMBER_SUPPLY_POWER_LIMIT: 0.0,
-    SWITCH_SUPPLY_CAP: DEFAULT_OFF,
     #####################################
     # Device required defaults
     #####################################
@@ -937,8 +937,8 @@ DEVICE_INTERNAL_ENTITIES: dict[str, str] = {
     #####################################
     # Power source entities
     #####################################
-    SELECT_SUPPLY_POWER_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_SUPPLY_POWER_SENSOR}",
     SWITCH_SUPPLY_CAP: f"{SWITCH}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SWITCH_SUPPLY_CAP}",
+    SELECT_SUPPLY_POWER_SENSOR: f"{SELECT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SELECT_SUPPLY_POWER_SENSOR}",
     #####################################
     # Local device entities
     #####################################

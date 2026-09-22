@@ -27,8 +27,8 @@ from .const import (
     SWITCH_POLL_CHARGER_UPDATE,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
     SWITCH_SCHEDULE_CHARGE,
-    SWITCH_SUPPLY_CAP,
     SWITCH_SUN_TRIGGER,
+    SWITCH_SUPPLY_CAP,
 )
 from .entity import (
     SolarChargerEntity,
