@@ -1206,7 +1206,7 @@ class SolarCharge(ScOptionState):
         else:
             # To keep power source in pause mode, set max current=0 and min workable current>0.
             # Note: A paused power source will still get theoretical allocation.
-            # Only consulted when its result can actually change the outcome below.
+            # Required for unit tests: Only consulted when its result can actually change the outcome below.
             context.enough_power = (
                 self._is_median_net_allocated_power_more_than_min_workable_power(
                     context.net_allocations, context.state
