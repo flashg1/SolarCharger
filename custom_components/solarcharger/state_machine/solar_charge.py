@@ -1,4 +1,4 @@
-# ruff: noqa: TRY401, TID252
+# ruff: noqa: TRY401, TID252, PLR5501
 """Solar charge state machine implementation to manage solar charging."""
 
 import asyncio
@@ -1160,11 +1160,8 @@ class SolarCharge(ScOptionState):
     #             )
 
     #             if context.enough_power is not None and not context.enough_power:
+    #                 context.next_step = RunStep.PAUSE
     #                 context.continue_state = False
-    #                 if context.cap_supply_power:
-    #                     context.next_step = RunStep.DISCHARGE
-    #                 else:
-    #                     context.next_step = RunStep.PAUSE
 
     #         # What to do if there is no monitor window and not enough power?
     #         # Continue charging or stop?
@@ -1185,60 +1182,98 @@ class SolarCharge(ScOptionState):
         # and then start again closer to end time to complete charge.
         continue_charge = (
             context.connected
+            # Can continue when above charge limit, so don't test here.
             # and context.below_charge_limit
+            # Can continue if not charging, so don't test here.
+            # and (context.stats.loop_success_count == 0 or context.charging)
             and (not (context.goal.end_on_condition and context.goal.exit_condition))
-            and (context.stats.loop_success_count == 0 or context.charging)
             and (
                 # Sun trigger off, continue.
                 not context.goal.sun_trigger
                 # Sun trigger on, continue if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
-                or context.fast_charge
-                or context.calibrate_max_charge_speed
-                or (context.goal.has_charge_endtime and context.goal.max_charge_now)
+                # or context.fast_charge
+                # or context.calibrate_max_charge_speed
+                # or (context.goal.has_charge_endtime and context.goal.max_charge_now)
+                or self.is_max_speed_charge()
             )
         )
 
-        if continue_charge:
+        if not continue_charge:
+            context.next_step = RunStep.END
+            context.continue_state = False
+
+        else:
+            # To keep power source in pause mode, set max current=0 and min workable current>0.
+            # Note: A paused power source will still get theoretical allocation.
             context.enough_power = (
                 self._is_median_net_allocated_power_more_than_min_workable_power(
                     context.net_allocations, context.state
                 )
             )
 
-            if (
-                # Continue discharge if is power source.
-                context.cap_supply_power
-                and (
-                    (
-                        # Continue discharge if not real SOC.
-                        context.real_soc
-                        # Real SOC, continue discharge if SOC at or above limit.
-                        and not context.below_charge_limit
-                    )
-                    # or not context.real_soc
+            # Power supply.
+            if context.cap_supply_power:
+                # Discharge power if any of the following conditions are true.
+                if (
+                    # Real SOC and SOC at or above limit.
+                    (context.real_soc and not context.below_charge_limit)
+                    # Not first loop and not charging.
+                    or (context.stats.loop_success_count > 0 and not context.charging)
+                    # Not enough power.
                     or (context.enough_power is not None and not context.enough_power)
-                )
+                ):
+                    context.next_step = RunStep.DISCHARGE
+                    context.continue_state = False
+
+            # Not a power supply.
+            elif (
+                # SOC at or above limit.
+                not context.below_charge_limit
+                # Not first loop and not charging.
+                or (context.stats.loop_success_count > 0 and not context.charging)
             ):
-                context.next_step = RunStep.DISCHARGE
+                context.next_step = RunStep.END
                 context.continue_state = False
 
-            elif self._allow_pause_state():
-                # To keep power source in pause mode, set max current=0 and min workable current>0.
-                # Note: A paused power source will still get theoretical allocation.
-                # Do next step if there is not enough power to charge device.
-                if context.enough_power is not None and not context.enough_power:
-                    context.continue_state = False
-                    if context.cap_supply_power:
-                        context.next_step = RunStep.DISCHARGE
-                    elif context.below_charge_limit:
-                        context.next_step = RunStep.PAUSE
-                    else:
-                        context.next_step = RunStep.END
+            # Pause if not enough power.
+            elif self._allow_pause_state() and (
+                context.enough_power is not None and not context.enough_power
+            ):
+                context.next_step = RunStep.PAUSE
+                context.continue_state = False
 
-        else:
-            context.next_step = RunStep.END
-            context.continue_state = False
+    # ----------------------------------------------------------------------------
+    # def _set_is_continue_pause_state(self, context: ContextData) -> None:
+    #     """Is continue pause state?"""
+
+    #     context.next_step = RunStep.CHARGE
+    #     context.continue_state = False
+
+    #     continue_pause = (
+    #         context.connected
+    #         and context.below_charge_limit
+    #         and (not (context.goal.end_on_condition and context.goal.exit_condition))
+    #         and (
+    #             not context.goal.sun_trigger
+    #             or context.goal.sun_above_start_end_elevations
+    #         )
+    #         and not context.fast_charge
+    #         and not context.calibrate_max_charge_speed
+    #         and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
+    #     )
+
+    #     if continue_pause:
+    #         if self._is_allow_pause_state():
+    #             context.enough_power = (
+    #                 self._is_median_net_allocated_power_more_than_min_workable_power(
+    #                     context.net_allocations, context.state
+    #                 )
+    #             )
+
+    #             if context.enough_power is None or not context.enough_power:
+    #                 context.next_step = RunStep.PAUSE
+    #                 context.continue_state = True
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_pause_state(self, context: ContextData) -> None:
@@ -1249,30 +1284,16 @@ class SolarCharge(ScOptionState):
 
         continue_pause = (
             context.connected
-            and (
-                # Below charge limit, continue pause.
-                context.below_charge_limit
-                # At or above charge limit, continue pause if power source.
-                or context.cap_supply_power
-            )
-            and (
-                # Continue pause if not exit.
-                not (context.goal.end_on_condition and context.goal.exit_condition)
-            )
+            # Below charge limit, continue pause.
+            and (context.below_charge_limit)
+            # Continue pause if not exit.
+            and (not (context.goal.end_on_condition and context.goal.exit_condition))
             and (
                 # Sun trigger off, continue pause.
                 not context.goal.sun_trigger
                 # Sun trigger on, continue pause if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
             )
-            # # Continue pause if not fast charge.
-            # and not context.fast_charge
-            # # Continue pause if not calibrate charge speed.
-            # and not context.calibrate_max_charge_speed
-            # and not (
-            #     # Continue pause if no schedule and not max charge now.
-            #     context.goal.has_charge_endtime and context.goal.max_charge_now
-            # )
         )
 
         if continue_pause:
@@ -1302,57 +1323,51 @@ class SolarCharge(ScOptionState):
 
         continue_discharge = (
             context.connected
+            # Continue discharge if not exit.
+            and (not (context.goal.end_on_condition and context.goal.exit_condition))
             and (
-                # Continue pause if not exit.
-                not (context.goal.end_on_condition and context.goal.exit_condition)
-            )
-            and (
-                # Sun trigger off, continue pause.
+                # Sun trigger off, continue discharge.
                 not context.goal.sun_trigger
-                # Sun trigger on, continue pause if between start and end elevations.
+                # Sun trigger on, continue discharge if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
             )
         )
 
-        if continue_discharge:
-            # To keep power source in discharge mode, set max current=0 and min workable current>0.
-            # Note: A paused power source will still get theoretical allocation.
+        if not continue_discharge:
+            context.next_step = RunStep.CHARGE
+            context.continue_state = False
+
+        else:
             context.enough_power = (
                 self._is_median_net_allocated_power_more_than_min_workable_power(
                     context.net_allocations, context.state
                 )
             )
 
-            if (
-                # Continue discharge if is power source.
-                context.cap_supply_power
-                and (
-                    (
-                        # Continue discharge if not real SOC.
-                        context.real_soc
-                        # Real SOC, continue discharge if SOC at or above limit.
-                        and not context.below_charge_limit
-                    )
-                    # or not context.real_soc
-                    or (context.enough_power is not None and not context.enough_power)
-                )
-            ):
-                context.next_step = RunStep.DISCHARGE
-                context.continue_state = True
-
-            elif self._allow_pause_state():
-                # Continue discharge if there is not enough power to start charging.
-                if context.enough_power is not None and context.enough_power:
+            # Power supply.
+            if context.cap_supply_power:
+                # Discharge power if any of the following conditions are true.
+                if (
+                    # Real SOC and SOC below limit.
+                    (context.real_soc and context.below_charge_limit)
+                    # Enough power.
+                    and (context.enough_power is not None and context.enough_power)
+                ):
                     context.next_step = RunStep.CHARGE
                     context.continue_state = False
 
-            else:
+            # Not a power supply.
+            # Should not be here unless user turn off cap_supply_power when in discharge state.
+            elif (
+                not self._allow_pause_state()
+                or (
+                    context.below_charge_limit
+                    and (context.enough_power is not None and context.enough_power)
+                )
+                or context.charging
+            ):
                 context.next_step = RunStep.CHARGE
                 context.continue_state = False
-
-        else:
-            context.next_step = RunStep.CHARGE
-            context.continue_state = False
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_state(
