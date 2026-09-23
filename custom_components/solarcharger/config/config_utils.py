@@ -43,6 +43,7 @@ from ..const import (
     DOMAIN,
     DOMAIN_OCPP,
     DOMAIN_WITH_SUBDOMAINS,
+    ENTITY_CHARGER_SET_CHARGE_CURRENT,
     ENTITY_DEVICE_GET_CHARGE_LIMIT,
     ENTITY_DEVICE_LOCATION_SENSOR,
     ENTITY_DEVICE_SET_CHARGE_LIMIT,
@@ -574,6 +575,11 @@ def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
         TIME_CHARGE_ENDTIME_FRIDAY: "",
         TIME_CHARGE_ENDTIME_SATURDAY: "",
         TIME_CHARGE_ENDTIME_SUNDAY: "",
+        #######################################################
+        # From v0.12.0 to v0.13.0
+        # Remove OCPP charger_set_charge_current="" only. Others ok.
+        #######################################################
+        ENTITY_CHARGER_SET_CHARGE_CURRENT: "",
     }
 
     # Do not directly modify data map in loop, so put in list first.

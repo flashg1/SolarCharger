@@ -294,7 +294,7 @@ class PowerAllocator:
         #####################################
         # Power source
         #####################################
-        group.total_source_depower += member.supply_depower
+        group.total_supply_depower += member.supply_depower
 
     # ----------------------------------------------------------------------------
     def _get_allocation_pool(self, net_power: float = 0.0) -> AllocationBook:
@@ -346,7 +346,7 @@ class PowerAllocator:
 
             # Only all member group has complete group information.
             # member.source_depower is already set for members including active_member.
-            book.total_source_depower += all_member.supply_depower
+            book.total_supply_depower += all_member.supply_depower
 
             #####################################
             # Populate active member group with active chargers only.
@@ -378,7 +378,7 @@ class PowerAllocator:
 
         book.net_power = net_power
         book.gross_power = (
-            net_power - book.total_consumed_power + book.total_source_depower
+            net_power - book.total_consumed_power + book.total_supply_depower
         )
 
         return book

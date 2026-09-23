@@ -145,14 +145,14 @@ class AllocationGroup:
     #####################################
     # Power source variables
     #####################################
-    total_source_depower: float = 0  # +ve
+    total_supply_depower: float = 0  # +ve
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of AllocationGroup."""
         return (
             f"priority={self.priority}, "
-            f"total_source_depower={self.total_source_depower}, "
+            f"total_supply_depower={self.total_supply_depower}, "
             f"total_max_power={self.total_max_power}, "
             f"total_consumed_power={self.total_consumed_power}, "
             f"total_need_power={self.total_need_power}, "
@@ -213,13 +213,13 @@ class AllocationBook:
     #####################################
     # Power source variables
     #####################################
-    total_source_depower: float = 0.0  # +ve
+    total_supply_depower: float = 0.0  # +ve
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
         """Return string representation of AllocationBook."""
         return (
-            f"source_depower={self.total_source_depower}, "
+            f"supply_depower={self.total_supply_depower}, "
             f"active_instance={self.total_active_instance}, "
             f"paused_instance={self.total_paused_instance}, "
             f"total_instance={self.total_instance}, "

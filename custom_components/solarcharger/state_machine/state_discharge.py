@@ -6,7 +6,7 @@ import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import RunStep, RunState
+from ..const import RunState, RunStep
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_context_data import ContextData
 from . import state_initialise
@@ -20,13 +20,13 @@ _LOGGER = logging.getLogger(__name__)
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 class StateDischarge(SolarChargeState):
-    """Pause state: Turn off charger and wait for external trigger."""
+    """Discharge state: Do not turn off charger. Wait for external trigger."""
 
     def __init__(
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.PAUSE
+        self.state = RunState.DISCHARGE
 
     # ----------------------------------------------------------------------------
     def _update_pause_stats(
@@ -46,7 +46,7 @@ class StateDischarge(SolarChargeState):
         self.solarcharge.set_pause_stats(stats)
 
     # ----------------------------------------------------------------------------
-    async def _async_pause_charge(
+    async def _async_discharge(
         self,
         charger: Charger,
         chargeable: Chargeable,
@@ -64,20 +64,20 @@ class StateDischarge(SolarChargeState):
         # Initialise counts before starting loop
         stats.loop_success_count = 0
         stats.loop_consecutive_fail_count = 0
-        done_switch_off_charger = False
         while True:
             self.solarcharge.abort_if_exceed_max_consecutive_failure()
 
             try:
-                # Turn off charger if looping for the first time.
-                if not done_switch_off_charger:
-                    await self.solarcharge.async_turn_off_charger(charger, chargeable)
-                    done_switch_off_charger = True
+                # Update status periodically, and just before checking status.
+                # Do not wait here. Depends on the main loop to wait.
+                await self.solarcharge.async_update_ha(
+                    chargeable, wait_after_update=False
+                )
 
                 context = await self.solarcharge.async_set_charge_status(
                     charger, chargeable, state, stats
                 )
-                if context.next_step != RunStep.PAUSE:
+                if context.next_step != RunStep.DISCHARGE:
                     break
 
                 # Show running pause duration.
@@ -92,7 +92,7 @@ class StateDischarge(SolarChargeState):
             except Exception as e:
                 stats.loop_consecutive_fail_count += 1
                 _LOGGER.exception(
-                    "%s: Failed to pause charge: %s", self.solarcharge.caller, e
+                    "%s: Failed to discharge: %s", self.solarcharge.caller, e
                 )
 
             await self.solarcharge.async_charger_sleep()
@@ -109,11 +109,11 @@ class StateDischarge(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
-        """Start pause state."""
+        """Start discharge state."""
 
         self.solarcharge.set_run_state(self.state)
 
-        context = await self._async_pause_charge(
+        context = await self._async_discharge(
             self.solarcharge.charger,
             self.solarcharge.chargeable,
             self.solarcharge.machine_state.state,
@@ -122,11 +122,4 @@ class StateDischarge(SolarChargeState):
 
         self.solarcharge.log_context(context)
 
-        # WL: This also worked.
-        # Local Imports (Lazy Loading): Move from state_a import StateA inside
-        # the handle method of StateB. This delays the import until the method runs.
-        # from .state_initialise import StateInitialise
-        # self.solarcharge.set_state(StateInitialise())
-
-        # Import Modules, Not Classes
-        self.solarcharge.set_machine_state(state_initialise.StateInitialise())
+        self.solarcharge.set_machine_state(state_initialise.StateCharge())

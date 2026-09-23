@@ -16,8 +16,8 @@ from ..const import (
     ENTITY_CHARGER_CHARGING_SENSOR,
     NUMBER_CHARGER_MAX_SPEED,
     NUMBER_WAIT_CHARGER_AMP_CHANGE,
-    RunStep,
     RunState,
+    RunStep,
 )
 from ..exceptions.entity_exception import EntityExceptionError
 from ..models.model_charge_stats import ChargeStats
@@ -26,6 +26,7 @@ from ..models.model_context_data import ContextData
 from ..models.model_schedule_data import ScheduleData
 from ..models.model_state_of_charge import StateOfCharge
 from .solar_charge_state import SolarChargeState
+from .state_discharge import StateDischarge
 from .state_pause import StatePause
 from .state_tidyup import StateTidyUp
 
@@ -668,5 +669,7 @@ class StateCharge(SolarChargeState):
 
         if context.next_step == RunStep.PAUSE:
             self.solarcharge.set_machine_state(StatePause())
+        elif context.next_step == RunStep.DISCHARGE:
+            self.solarcharge.set_machine_state(StateDischarge())
         else:
             self.solarcharge.set_machine_state(StateTidyUp())

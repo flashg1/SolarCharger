@@ -327,6 +327,7 @@
                     "initialise": "Initialise",
                     "charge": "Charge",
                     "self-depower": "Self-depower",
+                    "discharge": "Discharge",
                     "pause": "Pause",
                     "tidy-up": "Tidy-up",
                     "end": "End"

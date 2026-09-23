@@ -1038,8 +1038,9 @@ OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     TEXT_CHARGER_STEP_CURRENT_LIST: f"{TEXT}.{DOMAIN}_{CONFIG_NAME_MARKER}_{TEXT_CHARGER_STEP_CURRENT_LIST}",
     ENTITY_CHARGER_GET_CHARGE_CURRENT: f"{SENSOR}.{DEVICE_NAME_MARKER}current_import",
     # OCPP set current entity does not exist. OCPP charge current is set by custom service call with charge profile.
-    # Setting this to blank string "" to disallow configuration in settings. Set to None to make it overridable in settings.
-    ENTITY_CHARGER_SET_CHARGE_CURRENT: "",
+    # Setting to blank string "" to disallow configuration in settings for string only. Set to None to make it overridable in settings.
+    # Setting this to blank string "" gives error on reconfiguration, ie. Entity is neither a valid entity ID nor a valid UUID.
+    ENTITY_CHARGER_SET_CHARGE_CURRENT: None,
     ENTITY_DEVICE_SOC_SENSOR: None,
     ENTITY_DEVICE_GET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_DEVICE_CHARGE_LIMIT}",
     ENTITY_DEVICE_SET_CHARGE_LIMIT: f"{NUMBER}.{DOMAIN}_{CONFIG_NAME_MARKER}_{NUMBER_DEVICE_CHARGE_LIMIT}",
