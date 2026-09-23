@@ -1192,10 +1192,10 @@ class SolarCharge(ScOptionState):
                 not context.goal.sun_trigger
                 # Sun trigger on, continue if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
-                # or context.fast_charge
-                # or context.calibrate_max_charge_speed
-                # or (context.goal.has_charge_endtime and context.goal.max_charge_now)
-                or self.is_max_speed_charge()
+                or context.fast_charge
+                or context.calibrate_max_charge_speed
+                or (context.goal.has_charge_endtime and context.goal.max_charge_now)
+                # or self.is_max_speed_charge()
             )
         )
 
@@ -1206,10 +1206,13 @@ class SolarCharge(ScOptionState):
         else:
             # To keep power source in pause mode, set max current=0 and min workable current>0.
             # Note: A paused power source will still get theoretical allocation.
+            # Only consulted when its result can actually change the outcome below.
             context.enough_power = (
                 self._is_median_net_allocated_power_more_than_min_workable_power(
                     context.net_allocations, context.state
                 )
+                if context.cap_supply_power or self._allow_pause_state()
+                else None
             )
 
             # Power supply.
@@ -1294,6 +1297,9 @@ class SolarCharge(ScOptionState):
                 # Sun trigger on, continue pause if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
             )
+            and not context.fast_charge
+            and not context.calibrate_max_charge_speed
+            and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
         )
 
         if continue_pause:
