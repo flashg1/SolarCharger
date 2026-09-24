@@ -6,7 +6,7 @@ import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import RunStep, RunState
+from ..const import RunState, RunStep
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_context_data import ContextData
 

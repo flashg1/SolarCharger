@@ -1100,16 +1100,7 @@ class SolarCharge(ScOptionState):
             median_net_allocated_power = net_allocations.median_value
             adjusted_activation_power, _ = self.get_adjusted_activation_power(run_state)
 
-            if run_state == RunState.PAUSE:
-                #####################################
-                # For exiting out of paused state.
-                #####################################
-                # Device is currently paused.
-                # Note surplus power is negative.
-                is_enough_power = (
-                    median_net_allocated_power <= adjusted_activation_power
-                )
-            else:
+            if run_state == RunState.CHARGE:
                 #####################################
                 # For entering pause state.
                 #####################################
@@ -1119,6 +1110,16 @@ class SolarCharge(ScOptionState):
                     median_net_allocated_power <= adjusted_activation_power
                     # Make it harder to go into pause state if near realtime net_allocated_power has enough power.
                     or net_allocated_power <= adjusted_activation_power
+                )
+
+            else:
+                #####################################
+                # For exiting out of paused or discharge state.
+                #####################################
+                # Device is currently paused.
+                # Note surplus power is negative.
+                is_enough_power = (
+                    median_net_allocated_power <= adjusted_activation_power
                 )
 
         return is_enough_power

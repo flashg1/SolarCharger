@@ -9,7 +9,7 @@ from ..chargers.charger import Charger
 from ..const import RunState, RunStep
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_context_data import ContextData
-from . import state_initialise
+from . import state_charge
 from .solar_charge_state import SolarChargeState
 
 # ----------------------------------------------------------------------------
@@ -125,4 +125,4 @@ class StateDischarge(SolarChargeState):
 
         self.solarcharge.log_context(context)
 
-        self.solarcharge.set_machine_state(state_initialise.StateCharge())
+        self.solarcharge.set_machine_state(state_charge.StateCharge())

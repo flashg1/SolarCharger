@@ -1,6 +1,9 @@
+# ruff: noqa: TID252
 """Power allocation data model."""
 
 from dataclasses import dataclass
+
+from ..const import RunState
 
 
 # ----------------------------------------------------------------------------
@@ -44,6 +47,8 @@ class PowerAllocation:
     # Device can set current?
     can_set_current: bool
 
+    # Run state
+    run_state: RunState = RunState.END
     # Device allows pause state?
     max_speed_charge: bool = False
     # Device depower by itself, eg. themostat.
@@ -89,6 +94,7 @@ class PowerAllocation:
         """Return string representation of PowerAllocation."""
         return (
             f"name={self.name}, "
+            f"run_state={self.run_state}, "
             f"cap_supply_power={self.cap_supply_power}, "
             f"supply_net_power={self.supply_net_power}, "
             f"supply_power_limit={self.supply_power_limit}, "

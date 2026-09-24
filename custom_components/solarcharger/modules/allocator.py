@@ -111,6 +111,7 @@ class PowerAllocator:
         step_power_list = control.controller.solar_charge.get_charger_step_power_list()
 
         # Participate in power allocation.
+        run_state = control.controller.solar_charge.machine_state.state
         instance = control.controller.charge_control.instance_count
         can_set_current = control.controller.solar_charge.can_set_current
         # Device pause state.
@@ -187,6 +188,7 @@ class PowerAllocator:
             power_factor=power_factor,
         )
         member.consumed_power = consumed_power
+        member.run_state = run_state
 
         #####################################
         # Power source
@@ -694,15 +696,7 @@ class PowerAllocator:
     def _get_member_state(self, member: PowerAllocation) -> str:
         """Get member state string."""
 
-        if member.share_allocation == 0:
-            if member.self_depower:
-                member_state = "Self-depower"
-            else:
-                member_state = "Pause"
-        else:
-            member_state = "Active"
-
-        return member_state
+        return member.run_state.value
 
     # ----------------------------------------------------------------------------
     async def _async_send_allocations(
