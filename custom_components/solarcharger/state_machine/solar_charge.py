@@ -1195,6 +1195,7 @@ class SolarCharge(ScOptionState):
                 # or context.fast_charge
                 # or context.calibrate_max_charge_speed
                 # or (context.goal.has_charge_endtime and context.goal.max_charge_now)
+                # Charge at max speed.
                 or self.is_max_speed_charge()
             )
         )
@@ -1215,7 +1216,9 @@ class SolarCharge(ScOptionState):
                 else None
             )
 
+            #####################################
             # Power supply.
+            #####################################
             if context.cap_supply_power:
                 # Discharge power if any of the following conditions are true.
                 if (
@@ -1229,7 +1232,9 @@ class SolarCharge(ScOptionState):
                     context.next_step = RunStep.DISCHARGE
                     context.continue_state = False
 
+            #####################################
             # Not a power supply.
+            #####################################
             elif (
                 # SOC at or above limit.
                 not context.below_charge_limit
@@ -1300,6 +1305,7 @@ class SolarCharge(ScOptionState):
             # and not context.fast_charge
             # and not context.calibrate_max_charge_speed
             # and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
+            # Not charge at max speed.
             and not self.is_max_speed_charge()
         )
 
@@ -1336,6 +1342,7 @@ class SolarCharge(ScOptionState):
                 not context.goal.sun_trigger
                 # Sun trigger on, continue discharge if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
+                # Charge at max speed.
                 or self.is_max_speed_charge()
             )
         )
@@ -1345,7 +1352,9 @@ class SolarCharge(ScOptionState):
             context.continue_state = False
 
         else:
+            #####################################
             # Power supply.
+            #####################################
             if context.cap_supply_power:
                 context.enough_power = (
                     self._is_median_net_allocated_power_more_than_min_workable_power(
@@ -1353,7 +1362,6 @@ class SolarCharge(ScOptionState):
                     )
                 )
 
-                # Discharge power if any of the following conditions are true.
                 if (
                     # Real SOC and SOC below limit.
                     (context.real_soc and context.below_charge_limit)
@@ -1363,8 +1371,10 @@ class SolarCharge(ScOptionState):
                     context.next_step = RunStep.CHARGE
                     context.continue_state = False
 
+            #####################################
             # Not a power supply.
             # Should not be here unless user turn off cap_supply_power when in discharge state.
+            #####################################
             else:
                 context.next_step = RunStep.CHARGE
                 context.continue_state = False
