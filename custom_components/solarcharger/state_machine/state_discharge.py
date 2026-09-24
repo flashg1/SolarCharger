@@ -32,7 +32,7 @@ class StateDischarge(SolarChargeState):
     def _update_pause_stats(
         self, stats: ChargeStats, paused_duration: timedelta
     ) -> None:
-        """Update pause stats."""
+        """Update pause/discharge stats."""
 
         stats.pause_last_duration = paused_duration
         stats.pause_total_duration += paused_duration
@@ -58,16 +58,19 @@ class StateDischarge(SolarChargeState):
         start_time = self.solarcharge.get_local_datetime()
         self.solarcharge.give_up_real_power_allocation()
 
-        # Reset buffer for moving average
-        # self.solarcharge.power_allocations = []
-
         # Initialise counts before starting loop
         stats.loop_success_count = 0
         stats.loop_consecutive_fail_count = 0
+        done_set_zero_current = False
         while True:
             self.solarcharge.abort_if_exceed_max_consecutive_failure()
 
             try:
+                # Set 0A charge current if looping for the first time.
+                if not done_set_zero_current:
+                    await self.solarcharge.async_set_charge_current(charger, 0)
+                    done_set_zero_current = True
+
                 # Update status periodically, and just before checking status.
                 # Do not wait here. Depends on the main loop to wait.
                 await self.solarcharge.async_update_ha(

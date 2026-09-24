@@ -1192,10 +1192,10 @@ class SolarCharge(ScOptionState):
                 not context.goal.sun_trigger
                 # Sun trigger on, continue if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
-                or context.fast_charge
-                or context.calibrate_max_charge_speed
-                or (context.goal.has_charge_endtime and context.goal.max_charge_now)
-                # or self.is_max_speed_charge()
+                # or context.fast_charge
+                # or context.calibrate_max_charge_speed
+                # or (context.goal.has_charge_endtime and context.goal.max_charge_now)
+                or self.is_max_speed_charge()
             )
         )
 
@@ -1206,7 +1206,7 @@ class SolarCharge(ScOptionState):
         else:
             # To keep power source in pause mode, set max current=0 and min workable current>0.
             # Note: A paused power source will still get theoretical allocation.
-            # Required for unit tests: Only consulted when its result can actually change the outcome below.
+            # Only consulted when its result can actually change the outcome below, otherwise need to fake data for unit tests.
             context.enough_power = (
                 self._is_median_net_allocated_power_more_than_min_workable_power(
                     context.net_allocations, context.state
@@ -1282,8 +1282,8 @@ class SolarCharge(ScOptionState):
     def _set_is_continue_pause_state(self, context: ContextData) -> None:
         """Is continue pause state?"""
 
-        context.next_step = RunStep.PAUSE
-        context.continue_state = True
+        context.next_step = RunStep.CHARGE
+        context.continue_state = False
 
         continue_pause = (
             context.connected
@@ -1297,9 +1297,10 @@ class SolarCharge(ScOptionState):
                 # Sun trigger on, continue pause if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
             )
-            and not context.fast_charge
-            and not context.calibrate_max_charge_speed
-            and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
+            # and not context.fast_charge
+            # and not context.calibrate_max_charge_speed
+            # and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
+            and not self.is_max_speed_charge()
         )
 
         if continue_pause:
@@ -1309,16 +1310,15 @@ class SolarCharge(ScOptionState):
                         context.net_allocations, context.state
                     )
                 )
-                # Continue pause if there is not enough power to start charging.
-                if context.enough_power is not None and context.enough_power:
-                    context.next_step = RunStep.CHARGE
-                    context.continue_state = False
-            else:
-                context.next_step = RunStep.CHARGE
-                context.continue_state = False
-        else:
-            context.next_step = RunStep.CHARGE
-            context.continue_state = False
+
+                if (
+                    # Not enough data to determine enough power.
+                    context.enough_power is None
+                    # Enough data and not enough power.
+                    or not context.enough_power
+                ):
+                    context.next_step = RunStep.PAUSE
+                    context.continue_state = True
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_discharge_state(self, context: ContextData) -> None:
@@ -1336,6 +1336,7 @@ class SolarCharge(ScOptionState):
                 not context.goal.sun_trigger
                 # Sun trigger on, continue discharge if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
+                or self.is_max_speed_charge()
             )
         )
 
@@ -1344,14 +1345,14 @@ class SolarCharge(ScOptionState):
             context.continue_state = False
 
         else:
-            context.enough_power = (
-                self._is_median_net_allocated_power_more_than_min_workable_power(
-                    context.net_allocations, context.state
-                )
-            )
-
             # Power supply.
             if context.cap_supply_power:
+                context.enough_power = (
+                    self._is_median_net_allocated_power_more_than_min_workable_power(
+                        context.net_allocations, context.state
+                    )
+                )
+
                 # Discharge power if any of the following conditions are true.
                 if (
                     # Real SOC and SOC below limit.
@@ -1364,14 +1365,7 @@ class SolarCharge(ScOptionState):
 
             # Not a power supply.
             # Should not be here unless user turn off cap_supply_power when in discharge state.
-            elif (
-                not self._allow_pause_state()
-                or (
-                    context.below_charge_limit
-                    and (context.enough_power is not None and context.enough_power)
-                )
-                or context.charging
-            ):
+            else:
                 context.next_step = RunStep.CHARGE
                 context.continue_state = False
 
