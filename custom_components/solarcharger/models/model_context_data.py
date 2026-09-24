@@ -8,7 +8,7 @@ from typing import Any
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import RunStep, RunState
+from ..const import RunState, RunStep
 from .model_charge_stats import ChargeStats
 from .model_median_data import MedianData
 from .model_schedule_data import ScheduleData

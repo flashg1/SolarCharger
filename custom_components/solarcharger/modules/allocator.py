@@ -119,10 +119,12 @@ class PowerAllocator:
         self_depower = control.controller.solar_charge.is_self_depower
 
         adjusted_activation_power, activation_power = (
-            control.controller.solar_charge.get_adjusted_activation_power(
-                RunState.PAUSE if share_allocation == 0 else RunState.CHARGE
-            )
+            control.controller.solar_charge.get_adjusted_activation_power(run_state)
         )
+
+        # Power supply
+        cap_supply_power = control.controller.solar_charge.is_cap_supply_power()
+        below_charge_limit = control.controller.solar_charge.is_below_charge_limit()
 
         if instance > 0:
             #####################################
@@ -160,6 +162,19 @@ class PowerAllocator:
                     else 0
                 )
 
+            #####################################
+            # Power supply fully charged.
+            #####################################
+            if (
+                cap_supply_power
+                and not below_charge_limit
+                and run_state == RunState.DISCHARGE
+            ):
+                # Device should be in discharge state.
+                # Get 0 allocated power in virtual allocation.
+                max_power = 0
+                max_current = 0
+
         max_speed_charge = control.controller.solar_charge.is_max_speed_charge()
 
         # Chargers that requires charging at max speed has system priority and equal weight.
@@ -193,7 +208,6 @@ class PowerAllocator:
         #####################################
         # Power source
         #####################################
-        cap_supply_power = control.controller.solar_charge.is_cap_supply_power()
         if cap_supply_power:
             supply_net_power = control.controller.solar_charge.get_supply_net_power()
             supply_power_limit = (

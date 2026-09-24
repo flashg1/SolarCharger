@@ -864,7 +864,7 @@ class SolarCharge(ScOptionState):
         return charge_limit_changed
 
     # ----------------------------------------------------------------------------
-    def is_below_charge_limit(
+    def _is_below_charge_limit(
         self, chargeable: Chargeable, val_dict: ConfigValueDict | None = None
     ) -> bool:
         """Is device SOC below charge limit? Always return true if SOC entity ID is not defined."""
@@ -898,6 +898,12 @@ class SolarCharge(ScOptionState):
             )
 
         return is_below_limit
+
+    # ----------------------------------------------------------------------------
+    def is_below_charge_limit(self, val_dict: ConfigValueDict | None = None) -> bool:
+        """Is device SOC below charge limit? Always return true if SOC entity ID is not defined."""
+
+        return self._is_below_charge_limit(self.chargeable, val_dict)
 
     # ----------------------------------------------------------------------------
     def is_charging(
@@ -1014,7 +1020,7 @@ class SolarCharge(ScOptionState):
         # Device charge limit must have already been set before this check.
         soc_tag = ENTITY_DEVICE_SOC_SENSOR
         val_dict = ConfigValueDict(soc_tag, {})
-        context.below_charge_limit = self.is_below_charge_limit(chargeable, val_dict)
+        context.below_charge_limit = self._is_below_charge_limit(chargeable, val_dict)
         context.real_soc = val_dict.config_values[soc_tag].entity_id is not None
 
         val_dict = ConfigValueDict(ENTITY_CHARGER_CHARGING_SENSOR, {})
@@ -1056,21 +1062,21 @@ class SolarCharge(ScOptionState):
         # If device can set current, make it harder to exit pause state by raising the requirement to exit pause state.
         # Min workable current enter pause percent = 0%
         # Min workable current exit pause percent = 10% (ie. harder to change from paused to charging state)
-        if run_state == RunState.PAUSE:
-            #####################################
-            # For exiting out of paused state.
-            #####################################
-            # Device is currently paused.
-            extra_percent = (
-                self.get_charger_min_workable_power_resume_charge_threshold()
-            )
-
-        else:
+        if run_state in [RunState.CHARGE, RunState.SELF_DEPOWER]:
             #####################################
             # For entering pause state.
             #####################################
             # Device is currently charging.
             extra_percent = self.get_charger_min_workable_power_pause_charge_threshold()
+
+        else:
+            #####################################
+            # For exiting out of paused or discharge state.
+            #####################################
+            # Device is currently paused.
+            extra_percent = (
+                self.get_charger_min_workable_power_resume_charge_threshold()
+            )
 
         adjusted_activation_power = activation_power * (100 + extra_percent) / 100
 
@@ -1100,7 +1106,7 @@ class SolarCharge(ScOptionState):
             median_net_allocated_power = net_allocations.median_value
             adjusted_activation_power, _ = self.get_adjusted_activation_power(run_state)
 
-            if run_state == RunState.CHARGE:
+            if run_state in [RunState.CHARGE, RunState.SELF_DEPOWER]:
                 #####################################
                 # For entering pause state.
                 #####################################

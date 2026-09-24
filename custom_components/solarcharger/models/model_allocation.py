@@ -87,7 +87,9 @@ class PowerAllocation:
     supply_net_power: float = 0.0  # -ve or +ve
     # +ve (>=0) = output power limit , -ve (<0) = No output power limit
     supply_power_limit: float = 0.0
+    # Amount of output power to reduce so as not to exceed supply_power_limit.
     supply_depower: float = 0.0  # 0 or +ve
+    below_charge_limit: bool = False
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -99,6 +101,7 @@ class PowerAllocation:
             f"supply_net_power={self.supply_net_power}, "
             f"supply_power_limit={self.supply_power_limit}, "
             f"supply_depower={self.supply_depower}, "
+            f"below_charge_limit={self.below_charge_limit}, "
             f"max_power={self.max_power}, "
             f"max_current={self.max_current}, "
             f"step_power_list={self.step_power_list}, "

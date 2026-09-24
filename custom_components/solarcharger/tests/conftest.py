@@ -92,6 +92,7 @@ class FakeSolarCharge:
     cap_supply_power: bool = False
     supply_net_power: float = 0.0
     supply_power_limit: float = 0.0
+    below_charge_limit: bool = True
 
     def get_charger_priority(self) -> int:
         """Return configured priority."""
@@ -185,6 +186,10 @@ class FakeSolarCharge:
     def get_supply_power_limit(self) -> float:
         """Get power source output power limit."""
         return self.supply_power_limit
+
+    def is_below_charge_limit(self) -> bool:
+        """Return below-charge-limit flag."""
+        return self.below_charge_limit
 
     @property
     def machine_state(self) -> SimpleNamespace:

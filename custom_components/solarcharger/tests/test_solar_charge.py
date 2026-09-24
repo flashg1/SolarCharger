@@ -815,7 +815,7 @@ def test_below_charge_limit_true_without_a_configured_soc_sensor() -> None:
     solar_charge = make_bare_solar_charge()
     chargeable = make_fake_soc_chargeable(soc_entity_id=None, soc=None)
 
-    assert solar_charge.is_below_charge_limit(chargeable) is True
+    assert solar_charge._is_below_charge_limit(chargeable) is True
 
 
 def test_below_charge_limit_true_when_soc_has_room_left() -> None:
@@ -823,7 +823,7 @@ def test_below_charge_limit_true_when_soc_has_room_left() -> None:
     solar_charge = make_bare_solar_charge()
     chargeable = make_fake_soc_chargeable(charge_limit=80.0, soc=50.0)
 
-    assert solar_charge.is_below_charge_limit(chargeable) is True
+    assert solar_charge._is_below_charge_limit(chargeable) is True
 
 
 def test_below_charge_limit_false_when_soc_has_reached_the_limit() -> None:
@@ -831,7 +831,7 @@ def test_below_charge_limit_false_when_soc_has_reached_the_limit() -> None:
     solar_charge = make_bare_solar_charge()
     chargeable = make_fake_soc_chargeable(charge_limit=80.0, soc=80.0)
 
-    assert solar_charge.is_below_charge_limit(chargeable) is False
+    assert solar_charge._is_below_charge_limit(chargeable) is False
 
 
 def test_below_charge_limit_fails_open_when_charge_limit_lookup_errors() -> None:
@@ -839,7 +839,7 @@ def test_below_charge_limit_fails_open_when_charge_limit_lookup_errors() -> None
     solar_charge = make_bare_solar_charge()
     chargeable = make_fake_soc_chargeable(raise_on_charge_limit=RuntimeError("boom"))
 
-    assert solar_charge.is_below_charge_limit(chargeable) is True
+    assert solar_charge._is_below_charge_limit(chargeable) is True
 
 
 def test_below_charge_limit_fails_open_on_soc_timeout() -> None:
@@ -847,7 +847,7 @@ def test_below_charge_limit_fails_open_on_soc_timeout() -> None:
     solar_charge = make_bare_solar_charge()
     chargeable = make_fake_soc_chargeable(raise_on_soc=TimeoutError("slow device"))
 
-    assert solar_charge.is_below_charge_limit(chargeable) is True
+    assert solar_charge._is_below_charge_limit(chargeable) is True
 
 
 # ----------------------------------------------------------------------------
