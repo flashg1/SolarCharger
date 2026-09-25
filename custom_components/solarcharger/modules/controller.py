@@ -29,7 +29,7 @@ from ..const import (
     DEFAULT_CHARGE_LIMIT_MAP,
     DELTA_CHARGER_CURRENT_UPDATE_PERIOD,
     NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
-    SENSOR_INSTANCE_COUNT,
+    SENSOR_INSTANCE,
     SENSOR_SYNC_UPDATE,
     SENSOR_WEATHER_FORECAST,
     SUBENTRY_CHARGER_TYPES,
@@ -968,7 +968,7 @@ class ChargeController(ScOptionState):
                     control.entities.switches[SWITCH_CHARGE].turn_off()
 
                 if control.entities.sensors:
-                    control.entities.sensors[SENSOR_INSTANCE_COUNT].set_state(
+                    control.entities.sensors[SENSOR_INSTANCE].set_state(
                         control.instance_count
                     )
                     # I don't think setting SENSOR_CONSUMED_POWER is required here.
@@ -978,7 +978,7 @@ class ChargeController(ScOptionState):
             control.instance_count = 1
             control.charge_task.add_done_callback(_callback_on_charge_end)
             if control.entities.sensors:
-                control.entities.sensors[SENSOR_INSTANCE_COUNT].set_state(
+                control.entities.sensors[SENSOR_INSTANCE].set_state(
                     control.instance_count
                 )
 

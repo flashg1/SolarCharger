@@ -377,7 +377,7 @@ NUMBER_SUPPLY_POWER_LIMIT = "supply_power_limit"
 #####################################
 # Monitor window entities
 #####################################
-SENSOR_INSTANCE_COUNT = "instance_count"  # 0 or 1
+SENSOR_INSTANCE = "instance"  # 0 or 1
 SENSOR_RUN_STATE = "run_state"
 SENSOR_SHARE_ALLOCATION = "share_allocation"  # 1=shared or 0=not shared
 
@@ -664,7 +664,7 @@ CONFIG_ENTITY_ID_LIST: list[str] = [
     #####################################
     # Charger config
     #####################################
-    SENSOR_INSTANCE_COUNT,
+    SENSOR_INSTANCE,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SELF_DEPOWER_TODAY,
     SENSOR_CONSUMED_POWER,
@@ -947,7 +947,7 @@ DEVICE_INTERNAL_ENTITIES: dict[str, str] = {
     # Local device entities
     #####################################
     # Sensors
-    SENSOR_INSTANCE_COUNT: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_INSTANCE_COUNT}",
+    SENSOR_INSTANCE: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_INSTANCE}",
     SENSOR_SHARE_ALLOCATION: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_SHARE_ALLOCATION}",
     SENSOR_SELF_DEPOWER_TODAY: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_SELF_DEPOWER_TODAY}",
     SENSOR_CONSUMED_POWER: f"{SENSOR}.{DOMAIN}_{CONFIG_NAME_MARKER}_{SENSOR_CONSUMED_POWER}",

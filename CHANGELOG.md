@@ -3,6 +3,8 @@
 ## v0.13.0 2026-09-17
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
+- Renamed instance count entity to instance.
+- Renamed pause stats entities to stall charge stats.
 ### Fix
 - Fixed error with not able to reconfigure OCPP settings.
 ### New feature

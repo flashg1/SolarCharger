@@ -364,8 +364,8 @@
             "consumed_energy_today": {
                 "name": "Consumed energy today"
             },
-            "instance_count": {
-                "name": "Instance count"
+            "instance": {
+                "name": "Instance"
             },
             "share_allocation": {
                 "name": "Share allocation"

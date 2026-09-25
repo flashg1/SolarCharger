@@ -48,7 +48,7 @@ from .const import (
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
     SENSOR_DELTA_ALLOCATED_POWER,
-    SENSOR_INSTANCE_COUNT,
+    SENSOR_INSTANCE,
     SENSOR_LAST_CHECK,
     SENSOR_LAST_STALL_DURATION,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
@@ -611,11 +611,11 @@ CONFIG_SENSOR_LIST: tuple[
     # entity_category=EntityCategory.DIAGNOSTIC
     #####################################
     (
-        SENSOR_INSTANCE_COUNT,
+        SENSOR_INSTANCE,
         SolarChargerSensorStateEntity,
         SolarChargerEntityType.TYPE_LOCAL_ONLY,
         SensorEntityDescription(
-            key=SENSOR_INSTANCE_COUNT,
+            key=SENSOR_INSTANCE,
             icon=ICON_RUN,
             state_class=SensorStateClass.TOTAL,
             entity_category=EntityCategory.DIAGNOSTIC,
