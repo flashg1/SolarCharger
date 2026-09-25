@@ -373,14 +373,14 @@
             "self_depower_today": {
                 "name": "Self-depower today"
             },
-            "pause_count": {
-                "name": "Pause count"
+            "stall_charge": {
+                "name": "Stall charge"
             },
-            "average_pause_duration": {
-                "name": "Average pause duration"
+            "average_stall_duration": {
+                "name": "Average stall duration"
             },
-            "last_pause_duration": {
-                "name": "Last pause duration"
+            "last_stall_duration": {
+                "name": "Last stall duration"
             },
             "sync_update": {
                 "name": "Sync update"

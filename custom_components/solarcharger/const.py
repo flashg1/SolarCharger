@@ -391,11 +391,11 @@ SENSOR_MEDIAN_NET_ALLOCATED_POWER = "median_net_allocated_power"
 SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD = "median_net_allocated_power_period"
 SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
 
-# Pause count per session
-SENSOR_PAUSE_COUNT = "pause_count"
-# Pause average duration per session
-SENSOR_AVERAGE_PAUSE_DURATION = "average_pause_duration"
-SENSOR_LAST_PAUSE_DURATION = "last_pause_duration"
+# Stall charge count per session
+SENSOR_STALL_CHARGE = "stall_charge"
+# Stall average duration per session
+SENSOR_AVERAGE_STALL_DURATION = "average_stall_duration"
+SENSOR_LAST_STALL_DURATION = "last_stall_duration"
 
 SENSOR_CONSUMED_POWER = "consumed_power"
 SENSOR_CONSUMED_ENERGY_TODAY = "consumed_energy_today"

@@ -34,23 +34,6 @@ class StatePause(SolarChargeState):
         self.state = RunState.PAUSE
 
     # ----------------------------------------------------------------------------
-    def _update_pause_stats(
-        self, stats: ChargeStats, paused_duration: timedelta
-    ) -> None:
-        """Update pause stats."""
-
-        stats.pause_last_duration = paused_duration
-        stats.pause_total_duration += paused_duration
-        stats.pause_total_count += 1
-        stats.pause_average_duration = timedelta(
-            seconds=(
-                stats.pause_total_duration.total_seconds() / stats.pause_total_count
-            )
-        )
-
-        self.solarcharge.set_pause_stats(stats)
-
-    # ----------------------------------------------------------------------------
     async def _async_pause_charge(
         self,
         charger: Charger,
@@ -86,7 +69,7 @@ class StatePause(SolarChargeState):
                     break
 
                 # Show running pause duration.
-                self.solarcharge.set_last_pause_duration(
+                self.solarcharge.set_last_stall_duration(
                     self.solarcharge.get_local_datetime() - start_time
                 )
 
@@ -104,11 +87,11 @@ class StatePause(SolarChargeState):
             stats.loop_total_count += 1
 
         end_time = self.solarcharge.get_local_datetime()
-        paused_duration = end_time - start_time
+        stall_duration = end_time - start_time
 
         # Think about only update stats when pause exit was due to having enough power.
         # if next_step == ChargeStatus.CHARGE_CONTINUE:
-        self._update_pause_stats(stats, paused_duration)
+        self.solarcharge.update_stall_stats(stats, stall_duration)
 
         return context
 

@@ -48,7 +48,7 @@ class StateInitialise(SolarChargeState):
 
         await self._async_init_device(self.solarcharge.chargeable)
 
-        if self.solarcharge.stats.pause_total_count == 0:
+        if self.solarcharge.stats.stall_total_count == 0:
             # Starting session for the first time, so get user preference on start state.
             start_state = self.solarcharge.get_start_state()
         else:

@@ -26,19 +26,19 @@ class ChargeStats:
     loop_total_count: int = 0
 
     #####################################
-    # Pause stats
+    # Stall stats
     #####################################
-    # Pause total count
-    pause_total_count: int = 0
+    # Stall total count
+    stall_total_count: int = 0
 
-    # Pause total duration
-    pause_total_duration: timedelta = timedelta(seconds=0)
+    # Stall total duration
+    stall_total_duration: timedelta = timedelta(seconds=0)
 
-    # Pause average duration
-    pause_average_duration: timedelta = timedelta(seconds=0)
+    # Stall average duration
+    stall_average_duration: timedelta = timedelta(seconds=0)
 
-    # Pause last duration
-    pause_last_duration: timedelta = timedelta(seconds=0)
+    # Stall last duration
+    stall_last_duration: timedelta = timedelta(seconds=0)
 
     # ----------------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -49,8 +49,8 @@ class ChargeStats:
             f"loop_total_fail_count={self.loop_total_fail_count}, "
             f"loop_total_success_count={self.loop_total_count - self.loop_total_fail_count}, "
             f"loop_total_count={self.loop_total_count}, "
-            f"pause_total_count={self.pause_total_count}, "
-            f"pause_total_duration={self.pause_total_duration}, "
-            f"pause_average_duration={self.pause_average_duration}, "
-            f"pause_last_duration={self.pause_last_duration}"
+            f"stall_total_count={self.stall_total_count}, "
+            f"stall_total_duration={self.stall_total_duration}, "
+            f"stall_average_duration={self.stall_average_duration}, "
+            f"stall_last_duration={self.stall_last_duration}"
         )

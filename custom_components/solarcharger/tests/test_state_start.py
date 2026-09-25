@@ -64,7 +64,7 @@ def make_fake_solarcharge(**overrides: object) -> SimpleNamespace:
         "set_consumed_power": Mock(),
         "set_median_data_not_ready": Mock(side_effect=_set_not_ready),
         "set_median_data_ready": Mock(side_effect=_set_ready),
-        "set_pause_stats": Mock(),
+        "set_stall_stats": Mock(),
         "give_up_real_power_allocation": Mock(),
         "set_net_allocated_power": Mock(),
         "set_net_allocated_power_sample_size": Mock(),

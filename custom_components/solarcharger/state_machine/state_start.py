@@ -504,7 +504,7 @@ class StateStart(SolarChargeState):
 
         # Init stats
         self.solarcharge.stats = ChargeStats()
-        self.solarcharge.set_pause_stats(self.solarcharge.stats)
+        self.solarcharge.set_stall_stats(self.solarcharge.stats)
 
         self.log_configuration()
 
