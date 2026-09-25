@@ -10,7 +10,7 @@ from typing import Any
 from propcache.api import cached_property
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
 from homeassistant.util import slugify
 
@@ -709,7 +709,7 @@ class ScOptionState(ScConfigState):
             self._subentry.unique_id,
             config_item,
             entity_id,
-            "on" if turn_on else "off",
+            STATE_ON if turn_on else STATE_OFF,
         )
 
         if entity_id:

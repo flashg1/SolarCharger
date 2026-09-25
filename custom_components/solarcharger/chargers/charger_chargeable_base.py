@@ -245,10 +245,16 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         """Is charger switched on?"""
         switched_on = False
 
-        state = self.option_get_entity_string(
-            ENTITY_CHARGER_ON_OFF_SWITCH, val_dict=val_dict
-        )
-        if state == STATE_ON:
+        config_item = ENTITY_CHARGER_ON_OFF_SWITCH
+        val_dict = ConfigValueDict(config_item, {}) if val_dict is None else val_dict
+
+        state = self.option_get_entity_string(config_item, val_dict=val_dict)
+        if (
+            # Switch not defined, so assume always on.
+            val_dict.config_values[config_item].entity_id is None
+            # Switch defined, so check stat.
+            or state == STATE_ON
+        ):
             switched_on = True
 
         return switched_on
@@ -264,8 +270,34 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
         )
 
     # ----------------------------------------------------------------------------
+    # def is_charging(self, val_dict: ConfigValueDict | None = None) -> bool:
+    #     """Is device charging?"""
+    #     is_charging = False
+
+    #     config_item = ENTITY_CHARGER_CHARGING_SENSOR
+    #     val_dict = ConfigValueDict(config_item, {}) if val_dict is None else val_dict
+
+    #     state = self.option_get_entity_string(config_item, val_dict=val_dict)
+    #     if (
+    #         # Sensor defined, so check state.
+    #         val_dict.config_values[config_item].entity_id is not None
+    #     ):
+    #         state_list = self.option_get_list(OPTION_CHARGER_CHARGING_STATE_LIST)
+    #         if state is not None and state_list is not None:
+    #             is_charging = state in state_list
+    #     else:
+    #         # Sensor not defined, so assume always on.
+    #         is_charging = True
+
+    #     return is_charging
+
+    # ----------------------------------------------------------------------------
     def is_charging(self, val_dict: ConfigValueDict | None = None) -> bool:
-        """Is device charging?"""
+        """Is device charging?
+
+        No need to fake here if entity not defined. Faked by is_charger_switch_on()
+        in solar_charge is_charging() if entity is not defined.
+        """
         is_charging = False
 
         state = self.option_get_entity_string(

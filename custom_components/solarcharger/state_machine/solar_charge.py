@@ -1299,6 +1299,8 @@ class SolarCharge(ScOptionState):
 
         continue_pause = (
             context.connected
+            # Continue pause if not power source (user turn on supply cap when paused).
+            and not self.is_cap_supply_power()
             # Below charge limit, continue pause.
             and (context.below_charge_limit)
             # Continue pause if not exit.

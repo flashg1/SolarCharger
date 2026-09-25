@@ -9,6 +9,8 @@ from zoneinfo import ZoneInfo
 
 from homeassistant.const import (
     ATTR_DEVICE_ID,
+    SERVICE_TURN_OFF,
+    SERVICE_TURN_ON,
     STATE_ON,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
@@ -421,7 +423,7 @@ class ScState:
     async def async_turn_switch(self, entity_id: str, turn_on: bool) -> None:
         """Turn switch on or off."""
 
-        service_name = "turn_on" if turn_on else "turn_off"
+        service_name = SERVICE_TURN_ON if turn_on else SERVICE_TURN_OFF
         await self.async_ha_entity_call("switch", service_name, entity_id)
 
     # ----------------------------------------------------------------------------
