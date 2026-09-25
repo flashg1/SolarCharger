@@ -163,7 +163,7 @@ class PowerAllocator:
                 )
 
             #####################################
-            # Power supply fully charged.
+            # Power source fully charged.
             #####################################
             if (
                 cap_supply_power

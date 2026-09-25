@@ -1179,7 +1179,10 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_charge_state(self, context: ContextData) -> None:
-        """Is continue charge state?"""
+        """Is continue charge state?
+
+        Power source needs to know charge limit.
+        """
 
         context.next_step = RunStep.CHARGE
         context.continue_state = True
@@ -1299,7 +1302,7 @@ class SolarCharge(ScOptionState):
 
         continue_pause = (
             context.connected
-            # Continue pause if not power source (user turn on supply cap when paused).
+            # Continue pause if not power source.
             and not self.is_cap_supply_power()
             # Below charge limit, continue pause.
             and (context.below_charge_limit)
@@ -1337,13 +1340,18 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_discharge_state(self, context: ContextData) -> None:
-        """Is continue discharge state?"""
+        """Is continue discharge state?
+
+        Power source needs to know charge limit.
+        """
 
         context.next_step = RunStep.DISCHARGE
         context.continue_state = True
 
         continue_discharge = (
             context.connected
+            # Continue discharge if power source.
+            and self.is_cap_supply_power()
             # Continue discharge if not exit.
             and (not (context.goal.end_on_condition and context.goal.exit_condition))
             and (
@@ -1351,8 +1359,6 @@ class SolarCharge(ScOptionState):
                 not context.goal.sun_trigger
                 # Sun trigger on, continue discharge if between start and end elevations.
                 or context.goal.sun_above_start_end_elevations
-                # Charge at max speed.
-                or self.is_max_speed_charge()
             )
         )
 
@@ -1374,19 +1380,15 @@ class SolarCharge(ScOptionState):
                 if (
                     # Real SOC and SOC below limit.
                     (context.real_soc and context.below_charge_limit)
-                    # Enough power.
-                    and (context.enough_power is not None and context.enough_power)
+                    and (
+                        # Enough power.
+                        (context.enough_power is not None and context.enough_power)
+                        # Charge at max speed.
+                        or self.is_max_speed_charge()
+                    )
                 ):
                     context.next_step = RunStep.CHARGE
                     context.continue_state = False
-
-            #####################################
-            # Not a power source.
-            # Should not be here unless user turn off cap_supply_power when in discharge state.
-            #####################################
-            else:
-                context.next_step = RunStep.CHARGE
-                context.continue_state = False
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_state(
