@@ -1224,7 +1224,7 @@ class SolarCharge(ScOptionState):
             )
 
             #####################################
-            # Power supply.
+            # Power source.
             #####################################
             if context.cap_supply_power:
                 # Discharge power if any of the following conditions are true.
@@ -1240,7 +1240,7 @@ class SolarCharge(ScOptionState):
                     context.continue_state = False
 
             #####################################
-            # Not a power supply.
+            # Not a power source.
             #####################################
             elif (
                 # SOC at or above limit.
@@ -1362,7 +1362,7 @@ class SolarCharge(ScOptionState):
 
         else:
             #####################################
-            # Power supply.
+            # Power source.
             #####################################
             if context.cap_supply_power:
                 context.enough_power = (
@@ -1381,7 +1381,7 @@ class SolarCharge(ScOptionState):
                     context.continue_state = False
 
             #####################################
-            # Not a power supply.
+            # Not a power source.
             # Should not be here unless user turn off cap_supply_power when in discharge state.
             #####################################
             else:
