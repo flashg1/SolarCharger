@@ -31,8 +31,8 @@ from unittest.mock import AsyncMock, Mock
 
 from custom_components.solarcharger.const import (
     MAX_CONSECUTIVE_FAILURE_COUNT,
-    RunStep,
     RunState,
+    RunStep,
 )
 from custom_components.solarcharger.models.model_charge_stats import ChargeStats
 from custom_components.solarcharger.models.model_context_data import ContextData

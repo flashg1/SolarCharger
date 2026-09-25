@@ -20,8 +20,8 @@ from custom_components.solarcharger.const import (
     MAX_CONSECUTIVE_FAILURE_COUNT,
     NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
     NUMBER_CHARGER_MIN_CURRENT,
-    RunStep,
     RunState,
+    RunStep,
 )
 from custom_components.solarcharger.models.model_charge_stats import ChargeStats
 from custom_components.solarcharger.models.model_config import ConfigValue
@@ -93,6 +93,7 @@ def make_continue_state_solar_charge(
     solar_charge = make_bare_solar_charge()
     solar_charge._allow_pause_state = lambda: allow_pause_state
     solar_charge.is_max_speed_charge = lambda: max_speed_charge
+    solar_charge.is_cap_supply_power = lambda: False
     return solar_charge
 
 
