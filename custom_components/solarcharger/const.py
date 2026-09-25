@@ -394,8 +394,8 @@ SENSOR_SMA_NET_ALLOCATED_POWER = "sma_net_allocated_power"
 # Stall charge count per session
 SENSOR_STALL_CHARGE = "stall_charge"
 # Stall average duration per session
-SENSOR_AVERAGE_STALL_DURATION = "average_stall_duration"
-SENSOR_LAST_STALL_DURATION = "last_stall_duration"
+SENSOR_STALL_AVERAGE_DURATION = "stall_average_duration"
+SENSOR_STALL_LAST_DURATION = "stall_last_duration"
 
 SENSOR_CONSUMED_POWER = "consumed_power"
 SENSOR_CONSUMED_ENERGY_TODAY = "consumed_energy_today"

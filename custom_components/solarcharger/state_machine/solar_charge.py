@@ -41,10 +41,8 @@ from ..const import (
     NUMBER_WAIT_DEVICE_LIMIT_CHANGE,
     NUMBER_WAIT_DEVICE_UPDATE_HA,
     NUMBER_WAIT_DEVICE_WAKEUP,
-    SENSOR_AVERAGE_STALL_DURATION,
     SENSOR_CONSUMED_ENERGY_TODAY,
     SENSOR_CONSUMED_POWER,
-    SENSOR_LAST_STALL_DURATION,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER,
     SENSOR_MEDIAN_NET_ALLOCATED_POWER_PERIOD,
     SENSOR_NET_ALLOCATED_POWER,
@@ -54,7 +52,9 @@ from ..const import (
     SENSOR_SELF_DEPOWER_TODAY,
     SENSOR_SHARE_ALLOCATION,
     SENSOR_SMA_NET_ALLOCATED_POWER,
+    SENSOR_STALL_AVERAGE_DURATION,
     SENSOR_STALL_CHARGE,
+    SENSOR_STALL_LAST_DURATION,
     MedianDataState,
     RunState,
     RunStep,
@@ -398,26 +398,26 @@ class SolarCharge(ScOptionState):
         self.update_sensor(SENSOR_STALL_CHARGE, val)
 
     # ----------------------------------------------------------------------------
-    def set_last_stall_duration(self, val: timedelta) -> None:
-        """Set last stall duration."""
+    def set_stall_last_duration(self, val: timedelta) -> None:
+        """Set stall last duration."""
 
         # native_unit_of_measurement=UnitOfTime.MINUTES
-        self.update_sensor(SENSOR_LAST_STALL_DURATION, val.total_seconds() / 60)
+        self.update_sensor(SENSOR_STALL_LAST_DURATION, val.total_seconds() / 60)
 
     # ----------------------------------------------------------------------------
-    def set_average_stall_duration(self, val: timedelta) -> None:
-        """Set average stall duration."""
+    def set_stall_average_duration(self, val: timedelta) -> None:
+        """Set stall average duration."""
 
         # native_unit_of_measurement=UnitOfTime.MINUTES
-        self.update_sensor(SENSOR_AVERAGE_STALL_DURATION, val.total_seconds() / 60)
+        self.update_sensor(SENSOR_STALL_AVERAGE_DURATION, val.total_seconds() / 60)
 
     # ----------------------------------------------------------------------------
     def set_stall_stats(self, val: ChargeStats) -> None:
         """Set stall charging stats."""
 
         self.set_stall_charge_count(val.stall_total_count)
-        self.set_last_stall_duration(val.stall_last_duration)
-        self.set_average_stall_duration(val.stall_average_duration)
+        self.set_stall_last_duration(val.stall_last_duration)
+        self.set_stall_average_duration(val.stall_average_duration)
 
     # ----------------------------------------------------------------------------
     def update_stall_stats(self, stats: ChargeStats, stall_duration: timedelta) -> None:

@@ -376,11 +376,11 @@
             "stall_charge": {
                 "name": "Stall charge"
             },
-            "average_stall_duration": {
-                "name": "Average stall duration"
+            "stall_average_duration": {
+                "name": "Stall average duration"
             },
-            "last_stall_duration": {
-                "name": "Last stall duration"
+            "stall_last_duration": {
+                "name": "Stall last duration"
             },
             "sync_update": {
                 "name": "Sync update"

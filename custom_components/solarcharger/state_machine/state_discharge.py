@@ -67,7 +67,7 @@ class StateDischarge(SolarChargeState):
                     break
 
                 # Show running stall duration.
-                self.solarcharge.set_last_stall_duration(
+                self.solarcharge.set_stall_last_duration(
                     self.solarcharge.get_local_datetime() - start_time
                 )
 
