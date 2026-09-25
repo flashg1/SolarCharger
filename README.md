@@ -74,7 +74,7 @@ Home Assistant solar charger uses surplus solar to charge your EV and home. ☀�
 - Uses [power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) to determine whether or not to pause or resume charging. Charger is switched off when paused.
 - Support [configurable charger step current](https://github.com/flashg1/SolarCharger/wiki/User-guide#step-current-list).
 - Support [SolarCharger cards](https://github.com/flashg1/SolarCharger/wiki/User-interface#solarcharger-cards).
-- Added [power source](https://github.com/flashg1/SolarCharger/wiki/User-guide#source-limit-output-power) support.
+- Added [power source](https://github.com/flashg1/SolarCharger/wiki/User-guide#supply-cap) support.
 
 **💡 Tip:** Please :star: this project if you find it useful, and may be also buy me a coffee!
 
