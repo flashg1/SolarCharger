@@ -30,6 +30,7 @@ class ContextData:
     goal: ScheduleData
     net_allocations: MedianData
     stats: ChargeStats
+    net_allocated_power: float = 0.0
 
     #####################################
     # Outputs
@@ -65,7 +66,8 @@ class ContextData:
             f"enough_power={self.enough_power}, "
             f"median_net_allocated_power={self.net_allocations.median_value}, "
             f"sample_size={self.net_allocations.sample_size}), "
-            f"net_allocated_power={0 if self.net_allocations.last_data_point is None else self.net_allocations.last_data_point.value}, "
+            f"net_allocated_power={self.net_allocated_power}, "
+            # f"net_allocated_power={0 if self.net_allocations.last_data_point is None else self.net_allocations.last_data_point.value}, "
             f"connected={self.connected}, "
             f"below_charge_limit={self.below_charge_limit} ({self.goal.battery_soc}/{self.goal.new_charge_limit}), "
             f"end_on_condition={self.goal.end_on_condition}, "

@@ -151,6 +151,7 @@ class SolarCharge(ScOptionState):
         # Entity backed by variable for efficiency. Ok if re-direction is not required.
         self._share_allocation: int = 0
         self._consumed_power: float = 0.0
+        self._net_allocated_power: float = 0.0
 
         # Initialise state machine self._state variable.
         self.set_machine_state(StateStart())
@@ -338,7 +339,14 @@ class SolarCharge(ScOptionState):
     def set_net_allocated_power(self, val: float) -> None:
         """Set net allocated power."""
 
+        self._net_allocated_power = val
         self.update_sensor(SENSOR_NET_ALLOCATED_POWER, val)
+
+    # ----------------------------------------------------------------------------
+    def get_net_allocated_power(self) -> float:
+        """Get net allocated power."""
+
+        return self._net_allocated_power
 
     # ----------------------------------------------------------------------------
     def set_net_allocated_power_sample_size(self, val: int) -> None:
@@ -964,37 +972,29 @@ class SolarCharge(ScOptionState):
 
         return max_speed_charge
 
+    # # ----------------------------------------------------------------------------
+    # def _allow_pause_state(self) -> bool:
+    #     """Check if charger is allowed to go into pause state."""
+    #     allow_pause_state = False
+
+    #     if self.power_monitor_duration > 0:
+    #         # Yes, monitor config switched on.
+    #         allow_pause_state = True
+
+    #         if self.is_max_speed_charge():
+    #             allow_pause_state = False
+
+    #     return allow_pause_state
+
     # ----------------------------------------------------------------------------
-    def _allow_pause_state(self) -> bool:
-        """Check if charger is allowed to go into pause state."""
-        allow_pause_state = False
+    def _is_allowed_to_pause(self) -> bool:
+        """Check if charger is allowed to pause."""
+        allow_to_pause = True
 
-        if self.power_monitor_duration > 0:
-            # Yes, monitor config switched on.
-            allow_pause_state = True
+        if self.is_max_speed_charge():
+            allow_to_pause = False
 
-            if self.is_max_speed_charge():
-                allow_pause_state = False
-
-        return allow_pause_state
-
-    # ----------------------------------------------------------------------------
-    def _allow_discharge_state(
-        self, cap_supply_power: bool, real_soc: bool, below_charge_limit: bool
-    ) -> bool:
-        """Check if device is allowed to go into discharge state."""
-
-        if cap_supply_power:
-            if not real_soc or not below_charge_limit:
-                # Not real SOC, or real SOC and at or above charge limit.
-                allow_discharge_state = True
-            else:
-                # Real SOC and below charge limit.
-                allow_discharge_state = False
-        else:
-            allow_discharge_state = self._allow_pause_state()
-
-        return allow_discharge_state
+        return allow_to_pause
 
     # ----------------------------------------------------------------------------
     # Machine state functions
@@ -1029,7 +1029,7 @@ class SolarCharge(ScOptionState):
 
         # Init variables
         context = ContextData(charger, chargeable, state, goal, net_allocations, stats)
-
+        context.net_allocated_power = self.get_net_allocated_power()
         context.connected = self.is_connected(charger)
 
         # Device charge limit must have already been set before this check.
@@ -1108,42 +1108,118 @@ class SolarCharge(ScOptionState):
         return (adjusted_activation_power, activation_power)
 
     # ----------------------------------------------------------------------------
+    # def _is_median_net_allocated_power_more_than_min_workable_power(
+    #     self,
+    #     net_allocations: MedianData,
+    #     run_state: RunState,
+    # ) -> bool | None:
+    #     """Is median net allocated power more than minimum workable power? None=not enough data."""
+    #     enough_power = None
+
+    #     if net_allocations.window_seconds > 0 and net_allocations.data_set_ready:
+    #         net_allocated_power = net_allocations.last_data_point.value
+    #         median_net_allocated_power = net_allocations.median_value
+    #         adjusted_activation_power, _ = self.get_adjusted_activation_power(run_state)
+
+    #         if run_state in [RunState.CHARGE, RunState.SELF_DEPOWER]:
+    #             #####################################
+    #             # For entering pause state.
+    #             #####################################
+    #             # Device is currently charging.
+    #             # Note surplus power is negative.
+    #             enough_power = (
+    #                 median_net_allocated_power <= adjusted_activation_power
+    #                 # Make it harder to go into pause state if near realtime net_allocated_power has enough power.
+    #                 or net_allocated_power <= adjusted_activation_power
+    #             )
+
+    #         else:
+    #             #####################################
+    #             # For exiting out of paused or discharge state.
+    #             #####################################
+    #             # Device is currently paused.
+    #             # Note surplus power is negative.
+    #             enough_power = median_net_allocated_power <= adjusted_activation_power
+
+    #     return enough_power
+
+    # ----------------------------------------------------------------------------
+    def _is_allocated_power_more_than_min_workable_power(
+        self,
+        allocated_power: float,
+        realtime_allocated_power: float,
+        run_state: RunState,
+    ) -> bool:
+        """Is allocated power more than minimum workable power?"""
+
+        adjusted_activation_power, _ = self.get_adjusted_activation_power(run_state)
+
+        if run_state in [RunState.CHARGE, RunState.SELF_DEPOWER]:
+            #####################################
+            # For entering pause state.
+            #####################################
+            # Device is currently charging.
+            # Note surplus power is negative.
+            enough_power = (
+                allocated_power <= adjusted_activation_power
+                # Make it harder to go into pause state if near realtime net_allocated_power has enough power.
+                or realtime_allocated_power <= adjusted_activation_power
+            )
+
+        else:
+            #####################################
+            # For exiting out of paused or discharge state.
+            #####################################
+            # Device is currently paused.
+            # Note surplus power is negative.
+            enough_power = allocated_power <= adjusted_activation_power
+
+        return enough_power
+
+    # ----------------------------------------------------------------------------
     def _is_median_net_allocated_power_more_than_min_workable_power(
         self,
         net_allocations: MedianData,
         run_state: RunState,
     ) -> bool | None:
         """Is median net allocated power more than minimum workable power? None=not enough data."""
-        is_enough_power = None
+        enough_power = None
 
         if net_allocations.window_seconds > 0 and net_allocations.data_set_ready:
-            net_allocated_power = net_allocations.last_data_point.value
             median_net_allocated_power = net_allocations.median_value
-            adjusted_activation_power, _ = self.get_adjusted_activation_power(run_state)
+            realtime_allocated_power = net_allocations.last_data_point.value
 
-            if run_state in [RunState.CHARGE, RunState.SELF_DEPOWER]:
-                #####################################
-                # For entering pause state.
-                #####################################
-                # Device is currently charging.
-                # Note surplus power is negative.
-                is_enough_power = (
-                    median_net_allocated_power <= adjusted_activation_power
-                    # Make it harder to go into pause state if near realtime net_allocated_power has enough power.
-                    or net_allocated_power <= adjusted_activation_power
+            enough_power = self._is_allocated_power_more_than_min_workable_power(
+                median_net_allocated_power, realtime_allocated_power, run_state
+            )
+
+        return enough_power
+
+    # ----------------------------------------------------------------------------
+    # _is_median_net_allocated_power_more_than_min_workable_power
+    def _is_enough_power(
+        self,
+        net_allocations: MedianData,
+        run_state: RunState,
+    ) -> bool | None:
+        """Is there enough power to start charging?"""
+        enough_power = None
+
+        if net_allocations.window_seconds > 0:
+            # Monitor window enabled, so compare against median net allocated power.
+            enough_power = (
+                self._is_median_net_allocated_power_more_than_min_workable_power(
+                    net_allocations, run_state
                 )
+            )
+        else:
+            # Monitor window disabled, so compare against net allocated power.
+            net_allocated_power = self.get_net_allocated_power()
+            enough_power = self._is_allocated_power_more_than_min_workable_power(
+                net_allocated_power, net_allocated_power, run_state
+            )
 
-            else:
-                #####################################
-                # For exiting out of paused or discharge state.
-                #####################################
-                # Device is currently paused.
-                # Note surplus power is negative.
-                is_enough_power = (
-                    median_net_allocated_power <= adjusted_activation_power
-                )
-
-        return is_enough_power
+        return enough_power
 
     # ----------------------------------------------------------------------------
     # def _set_is_continue_charge_state(self, context: ContextData) -> None:
@@ -1234,10 +1310,8 @@ class SolarCharge(ScOptionState):
             # Note: A paused power source will still get theoretical allocation.
             # Only consulted when its result can actually change the outcome below, otherwise need to fake data for unit tests.
             context.enough_power = (
-                self._is_median_net_allocated_power_more_than_min_workable_power(
-                    context.net_allocations, context.state
-                )
-                if context.cap_supply_power or self._allow_pause_state()
+                self._is_enough_power(context.net_allocations, context.state)
+                if context.cap_supply_power or self._is_allowed_to_pause()
                 else None
             )
 
@@ -1270,7 +1344,7 @@ class SolarCharge(ScOptionState):
                 context.continue_state = False
 
             # Pause if not enough power.
-            elif self._allow_pause_state() and (
+            elif self._is_allowed_to_pause() and (
                 context.enough_power is not None and not context.enough_power
             ):
                 context.next_step = RunStep.PAUSE
@@ -1337,11 +1411,9 @@ class SolarCharge(ScOptionState):
         )
 
         if continue_pause:
-            if self._allow_pause_state():
-                context.enough_power = (
-                    self._is_median_net_allocated_power_more_than_min_workable_power(
-                        context.net_allocations, context.state
-                    )
+            if self._is_allowed_to_pause():
+                context.enough_power = self._is_enough_power(
+                    context.net_allocations, context.state
                 )
 
                 if (
@@ -1386,10 +1458,8 @@ class SolarCharge(ScOptionState):
             # Power source.
             #####################################
             if context.cap_supply_power:
-                context.enough_power = (
-                    self._is_median_net_allocated_power_more_than_min_workable_power(
-                        context.net_allocations, context.state
-                    )
+                context.enough_power = self._is_enough_power(
+                    context.net_allocations, context.state
                 )
 
                 if (

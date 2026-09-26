@@ -286,7 +286,7 @@ class StateStart(SolarChargeState):
 
         if new_state is not None:
             try:
-                allocated_power = float(new_state.state)
+                delta_allocated_power = float(new_state.state)
                 # last_reported in UTC
                 old_updatetime = as_local(old_state.last_reported)
                 # last_updated in UTC
@@ -305,7 +305,7 @@ class StateStart(SolarChargeState):
                 # Save allocated power to calculate moving average.
                 if self.solarcharge.power_monitor_duration > 0:
                     consumed_power = self.solarcharge.get_consumed_power()
-                    net_allocated_power = allocated_power - consumed_power
+                    net_allocated_power = delta_allocated_power - consumed_power
                     new_data_point = MedianDataPoint(
                         value=net_allocated_power,
                         period=period,
