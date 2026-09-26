@@ -3,6 +3,7 @@
 ## v0.13.0 2026-09-17
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
+- Setting power monitor window to 0 seconds will now use realtime net allocated power to determine whether or not to pause.
 - Renamed instance count entity to instance.
 - Renamed pause stats entities to stall charge stats.
 ### Fix

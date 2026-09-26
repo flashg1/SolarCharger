@@ -997,6 +997,16 @@ class SolarCharge(ScOptionState):
         return allow_to_pause
 
     # ----------------------------------------------------------------------------
+    def _is_allowed_to_discharge(self) -> bool:
+        """Check if power source is allowed to discharge."""
+        allow_to_discharge = True
+
+        if self.is_max_speed_charge():
+            allow_to_discharge = False
+
+        return allow_to_discharge
+
+    # ----------------------------------------------------------------------------
     # Machine state functions
     # ----------------------------------------------------------------------------
     def log_context(self, context: ContextData) -> None:
@@ -1322,11 +1332,18 @@ class SolarCharge(ScOptionState):
                 # Discharge power if any of the following conditions are true.
                 if (
                     # Real SOC and SOC at or above limit.
-                    (context.real_soc and not context.below_charge_limit)
+                    # (context.real_soc and not context.below_charge_limit)
+                    not context.below_charge_limit
                     # Not first loop and not charging.
                     or (context.stats.loop_success_count > 0 and not context.charging)
                     # Not enough power.
-                    or (context.enough_power is not None and not context.enough_power)
+                    or (
+                        self._is_allowed_to_discharge()
+                        and (
+                            context.enough_power is not None
+                            and not context.enough_power
+                        )
+                    )
                 ):
                     context.next_step = RunStep.DISCHARGE
                     context.continue_state = False
@@ -1464,7 +1481,8 @@ class SolarCharge(ScOptionState):
 
                 if (
                     # Real SOC and SOC below limit.
-                    (context.real_soc and context.below_charge_limit)
+                    # (context.real_soc and context.below_charge_limit)
+                    context.below_charge_limit
                     and (
                         # Enough power.
                         (context.enough_power is not None and context.enough_power)
