@@ -335,7 +335,17 @@ class PowerAllocator:
 
             # Get final consumed power from member and then reset to 0.
             consumed_power = control.controller.solar_charge.get_consumed_power()
-            all_member = self._create_group_member(book, control, consumed_power)
+            try:
+                # Use try block to avoid exception for one member aborting allocation for all.
+                all_member = self._create_group_member(book, control, consumed_power)
+            except Exception as e:
+                # Will try again next cycle.
+                _LOGGER.exception(
+                    "%s: Failed allocation: %s",
+                    control.config_name,
+                    e,
+                )
+                continue
             consumed_power = all_member.consumed_power
             all_member.consumed_power = 0
 
