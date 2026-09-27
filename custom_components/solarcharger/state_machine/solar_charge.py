@@ -1334,7 +1334,7 @@ class SolarCharge(ScOptionState):
                     # Real SOC and SOC at or above limit.
                     # (context.real_soc and not context.below_charge_limit)
                     not context.below_charge_limit
-                    # Not first loop and not charging.
+                    # Power source stopped charging by itself after first loop.
                     or (context.stats.loop_success_count > 0 and not context.charging)
                     # Not enough power.
                     or (
@@ -1354,7 +1354,7 @@ class SolarCharge(ScOptionState):
             elif (
                 # SOC at or above limit.
                 not context.below_charge_limit
-                # Not first loop and not charging.
+                # Charger stopped charging by itself after first loop.
                 or (context.stats.loop_success_count > 0 and not context.charging)
             ):
                 context.next_step = RunStep.END
