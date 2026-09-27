@@ -3,10 +3,11 @@
 ## v0.13.0 2026-09-17
 ### Breaking change
 - Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
-- Setting power monitor window to 0 seconds will now use realtime net allocated power to determine whether or not to pause.
+- **IMPORTANT**: The behaviour of setting [Power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) = 0 second has changed. The old behaviour was to disable pause state. The new behaviour is to use realtime net allocated power to determine whether or not to enter or exit [Pause](https://github.com/flashg1/SolarCharger/wiki/User-guide#pause)/[Discharge](https://github.com/flashg1/SolarCharger/wiki/User-guide#discharge) states.
 - Renamed instance count entity to instance.
-- Renamed pause stats entities to stall charge stats.
+- Renamed pause stats entities to stall charge stats applicable to both pause and discharge states.
 ### Fix
+- Fixed allocation exception for one device aborted allocation for all devices.
 - Fixed error with not able to reconfigure OCPP settings.
 ### New feature
 - Added [power source](https://github.com/flashg1/SolarCharger/wiki/User-guide#supply-cap) support.
