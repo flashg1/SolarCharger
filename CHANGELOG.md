@@ -5,6 +5,7 @@
 - **IMPORTANT: MAJOR CHANGE**: All SolarCharger entities have been renamed from *.solarcharger_Domain_DeviceName_EntityKey to *.sc_Domain_DeviceName_EntityKey. The objective is to reduce the length of the entity name for future scope. Please note down all your custom configs before upgrading so that you can put back those values after the upgrade. Please also note that templates using the old entity names will also need to be changed. I am sorry for the inconvenience caused. The following are some common custom configs:
   - Effective voltage
   - Max current
+  - Min workable current
   - Priority
   - Weather provider
   - Device presence sensor and trigger
