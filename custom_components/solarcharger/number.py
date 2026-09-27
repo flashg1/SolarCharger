@@ -25,7 +25,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .config.config_utils import get_device_config_default_value
 from .const import (
-    DOMAIN,
+    DOMAIN_SC,
     NUMBER,
     NUMBER_CHARGE_LIMIT_FRIDAY,
     NUMBER_CHARGE_LIMIT_MONDAY,
@@ -755,7 +755,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up numbers based on config entry."""
-    coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN_SC][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
         # if subentry.subentry_type == SUBENTRY_TYPE_CHARGER:

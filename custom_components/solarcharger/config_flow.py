@@ -34,7 +34,7 @@ from .const import (
     CONFIG_FILE_SOURCE,
     CONFIG_NET_POWER_SENSOR,
     DEFAULT_CHARGER_CURRENT_UPDATE_PERIOD,
-    DOMAIN,
+    DOMAIN_SC,
     ERROR_CURRENT_UPDATE_PERIOD,
     ERROR_NET_POWER_SENSOR,
     MINIMUM_CHARGER_CURRENT_UPDATE_PERIOD,
@@ -73,7 +73,7 @@ def validate_charger_config(
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
+class ConfigFlowHandler(ConfigFlow, domain=DOMAIN_SC):
     """Handle a config flow for Solar Charger."""
 
     cf_data: dict | None = None

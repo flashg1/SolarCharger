@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from ..const import DOMAIN
+from ..const import DOMAIN_SC
 from .charger_chargeable_base import ChargerChargeableBase
 
 # ----------------------------------------------------------------------------
@@ -39,7 +39,7 @@ class UserCustomCharger(ChargerChargeableBase):
         """Check if the given device is an User Custom charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
-        return any(id_domain == DOMAIN for id_domain, _ in device.identifiers)
+        return any(id_domain == DOMAIN_SC for id_domain, _ in device.identifiers)
 
     # ----------------------------------------------------------------------------
     # Charger interface implementation
@@ -49,4 +49,4 @@ class UserCustomCharger(ChargerChargeableBase):
         """Check if device is a User Custom charger."""
 
         _LOGGER.debug("%s: %s", device.name, device)
-        return any(id_domain == DOMAIN for id_domain, _ in device.identifiers)
+        return any(id_domain == DOMAIN_SC for id_domain, _ in device.identifiers)

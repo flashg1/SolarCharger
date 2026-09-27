@@ -110,7 +110,7 @@ def test_choose_selector_if_none(entity_id: str | None, expected: str) -> None:
 @pytest.mark.parametrize(
     ("entity_id", "expected"),
     [
-        pytest.param("sensor.solarcharger_foo", MODIFIABLE, id="solarcharger_entity"),
+        pytest.param("sensor.sc_foo", MODIFIABLE, id="solarcharger_entity"),
         pytest.param("sensor.other_foo", READ_ONLY, id="third_party_entity"),
         pytest.param(None, READ_ONLY, id="entity_absent"),
     ],

@@ -13,7 +13,6 @@ from .const import (
     CONFIG_NAME_GLOBAL_DEFAULTS,
     CONFIG_URL,
     DEVICE_MODEL_MAP,
-    DOMAIN,
     DOMAIN_BYD_VEHICLE,
     DOMAIN_GEELY_CONNECT,
     DOMAIN_GWM_ORA,
@@ -21,12 +20,14 @@ from .const import (
     DOMAIN_MG_SAIC,
     DOMAIN_MYSKODA,
     DOMAIN_OCPP,
+    DOMAIN_SC,
     DOMAIN_TESLA_CUSTOM,
     DOMAIN_TESLA_FLEET,
     DOMAIN_TESLEMETRY,
     DOMAIN_TESSIE,
     DOMAIN_VOLVO,
     MANUFACTURER,
+    SC_PREFIX,
     SUBDOMAIN_ESPHOME_TESLA_BLE,
     SUBDOMAIN_MQTT_TESLA_BLE,
     SUBENTRY_CHARGER_TYPES,
@@ -41,7 +42,7 @@ _LOGGER = logging.getLogger(__name__)
 def compose_entity_id(platform_str: str, subentry_unique_id: str | None, key: str):
     """Compose the entity id."""
 
-    id_name = slugify(f"{DOMAIN}_{subentry_unique_id}_{key}")
+    id_name = slugify(f"{SC_PREFIX}_{subentry_unique_id}_{key}")
     return f"{platform_str}.{id_name}"
 
 
@@ -85,7 +86,7 @@ class SolarChargerEntityType(Enum):
     TYPE_LOCAL_GEELY_CONNECT = DOMAIN_GEELY_CONNECT
     TYPE_LOCAL_VOLVO = DOMAIN_VOLVO
     TYPE_LOCAL_MG_SAIC = DOMAIN_MG_SAIC
-    TYPE_LOCAL_USER_CUSTOM = DOMAIN
+    TYPE_LOCAL_USER_CUSTOM = DOMAIN_SC
 
     #####################################
     # Create both local device and global default entities for all devices
@@ -269,7 +270,7 @@ class SolarChargerEntity(Entity):
         self._attr_device_info = DeviceInfo(
             # Best to use a non-changing variable as identifier in the device registry.
             # identifiers={(DOMAIN, self._subentry.unique_id)},
-            identifiers={(DOMAIN, self._subentry.subentry_id)},
+            identifiers={(DOMAIN_SC, self._subentry.subentry_id)},
             name=self._subentry.title,
             manufacturer=MANUFACTURER,
             model=device_model,

@@ -23,7 +23,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
-    DOMAIN,
+    DOMAIN_SC,
     INPUT_TIME,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
@@ -210,7 +210,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up times based on config entry."""
-    coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN_SC][config_entry.entry_id]
 
     _LOGGER.warning("Creating input_datetime entities")
 

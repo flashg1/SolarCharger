@@ -19,7 +19,7 @@ from homeassistant.helpers.device_registry import DeviceEntry, DeviceRegistry
 from homeassistant.util import slugify
 
 from ..const import (
-    DOMAIN,
+    DOMAIN_SC,
     ERROR_DEVICE_ALREADY_ADDED,
     ERROR_SELECT_CHARGER,
     ERROR_SUBENTRY_CREATED,
@@ -213,7 +213,7 @@ async def async_create_custom_device(
             unique_id=custom_charger_config_name,
             data=MappingProxyType(  # make data immutable
                 {
-                    SUBENTRY_CHARGER_DEVICE_DOMAIN: DOMAIN,  # Integration domain
+                    SUBENTRY_CHARGER_DEVICE_DOMAIN: DOMAIN_SC,  # Integration domain
                     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN: custom_charger_subdomain,  # Integration sub-domain
                     SUBENTRY_CHARGER_DEVICE_NAME: custom_charger_name,  # Integration-specific device name
                     SUBENTRY_CHARGER_DEVICE_ID: device_id,  # Integration-specific device ID
@@ -226,7 +226,7 @@ async def async_create_custom_device(
         hass,
         config_entry,
         custom_charger_config_name,
-        DOMAIN,
+        DOMAIN_SC,
         custom_charger_name,
         device_id,
     )

@@ -14,7 +14,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
-    DOMAIN,
+    DOMAIN_SC,
     TIME,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
@@ -197,7 +197,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up times based on config entry."""
-    coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN_SC][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
         # For both global default and charger subentries

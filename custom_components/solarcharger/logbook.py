@@ -11,7 +11,7 @@ from homeassistant.components.logbook import (
 from homeassistant.core import Event, HomeAssistant, callback
 
 from .const import (
-    DOMAIN,
+    DOMAIN_SC,
     EVENT_ACTION_NEW_CHARGE_CURRENT,
     EVENT_ATTR_ACTION,
     EVENT_ATTR_NEW_VALUE,
@@ -50,9 +50,9 @@ def async_describe_events(
         return {
             LOGBOOK_ENTRY_NAME: "AMP:",
             LOGBOOK_ENTRY_MESSAGE: message,
-            LOGBOOK_ENTRY_DOMAIN: DOMAIN,
+            LOGBOOK_ENTRY_DOMAIN: DOMAIN_SC,
         }
 
     async_describe_event(
-        DOMAIN, SOLAR_CHARGER_COORDINATOR_EVENT, async_describe_charger_event
+        DOMAIN_SC, SOLAR_CHARGER_COORDINATOR_EVENT, async_describe_charger_event
     )

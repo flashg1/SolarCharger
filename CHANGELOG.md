@@ -2,10 +2,20 @@
 
 ## v0.13.0 2026-09-17
 ### Breaking change
-- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
-- **IMPORTANT**: The behaviour of setting [Power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) = 0 second has changed. The old behaviour was to disable pause state. The new behaviour is to use realtime net allocated power to determine whether or not to enter or exit [Pause](https://github.com/flashg1/SolarCharger/wiki/User-guide#pause)/[Discharge](https://github.com/flashg1/SolarCharger/wiki/User-guide#discharge) states.
+- **IMPORTANT**: All SolarCharger entities have been renamed from *.solarcharger_Domain_DeviceName_EntityKey to *.sc_Domain_DeviceName_EntityKey. The objective is to reduce the length of the entity name for future scope. Please note down all your custom configs before upgrading so that you can put back those values after the upgrade. Please also note that templates using the old entity names will also need to be changed.  Example custom configs:
+  - Effective voltage
+  - Max current
+  - Weather provider
+  - Priority
+  - Device presence sensor and trigger
+  - Exit condition sensor and trigger
+  - Start state
+  - Default charge limits
+
+- The behaviour of setting [Power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) = 0 second has changed. The old behaviour was to disable pause state. The new behaviour is to use realtime net allocated power to determine whether or not to enter or exit [Pause](https://github.com/flashg1/SolarCharger/wiki/User-guide#pause)/[Discharge](https://github.com/flashg1/SolarCharger/wiki/User-guide#discharge) states.
 - Renamed instance count entity to instance.
 - Renamed pause stats entities to stall charge stats applicable to both pause and discharge states.
+- Please [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration).
 ### Fix
 - Fixed allocation exception for one device aborted allocation for all devices.
 - Fixed error with not able to reconfigure OCPP settings.

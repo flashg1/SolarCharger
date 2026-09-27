@@ -41,7 +41,7 @@ from custom_components.solarcharger.config.config_options_flow import (  # noqa:
 )
 from custom_components.solarcharger.const import (  # noqa: E402
     CURRENT_VARIATION_PERCENTAGE,
-    DOMAIN,
+    DOMAIN_SC,
     OPTION_GLOBAL_DEFAULTS_ID,
     RunState,
 )
@@ -412,7 +412,7 @@ def make_options_flow(
     """
     flow = ConfigOptionsFlowHandler()
     flow.handler = config_entry.entry_id
-    data = {DOMAIN: {config_entry.entry_id: coordinator}} if coordinator else {}
+    data = {DOMAIN_SC: {config_entry.entry_id: coordinator}} if coordinator else {}
     flow.hass = SimpleNamespace(
         data=data,
         config_entries=SimpleNamespace(

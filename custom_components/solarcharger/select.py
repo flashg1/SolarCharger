@@ -26,7 +26,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .config.config_utils import get_device_config_default_value
 from .const import (
-    DOMAIN,
+    DOMAIN_SC,
     # RESTORE_ON_START_FALSE,
     RESTORE_ON_START_TRUE,
     SELECT,
@@ -339,7 +339,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up selects based on config entry."""
-    coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN_SC][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
         # For global defaults and charger subentries

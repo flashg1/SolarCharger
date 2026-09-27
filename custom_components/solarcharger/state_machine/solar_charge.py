@@ -22,7 +22,7 @@ from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     CURRENT_VARIATION_PERCENTAGE,
-    DOMAIN,
+    DOMAIN_SC,
     ENTITY_CHARGER_CHARGING_SENSOR,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     ENTITY_CHARGER_ON_OFF_SWITCH,
@@ -176,13 +176,13 @@ class SolarCharge(ScOptionState):
         if is_ha_version_at_least("2026.9.1"):
             # Call the new method
             device = device_registry.async_get_device_by_identifier(
-                identifier=(DOMAIN, self._subentry.subentry_id),
+                identifier=(DOMAIN_SC, self._subentry.subentry_id),
                 config_entry_id=self._entry.entry_id,
             )
         else:
             # Fallback to the legacy method
             device = device_registry.async_get_device(
-                identifiers={(DOMAIN, self._subentry.subentry_id)}
+                identifiers={(DOMAIN_SC, self._subentry.subentry_id)}
             )
 
         if device is None:

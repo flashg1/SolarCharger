@@ -9,7 +9,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .config.config_utils import get_device_config_default_value
-from .const import DOMAIN, TEXT, TEXT_CHARGER_STEP_CURRENT_LIST
+from .const import DOMAIN_SC, TEXT, TEXT_CHARGER_STEP_CURRENT_LIST
 from .entity import (
     SolarChargerEntity,
     SolarChargerEntityType,
@@ -118,7 +118,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up texts based on config entry."""
-    coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN_SC][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
         # For both global default and charger subentries

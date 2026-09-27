@@ -29,7 +29,7 @@ from .const import (
     CONFIG_DEVICE_DOMAIN,
     CONFIG_DEVICE_ID,
     CONFIG_DEVICE_NAME,
-    DOMAIN,
+    DOMAIN_SC,
     OPTION_GLOBAL_DEFAULT_ENTITIES,
     OPTION_GLOBAL_DEFAULTS_ID,
     OPTION_GLOBAL_DEFAULTS_NAME,
@@ -49,7 +49,7 @@ from .modules.coordinator import SolarChargerCoordinator
 # ----------------------------------------------------------------------------
 _LOGGER = logging.getLogger(__name__)
 
-CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN_SC)
 
 
 # ----------------------------------------------------------------------------
@@ -89,7 +89,7 @@ async def _async_register_frontend_strategy(hass: HomeAssistant) -> None:
     ever runs once, so no double-registration guard is needed here (unlike a
     static path registered from async_setup_entry).
     """
-    integration = await async_get_integration(hass, DOMAIN)
+    integration = await async_get_integration(hass, DOMAIN_SC)
     frontend_dir = Path(__file__).parent / "frontend"
 
     await hass.http.async_register_static_paths(
@@ -102,7 +102,7 @@ async def _async_register_frontend_strategy(hass: HomeAssistant) -> None:
 # ----------------------------------------------------------------------------
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up Solar Charger integration."""
-    hass.data.setdefault(DOMAIN, {})
+    hass.data.setdefault(DOMAIN_SC, {})
     await _async_register_frontend_strategy(hass)
     return True
 
@@ -319,7 +319,7 @@ async def _async_create_charger_subentries_from_config_file(
 
     if device_count > 0:
         for device in device_list:
-            if device[CONFIG_DEVICE_DOMAIN] == DOMAIN:
+            if device[CONFIG_DEVICE_DOMAIN] == DOMAIN_SC:
                 # Global defaults device must exists before custom chargers can be created.
                 error_msg = await async_create_custom_device(
                     hass,
@@ -389,7 +389,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         global_defaults_subentry=global_defaults_subentry,
     )
     coordinator.device_controls = device_controls
-    hass.data[DOMAIN][entry.entry_id] = coordinator
+    hass.data[DOMAIN_SC][entry.entry_id] = coordinator
 
     #####################################
     # Create entites for each platform with dependency on coordinator.
@@ -446,13 +446,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 # ----------------------------------------------------------------------------
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    coordinator: SolarChargerCoordinator = hass.data[DOMAIN].get(entry.entry_id)
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN_SC].get(entry.entry_id)
     await coordinator.async_unload()  # Call coordinator's own unload method
 
     # Unload platforms
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unloaded and coordinator:  # Ensure coordinator was found before trying to pop
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+        hass.data[DOMAIN_SC].pop(entry.entry_id, None)
 
     return unloaded  # Return the result of unloading platforms

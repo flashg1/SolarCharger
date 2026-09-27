@@ -19,7 +19,7 @@ from homeassistant.config_entries import (
 from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from ..const import (
-    DOMAIN,
+    DOMAIN_SC,
     ENTITY_CHARGER_CHARGING_SENSOR,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     ENTITY_CHARGER_ON_OFF_SWITCH,
@@ -519,7 +519,7 @@ class ConfigOptionsFlowHandler(OptionsFlow):
         processed_data = process_api_config(
             self.config_entry, config_name, data, is_init_all=False
         )
-        coordinator: SolarChargerCoordinator = self.hass.data[DOMAIN][
+        coordinator: SolarChargerCoordinator = self.hass.data[DOMAIN_SC][
             self.config_entry.entry_id
         ]
 

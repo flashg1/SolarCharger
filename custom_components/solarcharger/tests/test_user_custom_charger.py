@@ -35,7 +35,7 @@ from custom_components.solarcharger.chargers.user_custom_charger import (
     UserCustomCharger,
 )
 from custom_components.solarcharger.const import (
-    DOMAIN,
+    DOMAIN_SC,
     ENTITY_CHARGER_GET_CHARGE_CURRENT,
     ENTITY_CHARGER_ON_OFF_SWITCH,
     NUMBER_CHARGER_MAX_CURRENT,
@@ -98,7 +98,7 @@ def make_hot_water_charger(
     entry = make_config_entry(subentry, options={subentry.unique_id: (options or {})})
     device = SimpleNamespace(
         id="device-1",
-        identifiers=identifiers or {(DOMAIN, "hot_water")},
+        identifiers=identifiers or {(DOMAIN_SC, "hot_water")},
     )
     return UserCustomCharger(
         hass,
@@ -115,7 +115,7 @@ def make_hot_water_charger(
 @pytest.mark.parametrize(
     ("identifiers", "expected"),
     [
-        pytest.param({(DOMAIN, "hot_water")}, True, id="solarcharger_device"),
+        pytest.param({(DOMAIN_SC, "hot_water")}, True, id="solarcharger_device"),
         pytest.param(
             {("tesla_custom", "abc123")}, False, id="other_integration_device"
         ),
@@ -133,7 +133,7 @@ def test_is_charger_device_matches_only_solarcharger_domain(
 
 def test_is_chargeable_device_agrees_with_is_charger_device() -> None:
     """A user-custom device is both the charger and the chargeable at once."""
-    device = SimpleNamespace(name="Hot Water", identifiers={(DOMAIN, "hot_water")})
+    device = SimpleNamespace(name="Hot Water", identifiers={(DOMAIN_SC, "hot_water")})
 
     assert UserCustomCharger.is_chargeable_device(device) is True  # type: ignore[arg-type]
 

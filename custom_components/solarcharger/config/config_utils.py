@@ -2,6 +2,7 @@
 """Common config utils."""
 
 import logging
+import re
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass
@@ -40,8 +41,8 @@ from ..const import (
     DELETE_ENTITY_MARKER,
     DELETE_STRING_MARKER,
     DEVICE_NAME_MARKER,
-    DOMAIN,
     DOMAIN_OCPP,
+    DOMAIN_SC,
     DOMAIN_WITH_SUBDOMAINS,
     ENTITY_CHARGER_SET_CHARGE_CURRENT,
     ENTITY_DEVICE_GET_CHARGE_LIMIT,
@@ -58,6 +59,16 @@ from ..const import (
     NUMBER_CHARGE_LIMIT_THURSDAY,
     NUMBER_CHARGE_LIMIT_TUESDAY,
     NUMBER_CHARGE_LIMIT_WEDNESDAY,
+    NUMBER_CHARGER_EFFECTIVE_VOLTAGE,
+    NUMBER_CHARGER_MAX_CURRENT,
+    NUMBER_CHARGER_MAX_SPEED,
+    NUMBER_CHARGER_MIN_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_CURRENT,
+    NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD,
+    NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD,
+    NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT,
+    NUMBER_CHARGER_POWER_FACTOR,
+    NUMBER_CHARGER_PRIORITY,
     NUMBER_DEFAULT_CHARGE_LIMIT_FRIDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_MONDAY,
     NUMBER_DEFAULT_CHARGE_LIMIT_SATURDAY,
@@ -68,16 +79,26 @@ from ..const import (
     NUMBER_DEVICE_CHARGE_LIMIT,
     NUMBER_DEVICE_MAX_CHARGE_LIMIT,
     NUMBER_DEVICE_MIN_CHARGE_LIMIT,
+    NUMBER_POWER_MONITOR_DURATION,
+    NUMBER_SUNRISE_ELEVATION_START_TRIGGER,
+    NUMBER_SUNSET_ELEVATION_END_TRIGGER,
+    NUMBER_SUPPLY_POWER_LIMIT,
+    NUMBER_WAIT_CHARGER_AMP_CHANGE,
+    NUMBER_WAIT_CHARGER_OFF,
+    NUMBER_WAIT_CHARGER_ON,
     NUMBER_WAIT_DEVICE_LIMIT_CHANGE,
     NUMBER_WAIT_DEVICE_UPDATE_HA,
     NUMBER_WAIT_DEVICE_WAKEUP,
     OPTION_CHARGER_NAME,
     OPTION_DEVICE_LOCATION_STATE_LIST,
     OPTION_GLOBAL_DEFAULTS_ID,
+    SC_PREFIX,
+    SENSOR_DELTA_ALLOCATED_POWER,
     STORAGE_VERSION,
     SUBENTRY_CHARGER_DEVICE_DOMAIN,
     SUBENTRY_CHARGER_DEVICE_SUBDOMAIN,
     SWITCH_REDUCE_CHARGE_LIMIT_DIFFERENCE,
+    TEXT_CHARGER_STEP_CURRENT_LIST,
     TIME_CHARGE_ENDTIME_FRIDAY,
     TIME_CHARGE_ENDTIME_MONDAY,
     TIME_CHARGE_ENDTIME_SATURDAY,
@@ -270,11 +291,34 @@ WEATHER_ENTITY_SELECTOR = EntitySelector(
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 def _is_solarcharger_entity(entity_id: str) -> bool:
-    """Entity with solarcharger prefix is a solarcharger entity."""
+    """Entity with solarcharger prefix is a solarcharger entity.
 
-    # return config_item in entity_id
-    # Local device entity must contain .solarcharger_ in entity_id.
-    return DOMAIN in entity_id
+    Local device entity must contain .sc_ in entity_id.
+    """
+
+    # rf".*?\.{SC_PREFIX}_" matches first occurance, can be anywhere in string.
+    # rf".*\.{SC_PREFIX}_" matches last occurance, can be anywhere in string.
+    # rf"[^.]+\.{SC_PREFIX}_" matches on the first dot only.
+
+    # For SC_PREFIX contains special regex characters (like ., *, +, ?, $, ^, or []).
+    # pattern = rf"[^.]+\.{re.escape(SC_PREFIX)}_"
+
+    # For SC_PREFIX without special regex characters.
+    pattern = rf"[^.]+\.{SC_PREFIX}_"
+
+    return re.match(pattern, entity_id)
+
+
+# ----------------------------------------------------------------------------
+def _is_old_solarcharger_entity(entity_id: str) -> bool:
+    """Entity with old solarcharger prefix is a solarcharger entity.
+
+    Local device entity must contain .solarcharger_ in entity_id.
+    """
+
+    pattern = rf"[^.]+\.solarcharger_"
+
+    return re.match(pattern, entity_id)
 
 
 # ----------------------------------------------------------------------------
@@ -361,7 +405,7 @@ def _ha_store_get_key(config_name: str) -> str:
     """Get config storage key."""
 
     name = slugify(config_name.strip())
-    return f"{DOMAIN}.{name}"
+    return f"{DOMAIN_SC}.{name}"
 
 
 # ----------------------------------------------------------------------------
@@ -526,6 +570,8 @@ async def async_ha_store_delete_device_list(
 def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
     """Migrate and delete old config settings."""
 
+    rename_sc_entity_id: str = "rename_sc_entity_id"
+
     # Since Python 3.7, standard dictionaries remember the order items were added.
     # Converting a dictionary to a list keeps that same order for version migrations.
     # old name (key): new name (value)
@@ -577,9 +623,35 @@ def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
         TIME_CHARGE_ENDTIME_SUNDAY: "",
         #######################################################
         # From v0.12.0 to v0.13.0
-        # Remove OCPP charger_set_charge_current="" only. Others ok.
         #######################################################
+        # Remove OCPP charger_set_charge_current="" only. Others ok.
         ENTITY_CHARGER_SET_CHARGE_CURRENT: "",
+        # Global defaults SC entities
+        NUMBER_CHARGER_EFFECTIVE_VOLTAGE: rename_sc_entity_id,
+        NUMBER_SUNRISE_ELEVATION_START_TRIGGER: rename_sc_entity_id,
+        NUMBER_SUNSET_ELEVATION_END_TRIGGER: rename_sc_entity_id,
+        NUMBER_WAIT_DEVICE_WAKEUP: rename_sc_entity_id,
+        NUMBER_WAIT_DEVICE_UPDATE_HA: rename_sc_entity_id,
+        NUMBER_WAIT_DEVICE_LIMIT_CHANGE: rename_sc_entity_id,
+        NUMBER_WAIT_CHARGER_ON: rename_sc_entity_id,
+        NUMBER_WAIT_CHARGER_OFF: rename_sc_entity_id,
+        NUMBER_WAIT_CHARGER_AMP_CHANGE: rename_sc_entity_id,
+        NUMBER_POWER_MONITOR_DURATION: rename_sc_entity_id,
+        # Overridable SC entities
+        NUMBER_SUPPLY_POWER_LIMIT: rename_sc_entity_id,
+        NUMBER_CHARGER_MAX_SPEED: rename_sc_entity_id,
+        NUMBER_CHARGER_POWER_FACTOR: rename_sc_entity_id,
+        NUMBER_CHARGER_MIN_CURRENT: rename_sc_entity_id,
+        NUMBER_CHARGER_MIN_WORKABLE_CURRENT: rename_sc_entity_id,
+        NUMBER_CHARGER_MIN_WORKABLE_POWER_PAUSE_THRESHOLD: rename_sc_entity_id,
+        NUMBER_CHARGER_MIN_WORKABLE_POWER_RESUME_THRESHOLD: rename_sc_entity_id,
+        NUMBER_CHARGER_PRIORITY: rename_sc_entity_id,
+        NUMBER_CHARGER_POWER_ALLOCATION_WEIGHT: rename_sc_entity_id,
+        SENSOR_DELTA_ALLOCATED_POWER: rename_sc_entity_id,
+        NUMBER_CHARGER_MAX_CURRENT: rename_sc_entity_id,
+        TEXT_CHARGER_STEP_CURRENT_LIST: rename_sc_entity_id,
+        ENTITY_DEVICE_GET_CHARGE_LIMIT: rename_sc_entity_id,
+        ENTITY_DEVICE_SET_CHARGE_LIMIT: rename_sc_entity_id,
     }
 
     # Do not directly modify data map in loop, so put in list first.
@@ -593,9 +665,29 @@ def _ha_store_migrate_config(store_config: dict[str, Any]) -> None:
                 # Old value not required in config.
                 continue
 
+            #####################################
+            # Rename SC entity ID only
+            #####################################
+            if new_key == rename_sc_entity_id:
+                if not (
+                    _is_solarcharger_entity(old_config_val)
+                    or _is_old_solarcharger_entity(old_config_val)
+                ):
+                    # Not SC entity, so keep key and non-SC entity.
+                    store_config[old_key] = old_config_val
+                else:
+                    # SC entity. Already deleted key, so wait for config flow to recreate key.
+                    continue
+
+            #####################################
+            # New key
+            #####################################
             # Only remove old solar charger entity ID.
             # Need to handle separately for config string.
-            if not _is_solarcharger_entity(old_config_val):
+            elif not (
+                _is_solarcharger_entity(old_config_val)
+                or _is_old_solarcharger_entity(old_config_val)
+            ):
                 # Keep non-solarcharger entity ID, string config or None.
                 store_config[new_key] = old_config_val
 

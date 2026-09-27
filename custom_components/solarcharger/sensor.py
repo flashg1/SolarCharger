@@ -28,7 +28,7 @@ from homeassistant.helpers.typing import StateType
 from homeassistant.util.dt import as_local
 
 from .const import (
-    DOMAIN,
+    DOMAIN_SC,
     ICON_ALLOCATION,
     ICON_DATA_READY,
     ICON_DELTA,
@@ -703,7 +703,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up sensors based on config entry."""
-    coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator: SolarChargerCoordinator = hass.data[DOMAIN_SC][config_entry.entry_id]
 
     for subentry in config_entry.subentries.values():
         # For charger subentries only

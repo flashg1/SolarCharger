@@ -106,7 +106,7 @@ def test_get_option_value_falls_back_to_global_default_entity() -> None:
         entry, NUMBER_CHARGER_EFFECTIVE_VOLTAGE
     )
 
-    assert value == "number.solarcharger_global_defaults_charger_effective_voltage"
+    assert value == "number.sc_global_defaults_charger_effective_voltage"
 
 
 # ----------------------------------------------------------------------------
@@ -287,7 +287,7 @@ def test_charger_environment_schema_maps_effective_voltage_to_number_selector(
     [
         pytest.param(
             NUMBER_CHARGER_MAX_SPEED,
-            {NUMBER_CHARGER_MAX_SPEED: "number.solarcharger_charger1_max_speed"},
+            {NUMBER_CHARGER_MAX_SPEED: "number.sc_charger1_max_speed"},
             NUMBER_ENTITY_SELECTOR,
             id="modifiable_if_sc_entity_and_is_sc_entity",
         ),
