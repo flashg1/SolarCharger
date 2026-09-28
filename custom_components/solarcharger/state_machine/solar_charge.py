@@ -20,6 +20,7 @@ from homeassistant.helpers.typing import StateType
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
 from ..chargers.sc_option_state import ScOptionState
+from ..config.config_utils import get_device_domain
 from ..const import (
     CURRENT_VARIATION_PERCENTAGE,
     DOMAIN_SC,
@@ -817,15 +818,23 @@ class SolarCharge(ScOptionState):
             )
 
     # ----------------------------------------------------------------------------
-    async def async_turn_off_charger(
-        self, charger: Charger, chargeable: Chargeable
+    async def async_power_down_charger(
+        self,
+        charger: Charger,
+        chargeable: Chargeable,
+        do_not_turn_off_list: list[str] | None = None,
     ) -> None:
         """Turn off charger."""
 
         switched_on = charger.is_charger_switch_on()
         if switched_on:
             await self.async_set_charge_current(charger, 0)
-            await self.async_turn_charger_switch(charger, turn_on=False)
+            if do_not_turn_off_list is not None:
+                device_domain = get_device_domain(self._subentry)
+                if device_domain not in do_not_turn_off_list:
+                    await self.async_turn_charger_switch(charger, turn_on=False)
+            else:
+                await self.async_turn_charger_switch(charger, turn_on=False)
             await self.async_update_ha(chargeable)
 
         # Must reset time here to avoid possible wrong energy calculation if pausing.

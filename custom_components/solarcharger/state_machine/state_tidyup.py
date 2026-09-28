@@ -61,7 +61,7 @@ class StateTidyUp(SolarChargeState):
             if self.solarcharge.is_device_at_location_and_connected():
                 # Only turn off charger if device is at home and connected.
                 # To avoid turning off external charger!
-                await self.solarcharge.async_turn_off_charger(charger, chargeable)
+                await self.solarcharge.async_power_down_charger(charger, chargeable)
 
                 # Only schedule next charge session if device is at home and connected.
                 await self.solarcharge.scheduler.async_schedule_next_charge_session(

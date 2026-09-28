@@ -79,102 +79,6 @@ PLATFORMS: list[Platform | str] = [
     # INPUT_TIME,
 ]
 
-
-#######################################################
-# Enumerations
-#######################################################
-class RunStep(Enum):
-    """Enumeration of run steps."""
-
-    CHARGE = "charge"
-    DISCHARGE = "discharge"
-    PAUSE = "pause"
-    END = "end"
-
-
-class StartState(Enum):
-    """Enumeration of start states."""
-
-    AUTO = "auto"
-    CHARGE = "charge"
-    PAUSE = "pause"
-
-
-START_STATE_LIST: list[str] = [state.value for state in StartState]
-
-
-class RunState(Enum):
-    """Enumeration of machine states."""
-
-    # Sensor state attributes must be lower case. Translation will display state in OS language.
-    UNDEFINED = "undefined"
-    START = "start"
-    INITIALISE = "initialise"
-
-    CHARGE = "charge"
-    # SELF_DEPOWER is a sub-state of CHARGING state.
-    SELF_DEPOWER = "self-depower"
-
-    DISCHARGE = "discharge"
-
-    PAUSE = "pause"
-    ABORT = "abort"
-    TIDY_UP = "tidy-up"
-    END = "end"
-
-
-RUN_STATE_LIST: list[str] = [state.value for state in RunState]
-
-
-class MedianDataState(Enum):
-    """Enumeration of median data set states."""
-
-    # Sensor state attributes must be lower case. Translation will display state in OS language.
-    NOT_READY = "not_ready"
-    READY = "ready"
-
-
-MEDIAN_DATA_STATE_LIST: list[str] = [state.value for state in MedianDataState]
-
-
-class Modifiable(Enum):
-    """Enumeration of modifiable configuration options."""
-
-    # Select only one. Can combine with inclusion/exclusion lists.
-    IF_NONE = "modifiable_if_none"
-    ALWAYS = "modifiable_always"
-    IF_SC_ENTITY = "modifiable_if_sc_entity"
-    NEVER = "modifiable_never"
-
-    # Inclusion list. Can select multiple.
-    INCLUDE_OCPP = "include_ocpp"
-
-    # Exclusion list. Can select multiple.
-    EXCLUDE_OCPP = "exclude_ocpp"
-
-
-MODIFIABLE_DEFAULT: list[Modifiable] = [Modifiable.IF_NONE]
-MODIFIABLE_ALWAYS: list[Modifiable] = [Modifiable.ALWAYS]
-MODIFIABLE_IF_SC_ENTITY: list[Modifiable] = [Modifiable.IF_SC_ENTITY]
-MODIFIABLE_EXCEPT_OCPP: list[Modifiable] = [Modifiable.ALWAYS, Modifiable.EXCLUDE_OCPP]
-
-#######################################################
-# SC events
-#######################################################
-# COORDINATOR_STATE_STOPPED = "stopped"
-# COORDINATOR_STATE_CHARGING = "charging"
-# COORDINATOR_STATES: tuple[str, ...] = (
-#     COORDINATOR_STATE_STOPPED,
-#     COORDINATOR_STATE_CHARGING,
-# )
-
-# Event constants
-SOLAR_CHARGER_COORDINATOR_EVENT = f"{DOMAIN_SC}_coordinator_event"
-EVENT_ACTION_NEW_CHARGE_CURRENT = "new_charge_current"
-EVENT_ATTR_ACTION = "action"
-EVENT_ATTR_NEW_VALUE = "new_value"
-EVENT_ATTR_OLD_VALUE = "old_value"
-
 #######################################################
 # Constants
 #######################################################
@@ -301,6 +205,103 @@ DEVICE_MODEL_MAP: dict[str, str] = {
 }
 
 CHARGE_API_DOMAIN = "charge_api_domain"
+
+
+#######################################################
+# Enumerations
+#######################################################
+class RunStep(Enum):
+    """Enumeration of run steps."""
+
+    CHARGE = "charge"
+    DISCHARGE = "discharge"
+    PAUSE = "pause"
+    END = "end"
+
+
+class StartState(Enum):
+    """Enumeration of start states."""
+
+    AUTO = "auto"
+    CHARGE = "charge"
+    PAUSE = "pause"
+
+
+START_STATE_LIST: list[str] = [state.value for state in StartState]
+
+
+class RunState(Enum):
+    """Enumeration of machine states."""
+
+    # Sensor state attributes must be lower case. Translation will display state in OS language.
+    UNDEFINED = "undefined"
+    START = "start"
+    INITIALISE = "initialise"
+
+    CHARGE = "charge"
+    # SELF_DEPOWER is a sub-state of CHARGING state.
+    SELF_DEPOWER = "self-depower"
+
+    DISCHARGE = "discharge"
+
+    PAUSE = "pause"
+    ABORT = "abort"
+    TIDY_UP = "tidy-up"
+    END = "end"
+
+
+RUN_STATE_LIST: list[str] = [state.value for state in RunState]
+PAUSE_STATE_CHARGER_ON_LIST: list[str] = [DOMAIN_OCPP]
+
+
+class MedianDataState(Enum):
+    """Enumeration of median data set states."""
+
+    # Sensor state attributes must be lower case. Translation will display state in OS language.
+    NOT_READY = "not_ready"
+    READY = "ready"
+
+
+MEDIAN_DATA_STATE_LIST: list[str] = [state.value for state in MedianDataState]
+
+
+class Modifiable(Enum):
+    """Enumeration of modifiable configuration options."""
+
+    # Select only one. Can combine with inclusion/exclusion lists.
+    IF_NONE = "modifiable_if_none"
+    ALWAYS = "modifiable_always"
+    IF_SC_ENTITY = "modifiable_if_sc_entity"
+    NEVER = "modifiable_never"
+
+    # Inclusion list. Can select multiple.
+    INCLUDE_OCPP = "include_ocpp"
+
+    # Exclusion list. Can select multiple.
+    EXCLUDE_OCPP = "exclude_ocpp"
+
+
+MODIFIABLE_DEFAULT: list[Modifiable] = [Modifiable.IF_NONE]
+MODIFIABLE_ALWAYS: list[Modifiable] = [Modifiable.ALWAYS]
+MODIFIABLE_IF_SC_ENTITY: list[Modifiable] = [Modifiable.IF_SC_ENTITY]
+MODIFIABLE_EXCEPT_OCPP: list[Modifiable] = [Modifiable.ALWAYS, Modifiable.EXCLUDE_OCPP]
+
+#######################################################
+# SC events
+#######################################################
+# COORDINATOR_STATE_STOPPED = "stopped"
+# COORDINATOR_STATE_CHARGING = "charging"
+# COORDINATOR_STATES: tuple[str, ...] = (
+#     COORDINATOR_STATE_STOPPED,
+#     COORDINATOR_STATE_CHARGING,
+# )
+
+# Event constants
+SOLAR_CHARGER_COORDINATOR_EVENT = f"{DOMAIN_SC}_coordinator_event"
+EVENT_ACTION_NEW_CHARGE_CURRENT = "new_charge_current"
+EVENT_ATTR_ACTION = "action"
+EVENT_ATTR_NEW_VALUE = "new_value"
+EVENT_ATTR_OLD_VALUE = "old_value"
 
 #######################################################
 # Error codes

@@ -23,6 +23,7 @@
 ### New feature
 - Added [power source](https://github.com/flashg1/SolarCharger/wiki/User-guide#supply-cap) support.
 ### Improvement
+- Do not turn off OCPP charger when in pause state.
 - Removed dependency on card-mod for charge schedule heading colour.
 
 ## v0.12.0 2026-09-11

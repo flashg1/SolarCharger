@@ -5,7 +5,7 @@ import logging
 
 from ..chargers.chargeable import Chargeable
 from ..chargers.charger import Charger
-from ..const import RunState, RunStep
+from ..const import PAUSE_STATE_CHARGER_ON_LIST, RunState, RunStep
 from ..models.model_charge_stats import ChargeStats
 from ..models.model_context_data import ContextData
 
@@ -51,15 +51,17 @@ class StatePause(SolarChargeState):
         # Initialise counts before starting loop
         stats.loop_success_count = 0
         stats.loop_consecutive_fail_count = 0
-        done_switch_off_charger = False
+        done_power_down_charger = False
         while True:
             self.solarcharge.abort_if_exceed_max_consecutive_failure()
 
             try:
                 # Turn off charger if looping for the first time.
-                if not done_switch_off_charger:
-                    await self.solarcharge.async_turn_off_charger(charger, chargeable)
-                    done_switch_off_charger = True
+                if not done_power_down_charger:
+                    await self.solarcharge.async_power_down_charger(
+                        charger, chargeable, PAUSE_STATE_CHARGER_ON_LIST
+                    )
+                    done_power_down_charger = True
 
                 context = await self.solarcharge.async_set_charge_status(
                     charger, chargeable, state, stats
