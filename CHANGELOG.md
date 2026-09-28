@@ -9,6 +9,7 @@
   - Priority
   - Start state
   - Weather provider
+  - Max charge speed
   - Schedule charge
   - Sun trigger
   - Plugin trigger
