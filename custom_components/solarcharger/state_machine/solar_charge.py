@@ -842,25 +842,6 @@ class SolarCharge(ScOptionState):
         await self.async_option_sleep(NUMBER_WAIT_DEVICE_LIMIT_CHANGE)
 
     # ----------------------------------------------------------------------------
-    # async def async_set_charge_limit_if_required(
-    #     self, chargeable: Chargeable, goal: ScheduleData
-    # ) -> bool:
-    #     """Set new charge limit if changed, otherwise use existing charge limit."""
-
-    #     if charge_limit_changed := (goal.old_charge_limit != goal.new_charge_limit):
-    #         _LOGGER.warning(
-    #             "%s: Changing charge limit from %.1f %% to %.1f %% for %s",
-    #             self.caller,
-    #             goal.old_charge_limit,
-    #             goal.new_charge_limit,
-    #             # now_time.strftime("%A"),
-    #             goal.weekly_schedule[goal.day_index].charge_day,
-    #         )
-    #         await self.async_set_charge_limit(chargeable, goal.new_charge_limit)
-
-    #     return charge_limit_changed
-
-    # ----------------------------------------------------------------------------
     async def async_set_charge_limit_if_required(
         self, chargeable: Chargeable, goal: ScheduleData
     ) -> bool:
@@ -1118,42 +1099,6 @@ class SolarCharge(ScOptionState):
         return (adjusted_activation_power, activation_power)
 
     # ----------------------------------------------------------------------------
-    # def _is_median_net_allocated_power_more_than_min_workable_power(
-    #     self,
-    #     net_allocations: MedianData,
-    #     run_state: RunState,
-    # ) -> bool | None:
-    #     """Is median net allocated power more than minimum workable power? None=not enough data."""
-    #     enough_power = None
-
-    #     if net_allocations.window_seconds > 0 and net_allocations.data_set_ready:
-    #         net_allocated_power = net_allocations.last_data_point.value
-    #         median_net_allocated_power = net_allocations.median_value
-    #         adjusted_activation_power, _ = self.get_adjusted_activation_power(run_state)
-
-    #         if run_state in [RunState.CHARGE, RunState.SELF_DEPOWER]:
-    #             #####################################
-    #             # For entering pause state.
-    #             #####################################
-    #             # Device is currently charging.
-    #             # Note surplus power is negative.
-    #             enough_power = (
-    #                 median_net_allocated_power <= adjusted_activation_power
-    #                 # Make it harder to go into pause state if near realtime net_allocated_power has enough power.
-    #                 or net_allocated_power <= adjusted_activation_power
-    #             )
-
-    #         else:
-    #             #####################################
-    #             # For exiting out of paused or discharge state.
-    #             #####################################
-    #             # Device is currently paused.
-    #             # Note surplus power is negative.
-    #             enough_power = median_net_allocated_power <= adjusted_activation_power
-
-    #     return enough_power
-
-    # ----------------------------------------------------------------------------
     def _is_allocated_power_more_than_min_workable_power(
         self,
         allocated_power: float,
@@ -1366,38 +1311,6 @@ class SolarCharge(ScOptionState):
             ):
                 context.next_step = RunStep.PAUSE
                 context.continue_state = False
-
-    # ----------------------------------------------------------------------------
-    # def _set_is_continue_pause_state(self, context: ContextData) -> None:
-    #     """Is continue pause state?"""
-
-    #     context.next_step = RunStep.CHARGE
-    #     context.continue_state = False
-
-    #     continue_pause = (
-    #         context.connected
-    #         and context.below_charge_limit
-    #         and (not (context.goal.end_on_condition and context.goal.exit_condition))
-    #         and (
-    #             not context.goal.sun_trigger
-    #             or context.goal.sun_above_start_end_elevations
-    #         )
-    #         and not context.fast_charge
-    #         and not context.calibrate_max_charge_speed
-    #         and not (context.goal.has_charge_endtime and context.goal.max_charge_now)
-    #     )
-
-    #     if continue_pause:
-    #         if self._is_allow_pause_state():
-    #             context.enough_power = (
-    #                 self._is_median_net_allocated_power_more_than_min_workable_power(
-    #                     context.net_allocations, context.state
-    #                 )
-    #             )
-
-    #             if context.enough_power is None or not context.enough_power:
-    #                 context.next_step = RunStep.PAUSE
-    #                 context.continue_state = True
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_pause_state(self, context: ContextData) -> None:

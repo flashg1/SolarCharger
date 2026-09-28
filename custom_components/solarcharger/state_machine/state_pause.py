@@ -1,7 +1,6 @@
 # ruff: noqa: TRY401, TID252
 """State machine state."""
 
-from datetime import timedelta
 import logging
 
 from ..chargers.chargeable import Chargeable

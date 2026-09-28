@@ -316,7 +316,8 @@ def _is_old_solarcharger_entity(entity_id: str) -> bool:
     Local device entity must contain .solarcharger_ in entity_id.
     """
 
-    pattern = rf"[^.]+\.solarcharger_"
+    old_sc_prefix = "solarcharger"
+    pattern = rf"[^.]+\.{old_sc_prefix}_"
 
     return re.match(pattern, entity_id)
 

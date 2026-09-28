@@ -257,6 +257,7 @@ def make_power_allocation(**overrides: Any) -> PowerAllocation:
     defaults: dict[str, Any] = {
         "subentry_id": "member",
         "name": "Member",
+        "run_state": RunState.CHARGE,
         "max_power": 2000.0,
         "max_current": 8.7,
         "step_power_list": [],

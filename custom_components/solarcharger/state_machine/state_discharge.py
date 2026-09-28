@@ -1,7 +1,6 @@
 # ruff: noqa: TRY401, TID252
 """State machine state."""
 
-from datetime import timedelta
 import logging
 
 from ..chargers.chargeable import Chargeable
@@ -36,7 +35,7 @@ class StateDischarge(SolarChargeState):
         state: RunState,
         stats: ChargeStats,
     ) -> ContextData:
-        """Pause charge and wait for external trigger to continue. Let device sleep."""
+        """Set 0 current and wait for external trigger to continue charge."""
 
         start_time = self.solarcharge.get_local_datetime()
         self.solarcharge.give_up_real_power_allocation()

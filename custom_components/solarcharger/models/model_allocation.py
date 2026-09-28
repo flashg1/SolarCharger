@@ -19,6 +19,8 @@ class PowerAllocation:
     # Charger variables
     #####################################
     # Environment data:
+    # Run state
+    run_state: RunState
     # Maximum power the charger can consume.
     max_power: float
     # Not used. FYI only.
@@ -48,7 +50,7 @@ class PowerAllocation:
     can_set_current: bool
 
     # Run state
-    run_state: RunState = RunState.END
+    # run_state: RunState = RunState.END
     # Device allows pause state?
     max_speed_charge: bool = False
     # Device depower by itself, eg. themostat.

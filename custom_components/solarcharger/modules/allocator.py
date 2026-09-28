@@ -187,6 +187,7 @@ class PowerAllocator:
         member = PowerAllocation(
             subentry_id=control.subentry_id,
             name=control.config_name,
+            run_state=run_state,
             max_power=max_power,
             max_current=max_current,
             step_power_list=step_power_list,
@@ -203,7 +204,6 @@ class PowerAllocator:
             power_factor=power_factor,
         )
         member.consumed_power = consumed_power
-        member.run_state = run_state
 
         #####################################
         # Power source
