@@ -7,10 +7,13 @@
   - Max current
   - Min workable current
   - Priority
+  - Start state
   - Weather provider
+  - Schedule charge
+  - Sun trigger
+  - Plugin trigger
   - Device presence sensor and trigger
   - Exit condition sensor and trigger
-  - Start state
   - Default charge limits
 
 - The behaviour of setting [Power monitor duration](https://github.com/flashg1/SolarCharger/wiki/User-guide#power-monitor-duration) = 0 second has changed. The old behaviour was to disable pause state. The new behaviour is to use realtime net allocated power to determine whether or not to enter or exit [Pause](https://github.com/flashg1/SolarCharger/wiki/User-guide#pause)/[Discharge](https://github.com/flashg1/SolarCharger/wiki/User-guide#discharge) states.
