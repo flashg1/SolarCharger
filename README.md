@@ -36,6 +36,7 @@ It works with Tesla, OCPP chargers and a growing list of other EVs, hot water sy
 ## How it works
 
 ```mermaid
+%%{init: {"flowchart": {"diagramPadding": 150}}}%%
 flowchart LR
   Sun["☀️ Solar panels"] --> Net["Net power sensor<br/>(− export / + import)"]
   Net --> Alloc["SolarCharger<br/>shares surplus by priority"]
