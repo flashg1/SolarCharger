@@ -66,7 +66,7 @@ Because a hot water element can only be switched on or off, not throttled, it on
 
 **Setup:** add the hot water system with **[Add custom device](https://github.com/flashg1/SolarCharger/wiki/Configuration#example-config-for-a-heater)**. Select the switch, and select the current sensor as **"Charger get charge current (AMP)"**. Then give it a higher priority than the car. See [priority and weighting](https://github.com/flashg1/SolarCharger/wiki/Configuration#charge-multiple-devices-at-the-same-time-based-on-priority-and-weight-for-each-device).
 
-![Allocation and control](https://github.com/flashg1/SolarCharger/assets/122323972/ee3ed51d-9cbe-4b41-ac70-e0ac8d3b1bd2)
+![Allocation and control](https://github.com/flashg1/SolarCharger/assets/122323972/1a59911d-6c5b-43d5-a361-cd515e4f4082)
 
 ![Follow the sun](https://github.com/flashg1/SolarCharger/assets/122323972/5f6eb7e4-66dd-4840-961f-0c2d9b58f77b)
 
