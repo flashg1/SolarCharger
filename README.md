@@ -36,6 +36,7 @@ It works with Tesla, OCPP chargers and a growing list of other EVs, hot water sy
 ## How it works
 
 ```mermaid
+%%{init: {"flowchart": {"diagramPadding": 150}}}%%
 flowchart LR
   Sun["☀️ Solar panels"] --> Net["Net power sensor<br/>(− export / + import)"]
   Net --> Alloc["SolarCharger<br/>shares surplus by priority"]
@@ -75,7 +76,7 @@ Because a hot water element can only be switched on or off, not throttled, it on
 1. **Install** SolarCharger via HACS ([details](#installation)) and restart Home Assistant.
 2. **Create a "Net power" sensor** that reads negative when exporting and positive when importing ([example](#configuration)).
 3. **Add the integration**: Settings > Devices & services > Add integration > "SolarCharger", then click **Add charger device**.
-4. **Set three values**: charger effective voltage, maximum current and maximum charge speed ([where](#configuration)).
+4. **Set two values**: charger effective voltage and maximum current ([where](#configuration)).
 5. **Plug in the car.** That's it. SolarCharger takes over within about a minute.
 
 
