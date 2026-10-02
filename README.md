@@ -66,9 +66,11 @@ Because a hot water element can only be switched on or off, not throttled, it on
 
 **Setup:** add the hot water system with **[Add custom device](https://github.com/flashg1/SolarCharger/wiki/Configuration#example-config-for-a-heater)**. Select the switch, and select the current sensor as **"Charger get charge current (AMP)"**. Then give it a higher priority than the car. See [priority and weighting](https://github.com/flashg1/SolarCharger/wiki/Configuration#charge-multiple-devices-at-the-same-time-based-on-priority-and-weight-for-each-device).
 
-![Charge current following surplus solar through the day](https://github.com/flashg1/TeslaSolarCharger/assets/122323972/58d1df89-905b-422c-8542-0081b9fa342f)
+![Allocation](https://github.com/flashg1/SolarCharger/assets/122323972/2e2cff90-843d-4693-a3e3-eba896edcc55)
 
-![SolarCharger controls in the Home Assistant app](https://github.com/flashg1/TeslaSolarCharger/assets/122323972/2f04b1e2-b56d-493c-977f-82d5dd04cbe5)
+![Charge current following surplus solar through the day](https://github.com/flashg1/SolarCharger/assets/122323972/5f6eb7e4-66dd-4840-961f-0c2d9b58f77b)
+
+![SolarCharger controls in the Home Assistant app](https://github.com/flashg1/SolarCharger/assets/122323972/2f04b1e2-b56d-493c-977f-82d5dd04cbe5)
 
 
 ## Quick start
