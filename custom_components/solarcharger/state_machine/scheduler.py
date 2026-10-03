@@ -30,9 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # Look ahead charge limit list including today.
-# Use MAX_CHARGE_LIMIT_DIFF to calculate charge limit for all days except one day before maximum charge limit day.
-# The day before maximum charge limit day will use MIN_CHARGE_LIMIT_DIFF to minimise charge limit difference for the next day.
-MIN_CHARGE_LIMIT_DIFF = 5
+# Use MAX_CHARGE_LIMIT_DIFF to calculate charge limit for all days.
 MAX_CHARGE_LIMIT_DIFF = 10
 LOOK_AHEAD_CHARGE_LIMIT_DAYS = 4
 
@@ -86,7 +84,7 @@ class ChargeScheduler(ScOptionState):
         look_ahead_charge_limit = goal.new_charge_limit
 
         if not goal.has_charge_endtime or (
-            goal.has_charge_endtime and goal.new_charge_limit == goal.battery_soc + 1
+            goal.has_charge_endtime and goal.battery_soc + 1 >= goal.new_charge_limit
         ):
             look_ahead_schedule: list[ChargeSchedule] = []
             today_index = goal.day_index
@@ -103,14 +101,30 @@ class ChargeScheduler(ScOptionState):
                     look_ahead_max_charge_limit = look_ahead_schedule[i].charge_limit
                     look_ahead_max_charge_limit_index = i
 
-            if look_ahead_max_charge_limit_index == 1:
-                look_ahead_charge_limit = (
-                    look_ahead_max_charge_limit - MIN_CHARGE_LIMIT_DIFF
+            # if look_ahead_max_charge_limit_index == 1:
+            #     look_ahead_charge_limit = (
+            #         look_ahead_max_charge_limit - MIN_CHARGE_LIMIT_DIFF
+            #     )
+            # else:
+            #     look_ahead_charge_limit = look_ahead_max_charge_limit - (
+            #         look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
+            #     )
+
+            today_charge_limit = look_ahead_schedule[0].charge_limit
+            average_charge_limit = round(
+                (
+                    look_ahead_schedule[0].charge_limit
+                    + look_ahead_schedule[1].charge_limit
                 )
-            else:
-                look_ahead_charge_limit = look_ahead_max_charge_limit - (
-                    look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
-                )
+                / 2
+            )
+            highest_charge_limit = look_ahead_max_charge_limit - (
+                look_ahead_max_charge_limit_index * MAX_CHARGE_LIMIT_DIFF
+            )
+
+            look_ahead_charge_limit = max(
+                today_charge_limit, average_charge_limit, highest_charge_limit
+            )
 
         return look_ahead_charge_limit
 
@@ -126,7 +140,7 @@ class ChargeScheduler(ScOptionState):
             if next_charge_limit > goal.new_charge_limit:  # noqa: PLR1730
                 goal.new_charge_limit = next_charge_limit
 
-        elif goal.has_charge_endtime and goal.new_charge_limit == goal.battery_soc + 1:
+        elif goal.has_charge_endtime and goal.battery_soc + 1 >= goal.new_charge_limit:
             # Has charge end time and almost done, so plan for next session and
             # increase charge limit before device turns off the charger.
             if next_charge_limit > goal.new_charge_limit:

@@ -6,6 +6,7 @@
 ### Fix
 ### New feature
 ### Improvement
+- Enhanced reduce charge limit difference between days to always consider tomorrow's charge limit as well as 3 days ahead.
 
 ## v0.13.0 2026-09-17
 ### Breaking change
