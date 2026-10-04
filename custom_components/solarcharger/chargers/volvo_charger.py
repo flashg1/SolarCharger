@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Volvo charger implementation."""
 
 import logging

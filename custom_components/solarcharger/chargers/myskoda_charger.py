@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """MySkoda charger implementation."""
 
 import logging

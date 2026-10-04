@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Charge control data model."""
 
 from asyncio import Task

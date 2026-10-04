@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Tesla ESPHome BLE Charger implementation."""
 
 import logging

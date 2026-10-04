@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Config flow for the solarcharger integration."""
 
 from copy import deepcopy

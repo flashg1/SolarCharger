@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """OCPP charger implementation."""
 
 import logging

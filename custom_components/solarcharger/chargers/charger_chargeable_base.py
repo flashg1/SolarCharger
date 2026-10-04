@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Charger and Chargeable base class implementation."""
 
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry

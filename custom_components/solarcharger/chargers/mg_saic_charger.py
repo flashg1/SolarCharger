@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """MG SAIC charger implementation."""
 
 import logging

@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252
 """State machine state."""
 
 import logging
@@ -78,11 +77,9 @@ class StatePause(SolarChargeState):
                 stats.loop_success_count += 1
                 stats.loop_consecutive_fail_count = 0
 
-            except Exception as e:
+            except Exception:
                 stats.loop_consecutive_fail_count += 1
-                _LOGGER.exception(
-                    "%s: Failed to pause charge: %s", self.solarcharge.caller, e
-                )
+                _LOGGER.exception("%s: Failed to pause charge", self.solarcharge.caller)
 
             await self.solarcharge.async_charger_sleep()
             stats.loop_total_count += 1

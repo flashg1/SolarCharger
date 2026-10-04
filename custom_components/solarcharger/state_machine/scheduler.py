@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Module to manage charge scheduling."""
 
 from datetime import datetime, time, timedelta
@@ -53,7 +52,9 @@ class ChargeScheduler(ScOptionState):
             caller = __name__
         ScOptionState.__init__(self, hass, entry, subentry, caller)
 
-        self._history_date = datetime(2026, 1, 1, 0, 0, 0)
+        self._history_date = datetime(2026, 1, 1, 0, 0, 0).astimezone(
+            self.get_local_timezone()
+        )
         self._calibration_charge_limit: float = -1
 
     # ----------------------------------------------------------------------------

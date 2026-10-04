@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Support basic HA state requests."""
 
 from collections.abc import Callable

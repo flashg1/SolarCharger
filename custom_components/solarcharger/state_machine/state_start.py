@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252
 """State machine state."""
 
 from datetime import datetime, timedelta
@@ -315,12 +314,11 @@ class StateStart(SolarChargeState):
                         self.solarcharge.net_allocations, new_data_point
                     )
 
-            except Exception as e:
+            except Exception:
                 _LOGGER.exception(
-                    "%s: Failed to allocate net power %s W: %s",
+                    "%s: Failed to allocate net power %s W",
                     self.solarcharge.caller,
                     new_state.state,
-                    e,
                 )
 
     # ----------------------------------------------------------------------------

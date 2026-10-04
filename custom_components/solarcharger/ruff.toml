@@ -1,0 +1,4 @@
+extend = "../../../pyproject.toml"
+
+[lint.per-file-ignores]
+"**/*.py" = ["TID251", "TID252"]

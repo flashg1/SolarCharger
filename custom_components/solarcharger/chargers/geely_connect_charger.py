@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Geely Connect charger implementation."""
 
 import logging

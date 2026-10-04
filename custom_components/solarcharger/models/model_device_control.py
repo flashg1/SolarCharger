@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Device control data model."""
 
 from dataclasses import dataclass

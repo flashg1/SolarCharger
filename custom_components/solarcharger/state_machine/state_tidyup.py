@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252
 """State machine state."""
 
 import logging
@@ -68,11 +67,9 @@ class StateTidyUp(SolarChargeState):
                     chargeable, self.solarcharge.started_calibrate_max_charge_speed
                 )
 
-        except Exception as e:
+        except Exception:
             _LOGGER.exception(
-                "%s: Failed to tidy up charge task on exit: %s",
-                self.solarcharge.caller,
-                e,
+                "%s: Failed to tidy up charge task on exit", self.solarcharge.caller
             )
 
     # ----------------------------------------------------------------------------

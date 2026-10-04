@@ -1,4 +1,3 @@
-# ruff: noqa: TID252, RET504
 """Config subentry flow to create charger using supported integrations."""
 
 import logging
@@ -172,18 +171,12 @@ async def async_create_charger_device(
     # Get charger device subentry
     thirdparty_charger_id: str | None = input_data.get(SUBENTRY_CHARGER_DEVICE_ID)
     if not thirdparty_charger_id:
-        error_msg = f"Subentry {SUBENTRY_CHARGER_DEVICE_ID} not defined"
-        # raise ValueError(error_msg)
-        return error_msg
+        return f"Subentry {SUBENTRY_CHARGER_DEVICE_ID} not defined"
 
     registry: DeviceRegistry = dr.async_get(hass)
     thirdparty_charger: DeviceEntry | None = registry.async_get(thirdparty_charger_id)
     if not thirdparty_charger:
-        error_msg = (
-            f"Charger device {thirdparty_charger_id} not found in device registry."
-        )
-        # raise ValueError(error_msg)
-        return error_msg
+        return f"Charger device {thirdparty_charger_id} not found in device registry."
 
     # Get charger domain and name to create unique_id
     # Tesla has 2 config entries in "Device info": Tesla Custom Integration, Template
@@ -209,9 +202,7 @@ async def async_create_charger_device(
     # )
 
     if not thirdparty_config_entry:
-        error_msg = f"{thirdparty_charger.name}: Charger config entry not found"
-        # raise ValueError(error_msg)
-        return error_msg
+        return f"{thirdparty_charger.name}: Charger config entry not found"
 
     #######################################################
     # thirdparty_charger.name is set by official Tesla mobile app.  Need reboot
@@ -285,12 +276,10 @@ async def async_create_charger_device(
         or not thirdparty_charger_name
         or not thirdparty_charger_id
     ):
-        error_msg = (
+        return (
             f"Missing config entry domain, name, or ID: "
             f"{thirdparty_config_entry.domain=}, {thirdparty_charger_name=}, {thirdparty_charger_id=}"
         )
-        # raise ValueError(error_msg)
-        return error_msg
 
     hass.config_entries.async_add_subentry(
         config_entry,

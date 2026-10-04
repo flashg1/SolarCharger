@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """GWM Ora charger implementation."""
 
 import logging
