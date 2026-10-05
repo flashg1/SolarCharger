@@ -65,7 +65,7 @@ Because a hot water element can only be switched on or off, not throttled, it on
 - **An on/off switch** for the element, e.g. a smart relay or contactor.
 - **A current sensor** that measures the element's actual current draw in amps, e.g. from an energy-monitoring relay or a clamp meter. This is how SolarCharger knows whether the thermostat has switched the element off, so it can pass that power on to the car.
 
-**Setup:** add the hot water system with **[Add custom device](https://github.com/flashg1/SolarCharger/wiki/Configuration#example-config-for-a-heater)**. Select the switch, and select the current sensor as **"Charger get charge current (AMP)"**. Then give it a higher priority than the car. See [priority and weighting](https://github.com/flashg1/SolarCharger/wiki/Configuration#charge-multiple-devices-at-the-same-time-based-on-priority-and-weight-for-each-device).
+**Setup:** add the hot water system with **[Add custom device](https://github.com/flashg1/SolarCharger/wiki/Configuration#how-to-configure-a-water-heater)**. Select the switch, and select the current sensor as **"Charger get charge current (AMP)"**. Then give it a higher priority than the car. See [priority and weighting](https://github.com/flashg1/SolarCharger/wiki/Configuration#charge-multiple-devices-at-the-same-time-based-on-priority-and-weight-for-each-device).
 
 ![Allocation and control](https://github.com/flashg1/SolarCharger/assets/122323972/1a59911d-6c5b-43d5-a361-cd515e4f4082)
 
