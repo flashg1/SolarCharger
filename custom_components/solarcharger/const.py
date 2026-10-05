@@ -214,8 +214,8 @@ class RunStep(Enum):
     """Enumeration of run steps."""
 
     CHARGE = "charge"
-    DISCHARGE = "discharge"
     PAUSE = "pause"
+    SUPPLY = "supply"
     END = "end"
 
 
@@ -242,7 +242,7 @@ class RunState(Enum):
     # SELF_DEPOWER is a sub-state of CHARGING state.
     SELF_DEPOWER = "self-depower"
 
-    DISCHARGE = "discharge"
+    SUPPLY = "supply"
 
     PAUSE = "pause"
     ABORT = "abort"

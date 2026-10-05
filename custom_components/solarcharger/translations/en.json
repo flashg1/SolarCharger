@@ -327,8 +327,8 @@
                     "initialise": "Initialise",
                     "charge": "Charge",
                     "self-depower": "Self-depower",
-                    "discharge": "Discharge",
                     "pause": "Pause",
+                    "supply": "Supply",
                     "tidy-up": "Tidy-up",
                     "end": "End"
                 }

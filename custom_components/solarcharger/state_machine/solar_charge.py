@@ -560,8 +560,11 @@ class SolarCharge(ScOptionState):
     def get_start_state(self) -> StartState:
         """Get preferred start state from config."""
 
+        # Power source always start in charge state.
         if self.is_cap_supply_power():
             start_state = StartState.CHARGE
+
+        # Power sink can choose to start in charge or pause state.
         else:
             state_str = self.get_string(self.start_state_selector_entity_id)
             start_state = StartState(state_str)
@@ -1294,7 +1297,7 @@ class SolarCharge(ScOptionState):
                         )
                     )
                 ):
-                    context.next_step = RunStep.DISCHARGE
+                    context.next_step = RunStep.SUPPLY
                     context.continue_state = False
 
             #####################################
@@ -1366,7 +1369,7 @@ class SolarCharge(ScOptionState):
         Power source needs to know charge limit.
         """
 
-        context.next_step = RunStep.DISCHARGE
+        context.next_step = RunStep.SUPPLY
         context.continue_state = True
 
         continue_discharge = (
@@ -1420,7 +1423,7 @@ class SolarCharge(ScOptionState):
             self._set_is_continue_charge_state(context)
         elif context.state == RunState.PAUSE:
             self._set_is_continue_pause_state(context)
-        elif context.state == RunState.DISCHARGE:
+        elif context.state == RunState.SUPPLY:
             self._set_is_continue_discharge_state(context)
 
     # ----------------------------------------------------------------------------

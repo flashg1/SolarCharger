@@ -17,17 +17,17 @@ _LOGGER = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-class StateDischarge(SolarChargeState):
-    """Discharge state: Do not turn off charger. Wait for external trigger."""
+class StateSupply(SolarChargeState):
+    """Supply state: Do not turn off charger. Wait for external trigger."""
 
     def __init__(
         self,
     ) -> None:
         """Initialise machine state."""
-        self.state = RunState.DISCHARGE
+        self.state = RunState.SUPPLY
 
     # ----------------------------------------------------------------------------
-    async def _async_discharge(
+    async def _async_supply(
         self,
         charger: Charger,
         chargeable: Chargeable,
@@ -61,7 +61,7 @@ class StateDischarge(SolarChargeState):
                 context = await self.solarcharge.async_set_charge_status(
                     charger, chargeable, state, stats
                 )
-                if context.next_step != RunStep.DISCHARGE:
+                if context.next_step != RunStep.SUPPLY:
                     break
 
                 # Show running stall duration.
@@ -75,7 +75,7 @@ class StateDischarge(SolarChargeState):
 
             except Exception:
                 stats.loop_consecutive_fail_count += 1
-                _LOGGER.exception("%s: Failed to discharge", self.solarcharge.caller)
+                _LOGGER.exception("%s: Failed to supply", self.solarcharge.caller)
 
             await self.solarcharge.async_charger_sleep()
             stats.loop_total_count += 1
@@ -91,11 +91,11 @@ class StateDischarge(SolarChargeState):
 
     # ----------------------------------------------------------------------------
     async def async_activate_state(self) -> None:
-        """Start discharge state."""
+        """Start supply state."""
 
         self.solarcharge.set_run_state(self.state)
 
-        context = await self._async_discharge(
+        context = await self._async_supply(
             self.solarcharge.charger,
             self.solarcharge.chargeable,
             self.solarcharge.machine_state.state,

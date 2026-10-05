@@ -167,7 +167,7 @@ class PowerAllocator:
             if (
                 cap_supply_power
                 and not below_charge_limit
-                and run_state == RunState.DISCHARGE
+                and run_state == RunState.SUPPLY
             ):
                 # Device should be in discharge state.
                 # Get 0 allocated power in virtual allocation.
