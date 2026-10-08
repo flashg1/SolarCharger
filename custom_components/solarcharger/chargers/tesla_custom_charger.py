@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Tesla Custom charger implementation."""
 
 import logging

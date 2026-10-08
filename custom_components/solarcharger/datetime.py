@@ -76,7 +76,7 @@ class SolarChargerDateTimeEntity(SolarChargerEntity, DateTimeEntity, RestoreEnti
                 # Use this one.
                 val = as_local(datetime.fromisoformat(last_state.state))
 
-            except Exception as e:
+            except (ValueError, OverflowError, OSError) as e:
                 # The restore value will be wrong.
                 # This is only a problem if initial value is UTC min time, so should be ok.
                 _LOGGER.error(

@@ -35,7 +35,6 @@ from custom_components.solarcharger.models.model_schedule_data import (
 from custom_components.solarcharger.state_machine.scheduler import (
     LOOK_AHEAD_CHARGE_LIMIT_DAYS,
     MAX_CHARGE_LIMIT_DIFF,
-    MIN_CHARGE_LIMIT_DIFF,
     ChargeScheduler,
 )
 import pytest
@@ -314,7 +313,7 @@ def test_look_ahead_uses_min_diff_when_tomorrow_has_the_highest_limit() -> None:
 
     look_ahead_limit = scheduler._get_look_ahead_charge_limit(goal)
 
-    assert look_ahead_limit == 90 - MIN_CHARGE_LIMIT_DIFF
+    assert look_ahead_limit == max(50, round((50 + 90) / 2), 90 - MAX_CHARGE_LIMIT_DIFF)
 
 
 def test_look_ahead_uses_index_times_max_diff_for_a_later_peak_day() -> None:
@@ -331,7 +330,9 @@ def test_look_ahead_uses_index_times_max_diff_for_a_later_peak_day() -> None:
 
     look_ahead_limit = scheduler._get_look_ahead_charge_limit(goal)
 
-    assert look_ahead_limit == 20 - (2 * MAX_CHARGE_LIMIT_DIFF)
+    assert look_ahead_limit == max(
+        10, round((10 + 15) / 2), 20 - (2 * MAX_CHARGE_LIMIT_DIFF)
+    )
 
 
 def test_look_ahead_is_skipped_when_charge_endtime_set_and_not_near_done() -> None:

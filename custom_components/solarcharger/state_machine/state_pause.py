@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252
 """State machine state."""
 
 import logging
@@ -78,11 +77,9 @@ class StatePause(SolarChargeState):
                 stats.loop_success_count += 1
                 stats.loop_consecutive_fail_count = 0
 
-            except Exception as e:
+            except Exception:
                 stats.loop_consecutive_fail_count += 1
-                _LOGGER.exception(
-                    "%s: Failed to pause charge: %s", self.solarcharge.caller, e
-                )
+                _LOGGER.exception("%s: Failed to pause charge", self.solarcharge.caller)
 
             await self.solarcharge.async_charger_sleep()
             stats.loop_total_count += 1
@@ -90,8 +87,6 @@ class StatePause(SolarChargeState):
         end_time = self.solarcharge.get_local_datetime()
         stall_duration = end_time - start_time
 
-        # Think about only update stats when pause exit was due to having enough power.
-        # if next_step == ChargeStatus.CHARGE_CONTINUE:
         self.solarcharge.update_stall_stats(stats, stall_duration)
 
         return context

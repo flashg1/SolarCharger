@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Module to track entity updates."""
 
 from collections.abc import Callable, Coroutine, Iterable

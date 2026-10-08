@@ -13,7 +13,7 @@ DOMAIN_SC = "solarcharger"
 SC_PREFIX = "sc"
 DOMAIN_DATA = f"{DOMAIN_SC}_data"
 # Also need to set version in manifest.json, README.md and CHANGELOG.md.
-VERSION = "0.13.0"
+VERSION = "0.13.1"
 STORAGE_VERSION = 1
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
@@ -214,8 +214,8 @@ class RunStep(Enum):
     """Enumeration of run steps."""
 
     CHARGE = "charge"
-    DISCHARGE = "discharge"
     PAUSE = "pause"
+    SUPPLY = "supply"
     END = "end"
 
 
@@ -242,7 +242,7 @@ class RunState(Enum):
     # SELF_DEPOWER is a sub-state of CHARGING state.
     SELF_DEPOWER = "self-depower"
 
-    DISCHARGE = "discharge"
+    SUPPLY = "supply"
 
     PAUSE = "pause"
     ABORT = "abort"

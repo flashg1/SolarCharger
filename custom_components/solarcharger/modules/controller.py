@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252, PLR5501
 """Module to manage the charging process and entity subscriptions."""
 
 import asyncio
@@ -21,6 +20,7 @@ from homeassistant.core import (
     State,
     callback,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.typing import NoEventData
 from homeassistant.util.dt import utcnow
 
@@ -160,12 +160,8 @@ class ChargeController(ScOptionState):
                 config_item
             ].set_complete_state(state_value, attributes)
 
-        except Exception as e:
-            _LOGGER.exception(
-                "%s: Failed to update attribute sensor data: %s",
-                self.caller,
-                e,
-            )
+        except Exception:
+            _LOGGER.exception("%s: Failed to update attribute sensor data", self.caller)
 
     # ----------------------------------------------------------------------------
     async def _async_update_weather_sensor(self, entity_id: str) -> None:
@@ -197,7 +193,7 @@ class ChargeController(ScOptionState):
             else:
                 attributes["daily_forecast"] = []
 
-        except Exception as e:
+        except HomeAssistantError as e:
             _LOGGER.warning(
                 "%s: Failed get_forecasts: %s: %s", self.caller, entity_id, e
             )
@@ -252,9 +248,8 @@ class ChargeController(ScOptionState):
             if not self._tracking_weather:
                 self._subscribe_weather(entity_id)
 
-        else:
-            if self._tracking_weather:
-                self._unsubscribe_weather()
+        elif self._tracking_weather:
+            self._unsubscribe_weather()
 
     # ----------------------------------------------------------------------------
     # Allocator
@@ -267,12 +262,8 @@ class ChargeController(ScOptionState):
         try:
             ok = await self._allocator.async_allocate_net_power()
 
-        except Exception as e:
-            _LOGGER.exception(
-                "%s: Failed to allocate net power: %s",
-                self.caller,
-                e,
-            )
+        except Exception:
+            _LOGGER.exception("%s: Failed to allocate net power", self.caller)
 
         return ok
 
@@ -291,11 +282,9 @@ class ChargeController(ScOptionState):
 
             self._sync_charge_current_time = utcnow().timestamp()
 
-        except Exception as e:
+        except Exception:
             _LOGGER.exception(
-                "%s: Failed to synchronise charge current update: %s",
-                self.caller,
-                e,
+                "%s: Failed to synchronise charge current update", self.caller
             )
 
     # ----------------------------------------------------------------------------
@@ -353,12 +342,11 @@ class ChargeController(ScOptionState):
                     self._net_power_update_count = 0
                     await self._async_synchronise_charge_current_update()
 
-            except Exception as e:
+            except Exception:
                 _LOGGER.exception(
-                    "%s: Failed to synchronise charge current update for net power %s W: %s",
+                    "%s: Failed to synchronise charge current update for net power %s W",
                     self.caller,
                     new_state.state,
-                    e,
                 )
 
     # ----------------------------------------------------------------------------
@@ -454,11 +442,9 @@ class ChargeController(ScOptionState):
                             )
                             self._turn_charger_switch(turn_on=True)
 
-            except Exception as e:
+            except Exception:
                 _LOGGER.exception(
-                    "%s: Failed to check if need to reschedule charge: %s",
-                    self.caller,
-                    e,
+                    "%s: Failed to check if need to reschedule charge", self.caller
                 )
 
             self.set_updated_today_tomorrow_schedule(False)
@@ -843,12 +829,8 @@ class ChargeController(ScOptionState):
                         "%s: Aborted charge task",
                         self.caller,
                     )
-                except Exception as e:
-                    _LOGGER.exception(
-                        "%s: Error aborting charge task: %s",
-                        self.caller,
-                        e,
-                    )
+                except Exception:
+                    _LOGGER.exception("%s: Error aborting charge task", self.caller)
 
             else:
                 _LOGGER.info(
@@ -883,12 +865,8 @@ class ChargeController(ScOptionState):
                     )
                     await self.solar_charge.async_tidy_up()
 
-                except Exception as e:
-                    _LOGGER.exception(
-                        "%s: Error stopping charge task: %s",
-                        self.caller,
-                        e,
-                    )
+                except Exception:
+                    _LOGGER.exception("%s: Error stopping charge task", self.caller)
 
             else:
                 _LOGGER.info("Task %s already completed", self._charge_task.get_name())
@@ -1016,14 +994,13 @@ class ChargeController(ScOptionState):
             else:
                 self.charge_control.switch_charge = True
                 await self.async_start_charger(self.charge_control)
+        elif self.charge_control.switch_charge:
+            self.charge_control.switch_charge = False
+            await self.async_stop_charger(self.charge_control)
         else:
-            if self.charge_control.switch_charge:
-                self.charge_control.switch_charge = False
-                await self.async_stop_charger(self.charge_control)
-            else:
-                _LOGGER.error(
-                    "%s: Charger already stopped", self.charge_control.config_name
-                )
+            _LOGGER.error(
+                "%s: Charger already stopped", self.charge_control.config_name
+            )
 
     # ----------------------------------------------------------------------------
     # Called by switch entities/coordinator to action the switch state

@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252
 """State machine state."""
 
 from datetime import datetime
@@ -26,8 +25,8 @@ from ..models.model_context_data import ContextData
 from ..models.model_schedule_data import ScheduleData
 from ..models.model_state_of_charge import StateOfCharge
 from .solar_charge_state import SolarChargeState
-from .state_discharge import StateDischarge
 from .state_pause import StatePause
+from .state_supply import StateSupply
 from .state_tidyup import StateTidyUp
 
 # ----------------------------------------------------------------------------
@@ -128,11 +127,9 @@ class StateCharge(SolarChargeState):
                 self.solarcharge.charger, delta_allocated_power
             )
 
-        except Exception as e:
+        except Exception:
             _LOGGER.exception(
-                "%s: Failed to adjust charge current: %s",
-                self.solarcharge.caller,
-                e,
+                "%s: Failed to adjust charge current", self.solarcharge.caller
             )
 
         # This is the only place where count is set to 0.
@@ -186,12 +183,11 @@ class StateCharge(SolarChargeState):
 
                     self._start_adjust_charge_current_task()
 
-                except Exception as e:
+                except Exception:
                     _LOGGER.exception(
-                        "%s: Failed to handle sync event '%s': %s",
+                        "%s: Failed to handle sync event '%s'",
                         self.solarcharge.caller,
                         new_state.state,
-                        e,
                     )
 
     # ----------------------------------------------------------------------------
@@ -634,12 +630,10 @@ class StateCharge(SolarChargeState):
                 _LOGGER.warning(
                     "%s: Timeout charging device: %s", self.solarcharge.caller, e
                 )
-            except Exception as e:
+            except Exception:
                 stats.loop_total_fail_count += 1
                 stats.loop_consecutive_fail_count += 1
-                _LOGGER.exception(
-                    "%s: Error charging device: %s", self.solarcharge.caller, e
-                )
+                _LOGGER.exception("%s: Error charging device", self.solarcharge.caller)
 
             # Sleep before re-evaluating charging conditions.
             # Charging state must be "charging" for loop_count > 0.
@@ -669,7 +663,7 @@ class StateCharge(SolarChargeState):
 
         if context.next_step == RunStep.PAUSE:
             self.solarcharge.set_machine_state(StatePause())
-        elif context.next_step == RunStep.DISCHARGE:
-            self.solarcharge.set_machine_state(StateDischarge())
+        elif context.next_step == RunStep.SUPPLY:
+            self.solarcharge.set_machine_state(StateSupply())
         else:
             self.solarcharge.set_machine_state(StateTidyUp())

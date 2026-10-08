@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Power allocator implementation."""
 
 from copy import deepcopy
@@ -168,7 +167,7 @@ class PowerAllocator:
             if (
                 cap_supply_power
                 and not below_charge_limit
-                and run_state == RunState.DISCHARGE
+                and run_state == RunState.SUPPLY
             ):
                 # Device should be in discharge state.
                 # Get 0 allocated power in virtual allocation.
@@ -338,13 +337,9 @@ class PowerAllocator:
             try:
                 # Use try block to avoid exception for one member aborting allocation for all.
                 all_member = self._create_group_member(book, control, consumed_power)
-            except Exception as e:
+            except Exception:
                 # Will try again next cycle.
-                _LOGGER.exception(
-                    "%s: Failed allocation: %s",
-                    control.config_name,
-                    e,
-                )
+                _LOGGER.exception("%s: Failed allocation", control.config_name)
                 continue
             consumed_power = all_member.consumed_power
             all_member.consumed_power = 0

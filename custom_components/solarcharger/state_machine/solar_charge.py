@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252, PLR5501
 """Solar charge state machine implementation to manage solar charging."""
 
 import asyncio
@@ -515,8 +514,8 @@ class SolarCharge(ScOptionState):
                     if wait_after_update:
                         await self.async_option_sleep(NUMBER_WAIT_DEVICE_UPDATE_HA)
 
-        except Exception as e:
-            _LOGGER.exception("%s: Error updating HA: %s", self.caller, e)
+        except Exception:
+            _LOGGER.exception("%s: Error updating HA", self.caller)
 
     # ----------------------------------------------------------------------------
     def is_at_location(self, chargeable: Chargeable) -> bool:
@@ -561,8 +560,11 @@ class SolarCharge(ScOptionState):
     def get_start_state(self) -> StartState:
         """Get preferred start state from config."""
 
+        # Power source always start in charge state.
         if self.is_cap_supply_power():
             start_state = StartState.CHARGE
+
+        # Power sink can choose to start in charge or pause state.
         else:
             state_str = self.get_string(self.start_state_selector_entity_id)
             start_state = StartState(state_str)
@@ -812,9 +814,9 @@ class SolarCharge(ScOptionState):
             # if self.can_set_current:
             #     await self.async_option_sleep(NUMBER_WAIT_CHARGER_AMP_CHANGE)
 
-        except Exception as e:
+        except Exception:
             _LOGGER.exception(
-                "%s: Error setting charge current %s A: %s", self.caller, new_current, e
+                "%s: Error setting charge current %s A", self.caller, new_current
             )
 
     # ----------------------------------------------------------------------------
@@ -903,12 +905,8 @@ class SolarCharge(ScOptionState):
                 self.caller,
                 e,
             )
-        except Exception as e:
-            _LOGGER.exception(
-                "%s: Error getting SOC or charge limit: %s",
-                self.caller,
-                e,
-            )
+        except Exception:
+            _LOGGER.exception("%s: Error getting SOC or charge limit", self.caller)
 
         return is_below_limit
 
@@ -1299,7 +1297,7 @@ class SolarCharge(ScOptionState):
                         )
                     )
                 ):
-                    context.next_step = RunStep.DISCHARGE
+                    context.next_step = RunStep.SUPPLY
                     context.continue_state = False
 
             #####################################
@@ -1371,7 +1369,7 @@ class SolarCharge(ScOptionState):
         Power source needs to know charge limit.
         """
 
-        context.next_step = RunStep.DISCHARGE
+        context.next_step = RunStep.SUPPLY
         context.continue_state = True
 
         continue_discharge = (
@@ -1392,28 +1390,27 @@ class SolarCharge(ScOptionState):
             context.next_step = RunStep.CHARGE
             context.continue_state = False
 
-        else:
-            #####################################
-            # Power source.
-            #####################################
-            if context.cap_supply_power:
-                context.enough_power = self._is_enough_power(
-                    context.net_allocations, context.state
-                )
+        #####################################
+        # Power source.
+        #####################################
+        elif context.cap_supply_power:
+            context.enough_power = self._is_enough_power(
+                context.net_allocations, context.state
+            )
 
-                if (
-                    # Real SOC and SOC below limit.
-                    # (context.real_soc and context.below_charge_limit)
-                    context.below_charge_limit
-                    and (
-                        # Enough power.
-                        (context.enough_power is not None and context.enough_power)
-                        # Charge at max speed.
-                        or self.is_max_speed_charge()
-                    )
-                ):
-                    context.next_step = RunStep.CHARGE
-                    context.continue_state = False
+            if (
+                # Real SOC and SOC below limit.
+                # (context.real_soc and context.below_charge_limit)
+                context.below_charge_limit
+                and (
+                    # Enough power.
+                    (context.enough_power is not None and context.enough_power)
+                    # Charge at max speed.
+                    or self.is_max_speed_charge()
+                )
+            ):
+                context.next_step = RunStep.CHARGE
+                context.continue_state = False
 
     # ----------------------------------------------------------------------------
     def _set_is_continue_state(
@@ -1426,7 +1423,7 @@ class SolarCharge(ScOptionState):
             self._set_is_continue_charge_state(context)
         elif context.state == RunState.PAUSE:
             self._set_is_continue_pause_state(context)
-        elif context.state == RunState.DISCHARGE:
+        elif context.state == RunState.SUPPLY:
             self._set_is_continue_discharge_state(context)
 
     # ----------------------------------------------------------------------------
@@ -1546,11 +1543,9 @@ class SolarCharge(ScOptionState):
         try:
             await self.async_retry_15_times_to_update_ha_until_charger_on()
 
-        except Exception as e:
+        except Exception:
             _LOGGER.exception(
-                "%s: Error updating HA triggered by presence detection: %s",
-                self.caller,
-                e,
+                "%s: Error updating HA triggered by presence detection", self.caller
             )
 
         # This is the only place where update_ha_task_count is set to 0.
@@ -1622,6 +1617,6 @@ class SolarCharge(ScOptionState):
         try:
             await self.async_start_state_machine(StateStart())
 
-        except Exception as e:
-            _LOGGER.exception("%s: Abort charge: %s", self.caller, e)
+        except Exception:
+            _LOGGER.exception("%s: Abort charge", self.caller)
             await self.async_tidy_up()

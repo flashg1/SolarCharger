@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Tesla MQTT BLE charger implementation."""
 
 import logging

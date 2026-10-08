@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.13.1 2026-10-02
+### Breaking change
+- Reminder: If upgrading from v0.12.0 or prior, please follow instructions [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
+- Renamed "Discharge" state to "Supply" state.
+### Improvement
+- Enhanced reduce charge limit difference between days to always consider tomorrow's charge limit as well as 3 days ahead.
+
 ## v0.13.0 2026-09-17
 ### Breaking change
 - **IMPORTANT: MAJOR CHANGE:** All SolarCharger entities have been renamed from *.solarcharger_Domain_DeviceName_EntityKey to *.sc_Domain_DeviceName_EntityKey. The objective is to reduce the length of the entity name for future scope. Please note down all your custom configs before upgrading so that you can put back those values after the upgrade. Please also note that templates using the old entity names will also need to be changed. I am sorry for the inconvenience caused. The following are some common custom configs:

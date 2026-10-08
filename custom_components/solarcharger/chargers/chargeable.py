@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Base Chargeable Class."""
 
 from abc import ABC, abstractmethod

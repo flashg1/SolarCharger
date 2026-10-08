@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """User Custom charger implementation."""
 
 import logging

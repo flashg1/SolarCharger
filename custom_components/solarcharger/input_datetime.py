@@ -11,14 +11,7 @@ from homeassistant.components.input_datetime import (
     InputDatetime,
 )
 from homeassistant.config_entries import ConfigSubentry
-from homeassistant.const import (
-    ATTR_DATE,
-    ATTR_EDITABLE,
-    ATTR_TIME,
-    CONF_ICON,
-    CONF_ID,
-    CONF_NAME,
-)
+from homeassistant.const import CONF_ID, CONF_NAME
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import ConfigType
 
@@ -38,7 +31,6 @@ from .entity import (
     SolarChargerEntity,
     SolarChargerEntityType,
     compose_entity_id,
-    compose_entity_unique_id,
     is_create_entity,
 )
 from .modules.coordinator import SolarChargerCoordinator

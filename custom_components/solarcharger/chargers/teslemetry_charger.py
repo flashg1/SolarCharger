@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Teslemetry charger implementation."""
 
 import logging

@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """SolarCharger entity state using config from config_entry.options and config_subentry."""
 
 import asyncio

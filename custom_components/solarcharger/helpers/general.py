@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """General helpers."""
 
 # pylint: disable=relative-beyond-top-level

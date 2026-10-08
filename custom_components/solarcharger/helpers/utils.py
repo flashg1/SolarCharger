@@ -1,12 +1,11 @@
-# ruff: noqa: TRY401
 # TRY401: Checks for excessive logging of exception objects.
 """Utilities."""
 
 import asyncio
-import logging
-import threading
 from collections.abc import Callable
 from datetime import datetime, timedelta
+import logging
+import threading
 from types import FrameType
 from typing import Any
 
@@ -51,7 +50,7 @@ def get_callable_name(obj: Callable) -> str:
 # ----------------------------------------------------------------------------
 def is_ha_version_at_least(min_version: str) -> bool:
     """Check if the current Home Assistant version is at least the specified version."""
-    return CURRENT_HA_VERSION >= AwesomeVersion(min_version)
+    return AwesomeVersion(min_version) <= CURRENT_HA_VERSION
 
 
 # ----------------------------------------------------------------------------
@@ -232,12 +231,9 @@ def remove_callback_subscription(
         if cancel_subscription:
             try:
                 unsubscribe()
-            except Exception as e:
+            except Exception:
                 _LOGGER.exception(
-                    "%s: %s: Failed to unsubscribe callback: %s",
-                    caller,
-                    callback_key,
-                    e,
+                    "%s: %s: Failed to unsubscribe callback", caller, callback_key
                 )
 
     else:
@@ -282,9 +278,9 @@ def remove_all_callback_subscriptions(
         _LOGGER.warning("%s: Unsubscribe callback: %s", caller, callback_key)
         try:
             unsubscribe()
-        except Exception as e:
+        except Exception:
             _LOGGER.exception(
-                "%s: %s: Failed to unsubscribe callback: %s", caller, callback_key, e
+                "%s: %s: Failed to unsubscribe callback", caller, callback_key
             )
 
     unsub_callbacks.clear()

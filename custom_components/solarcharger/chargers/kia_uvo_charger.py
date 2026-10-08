@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Kia UVO charger implementation."""
 
 import logging

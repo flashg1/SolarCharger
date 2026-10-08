@@ -1,4 +1,3 @@
-# ruff: noqa: TRY401, TID252
 """Solar charger coordinator."""
 
 from datetime import datetime, timedelta
@@ -280,12 +279,8 @@ class SolarChargerCoordinator:
             # Misc
             #####################################
 
-        except Exception as e:
-            _LOGGER.exception(
-                "%s: Failed periodic maintenance: %s",
-                self.caller,
-                e,
-            )
+        except Exception:
+            _LOGGER.exception("%s: Failed periodic maintenance", self.caller)
 
     # ----------------------------------------------------------------------------
     def _start_periodic_maintenance(self) -> None:

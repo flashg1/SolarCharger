@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Common config utils."""
 
 import logging

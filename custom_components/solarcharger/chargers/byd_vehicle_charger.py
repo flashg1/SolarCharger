@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """BYD vehicle charger implementation."""
 
 import logging

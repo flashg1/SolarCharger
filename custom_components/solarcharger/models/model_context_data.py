@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """State machine context data model."""
 
 from dataclasses import dataclass

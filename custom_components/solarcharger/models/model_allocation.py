@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Power allocation data model."""
 
 from dataclasses import dataclass

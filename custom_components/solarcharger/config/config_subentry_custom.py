@@ -1,4 +1,3 @@
-# ruff: noqa: TID252, RET504
 """Config subentry flow to create user custom charger."""
 
 import logging
@@ -155,9 +154,7 @@ async def async_create_custom_device(
     # Get charger device subentry
     custom_charger_name: str | None = input_data.get(SUBENTRY_CHARGER_DEVICE_NAME)
     if not custom_charger_name:
-        error_msg = f"Subentry {SUBENTRY_CHARGER_DEVICE_NAME} not defined"
-        # raise ValueError(error_msg)
-        return error_msg
+        return f"Subentry {SUBENTRY_CHARGER_DEVICE_NAME} not defined"
 
     custom_charger_display_name = f"{SUBENTRY_TYPE_CUSTOM} {custom_charger_name}"
     custom_charger_config_name = slugify(f"{custom_charger_display_name}")
@@ -169,9 +166,7 @@ async def async_create_custom_device(
         hass, global_defaults_net_power
     )
     if not global_defaults_device_entry:
-        error_msg = f"{OPTION_GLOBAL_DEFAULTS_ID} entry not found in device registry."
-        # raise ValueError(error_msg)
-        return error_msg
+        return f"{OPTION_GLOBAL_DEFAULTS_ID} entry not found in device registry."
 
     #######################################################
     # Global defaults device must be created first in order to get global_defaults_device_entry.id

@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """Tessie charger implementation."""
 
 import logging

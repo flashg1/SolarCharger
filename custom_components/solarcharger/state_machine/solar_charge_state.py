@@ -1,4 +1,3 @@
-# ruff: noqa: TID252
 """State machine interface."""
 
 from abc import ABC, abstractmethod
