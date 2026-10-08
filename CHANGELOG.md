@@ -2,10 +2,8 @@
 
 ## v0.13.1 2026-10-02
 ### Breaking change
-- Reminder: If upgrading from v0.12.0 or prior, please follow instruction [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
+- Reminder: If upgrading from v0.12.0 or prior, please follow instructions [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
 - Renamed "Discharge" state to "Supply" state.
-### Fix
-### New feature
 ### Improvement
 - Enhanced reduce charge limit difference between days to always consider tomorrow's charge limit as well as 3 days ahead.
 

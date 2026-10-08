@@ -87,8 +87,6 @@ class StatePause(SolarChargeState):
         end_time = self.solarcharge.get_local_datetime()
         stall_duration = end_time - start_time
 
-        # Think about only update stats when pause exit was due to having enough power.
-        # if next_step == ChargeStatus.CHARGE_CONTINUE:
         self.solarcharge.update_stall_stats(stats, stall_duration)
 
         return context
