@@ -301,10 +301,11 @@ class StateStart(SolarChargeState):
                     new_state,
                 )
 
+                consumed_power = self.solarcharge.get_consumed_power()
+                net_allocated_power = delta_allocated_power - consumed_power
+
                 # Save allocated power to calculate moving average.
                 if self.solarcharge.power_monitor_duration > 0:
-                    consumed_power = self.solarcharge.get_consumed_power()
-                    net_allocated_power = delta_allocated_power - consumed_power
                     new_data_point = MedianDataPoint(
                         value=net_allocated_power,
                         period=period,
@@ -313,6 +314,9 @@ class StateStart(SolarChargeState):
                     self._process_net_allocated_power_update(
                         self.solarcharge.net_allocations, new_data_point
                     )
+                else:
+                    # Realtime mode: still publish net allocated power for _is_enough_power().
+                    self.solarcharge.set_net_allocated_power(net_allocated_power)
 
             except Exception:
                 _LOGGER.exception(
