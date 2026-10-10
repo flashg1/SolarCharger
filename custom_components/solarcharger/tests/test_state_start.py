@@ -393,6 +393,40 @@ def test_process_update_first_ever_point_is_its_own_median_and_average() -> None
 
 
 # ----------------------------------------------------------------------------
+# _async_handle_delta_allocated_power_update() -- realtime mode (duration = 0)
+# ----------------------------------------------------------------------------
+async def test_delta_update_publishes_net_allocated_power_when_monitor_disabled() -> (
+    None
+):
+    """With power monitor duration = 0, net allocated power must still be updated.
+
+    Regression: it was only updated via the median window, so it stayed at 0 W and
+    _is_enough_power() always reported not enough power, leaving the charger paused.
+    """
+    fake = make_fake_solarcharge(
+        power_monitor_duration=0.0,
+        get_consumed_power=Mock(return_value=500.0),
+    )
+    state = make_state_start(fake)
+    state._process_net_allocated_power_update = Mock()
+    event = SimpleNamespace(
+        data={
+            "entity_id": "number.sc_delta_allocated_power",
+            "old_state": SimpleNamespace(
+                last_reported=ANCHOR_NOW - timedelta(seconds=20)
+            ),
+            "new_state": SimpleNamespace(state="-2000", last_updated=ANCHOR_NOW),
+        }
+    )
+
+    await state._async_handle_delta_allocated_power_update(event)  # type: ignore[arg-type]
+
+    # net allocated = delta - consumed = -2000 - 500
+    fake.set_net_allocated_power.assert_called_once_with(-2500.0)
+    state._process_net_allocated_power_update.assert_not_called()
+
+
+# ----------------------------------------------------------------------------
 # _init_power_monitor_window() / _init_instance_variables()
 # ----------------------------------------------------------------------------
 def test_init_power_monitor_window_converts_minutes_to_seconds() -> None:
