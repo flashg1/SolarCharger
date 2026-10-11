@@ -13,7 +13,7 @@ DOMAIN_SC = "solarcharger"
 SC_PREFIX = "sc"
 DOMAIN_DATA = f"{DOMAIN_SC}_data"
 # Also need to set version in manifest.json, README.md and CHANGELOG.md.
-VERSION = "0.13.1"
+VERSION = "0.13.2"
 STORAGE_VERSION = 1
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
@@ -1021,7 +1021,7 @@ DEVICE_INTERNAL_ENTITIES: dict[str, str] = {
 # OPTION_CHARGER_CONNECT_TRIGGER_LIST: '["Preparing", "Available"]',
 # Add 'Available' to rc_ocpp_charger_connected for normal testing, and switch off charger to exit automation.
 # OPTION_CHARGER_CONNECT_STATE_LIST: '["Preparing", "Charging", "SuspendedEV", "SuspendedEVSE", "Finishing", "Available"]',
-OCPP_CHARGING_STATE = "Charging"
+OCPP_ALLOW_SET_CURRENT_STATES = ["Charging", "SuspendedEVSE"]
 OCPP_CHARGER_ENTITIES: dict[str, str | None] = {
     CHARGE_API_DOMAIN: DOMAIN_OCPP,
     OPTION_CHARGER_NAME: DEVICE_NAME_MARKER,

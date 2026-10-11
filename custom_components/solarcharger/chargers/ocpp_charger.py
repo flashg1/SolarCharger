@@ -18,7 +18,7 @@ from ..const import (
     NUMBER,
     NUMBER_OCPP_PROFILE_ID,
     NUMBER_OCPP_PROFILE_STACK_LEVEL,
-    OCPP_CHARGING_STATE,
+    OCPP_ALLOW_SET_CURRENT_STATES,
 )
 from ..entity import compose_entity_id
 from ..models.model_config import ConfigValue, ConfigValueDict
@@ -128,9 +128,9 @@ class OcppCharger(ChargerChargeableBase):
             config_val = ConfigValue(ENTITY_CHARGER_SET_CHARGE_CURRENT, entity_id, None)
             val_dict.config_values[ENTITY_CHARGER_SET_CHARGE_CURRENT] = config_val
 
-        # Only set charge current when charger is in OCPP_CHARGING_STATE.
+        # Only set charge current when charger is one of OCPP_ALLOW_SET_CURRENT_STATES.
         state = self.option_get_entity_string(ENTITY_CHARGER_CHARGING_SENSOR)
-        if state != OCPP_CHARGING_STATE:
+        if state not in OCPP_ALLOW_SET_CURRENT_STATES:
             _LOGGER.warning(
                 "%s: Cannot set current due to charger in state %s",
                 self.caller,

@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.13.2 2026-10-11
+### Breaking change
+- Reminder: If upgrading from v0.12.0 or prior, please follow instructions [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
+### Fix
+- Fixed net allocated power never updates and charger stuck in pause when "Power monitor duration"=0 [#35](https://github.com/flashg1/SolarCharger/issues/35). Thanks @shuch3ng.
+- Allow OCPP to set current when in SuspendedEVSE state [#37](https://github.com/flashg1/SolarCharger/issues/37). Thanks @blakegonzales.
+
 ## v0.13.1 2026-10-02
 ### Breaking change
 - Reminder: If upgrading from v0.12.0 or prior, please follow instructions [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
