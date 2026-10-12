@@ -1,4 +1,9 @@
 extend = "../../../pyproject.toml"
 
+#######################################################
+# This file, config/custom_components/solarcharger/ruff.toml, is here just for reference.
+# HA config directory is gitignored, so the Ruff server cannot discover this file.
+# The following are placed in .vscode/settings.json to be effective.
+#######################################################
 [lint.per-file-ignores]
 "**/*.py" = ["TID251", "TID252"]
