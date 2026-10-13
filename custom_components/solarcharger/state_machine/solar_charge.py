@@ -880,14 +880,18 @@ class SolarCharge(ScOptionState):
 
     # ----------------------------------------------------------------------------
     def _is_below_charge_limit(
-        self, chargeable: Chargeable, val_dict: ConfigValueDict | None = None
+        self,
+        chargeable: Chargeable,
+        charge_limit: float | None,
+        val_dict: ConfigValueDict | None = None,
     ) -> bool:
         """Is device SOC below charge limit? Always return true if SOC entity ID is not defined."""
 
         is_below_limit = True
 
         try:
-            charge_limit = chargeable.get_charge_limit()
+            if charge_limit is None:
+                charge_limit = chargeable.get_charge_limit()
 
             config_item = ENTITY_DEVICE_SOC_SENSOR
             if val_dict is None:
@@ -914,7 +918,7 @@ class SolarCharge(ScOptionState):
     def is_below_charge_limit(self, val_dict: ConfigValueDict | None = None) -> bool:
         """Is device SOC below charge limit? Always return true if SOC entity ID is not defined."""
 
-        return self._is_below_charge_limit(self.chargeable, val_dict)
+        return self._is_below_charge_limit(self.chargeable, None, val_dict)
 
     # ----------------------------------------------------------------------------
     def is_charging(
@@ -1033,7 +1037,17 @@ class SolarCharge(ScOptionState):
         # Device charge limit must have already been set before this check.
         soc_tag = ENTITY_DEVICE_SOC_SENSOR
         val_dict = ConfigValueDict(soc_tag, {})
-        context.below_charge_limit = self._is_below_charge_limit(chargeable, val_dict)
+        if state == RunState.PAUSE:
+            # For pause state, use charge limit from schedule goal because charge limit
+            # from device may not have been set yet.
+            context.below_charge_limit = self._is_below_charge_limit(
+                chargeable, goal.new_charge_limit, val_dict
+            )
+        else:
+            # Get charge limit from device for all other states.
+            context.below_charge_limit = self._is_below_charge_limit(
+                chargeable, None, val_dict
+            )
         context.real_soc = val_dict.config_values[soc_tag].entity_id is not None
 
         val_dict = ConfigValueDict(ENTITY_CHARGER_CHARGING_SENSOR, {})

@@ -6,6 +6,7 @@
 ### Fix
 ### New feature
 ### Improvement
+- "Pause" state to use charge limit from schedule goal instead of from device because device might not be up-to-date.
 - Start charger at midnight to check today's new charge limit if "Schedule charge" is enabled and charger is not running.
 
 ## v0.13.2 2026-10-11
