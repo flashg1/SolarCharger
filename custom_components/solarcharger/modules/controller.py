@@ -409,44 +409,40 @@ class ChargeController(ScOptionState):
             self._hass.loop.create_task(action(turn_on))
 
     # ----------------------------------------------------------------------------
-    async def async_check_if_need_to_reschedule_charge(self) -> None:
+    async def _async_reschedule_charge(self, msg: str) -> None:
         """Reschedule charge due to schedule update."""
 
-        if self.is_updated_today_tomorrow_schedule:
-            try:
-                _LOGGER.info(
-                    "%s: Checking if need to reschedule charge due to schedule update",
-                    self.caller,
+        try:
+            _LOGGER.info(
+                "%s: Checking if need to reschedule charge",
+                self.caller,
+            )
+            if self.charge_control.instance_count == 0 and self.is_schedule_charge():
+                await self.solar_charge.async_wake_up_and_update_ha(self._chargeable)
+                goal: ScheduleData = (
+                    await self.solar_charge.async_get_current_schedule_data()
                 )
-                if (
-                    self.charge_control.instance_count == 0
-                    and self.is_schedule_charge()
+                if goal.use_charge_schedule and (
+                    goal.has_charge_endtime
+                    or (
+                        goal.battery_soc is not None
+                        and goal.battery_soc < goal.new_charge_limit
+                    )
                 ):
-                    await self.solar_charge.async_wake_up_and_update_ha(
-                        self._chargeable
-                    )
-                    goal: ScheduleData = (
-                        await self.solar_charge.async_get_current_schedule_data()
-                    )
-                    if goal.use_charge_schedule and (
-                        goal.has_charge_endtime
-                        or (
-                            goal.battery_soc is not None
-                            and goal.battery_soc < goal.new_charge_limit
-                        )
-                    ):
-                        if self.solar_charge.is_device_at_location_and_connected():
-                            _LOGGER.warning(
-                                "%s: Rescheduling charge due to schedule update",
-                                self.caller,
-                            )
-                            self._turn_charger_switch(turn_on=True)
+                    if self.solar_charge.is_device_at_location_and_connected():
+                        _LOGGER.warning("%s: %s", self.caller, msg)
+                        self._turn_charger_switch(turn_on=True)
 
-            except Exception:
-                _LOGGER.exception(
-                    "%s: Failed to check if need to reschedule charge", self.caller
-                )
+        except Exception:
+            _LOGGER.exception("%s: Failed to reschedule charge", self.caller)
 
+    # ----------------------------------------------------------------------------
+    async def async_check_if_need_to_reschedule_charge(self) -> None:
+        """Check if need to reschedule charge."""
+
+        if self.is_updated_today_tomorrow_schedule:
+            msg = "Rescheduling due to schedule update"
+            await self._async_reschedule_charge(msg)
             self.set_updated_today_tomorrow_schedule(False)
 
     # ----------------------------------------------------------------------------
@@ -455,20 +451,8 @@ class ChargeController(ScOptionState):
     async def _async_midnight_maintenance(self, now_time: datetime) -> None:
         """Perform midnight maintenance tasks."""
 
-        try:
-            if self.charge_control.instance_count == 0 and self.is_schedule_charge():
-                await self.solar_charge.async_wake_up_and_update_ha(self._chargeable)
-                if self.solar_charge.is_device_at_location_and_connected():
-                    _LOGGER.warning(
-                        "%s: Checking new charge limit for today",
-                        self.caller,
-                    )
-                    self._turn_charger_switch(turn_on=True)
-
-        except Exception:
-            _LOGGER.exception(
-                "%s: Failed to check new charge limit for today", self.caller
-            )
+        msg = "Rescheduling due to new charge limit for today"
+        await self._async_reschedule_charge(msg)
 
     # ----------------------------------------------------------------------------
     async def _async_schedule_midnight_maintenance(self) -> None:

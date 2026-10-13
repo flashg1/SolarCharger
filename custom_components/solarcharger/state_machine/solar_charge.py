@@ -1499,10 +1499,11 @@ class SolarCharge(ScOptionState):
     async def async_get_current_schedule_data(self) -> ScheduleData:
         """Get current schedule data."""
 
+        include_tomorrow = self.is_time_between_sunset_and_midnight()
         return await self.scheduler.async_get_schedule_data(
             self.chargeable,
             timer_session=False,
-            include_tomorrow=True,
+            include_tomorrow=include_tomorrow,
             started_calibration=False,
             started_max_charge=0,
             msg="Schedule",

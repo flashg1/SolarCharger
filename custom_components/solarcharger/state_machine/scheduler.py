@@ -378,6 +378,7 @@ class ChargeScheduler(ScOptionState):
             # Get today's schedule
             goal.battery_soc = chargeable.get_state_of_charge()
             today_endtime = goal.weekly_schedule[today_index].charge_end_time
+            completed_today_goal = False
             if today_endtime != time.min:
                 goal.charge_endtime = self.combine_local_date_time(
                     now_time.date(), today_endtime
@@ -387,6 +388,8 @@ class ChargeScheduler(ScOptionState):
                     and goal.battery_soc < today_charge_limit
                 ):
                     goal.has_charge_endtime = True
+                else:
+                    completed_today_goal = True  # Think how to use this.
 
             #####################################
             # If today has no schedule or passed schedule/completed SOC, or if include_tomorrow,
