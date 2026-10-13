@@ -452,6 +452,33 @@ class ChargeController(ScOptionState):
     # ----------------------------------------------------------------------------
     # Tracker callbacks
     # ----------------------------------------------------------------------------
+    async def _async_midnight_maintenance(self, now_time: datetime) -> None:
+        """Perform midnight maintenance tasks."""
+
+        try:
+            if self.charge_control.instance_count == 0 and self.is_schedule_charge():
+                await self.solar_charge.async_wake_up_and_update_ha(self._chargeable)
+                if self.solar_charge.is_device_at_location_and_connected():
+                    _LOGGER.warning(
+                        "%s: Checking new charge limit for today",
+                        self.caller,
+                    )
+                    self._turn_charger_switch(turn_on=True)
+
+        except Exception:
+            _LOGGER.exception(
+                "%s: Failed to check new charge limit for today", self.caller
+            )
+
+    # ----------------------------------------------------------------------------
+    async def _async_schedule_midnight_maintenance(self) -> None:
+        """Schedule midnight maintenance task."""
+
+        self._tracker.schedule_controller_midnight_maintenance(
+            self._async_midnight_maintenance
+        )
+
+    # ----------------------------------------------------------------------------
     async def async_handle_sun_elevation_update(
         self, event: Event[EventStateChangedData]
     ) -> None:
@@ -1050,6 +1077,9 @@ class ChargeController(ScOptionState):
     ) -> None:
         """Instantiates the power allocator and track net power updates."""
 
+        # Remove HA started callback if exists
+        self._tracker.remove_ha_started_callback()
+
         # coordinator: SolarChargerCoordinator = hass.data[DOMAIN][config_entry.entry_id]
         # Deferred import: allocator.py imports DeviceControl, which imports
         # ChargeController from this module -- a top-level import here would
@@ -1075,9 +1105,6 @@ class ChargeController(ScOptionState):
 
         self._track_net_power_update()
 
-        # Remove HA started callback if exists
-        self._tracker.remove_ha_started_callback()
-
     # ----------------------------------------------------------------------------
     async def _async_init_global_defaults_device(self) -> None:
         """Init global defaults device."""
@@ -1100,9 +1127,13 @@ class ChargeController(ScOptionState):
         # Only activate switch actions when HA has fully started, otherwise will hang others during startup.
         # eg. Switch on charge while HA is still starting up.
         self._initialising = False
+        # Remove HA started callback if exists
+        self._tracker.remove_ha_started_callback()
 
         # Permanent subscriptions
         self._subscribe_next_charge_time_update()
+        # Schedule controller midnight maintenance.
+        await self._async_schedule_midnight_maintenance()
 
         # Track next charge time trigger
         await self.async_switch_schedule_charge(self.is_schedule_charge())
@@ -1124,9 +1155,6 @@ class ChargeController(ScOptionState):
         await self.async_switch_calibrate_max_charge_speed(
             self.is_calibrate_max_charge_speed()
         )
-
-        # Remove HA started callback if exists
-        self._tracker.remove_ha_started_callback()
 
     # ----------------------------------------------------------------------------
     async def _async_init_charger_device(self) -> None:
@@ -1169,5 +1197,5 @@ class ChargeController(ScOptionState):
             await self._async_abort_solar_charger(None)
             await self._charger.async_unload()
 
-        # Unload tracker.
+        # Unload tracker for both charger and global defaults device.
         await self._tracker.async_unload()

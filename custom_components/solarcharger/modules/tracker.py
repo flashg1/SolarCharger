@@ -23,7 +23,11 @@ from homeassistant.core import (
 # async_track_sunset,
 # async_track_time_change,
 # async_track_time_interval,
-from homeassistant.helpers.event import async_call_later, async_track_state_change_event
+from homeassistant.helpers.event import (
+    async_call_later,
+    async_track_state_change_event,
+    async_track_time_change,
+)
 from homeassistant.helpers.typing import NoEventData
 from homeassistant.util.event_type import EventType
 
@@ -34,6 +38,7 @@ from ..chargers.sc_option_state import ScOptionState
 from ..const import (
     CALLBACK_CHARGE_ENDTIME_UPDATE,
     CALLBACK_CHARGE_LIMIT_UPDATE,
+    CALLBACK_CONTROLLER_0AM_MAINTENANCE,
     CALLBACK_DELTA_ALLOCATED_POWER,
     CALLBACK_DEVICE_PRESENCE,
     CALLBACK_HA_STARTED,
@@ -334,6 +339,15 @@ class Tracker(ScOptionState):
         """Unsubscribe SOC update events."""
 
         self.remove_callback(CALLBACK_SOC_UPDATE)
+
+    # ----------------------------------------------------------------------------
+    def schedule_controller_midnight_maintenance(self, action: DELAY_CALLBACK) -> None:
+        """Schedule controller midnight maintenance task."""
+
+        subscription = async_track_time_change(
+            self._hass, action, hour=0, minute=0, second=0
+        )
+        self.save_callback(CALLBACK_CONTROLLER_0AM_MAINTENANCE, subscription)
 
     # ----------------------------------------------------------------------------
     def unschedule_next_charge_time(self) -> None:

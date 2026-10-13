@@ -242,6 +242,15 @@ class SolarChargerSensorResetAtMidnightEntity(SolarChargerSensorEntity):
         )
 
     # ----------------------------------------------------------------------------
+    async def _async_midnight_reset(self, now_time: datetime) -> None:
+        """Reset value to starting state at midnight. Confirmed now_time is in local time."""
+
+        _LOGGER.debug(
+            "Resetting %s to %s at %s.", self.entity_id, self._starting_state, now_time
+        )
+        self._set_and_update_state(self._starting_state)
+
+    # ----------------------------------------------------------------------------
     async def async_added_to_hass(self) -> None:
         """Run when entity about to be added to hass."""
 
@@ -253,15 +262,6 @@ class SolarChargerSensorResetAtMidnightEntity(SolarChargerSensorEntity):
                 self.hass, self._async_midnight_reset, hour=0, minute=0, second=0
             )
         )
-
-    # ----------------------------------------------------------------------------
-    async def _async_midnight_reset(self, now_time: datetime) -> None:
-        """Reset value to starting state at midnight. Confirmed now_time is in local time."""
-
-        _LOGGER.debug(
-            "Resetting %s to %s at %s.", self.entity_id, self._starting_state, now_time
-        )
-        self._set_and_update_state(self._starting_state)
 
 
 # ----------------------------------------------------------------------------

@@ -13,7 +13,7 @@ DOMAIN_SC = "solarcharger"
 SC_PREFIX = "sc"
 DOMAIN_DATA = f"{DOMAIN_SC}_data"
 # Also need to set version in manifest.json, README.md and CHANGELOG.md.
-VERSION = "0.13.2"
+VERSION = "0.13.3"
 STORAGE_VERSION = 1
 ISSUE_URL = "https://github.com/flashg1/SolarCharger/issues"
 CONFIG_URL = "https://github.com/flashg1/SolarCharger"
@@ -1558,7 +1558,7 @@ CALLBACK_HA_STARTED = "callback_ha_started"
 CALLBACK_HA_STOP = "callback_ha_stop"
 CALLBACK_CHARGE_LIMIT_UPDATE = "callback_charge_limit_update"
 CALLBACK_CHARGE_ENDTIME_UPDATE = "callback_charge_endtime_update"
-
+CALLBACK_CONTROLLER_0AM_MAINTENANCE = "callback_controller_0am_maintenance"
 
 #######################################################
 # Misc
