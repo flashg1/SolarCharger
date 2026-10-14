@@ -85,7 +85,11 @@ class ChargeScheduler(ScOptionState):
         look_ahead_charge_limit = goal.new_charge_limit
 
         if not goal.has_charge_endtime or (
-            goal.has_charge_endtime and goal.battery_soc + 1 >= goal.new_charge_limit
+            goal.has_charge_endtime
+            and (
+                goal.battery_soc is not None
+                and goal.battery_soc + 1 >= goal.new_charge_limit
+            )
         ):
             look_ahead_schedule: list[ChargeSchedule] = []
             today_index = goal.day_index
@@ -141,7 +145,10 @@ class ChargeScheduler(ScOptionState):
             if next_charge_limit > goal.new_charge_limit:  # noqa: PLR1730
                 goal.new_charge_limit = next_charge_limit
 
-        elif goal.has_charge_endtime and goal.battery_soc + 1 >= goal.new_charge_limit:
+        elif goal.has_charge_endtime and (
+            goal.battery_soc is not None
+            and goal.battery_soc + 1 >= goal.new_charge_limit
+        ):
             # Has charge end time and almost done, so plan for next session and
             # increase charge limit before device turns off the charger.
             if next_charge_limit > goal.new_charge_limit:
@@ -378,18 +385,15 @@ class ChargeScheduler(ScOptionState):
             # Get today's schedule
             goal.battery_soc = chargeable.get_state_of_charge()
             today_endtime = goal.weekly_schedule[today_index].charge_end_time
-            completed_today_goal = False
             if today_endtime != time.min:
                 goal.charge_endtime = self.combine_local_date_time(
                     now_time.date(), today_endtime
                 )
-                if (
-                    goal.charge_endtime > now_time
+                if goal.charge_endtime > now_time and (
+                    goal.battery_soc is not None
                     and goal.battery_soc < today_charge_limit
                 ):
                     goal.has_charge_endtime = True
-                else:
-                    completed_today_goal = True  # Think how to use this.
 
             #####################################
             # If today has no schedule or passed schedule/completed SOC, or if include_tomorrow,

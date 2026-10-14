@@ -116,10 +116,10 @@ class ChargerChargeableBase(HaDevice, ScOptionState, Charger, Chargeable):
     # ----------------------------------------------------------------------------
     def get_state_of_charge(
         self, val_dict: ConfigValueDict | None = None
-    ) -> int | None:
+    ) -> float | None:
         """Get state of charge (SoC) of chargeable device."""
 
-        return self.option_get_entity_integer(
+        return self.option_get_entity_number(
             ENTITY_DEVICE_SOC_SENSOR, val_dict=val_dict
         )
 

@@ -8,6 +8,7 @@
 - Start charger at midnight to check today's new charge limit if "Schedule charge" is enabled and charger is not running.
 ### New feature
 ### Improvement
+- Changed SOC from int to float.
 
 ## v0.13.2 2026-10-11
 ### Breaking change

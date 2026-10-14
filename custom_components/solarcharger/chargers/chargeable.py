@@ -61,7 +61,7 @@ class Chargeable(ABC):
     @abstractmethod
     def get_state_of_charge(
         self, val_dict: ConfigValueDict | None = None
-    ) -> int | None:
+    ) -> float | None:
         """Get state of charge (SoC) of chargeable device."""
         # return 0
 
