@@ -989,14 +989,14 @@ class SolarCharge(ScOptionState):
         return allow_to_pause
 
     # ----------------------------------------------------------------------------
-    def _is_allowed_to_discharge(self) -> bool:
-        """Check if power source is allowed to discharge."""
-        allow_to_discharge = True
+    def _is_allowed_to_supply_power(self) -> bool:
+        """Check if power source is allowed to supply power."""
+        allow_to_supply = True
 
         if self.is_max_speed_charge():
-            allow_to_discharge = False
+            allow_to_supply = False
 
-        return allow_to_discharge
+        return allow_to_supply
 
     # ----------------------------------------------------------------------------
     # Machine state functions
@@ -1295,7 +1295,7 @@ class SolarCharge(ScOptionState):
             # Power source.
             #####################################
             if context.cap_supply_power:
-                # Discharge power if any of the following conditions are true.
+                # Supply power if any of the following conditions are true.
                 if (
                     # Real SOC and SOC at or above limit.
                     # (context.real_soc and not context.below_charge_limit)
@@ -1304,7 +1304,7 @@ class SolarCharge(ScOptionState):
                     or (context.stats.loop_success_count > 0 and not context.charging)
                     # Not enough power.
                     or (
-                        self._is_allowed_to_discharge()
+                        self._is_allowed_to_supply_power()
                         and (
                             context.enough_power is not None
                             and not context.enough_power

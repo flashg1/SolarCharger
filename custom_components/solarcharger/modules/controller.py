@@ -39,7 +39,6 @@ from ..const import (
 )
 from ..helpers.utils import get_is_sun_rising, get_sun_elevation, log_is_event_loop
 from ..models.model_charge_control import ChargeControl
-from ..models.model_schedule_data import ScheduleData
 from ..state_machine.solar_charge import SolarCharge
 from .tracker import Tracker
 
@@ -419,9 +418,7 @@ class ChargeController(ScOptionState):
             )
             if self.charge_control.instance_count == 0 and self.is_schedule_charge():
                 await self.solar_charge.async_wake_up_and_update_ha(self._chargeable)
-                goal: ScheduleData = (
-                    await self.solar_charge.async_get_current_schedule_data()
-                )
+                goal = await self.solar_charge.async_get_current_schedule_data()
                 if goal.use_charge_schedule and (
                     goal.has_charge_endtime
                     or (

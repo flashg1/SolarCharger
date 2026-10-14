@@ -36,7 +36,8 @@ class ContextData:
     #####################################
     continue_state: bool = False  # Continue current state
     next_step: RunStep = RunStep.END
-    enough_power: bool | None = None  # None=not enough data points.
+    # Is enough power available to continue charging? None=not enough data points.
+    enough_power: bool | None = None
 
     #####################################
     # Environment data
