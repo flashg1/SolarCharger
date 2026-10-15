@@ -5,7 +5,7 @@
 - Reminder: If upgrading from v0.12.0 or prior, please follow instructions [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
 ### Fix
 - "Pause" state to use charge limit from schedule goal instead of from device because device might not be up-to-date.
-- Start charger at midnight to check today's new charge limit if "Schedule charge" is enabled and charger is not running.
+- Start charger at midnight to check today's new charge limit if "Schedule charge" is enabled and charger is not running. **IMPORTANT:** Please set "Start state" to "Auto" and disable "Fast charge mode" to avoid unexpected charging at midnight. Turn off "Schedule charge" if midnight charge limit check is not required.
 ### New feature
 ### Improvement
 - Changed SOC from int to float.
