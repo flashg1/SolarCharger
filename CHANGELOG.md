@@ -6,7 +6,6 @@
 ### Fix
 - "Pause" state to use charge limit from schedule goal instead of from device because device might not be up-to-date.
 - Start charger at midnight to check today's new charge limit if "Schedule charge" is enabled and charger is not running. **IMPORTANT:** Please set "Start state" to "Auto" and disable "Fast charge mode" to avoid unexpected charging at midnight. Turn off "Schedule charge" if midnight charge limit check is not required.
-### New feature
 ### Improvement
 - Changed SOC from int to float.
 
