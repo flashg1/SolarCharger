@@ -1037,7 +1037,7 @@ class SolarCharge(ScOptionState):
         # Device charge limit must have already been set before this check.
         soc_tag = ENTITY_DEVICE_SOC_SENSOR
         val_dict = ConfigValueDict(soc_tag, {})
-        if state == RunState.PAUSE:
+        if state == RunState.PAUSE and goal.use_charge_schedule:
             # For pause state, use charge limit from schedule goal because charge limit
             # from device may not have been set yet.
             context.below_charge_limit = self._is_below_charge_limit(
