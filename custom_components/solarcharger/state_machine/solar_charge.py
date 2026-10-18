@@ -1037,17 +1037,22 @@ class SolarCharge(ScOptionState):
         # Device charge limit must have already been set before this check.
         soc_tag = ENTITY_DEVICE_SOC_SENSOR
         val_dict = ConfigValueDict(soc_tag, {})
-        if state == RunState.PAUSE and goal.use_charge_schedule:
-            # For pause state, use charge limit from schedule goal because charge limit
-            # from device may not have been set yet.
-            context.below_charge_limit = self._is_below_charge_limit(
+        #if state == RunState.PAUSE and goal.use_charge_schedule:
+        #    # For pause state, use charge limit from schedule goal because charge limit
+        #    # from device may not have been set yet.
+        #    context.below_charge_limit = self._is_below_charge_limit(
+        #        chargeable, goal.new_charge_limit, val_dict
+        #    )
+        #else:
+        #    # Get charge limit from device for all other states.
+        #    context.below_charge_limit = self._is_below_charge_limit(
+        #        chargeable, None, val_dict
+        #    )
+        
+        # goal.new_charge_limit already has correct value from device or from schedule.
+        context.below_charge_limit = self._is_below_charge_limit(
                 chargeable, goal.new_charge_limit, val_dict
-            )
-        else:
-            # Get charge limit from device for all other states.
-            context.below_charge_limit = self._is_below_charge_limit(
-                chargeable, None, val_dict
-            )
+        )
         context.real_soc = val_dict.config_values[soc_tag].entity_id is not None
 
         val_dict = ConfigValueDict(ENTITY_CHARGER_CHARGING_SENSOR, {})
