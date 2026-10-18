@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.13.4 2026-10-18
+### Breaking change
+- Reminder: If upgrading from v0.12.0 or prior, please follow instructions [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
+### Fix
+- When in "Pause" state, only use scheduled charge limit when "Schedule charge" is enabled, otherwise use charge limit from device.
+
 ## v0.13.3 2026-10-13
 ### Breaking change
 - Reminder: If upgrading from v0.12.0 or prior, please follow instructions [here](https://github.com/flashg1/SolarCharger/wiki/Installation#keep-current-config-and-history-when-updating-solarcharger) if you would like to keep current config and history, or just [delete then re-add the integration](https://github.com/flashg1/SolarCharger/wiki/Installation#how-to-delete-and-re-add-the-solarcharger-integration) to reconfigure from scratch if you have minimal configuration.
